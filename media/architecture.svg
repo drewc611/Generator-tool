@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 500" width="1040" height="500" role="img" aria-label="portamp architecture: a general policy gate above a signal chain of input, dsp, output and vis plugins, over a kernel bus, with the five pipeline stages below">
+<defs>
+<linearGradient id="chassis" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a42"/><stop offset="1" stop-color="#1b1b1f"/></linearGradient>
+</defs>
+<rect x="0.5" y="0.5" width="1039" height="499" rx="7" fill="url(#chassis)" stroke="#0e0e11"/>
+<rect x="2.5" y="2.5" width="1035" height="495" rx="6" fill="none" stroke="#5a5a66" opacity="0.45"/>
+<text x="18" y="30" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" font-weight="bold" fill="#f0a830" text-anchor="start" letter-spacing="3">SIGNAL CHAIN</text>
+<text x="1022" y="30" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#8b8b96" text-anchor="end">one shared context object, passed down the chain</text>
+<rect x="16" y="46" width="1008" height="56" rx="3" fill="#170e11" stroke="#4b2027"/>
+<path d="M17 101 L17 47 L1023 47" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<rect x="16" y="46" width="4" height="56" rx="2" fill="#fb7185"/>
+<text x="34" y="70" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="bold" fill="#fb7185" text-anchor="start">general</text>
+<text x="34" y="89" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">general-policy   general-authorization</text>
+<text x="300" y="70" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#d9d9e0" text-anchor="start">Consulted before a plugin reads a secret, calls the network, or writes a file.</text>
+<text x="300" y="89" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">A credential in the legacy source stops the run. The location is reported, the value never is.</text>
+<rect x="16" y="126" width="140" height="128" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M17 253 L17 127 L155 127" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<rect x="17" y="127" width="138" height="4" fill="#9a9aa5" opacity="0.9"/>
+<text x="28" y="154" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="bold" fill="#9a9aa5" text-anchor="start">SOURCE</text>
+<text x="28" y="178" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#a8a8b4" text-anchor="start">legacy tree</text>
+<text x="28" y="195" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#a8a8b4" text-anchor="start">screenshots</text>
+<text x="28" y="212" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#a8a8b4" text-anchor="start">HAR / schema</text>
+<text x="28" y="229" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#a8a8b4" text-anchor="start">OpenAPI</text>
+<rect x="186" y="126" width="150" height="128" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M187 253 L187 127 L335 127" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<rect x="187" y="127" width="148" height="4" fill="#6ee7a8" opacity="0.9"/>
+<text x="198" y="154" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="bold" fill="#6ee7a8" text-anchor="start">input</text>
+<text x="198" y="178" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">input-angular</text>
+<text x="198" y="195" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">input-shots</text>
+<text x="198" y="212" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">input-blackbox</text>
+<text x="198" y="229" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">input-record</text>
+<rect x="366" y="126" width="150" height="128" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M367 253 L367 127 L515 127" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<rect x="367" y="127" width="148" height="4" fill="#7dd3fc" opacity="0.9"/>
+<text x="378" y="154" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="bold" fill="#7dd3fc" text-anchor="start">dsp</text>
+<text x="378" y="178" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">dsp-tokens</text>
+<text x="378" y="195" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">dsp-apimap</text>
+<rect x="546" y="126" width="150" height="128" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M547 253 L547 127 L695 127" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<rect x="547" y="127" width="148" height="4" fill="#f0a830" opacity="0.9"/>
+<text x="558" y="154" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="bold" fill="#f0a830" text-anchor="start">output</text>
+<text x="558" y="178" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">output-react</text>
+<rect x="726" y="126" width="150" height="128" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M727 253 L727 127 L875 127" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<rect x="727" y="127" width="148" height="4" fill="#c4b5fd" opacity="0.9"/>
+<text x="738" y="154" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="bold" fill="#c4b5fd" text-anchor="start">vis</text>
+<text x="738" y="178" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">vis-parity</text>
+<rect x="906" y="126" width="118" height="128" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M907 253 L907 127 L1023 127" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<rect x="907" y="127" width="116" height="4" fill="#9a9aa5" opacity="0.9"/>
+<text x="918" y="154" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="bold" fill="#9a9aa5" text-anchor="start">./out</text>
+<text x="918" y="178" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#a8a8b4" text-anchor="start">components</text>
+<text x="918" y="195" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#a8a8b4" text-anchor="start">tokens</text>
+<text x="918" y="212" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#a8a8b4" text-anchor="start">endpoints</text>
+<text x="918" y="229" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#a8a8b4" text-anchor="start">PORT_NOTES.md</text>
+<path d="M160 190.0 L176 190.0" stroke="#5a5a66" stroke-width="1.5"/>
+<path d="M180 190.0 L170 185.0 L170 195.0 Z" fill="#f0a830"/>
+<path d="M340 190.0 L356 190.0" stroke="#5a5a66" stroke-width="1.5"/>
+<path d="M360 190.0 L350 185.0 L350 195.0 Z" fill="#f0a830"/>
+<path d="M520 190.0 L536 190.0" stroke="#5a5a66" stroke-width="1.5"/>
+<path d="M540 190.0 L530 185.0 L530 195.0 Z" fill="#f0a830"/>
+<path d="M700 190.0 L716 190.0" stroke="#5a5a66" stroke-width="1.5"/>
+<path d="M720 190.0 L710 185.0 L710 195.0 Z" fill="#f0a830"/>
+<path d="M880 190.0 L896 190.0" stroke="#5a5a66" stroke-width="1.5"/>
+<path d="M900 190.0 L890 185.0 L890 195.0 Z" fill="#f0a830"/>
+<rect x="16" y="288" width="1008" height="64" rx="3" fill="#0b0b0e" stroke="#0e0e11"/>
+<path d="M17 351 L17 289 L1023 289" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<rect x="16" y="288" width="4" height="64" rx="2" fill="#f0a830"/>
+<text x="34" y="314" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="bold" fill="#f0a830" text-anchor="start">kernel</text>
+<text x="34" y="334" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">448 lines</text>
+<text x="160" y="314" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#d9d9e0" text-anchor="start">Registry, discovery, stage dispatch. Knows five classes, five stages, and nothing else.</text>
+<text x="160" y="334" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">No Angular, no React, no screenshots, no HTTP. Everything that knows a framework is above this line.</text>
+<path d="M261.0 102 L261.0 126" stroke="#fb7185" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+<path d="M261.0 254 L261.0 288" stroke="#f0a830" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>
+<path d="M441.0 102 L441.0 126" stroke="#fb7185" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+<path d="M441.0 254 L441.0 288" stroke="#f0a830" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>
+<path d="M621.0 102 L621.0 126" stroke="#fb7185" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+<path d="M621.0 254 L621.0 288" stroke="#f0a830" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>
+<path d="M801.0 102 L801.0 126" stroke="#fb7185" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+<path d="M801.0 254 L801.0 288" stroke="#f0a830" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>
+<text x="18" y="378" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#f0a830" text-anchor="start" letter-spacing="3">PIPELINE STAGES</text>
+<text x="1022" y="378" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="end">a plugin subscribes to the stages it cares about</text>
+<rect x="16.0" y="392" width="180.8" height="52" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M17.0 443 L17.0 393 L195.8 393" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="106.4" y="416" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#e6e6ec" text-anchor="middle">scan</text>
+<text x="106.4" y="433" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="middle">read</text>
+<path d="M200.8 418.0 L212.8 418.0" stroke="#5a5a66" stroke-width="1.5"/>
+<path d="M216.8 418.0 L207.8 413.5 L207.8 422.5 Z" fill="#f0a830"/>
+<rect x="222.8" y="392" width="180.8" height="52" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M223.8 443 L223.8 393 L402.6 393" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="313.20000000000005" y="416" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#e6e6ec" text-anchor="middle">extract</text>
+<text x="313.20000000000005" y="433" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="middle">structure</text>
+<path d="M407.6 418.0 L419.6 418.0" stroke="#5a5a66" stroke-width="1.5"/>
+<path d="M423.6 418.0 L414.6 413.5 L414.6 422.5 Z" fill="#f0a830"/>
+<rect x="429.6" y="392" width="180.8" height="52" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M430.6 443 L430.6 393 L609.4000000000001 393" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="520.0" y="416" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#e6e6ec" text-anchor="middle">plan</text>
+<text x="520.0" y="433" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="middle">decide</text>
+<path d="M614.4000000000001 418.0 L626.4000000000001 418.0" stroke="#5a5a66" stroke-width="1.5"/>
+<path d="M630.4000000000001 418.0 L621.4000000000001 413.5 L621.4000000000001 422.5 Z" fill="#f0a830"/>
+<rect x="636.4000000000001" y="392" width="180.8" height="52" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M637.4000000000001 443 L637.4000000000001 393 L816.2 393" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="726.8000000000001" y="416" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#e6e6ec" text-anchor="middle">emit</text>
+<text x="726.8000000000001" y="433" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="middle">write</text>
+<path d="M821.2 418.0 L833.2 418.0" stroke="#5a5a66" stroke-width="1.5"/>
+<path d="M837.2 418.0 L828.2 413.5 L828.2 422.5 Z" fill="#f0a830"/>
+<rect x="843.2" y="392" width="180.8" height="52" rx="3" fill="#0d0d10" stroke="#0e0e11"/>
+<path d="M844.2 443 L844.2 393 L1023.0 393" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="933.6" y="416" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#e6e6ec" text-anchor="middle">verify</text>
+<text x="933.6" y="433" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="middle">check</text>
+</svg>

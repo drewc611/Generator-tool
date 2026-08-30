@@ -1,0 +1,10 @@
+{
+  "system": "Claims Intake, internal web app",
+  "owner": "Acme Insurance",
+  "relationship": "owner",
+  "basis": "Internally developed and owned outright. No third party components under a license restricting derivative works.",
+  "attestedBy": "A. Clark",
+  "attestedOn": "2026-08-30",
+  "sourceAvailable": false,
+  "artifacts": ["screenshots", "har", "schema"]
+}

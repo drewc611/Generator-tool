@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 448" width="1040" height="448" role="img" aria-label="The ten plugins portamp ships with, listed by class">
+<defs>
+<linearGradient id="chassis" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a42"/><stop offset="1" stop-color="#1b1b1f"/></linearGradient>
+<pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="2" fill="#000" opacity="0.16"/></pattern>
+</defs>
+<rect x="0.5" y="0.5" width="1039" height="447" rx="7" fill="url(#chassis)" stroke="#0e0e11"/>
+<rect x="2.5" y="2.5" width="1035" height="443" rx="6" fill="none" stroke="#5a5a66" opacity="0.45"/>
+<rect x="10" y="10" width="1020" height="34" rx="3" fill="#0e0e11" stroke="#0e0e11"/>
+<path d="M11 43 L11 11 L1029 11" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="24" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" font-weight="bold" fill="#f0a830" text-anchor="start" letter-spacing="3">PLUGIN RACK</text>
+<text x="1016" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#8b8b96" text-anchor="end">10 loaded  ./plugins is scanned automatically</text>
+<rect x="16" y="54" width="1008" height="330" rx="3" fill="#0a0a0d" stroke="#0e0e11"/>
+<path d="M17 383 L17 55 L1023 55" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="40" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" font-weight="bold" fill="#6a6a76" text-anchor="start" letter-spacing="1">CLASS</text>
+<text x="150" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" font-weight="bold" fill="#6a6a76" text-anchor="start" letter-spacing="1">NAME</text>
+<text x="330" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" font-weight="bold" fill="#6a6a76" text-anchor="start" letter-spacing="1">DOES</text>
+<rect x="26" y="82" width="988" height="1" fill="#5a5a66" opacity="0.25"/>
+<rect x="26" y="88" width="988" height="29" fill="#111116"/>
+<rect x="34" y="99" width="7" height="7" rx="1.5" fill="#6ee7a8"/>
+<text x="50" y="107" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#6ee7a8" text-anchor="start">input</text>
+<text x="150" y="107" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">input-angular</text>
+<text x="330" y="107" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">components, bindings, RxJS operators, HttpClient calls, interceptors</text>
+<rect x="34" y="128" width="7" height="7" rx="1.5" fill="#6ee7a8"/>
+<text x="50" y="136" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#6ee7a8" text-anchor="start">input</text>
+<text x="150" y="136" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">input-shots</text>
+<text x="330" y="136" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">catalogs screenshots and infers the state each filename shows</text>
+<rect x="26" y="146" width="988" height="29" fill="#111116"/>
+<rect x="34" y="157" width="7" height="7" rx="1.5" fill="#6ee7a8"/>
+<text x="50" y="165" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#6ee7a8" text-anchor="start">input</text>
+<text x="150" y="165" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">input-blackbox</text>
+<text x="330" y="165" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">HAR, schema dumps, exports. Passive: nothing driven, nothing fetched</text>
+<rect x="34" y="186" width="7" height="7" rx="1.5" fill="#6ee7a8"/>
+<text x="50" y="194" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#6ee7a8" text-anchor="start">input</text>
+<text x="150" y="194" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">input-record</text>
+<text x="330" y="194" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">drives the running app with Playwright: shots, HAR, computed styles</text>
+<rect x="26" y="204" width="988" height="29" fill="#111116"/>
+<rect x="34" y="215" width="7" height="7" rx="1.5" fill="#7dd3fc"/>
+<text x="50" y="223" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#7dd3fc" text-anchor="start">dsp</text>
+<text x="150" y="223" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">dsp-tokens</text>
+<text x="330" y="223" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">density, type scale, spacing, color roles. Unresolved is recorded</text>
+<rect x="34" y="244" width="7" height="7" rx="1.5" fill="#7dd3fc"/>
+<text x="50" y="252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#7dd3fc" text-anchor="start">dsp</text>
+<text x="150" y="252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">dsp-apimap</text>
+<text x="330" y="252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">one endpoint map and one client, so components never hold a URL</text>
+<rect x="26" y="262" width="988" height="29" fill="#111116"/>
+<rect x="34" y="273" width="7" height="7" rx="1.5" fill="#f0a830"/>
+<text x="50" y="281" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
+<text x="150" y="281" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-react</text>
+<text x="330" y="281" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">one component per Angular component, every state present</text>
+<rect x="34" y="302" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
+<text x="50" y="310" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
+<text x="150" y="310" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-parity</text>
+<text x="330" y="310" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">what was ported, what deviates, and what nobody could verify</text>
+<rect x="26" y="320" width="988" height="29" fill="#111116"/>
+<rect x="34" y="331" width="7" height="7" rx="1.5" fill="#fb7185"/>
+<text x="50" y="339" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
+<text x="150" y="339" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-policy</text>
+<text x="330" y="339" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">credentials, live calls, billable endpoints, fixtures with real data</text>
+<rect x="34" y="360" width="7" height="7" rx="1.5" fill="#fb7185"/>
+<text x="50" y="368" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
+<text x="150" y="368" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-authorization</text>
+<text x="330" y="368" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">the attestation gate in front of every no source path</text>
+<rect x="16" y="396" width="1008" height="36" rx="3" fill="#0b0b0e" stroke="#0e0e11"/>
+<path d="M17 431 L17 397 L1023 397" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="32" y="419" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#d9d9e0" text-anchor="start">A plugin is a directory with an index.js and a setup function. Drop it in, it loads. No registration file, no build step.</text>
+</svg>

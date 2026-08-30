@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 250" width="1040" height="250" role="img" aria-label="The secret gate stopping a run: a credential was found, the location is reported and the value is not">
+<defs>
+<linearGradient id="chassis" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a42"/><stop offset="1" stop-color="#1b1b1f"/></linearGradient>
+<pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="2" fill="#000" opacity="0.16"/></pattern>
+</defs>
+<rect x="0.5" y="0.5" width="1039" height="249" rx="7" fill="url(#chassis)" stroke="#0e0e11"/>
+<rect x="2.5" y="2.5" width="1035" height="245" rx="6" fill="none" stroke="#5a5a66" opacity="0.45"/>
+<rect x="10" y="10" width="1020" height="34" rx="3" fill="#0e0e11" stroke="#0e0e11"/>
+<path d="M11 43 L11 11 L1029 11" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="24" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" font-weight="bold" fill="#f0a830" text-anchor="start" letter-spacing="3">POLICY</text>
+<text x="1016" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#8b8b96" text-anchor="end">gates live in the kernel, not the README</text>
+<circle cx="140" cy="27" r="5" fill="#ef4444"/>
+<text x="154" y="31" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="bold" fill="#ef4444" text-anchor="start" letter-spacing="1">STOPPED</text>
+<rect x="18" y="56" width="1004" height="150" rx="3" fill="#120607" stroke="#4b2027"/>
+<path d="M19 205 L19 57 L1021 57" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="32" y="82" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#3fbf7f" text-anchor="start">scan</text>
+<text x="122" y="82" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#237a52" text-anchor="start">5 file(s) under ./legacy</text>
+<text x="32" y="99" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#3fbf7f" text-anchor="start">extract</text>
+<text x="122" y="99" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#c98f2e" text-anchor="start">warn  1 possible credential(s) in the legacy source</text>
+<text x="32" y="124" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#ef4444" text-anchor="start">error</text>
+<text x="122" y="124" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#f87171" text-anchor="start">Credentials found in the legacy source. Stopping.</text>
+<text x="122" y="141" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#f87171" text-anchor="start">src/app/leak.ts:1</text>
+<text x="278" y="141" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#f87171" text-anchor="start">client secret</text>
+<text x="122" y="158" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#9a9aa5" text-anchor="start">These are already compromised and need rotating. Nothing was copied</text>
+<text x="122" y="175" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#9a9aa5" text-anchor="start">into the port and no value was printed.</text>
+<rect x="19" y="57" width="1002" height="148" rx="2" fill="url(#scan)"/>
+<rect x="18" y="216" width="1004" height="24" rx="3" fill="#0b0b0e" stroke="#0e0e11"/>
+<path d="M19 239 L19 217 L1021 217" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="32" y="232" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="bold" fill="#f0a830" text-anchor="start">exit code 2</text>
+<text x="128" y="232" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">nothing was written to ./out</text>
+<text x="336" y="232" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#8b8b96" text-anchor="start">the value never appears in output, logs, or the port</text>
+</svg>

@@ -1,0 +1,50 @@
+{
+  "name": "portamp",
+  "version": "0.1.0",
+  "description": "Port a legacy front end to React without losing the look or the API contract. Tiny core, plugins do the work.",
+  "type": "module",
+  "bin": {
+    "portamp": "src/cli.js"
+  },
+  "exports": {
+    ".": "./src/core/kernel.js",
+    "./policy": "./src/core/policy.js",
+    "./context": "./src/core/context.js"
+  },
+  "files": [
+    "src",
+    "plugins",
+    "docs",
+    "skills"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "demo": "node src/cli.js run --src example/legacy --shots example/screenshots --out example/out",
+    "plugins": "node src/cli.js plugins",
+    "test": "node --test test/",
+    "record": "node src/cli.js run --allow-live --only input-record"
+  },
+  "keywords": [
+    "angular",
+    "react",
+    "migration",
+    "port",
+    "codemod",
+    "plugins"
+  ],
+  "dependencies": {},
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/drewc611/portamp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/drewc611/portamp/issues"
+  },
+  "homepage": "https://github.com/drewc611/portamp#readme",
+  "optionalDependencies": {
+    "playwright": "^1.47.0"
+  }
+}
