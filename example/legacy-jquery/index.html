@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>Order Desk</title><link rel="stylesheet" href="style.css"></head>
+<body>
+  <div id="toolbar">
+    <input id="q" type="text" placeholder="Filter orders">
+    <button id="refresh">Refresh</button>
+  </div>
+  <table id="orders"><tbody id="rows"></tbody></table>
+  <div id="summary"><span id="count">0</span> orders</div>
+  <form id="order-form">
+    <input id="customer" type="text">
+    <span id="form-error" style="display:none"></span>
+    <button id="save" type="submit">Save</button>
+  </form>
+<script src="js/jquery-1.8.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

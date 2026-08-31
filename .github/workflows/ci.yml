@@ -231,6 +231,29 @@ jobs:
             console.log(raised + ' pair(s) raised, none lowered, display size kept');
           " --input-type=module
 
+      # An app that never declared a component still comes out with a route
+      # table, boundary proposals and a plan, and nothing invented.
+      - name: a jQuery app is inventoried, clustered and planned, never invented
+        run: |
+          node src/cli.js run --src example/legacy-jquery --shots example/screenshots --out /tmp/jqdemo
+          test -s /tmp/jqdemo/WIDGETS.md
+          test -s /tmp/jqdemo/BOUNDARIES.md
+          grep -q "selector-soup" /tmp/jqdemo/ARCHITECTURE.md
+          grep -q "proposals and not results" /tmp/jqdemo/BOUNDARIES.md
+          grep -q "Decide the components before writing any of them" /tmp/jqdemo/MODERNIZATION.md
+          # An inventory is not a screen: nothing may be emitted from a proposal.
+          if ls /tmp/jqdemo/src/features 2>/dev/null | grep -q .; then
+            echo "a component was emitted from a proposal"; exit 1
+          fi
+
+      # The address bar is half the contract, and the route has to land on the
+      # screen the run actually read, by its class name.
+      - name: the route table resolves against the run
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out /tmp/rts
+          grep -qF '`<app-orders>`, in this run' /tmp/rts/ROUTES.md
+          grep -q "lazy" /tmp/rts/ROUTES.md
+
       # The whole no source chain, from a recording rather than a live browser.
       - name: a recorded exploration rebuilds the app it explored
         run: |

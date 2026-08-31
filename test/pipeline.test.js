@@ -18,6 +18,7 @@ test("the example runs end to end and writes the port", async (t) => {
     "DESIGN_UPLIFT.md",
     "MODERNIZATION.md",
     "PORT_NOTES.md",
+    "ROUTES.md",
     "src/api/client.js",
     "src/api/endpoints.js",
     "src/features/AppOrders/AppOrders.jsx",

@@ -20,6 +20,14 @@ export default {
     on("emit", async (ctx) => {
       let translated = 0;
 
+      // Every screen in the run, addressable by its tag, so a template that
+      // uses one becomes a reference to the ported component instead of an
+      // unknown element. A screen cannot resolve to itself: a self reference
+      // is recursion, and deciding that is not a translation.
+      const components = new Map(
+        ctx.screens.map((screen) => [screen.selector.toLowerCase(), { name: pascal(screen.selector) || "Screen" }])
+      );
+
       for (const s of ctx.screens) {
         const Name = pascal(s.selector) || "Screen";
         const notes = [];
@@ -32,9 +40,16 @@ export default {
         let props = unique([...s.inputs, ...s.outputs.map((o) => `on${pascal(o)}`)]);
         let collection = "data";
 
+        let referenced = [];
         if (s.template) {
-          const result = translate(s.template, { indent: 3 });
+          const scoped = new Map(components);
+          scoped.delete(s.selector.toLowerCase());
+          const result = translate(s.template, { indent: 3, components: scoped });
           body = result.jsx;
+          referenced = result.components.map((sel) => components.get(sel).name);
+          for (const note of result.notes.filter((n) => /looks like a component/.test(n))) {
+            ctx.unverified(`<${s.selector}>: ${note}`);
+          }
           models = result.models;
           collection = result.collections[0] ?? "data";
           props = unique([...props, ...result.reads]);
@@ -52,7 +67,7 @@ export default {
 
         await ctx.write(
           `src/features/${Name}/${Name}.jsx`,
-          COMPONENT({ Name, props, notes, origin: s.file, body, models, collection })
+          COMPONENT({ Name, props, notes, origin: s.file, body, models, collection, referenced })
         );
       }
 
@@ -67,7 +82,7 @@ export default {
 const PLACEHOLDER = (origin) =>
   `      {/* No template was found for this component. Port the body from ${origin}. */}`;
 
-const COMPONENT = ({ Name, props, notes, origin, body, models, collection }) => {
+const COMPONENT = ({ Name, props, notes, origin, body, models, collection, referenced = [] }) => {
   const state = models
     .map((m) => {
       const leaf = m.split(".").pop().replace(/[^\w$]/g, "");
@@ -80,8 +95,10 @@ const COMPONENT = ({ Name, props, notes, origin, body, models, collection }) => 
       ? "!data || (Array.isArray(data) && data.length === 0)"
       : `!${collection} || ${collection}.length === 0`;
 
+  const imports = referenced.map((name) => `import ${name} from "../${name}/${name}.jsx";`).join("\n");
   return `import React${models.length ? ", { useState }" : ""} from "react";
 import { tokens as T } from "../../tokens.js";
+${imports ? imports + "\n" : ""}
 
 /**
  * Ported from ${origin}

@@ -70,7 +70,7 @@ same screen written in Angular and in Vue produces byte identical React, Vue,
 Svelte and custom element output, which is the only honest way to claim the
 middle is framework blind.
 
-Plugins that ship, thirty one in five classes, and the core has never learned
+Plugins that ship, thirty three in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -79,6 +79,7 @@ input    input-angular  input-vue  input-jquery  input-explore
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior
          dsp-improve  dsp-a11y  dsp-i18n  dsp-deadcode
          dsp-archetype  dsp-modernize  dsp-uplift
+         dsp-routes  dsp-boundaries
 output   output-react  output-vue  output-svelte  output-html
          output-storybook  output-tests  output-openapi  output-msw
 vis      vis-parity  vis-ui
@@ -97,8 +98,8 @@ Named plainly so nobody rediscovers it as a surprise.
 - `output-react` translates the four constructs that make up most of a template
   and reports the rest rather than guessing: a pipe becomes an unformatted value
   with a note, an `else` branch is named and left for a person, `ng-template`
-  renders inline. It does not resolve component references, so a template that
-  uses another component renders that tag as an unknown element.
+  renders inline. A tag naming another screen in the run resolves to that ported
+  component; one the run has not seen stays an unknown element, and says so.
 - `input-angular` reads the syntax tree when `typescript` is installed and falls
   back to regular expressions when it is not. The fallback is narrower and says
   so in the run. Neither pass uses a type checker, so a URL built from anything
@@ -148,15 +149,16 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-1. **A real preview in the compare pane.** `vis-ui` shows the emitted source
-   because rendering needs a build. An optional esbuild would make it a true
-   side by side.
-2. **Component references in templates.** An unknown tag is emitted as an
-   unknown element. Resolve it against the other components in the run.
-3. **`vis-equivalence`.** `output-tests` writes the suite; running it against
+The full picture is ROADMAP.md: ninety seven features in ten phases, statuses
+honest. The next few from it:
+
+1. **`vis-equivalence`.** `output-tests` writes the suite; running it against
    the port and folding the result back into the report is the other half.
-4. **Boundaries for `input-jquery`.** Cluster the inventoried selectors by the
-   markup they share and emit the result as a proposal, never as a result.
+2. **`input-angularjs`.** The 1.x reader; ng-repeat is a dialect table away.
+3. **`dsp-forms`.** Validation recovered from markup and observed complaints,
+   as one schema per form.
+4. **A real preview in the compare pane.** An optional esbuild step would make
+   the wipe compare pixels rather than source.
 5. **`input-jsf`.** The reader that would say whether the shape holds where the
    markup is not in the repository at all.
 6. **A parser for `input-vue`.** It is regular expressions, and the run says so.

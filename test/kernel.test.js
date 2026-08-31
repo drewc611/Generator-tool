@@ -84,8 +84,8 @@ test("discovery loads every plugin that ships", async () => {
   await k.discover({ builtinDir: BUILTIN });
   const names = k.plugins.map((p) => p.name).sort();
   assert.deepEqual(names, [
-    "dsp-a11y", "dsp-apimap", "dsp-archetype", "dsp-behavior", "dsp-deadcode", "dsp-i18n", "dsp-improve",
-    "dsp-ir", "dsp-modernize", "dsp-tokens", "dsp-uplift",
+    "dsp-a11y", "dsp-apimap", "dsp-archetype", "dsp-behavior", "dsp-boundaries", "dsp-deadcode", "dsp-i18n", "dsp-improve",
+    "dsp-ir", "dsp-modernize", "dsp-routes", "dsp-tokens", "dsp-uplift",
     "general-authorization", "general-license", "general-policy",
     "input-angular", "input-blackbox", "input-explore", "input-jquery", "input-record", "input-shots", "input-vue",
     "output-html", "output-msw", "output-openapi", "output-react", "output-storybook", "output-svelte",

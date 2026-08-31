@@ -28,6 +28,8 @@ const DOES = {
   "input-blackbox": "HAR, schema dumps, exports. Passive: nothing driven, nothing fetched",
   "dsp-ir": "one representation in the middle, so a target costs a printer",
   "dsp-archetype": "what kind of app this is, from its structure and its traffic",
+  "dsp-boundaries": "components proposed for an app that declared none. Proposals, never results",
+  "dsp-routes": "the route table, because the address bar is half the contract",
   "dsp-modernize": "what to build instead, and the evidence for each decision",
   "dsp-uplift": "the old palette, brought to contrast without losing the brand",
   "dsp-tokens": "density, type scale, spacing, color roles. Unresolved is recorded",

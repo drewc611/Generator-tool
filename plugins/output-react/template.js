@@ -90,7 +90,7 @@ function attributes(node) {
   return out;
 }
 
-function print(node, depth) {
+function print(node, depth, ctx) {
   if (!node) return "";
   const indent = pad(depth);
 
@@ -113,33 +113,45 @@ function print(node, depth) {
       return `${indent}<div dangerouslySetInnerHTML={{ __html: ${node.expression} }} />`;
 
     case "fragment": {
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
       if (!children.length) return `${indent}<></>`;
       return [`${indent}<>`, ...children, `${indent}</>`].join("\n");
     }
 
     case "when": {
-      const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
+      const inner = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n");
       return `${indent}{${node.test} && (\n${inner}\n${indent})}`;
     }
 
     case "each": {
       const args = node.index ? `(${node.item}, ${node.index})` : `(${node.item})`;
-      const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
+      const inner = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n");
       return `${indent}{${node.list}.map(${args} => (\n${withKey(inner, node.key)}\n${indent}))}`;
     }
 
     case "element": {
       if (!node.tag) {
-        const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+        const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
         if (!children.length) return `${indent}<></>`;
         return [`${indent}<>`, ...children, `${indent}</>`].join("\n");
       }
+
+      // A tag that names another screen in the run is that screen, ported. The
+      // bindings become props and the outputs become callbacks, which is what
+      // the attribute pass already produces; only the name and the import are
+      // this case's to add.
+      const resolved = ctx?.components?.get(node.tag.toLowerCase());
+      if (resolved) ctx.used.add(node.tag.toLowerCase());
+      const tag = resolved ? resolved.name : node.tag;
+      if (!resolved && node.tag.includes("-") && ctx?.components) {
+        ctx.note(`<${node.tag}> looks like a component and is not in this run, so it is emitted as an unknown element. Port it in the same run and the reference will resolve.`);
+      }
+
       const props = attributes(node);
-      const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const open = `<${tag}${props.length ? " " + props.join(" ") : ""}`;
+      const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
       if (!children.length) return `${indent}${open} />`;
-      return [`${indent}${open}>`, ...children, `${indent}</${node.tag}>`].join("\n");
+      return [`${indent}${open}>`, ...children, `${indent}</${tag}>`].join("\n");
     }
 
     default:
@@ -157,8 +169,10 @@ function withKey(inner, key) {
 
 export { buildIr, parse, VOID };
 
-export function translate(html, { indent = 3, dialect } = {}) {
+export function translate(html, { indent = 3, dialect, components = null } = {}) {
   const ir = buildIr(html, { dialect });
-  const jsx = print(ir.root, indent) || `${pad(indent)}<></>`;
-  return { jsx, notes: ir.notes, models: ir.models, reads: ir.reads, collections: ir.collections, ir };
+  const notes = [...ir.notes];
+  const ctx = { components, used: new Set(), note: (t) => { if (!notes.includes(t)) notes.push(t); } };
+  const jsx = print(ir.root, indent, ctx) || `${pad(indent)}<></>`;
+  return { jsx, notes, models: ir.models, reads: ir.reads, collections: ir.collections, ir, components: [...ctx.used] };
 }

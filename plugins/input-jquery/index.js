@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { balanced } from "../dsp-ir/scan.js";
 
 /**
  * Reads a jQuery or plain DOM front end.
@@ -45,9 +46,84 @@ const DOM_WRITES = /document\.(?:getElementById|querySelector)\(\s*(['"`])([^'"`
 
 const looksLikeUrl = (s) => /^[./]|^https?:/.test(s) && !/^\s*$/.test(s);
 
+const SELECTOR_IN_BODY = /\$\(\s*(['"`])([^'"`]+)\1|document\.(?:getElementById|querySelector)\(\s*(['"`])([^'"`]+)\3/g;
+
+const selectorsIn = (body) => {
+  const found = [];
+  for (const m of body.matchAll(SELECTOR_IN_BODY)) {
+    const selector = m[2] ?? m[4];
+    if (selector && !looksLikeUrl(selector) && !found.includes(selector)) found.push(selector);
+  }
+  return found;
+};
+
+/**
+ * Every named function in the script, with the selectors its body touches and
+ * the other named functions it calls. The handler that only says load() has
+ * still drawn a boundary; it drew it one call away, which is where almost
+ * every jQuery app keeps its actual work.
+ */
+export function declaredFunctions(text) {
+  const declarations = new Map();
+  const patterns = [
+    /\bfunction\s+([\w$]+)\s*\([^)]*\)\s*\{/g,
+    /\b(?:const|let|var)\s+([\w$]+)\s*=\s*(?:function\s*\([^)]*\)|\([^)]*\)\s*=>|[\w$]+\s*=>)\s*\{/g,
+  ];
+  for (const re of patterns) {
+    for (const m of text.matchAll(re)) {
+      const body = balanced(text, m.index + m[0].length - 1);
+      if (body) declarations.set(m[1], { body, selectors: selectorsIn(body) });
+    }
+  }
+  // Resolve calls to a fixpoint, so load() calling render() still lands the
+  // selectors render touches on whoever called load. A visited set per name
+  // keeps a pair of mutually recursive functions from spinning.
+  for (const [name, fn] of declarations) {
+    const seen = new Set([name]);
+    const queue = [...declarations.keys()].filter((other) => !seen.has(other) && new RegExp(`\\b${other}\\s*\\(`).test(fn.body));
+    while (queue.length) {
+      const callee = queue.shift();
+      if (seen.has(callee)) continue;
+      seen.add(callee);
+      const target = declarations.get(callee);
+      for (const selector of target.selectors) if (!fn.selectors.includes(selector)) fn.selectors.push(selector);
+      for (const other of declarations.keys()) {
+        if (!seen.has(other) && new RegExp(`\\b${other}\\s*\\(`).test(target.body)) queue.push(other);
+      }
+    }
+  }
+  return declarations;
+}
+
+/**
+ * The selectors a handler's own body reaches for, the ones reached through the
+ * named functions it calls included.
+ */
+function touchedBy(text, from, functions) {
+  const window = text.slice(from, from + 300);
+  const call = /\.(on|click|change|submit|blur|focus|keyup|keydown|input|hover)\s*\(/.exec(window);
+  if (!call) return [];
+  const args = balanced(text, from + call.index + call[0].length - 1);
+  if (!args) return [];
+  const bodyOpen = args.indexOf("{");
+  if (bodyOpen < 0) return [];
+  const body = balanced(args, bodyOpen);
+  if (!body) return [];
+
+  const found = selectorsIn(body);
+  for (const [name, fn] of functions) {
+    if (new RegExp(`\\b${name}\\s*\\(`).test(body)) {
+      for (const selector of fn.selectors) if (!found.includes(selector)) found.push(selector);
+    }
+  }
+  return found;
+}
+
 export function readScript(text, rel) {
   const calls = [];
   const widgets = new Map();
+  const edges = [];
+  const functions = declaredFunctions(text);
 
   const widget = (selector) => {
     if (!widgets.has(selector)) widgets.set(selector, { selector, file: rel, events: [], writes: [] });
@@ -76,6 +152,11 @@ export function readScript(text, rel) {
     if (looksLikeUrl(selector)) continue;
 
     const on = HANDLER_IN_CHAIN.exec(chain);
+    if (on || SHORTHAND_IN_CHAIN.test(chain)) {
+      for (const touched of touchedBy(text, m.index, functions)) {
+        if (touched !== selector) edges.push([selector, touched]);
+      }
+    }
     if (on) {
       // `.on("focus blur", ...)` binds two events, not one named oddly.
       for (const event of on[2].split(/\s+/).filter(Boolean)) {
@@ -102,7 +183,7 @@ export function readScript(text, rel) {
     if (!w.writes.includes(kind)) w.writes.push(kind);
   }
 
-  return { calls, widgets: [...widgets.values()] };
+  return { calls, widgets: [...widgets.values()], edges };
 }
 
 /** A selector that is written to and listened on is doing more than decoration. */
@@ -119,16 +200,19 @@ export default {
 
       const widgets = [];
       const calls = [];
+      const edges = [];
       for (const file of files) {
         const text = await readFile(file.path, "utf8").catch(() => "");
         if (!text || !/\$\(|jQuery|document\.(getElementById|querySelector)/.test(text)) continue;
         const found = readScript(text, file.rel);
         widgets.push(...found.widgets);
         calls.push(...found.calls);
+        edges.push(...found.edges);
       }
       if (!widgets.length && !calls.length) return log.debug("nothing that reaches the DOM");
 
       ctx.widgets = [...(ctx.widgets ?? []), ...widgets];
+      ctx.widgetEdges = [...(ctx.widgetEdges ?? []), ...edges];
       ctx.api.calls.push(...calls);
       log.info(`${widgets.length} selector(s), ${calls.length} call(s)`);
 

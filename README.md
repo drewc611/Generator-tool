@@ -7,7 +7,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 539
-lines of core, no runtime dependencies, 31 plugins, and the literal output of
+lines of core, no runtime dependencies, 33 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 31 plugin(s)
+node src/cli.js plugins      # 33 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 209 tests, node --test, no framework
+npm test                     # 224 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 31 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 33 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -677,6 +677,9 @@ The plugin classes are the point. Everything below is a directory and an
 | `dsp-archetype` | What kind of app this is, from its structure rather than its framework |
 | `dsp-modernize` | What to build instead, with the evidence for every decision |
 | `dsp-uplift` | The old palette brought to contrast, without losing the brand |
+| `dsp-routes` | The route table, because the address bar is half the contract |
+| `dsp-boundaries` | Components proposed for an app that declared none |
+| component references | A tag naming another screen becomes that ported component |
 | `output-vue` | The third target on the IR |
 | `output-svelte` | The second target on the IR |
 | `output-html` | A custom element, depending on nothing |
@@ -687,24 +690,11 @@ The plugin classes are the point. Everything below is a directory and an
 | `general-license` | Fonts and icon sets whose licence does not travel |
 | `vis-ui` | The comparison view, which is where `vis-diff` landed |
 
-**Still open, in the order they pay off**
+**Still open**
 
-1. **A real preview in the compare pane.** The right side shows the emitted
-   source because rendering it needs a build. A tiny esbuild step behind an
-   optional dependency would make it a real side by side.
-2. **Component references in templates.** A template using `<app-row>` emits
-   `<app-row>` and leaves you to wire it. Resolving it against the other
-   components in the same run is the next real step in the translator.
-3. **Boundaries for the jQuery reader.** It inventories selectors and says
-   plainly that drawing the component boundaries is a person's job. Clustering
-   them by the markup they share is the honest next step, and it is inference,
-   so whatever it produces has to arrive as a proposal.
-4. **`input-jsf`.** The reader that would say whether the shape holds for a
-   server rendered framework, where the markup is not in the repository at all.
-5. **Focus order in `dsp-a11y`.** It measures contrast and target size. Focus
-   order needs the DOM, which means it belongs on the exploration rather than
-   on the tokens.
-6. **A parser for the Vue reader.** It is regular expressions, like the Angular
-   fallback, and it says so in the run.
+The whole picture is [ROADMAP.md](ROADMAP.md): ninety seven features in ten
+phases, forty four shipped, thirteen new in the current branch, forty planned,
+every status honest. The next few are `vis-equivalence`, the AngularJS 1.x
+reader, recovered form schemas, and a real pixel compare in the UI.
 
 MIT. See [LICENSE](LICENSE).

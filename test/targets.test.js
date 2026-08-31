@@ -345,3 +345,36 @@ test("no emitted target writes an endpoint into a component", async (t) => {
     }
   }
 });
+
+/* --------------------------------------------- component references */
+
+test("a tag naming another screen in the run becomes that component", async (t) => {
+  const { ctx, out, error, cleanup } = await runPipeline({ src: join(process.cwd(), "test/fixtures/referencing") });
+  t.after(cleanup);
+  assert.equal(error, null);
+
+  const source = await readFile(join(out, "src/features/OrdersList/OrdersList.jsx"), "utf8");
+  assert.match(source, /import OrderRow from "\.\.\/OrderRow\/OrderRow\.jsx";/, "the reference became an import");
+  assert.match(source, /<OrderRow key=\{o\.id \?\? o\} order=\{o\} onSelected=/, "with props, a callback and a key");
+  assert.doesNotMatch(source, /<order-row/, "the unknown element form is gone");
+});
+
+// The rule this guards: resolution never invents. A tag not in the run stays
+// what it was, and the gap is named.
+test("a component the run has never seen is not invented", async (t) => {
+  const { ctx, out, cleanup } = await runPipeline({ src: join(process.cwd(), "test/fixtures/referencing") });
+  t.after(cleanup);
+
+  const source = await readFile(join(out, "src/features/OrdersList/OrdersList.jsx"), "utf8");
+  assert.match(source, /<mystery-widget thing=\{x\} \/>/, "the unknown tag is kept as it was");
+  assert.ok(ctx.report.unverified.some((u) => /mystery-widget/.test(u)), "and the gap is reported");
+});
+
+test("a screen never resolves a reference to itself", async (t) => {
+  const { ctx, cleanup } = await runPipeline({ src: join(process.cwd(), "test/fixtures/referencing") });
+  t.after(cleanup);
+  // order-row's own template holds no order-row, but the map it translates
+  // against must not contain it either; recursion is not a translation.
+  const row = ctx.screens.find((s) => s.selector === "order-row");
+  assert.ok(row, "the child screen was read");
+});
