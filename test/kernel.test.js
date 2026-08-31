@@ -87,7 +87,7 @@ test("discovery loads every plugin that ships", async () => {
     "dsp-a11y", "dsp-apimap", "dsp-archetype", "dsp-behavior", "dsp-boundaries", "dsp-deadcode", "dsp-i18n", "dsp-improve",
     "dsp-ir", "dsp-modernize", "dsp-routes", "dsp-tokens", "dsp-uplift",
     "general-authorization", "general-license", "general-policy",
-    "input-angular", "input-blackbox", "input-explore", "input-jquery", "input-record", "input-shots", "input-vue",
+    "input-angular", "input-angularjs", "input-blackbox", "input-explore", "input-jquery", "input-record", "input-shots", "input-vue",
     "output-adr", "output-design-tokens", "output-html", "output-i18n", "output-migration", "output-msw",
     "output-openapi", "output-react", "output-storybook", "output-svelte", "output-tailwind",
     "output-tests", "output-vue", "vis-parity", "vis-ui",

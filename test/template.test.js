@@ -77,7 +77,7 @@ test("static and bound styles merge into one style prop", () => {
 });
 
 test("ng-container and ng-template disappear, ng-content becomes children", () => {
-  assert.match(flat(`<ng-container *ngIf="e"><b>x</b></ng-container>`), /\{e && \( <> <b> x <\/b> <\/> \)\}/);
+  assert.match(flat(`<ng-container *ngIf="e"><b>x</b></ng-container>`), /\{e && \( <b> x <\/b> \)\}/);
   assert.match(flat(`<ng-content></ng-content>`), /\{children\}/);
 });
 

@@ -75,11 +75,19 @@ function attributes(node) {
     }
   }
 
+  // A model's setter and a change handler on the same element are one
+  // onChange that does both. Two onChange props fight, React keeps the last,
+  // and whichever loses is dropped without a word.
+  const changeLike = node.model ? node.events.filter((e) => /^(change|input)$/.test(e.name)) : [];
   if (node.model) {
-    out.push(`value={${node.model}}`, `onChange={(event) => ${setterFor(node.model)}(event.target.value)}`);
+    const setter = `${setterFor(node.model)}(event.target.value)`;
+    out.push(`value={${node.model}}`, changeLike.length
+      ? `onChange={(event) => { ${setter}; ${changeLike.map((e) => `${e.handler};`).join(" ")} }}`
+      : `onChange={(event) => ${setter}}`);
   }
 
   for (const event of node.events) {
+    if (changeLike.includes(event)) continue;
     const base = camel(event.name);
     const on = `on${base.charAt(0).toUpperCase()}${base.slice(1)}`;
     out.push(`${on}={${/\bevent\b/.test(event.handler) ? `(event) => ${event.handler}` : `() => ${event.handler}`}}`);
@@ -113,6 +121,7 @@ function print(node, depth, ctx) {
       return `${indent}<div dangerouslySetInnerHTML={{ __html: ${node.expression} }} />`;
 
     case "fragment": {
+      if (node.children.length === 1) return print(node.children[0], depth, ctx);
       const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
       if (!children.length) return `${indent}<></>`;
       return [`${indent}<>`, ...children, `${indent}</>`].join("\n");
@@ -120,7 +129,10 @@ function print(node, depth, ctx) {
 
     case "when": {
       const inner = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n");
-      return `${indent}{${node.test} && (\n${inner}\n${indent})}`;
+      // `a || b && (...)` is not `(a || b) && (...)`. The parens appear the
+      // moment the test carries anything that binds looser than &&.
+      const test = /\|\||\?/.test(node.test) ? `(${node.test})` : node.test;
+      return `${indent}{${test} && (\n${inner}\n${indent})}`;
     }
 
     case "each": {
@@ -131,6 +143,7 @@ function print(node, depth, ctx) {
 
     case "element": {
       if (!node.tag) {
+        if (node.children.length === 1) return print(node.children[0], depth, ctx);
         const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
         if (!children.length) return `${indent}<></>`;
         return [`${indent}<>`, ...children, `${indent}</>`].join("\n");
