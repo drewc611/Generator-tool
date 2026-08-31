@@ -50,3 +50,24 @@ export function topLevelBlocks(body, openChar = "{") {
   }
   return found;
 }
+
+/**
+ * Remove script elements from markup, correctly.
+ *
+ * The obvious one line regex has two well known failures: it does not match
+ * `</script >` or `</script foo>`, and a single pass over overlapping tags can leave a `<script`
+ * it manufactured by removal. So the close tag tolerates whitespace, the
+ * replacement loops to a fixpoint, and an opener that never closes takes the
+ * rest of the text with it, which is exactly what a browser would have done.
+ */
+export function stripScripts(markup) {
+  let text = String(markup ?? "");
+  const one = /<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi;
+  for (let i = 0; i < 100; i++) {
+    const next = text.replace(one, "");
+    if (next === text) break;
+    text = next;
+  }
+  const unclosed = text.search(/<script\b/i);
+  return unclosed === -1 ? text : text.slice(0, unclosed);
+}

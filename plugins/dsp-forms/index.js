@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { buildIr, DIALECTS } from "../dsp-ir/ir.js";
 import { parse } from "../dsp-ir/parse.js";
+import { stripScripts } from "../dsp-ir/scan.js";
 
 /**
  * The validation rules, recovered as one schema per form.
@@ -84,7 +85,7 @@ export default {
       for (const file of ctx.sources.files.filter((f) => /\.html?$/.test(f.rel) && !claimed.has(f.rel))) {
         const html = await readFile(file.path, "utf8").catch(() => "");
         if (!html || !/<form/i.test(html)) continue;
-        const { fields, submits } = fieldsFromIr(buildIr(html.replace(/<script[\s\S]*?<\/script>/gi, "")));
+        const { fields, submits } = fieldsFromIr(buildIr(stripScripts(html)));
         if (fields.length && submits) forms.push({ screen: file.rel, file: file.rel, fields });
       }
 

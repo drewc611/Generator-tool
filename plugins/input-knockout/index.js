@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { balanced } from "../dsp-ir/scan.js";
+import { balanced, stripScripts } from "../dsp-ir/scan.js";
 import { buildIr, DIALECTS } from "../dsp-ir/ir.js";
 import { expand } from "./expand.js";
 
@@ -68,7 +68,7 @@ export default {
         // The bound region is the body; the app is the page. One screen per
         // page is what applyBindings actually meant.
         const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(expanded)?.[1] ?? expanded;
-        const template = body.replace(/<script[\s\S]*?<\/script>/gi, "");
+        const template = stripScripts(body);
 
         ctx.screens.push({
           selector: `ko-${page.rel.replace(/[^a-z0-9]+/gi, "-").replace(/-?html?$/i, "").replace(/^-|-$/g, "").toLowerCase() || "page"}`,

@@ -47,3 +47,14 @@ export function singleQuoted(value) {
     .replace(/\u2028/g, "\\u2028")
     .replace(/\u2029/g, "\\u2029")}'`;
 }
+
+/**
+ * Text destined for the inside of a generated template literal. The backslash
+ * goes first, or the escapes the later passes add are themselves escaped.
+ */
+export function templateText(value) {
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/`/g, "\\`")
+    .replace(/\$\{/g, "\\$\{")
+}

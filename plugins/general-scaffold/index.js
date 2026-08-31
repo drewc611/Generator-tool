@@ -1,4 +1,4 @@
-import { mkdir, writeFile, access } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 /**
@@ -24,20 +24,26 @@ export default {
           process.exitCode = 1;
           return;
         }
+        // Asking whether a file exists and then writing it is two answers to a
+        // question that can change in between. The wx flag makes the write
+        // itself the check.
         const dir = join(process.cwd(), "plugins", name);
-        if (await access(dir).then(() => true, () => false)) {
-          log.error(`${dir} already exists. Scaffolding will not overwrite it.`);
+        await mkdir(dir, { recursive: true });
+        try {
+          await writeFile(join(dir, "index.js"), PLUGIN(name, cls), { encoding: "utf8", flag: "wx" });
+        } catch (err) {
+          if (err.code !== "EEXIST") throw err;
+          log.error(`plugins/${name}/index.js already exists. Scaffolding will not overwrite it.`);
           process.exitCode = 1;
           return;
         }
-        await mkdir(dir, { recursive: true });
-        await writeFile(join(dir, "index.js"), PLUGIN(name, cls), "utf8");
         const testPath = join(process.cwd(), "test", `${name.replace(/^[a-z]+-/, "")}.test.js`);
-        if (!(await access(testPath).then(() => true, () => false))) {
-          await mkdir(dirname(testPath), { recursive: true });
-          await writeFile(testPath, TEST(name), "utf8");
+        await mkdir(dirname(testPath), { recursive: true });
+        try {
+          await writeFile(testPath, TEST(name), { encoding: "utf8", flag: "wx" });
           log.info(`wrote plugins/${name}/index.js and test/${name.replace(/^[a-z]+-/, "")}.test.js`);
-        } else {
+        } catch (err) {
+          if (err.code !== "EEXIST") throw err;
           log.info(`wrote plugins/${name}/index.js (the test file already existed)`);
         }
         log.info("It loads on the next run; discovery needs no registration. Now make it honest.");

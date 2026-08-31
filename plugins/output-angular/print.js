@@ -1,4 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
+import { singleQuoted } from "../dsp-ir/emit.js";
 
 /**
  * The Angular printer, which closes a loop: portamp reads the old Angular
@@ -24,7 +25,7 @@ function classAttribute(classes, out) {
 function styleAttribute(styles, out) {
   for (const s of styles) {
     if (s.kind === "spread") out.push(`[ngStyle]="${attrSafe(s.expression)}"`);
-    else if (s.literal !== undefined) out.push(`[style.${s.property}]="'${s.literal.replace(/'/g, "\\'")}'"`);
+    else if (s.literal !== undefined) out.push(`[style.${s.property}]="${singleQuoted(s.literal)}"`);
     else out.push(`[style.${s.property}${s.unit ? "." + s.unit : ""}]="${attrSafe(s.expression)}"`);
   }
 }

@@ -1,5 +1,5 @@
 import { toAngular } from "./print.js";
-import { identifier } from "../dsp-ir/emit.js";
+import { identifier, templateText } from "../dsp-ir/emit.js";
 
 const pascal = (sel) => identifier(String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join(""), "Screen");
 const camel = (s) => { const p = pascal(s); return p[0].toLowerCase() + p.slice(1); };
@@ -66,7 +66,7 @@ import { FormsModule } from "@angular/forms";
     } @else if (empty) {
       <p class="state state--empty">Nothing to show yet.</p>
     } @else {
-${result ? result.markup.replace(/\`/g, "\\\`") : "      <!-- No template was found for this component. -->"}
+${result ? templateText(result.markup) : "      <!-- No template was found for this component. -->"}
     }
   \`,
 })
