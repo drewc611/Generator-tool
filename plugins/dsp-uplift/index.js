@@ -131,12 +131,58 @@ function elevation(ink = "#1C1B19") {
 
 const round = (n) => Math.round(n * 100) / 100;
 
+/**
+ * The dark palette, derived rather than designed.
+ *
+ * The hue of every role survives; what changes is where each sits on
+ * lightness. Grounds drop to the bottom and keep their order (sunken below
+ * bg below surface), ink flips to the top, and every accent is then moved
+ * along lightness until it clears the same contrast targets against the new
+ * ground, which on a dark ground means lightening. Nothing is invented; a
+ * dark theme that changes a hue has changed the brand.
+ */
+export function deriveDark(color = {}) {
+  const at = (name, l, fallbackHue) => {
+    const hsl = toHsl(color[name]) ?? toHsl(fallbackHue) ?? { h: 0, s: 0, l };
+    return toHex({ ...hsl, s: Math.min(hsl.s, 0.35), l });
+  };
+
+  const dark = {
+    bg: at("bg", 0.09, color.ink),
+    surface: at("surface", 0.12, color.ink),
+    sunken: at("sunken", 0.07, color.ink),
+    line: at("line", 0.24, color.ink),
+    lineStrong: at("lineStrong", 0.34, color.ink),
+    ink: at("ink", 0.92),
+    inkMuted: at("inkMuted", 0.72),
+    inkFaint: at("inkFaint", 0.56),
+  };
+
+  const changes = [];
+  for (const [role, ground, target, where] of PAIRS) {
+    if (!color[role]) continue;
+    const on = dark[ground] ?? dark.surface;
+    if (dark[role] === undefined) {
+      // An accent keeps its full hue and saturation and moves on lightness
+      // until it reads on the dark ground.
+      const fitted = fitContrast(color[role], on, target);
+      dark[role] = fitted?.hex ?? color[role];
+    }
+    const achieved = ratio(dark[role], on);
+    changes.push({ role, ground, where, after: achieved === null ? null : round(achieved), target, ok: achieved !== null && achieved >= target });
+  }
+  return { color: dark, changes };
+}
+
 export function uplift(tokens = {}) {
   const scale = fitRatio(tokens.size);
   const size = typeScale(tokens.size, scale.ratio);
   const { color, changes } = upliftColor(tokens.color);
 
+  const dark = deriveDark(color);
+
   return {
+    dark,
     tokens: {
       density: tokens.density ?? "comfortable",
       size,
@@ -201,7 +247,7 @@ export default {
 
     on("emit", async (ctx) => {
       if (!ctx.uplift) return;
-      const { tokens } = ctx.uplift;
+      const tokens = { ...ctx.uplift.tokens, darkColor: ctx.uplift.dark?.color };
       await ctx.write("src/tokens.modern.js", MODULE(tokens, ctx.tokens?.provenance ?? []));
       await ctx.write("src/tokens.modern.css", CSS(tokens));
       await ctx.write("DESIGN_UPLIFT.md", render(ctx.uplift, ctx.tokens));
@@ -236,10 +282,21 @@ const CSS = (tokens) => {
   for (const [k, v] of Object.entries(tokens.motion)) push(k === "easing" ? "easing" : `duration-${k}`, v);
   push("focus-ring", tokens.focus);
 
+  const darkLines = Object.entries(tokens.darkColor ?? {}).map(([k, v]) => `    --color-${k}: ${v};`);
+
   return `/* Proposed by portamp. See DESIGN_UPLIFT.md for what changed and why. */
 :root {
 ${lines.join("\n")}
 }
+${darkLines.length ? `
+/* The same palette after dark, derived not designed: hues kept, lightness
+   order inverted, every pair re proven against its new ground. */
+@media (prefers-color-scheme: dark) {
+  :root {
+${darkLines.join("\n")}
+  }
+}
+` : ""}
 
 /* Motion is an enhancement, and somebody who has asked for less of it has
    asked for a reason. */
@@ -253,7 +310,8 @@ ${lines.join("\n")}
 `;
 };
 
-function render({ tokens, changes, scale, typeBefore, spaceBefore }, before) {
+function render({ tokens, changes, scale, typeBefore, spaceBefore, dark }, before) {
+  const darkChanges = dark?.changes;
   const fixed = changes.filter((c) => !c.kept);
   const kept = changes.filter((c) => c.kept);
 
@@ -307,6 +365,20 @@ Was \`[${spaceBefore.join(", ")}]\`. Becomes \`[${tokens.space.join(", ")}]\`.
 
 Every step is a multiple of four, which is what every other part of a modern
 stack assumes. Odd spacing values are the reason things look almost aligned.
+
+## After dark
+
+Derived, not designed: every hue is the light palette's, the grounds drop to
+the bottom of lightness in the same order, the ink flips to the top, and each
+accent moves along lightness until it clears the same target against its new
+ground. The proof, per pair:
+
+| pair | achieves | target | |
+| --- | --- | --- | --- |
+${(darkChanges ?? []).map((c) => `| ${c.role} on ${c.ground} | ${c.after ?? "?"}:1 | ${c.target}:1 | ${c.ok ? "passes" : "**does not reach it**"} |`).join("\n")}
+
+It ships inside \`tokens.modern.css\` under \`prefers-color-scheme: dark\`,
+so adopting it is one media query, and ignoring it costs nothing.
 
 ## What the old app had none of
 

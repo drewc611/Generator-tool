@@ -84,12 +84,13 @@ test("discovery loads every plugin that ships", async () => {
   await k.discover({ builtinDir: BUILTIN });
   const names = k.plugins.map((p) => p.name).sort();
   assert.deepEqual(names, [
-    "dsp-a11y", "dsp-apimap", "dsp-archetype", "dsp-behavior", "dsp-boundaries", "dsp-deadcode", "dsp-i18n", "dsp-improve",
-    "dsp-ir", "dsp-modernize", "dsp-routes", "dsp-tokens", "dsp-uplift",
+    "dsp-a11y", "dsp-apimap", "dsp-archetype", "dsp-behavior", "dsp-boundaries", "dsp-cognitive", "dsp-dates",
+    "dsp-deadcode", "dsp-diff", "dsp-entities", "dsp-flags", "dsp-forms", "dsp-i18n", "dsp-improve",
+    "dsp-ir", "dsp-modernize", "dsp-perf", "dsp-permissions", "dsp-routes", "dsp-tokens", "dsp-uplift",
     "general-authorization", "general-license", "general-policy",
     "input-angular", "input-angularjs", "input-backbone", "input-blackbox", "input-explore", "input-jquery", "input-knockout",
     "input-openapi", "input-record", "input-shots", "input-vue",
-    "output-adr", "output-design-tokens", "output-html", "output-i18n", "output-migration", "output-msw",
+    "output-adr", "output-design-tokens", "output-forms", "output-html", "output-i18n", "output-migration", "output-msw",
     "output-openapi", "output-react", "output-storybook", "output-svelte", "output-tailwind",
     "output-tests", "output-vue", "vis-parity", "vis-ui",
   ]);
