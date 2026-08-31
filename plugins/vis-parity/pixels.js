@@ -31,11 +31,13 @@ async function inlineElement(outDir, elementRel) {
 }
 
 export async function pixelDiff({ outDir, elementRel, shotPath }) {
-  const chromium = await loadChromium();
-  if (!chromium) return { skipped: "playwright is not installed; the diff needs a browser to render the element" };
-
+  // The cheap checks come first, so the skip names the most specific gap: a
+  // missing recording is that, whether or not a browser is installed.
   const shot = await readFile(shotPath).catch(() => null);
   if (!shot || !shot.length) return { skipped: "the recorded screenshot is empty" };
+
+  const chromium = await loadChromium();
+  if (!chromium) return { skipped: "playwright is not installed; the diff needs a browser to render the element" };
 
   const source = await inlineElement(outDir, elementRel);
   const tag = /customElements\.define\(\s*["']([\w-]+)["']/.exec(source)?.[1];
