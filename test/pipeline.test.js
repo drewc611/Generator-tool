@@ -14,6 +14,7 @@ test("the example runs end to end and writes the port", async (t) => {
   assert.deepEqual(ctx.written.sort(), [
     "A11Y.md",
     "ARCHITECTURE.md",
+    "COVERAGE.md",
     "DEAD_CODE.md",
     "DESIGN_UPLIFT.md",
     "MODERNIZATION.md",

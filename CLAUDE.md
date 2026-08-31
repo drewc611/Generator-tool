@@ -70,20 +70,25 @@ same screen written in Angular and in Vue produces byte identical React, Vue,
 Svelte and custom element output, which is the only honest way to claim the
 middle is framework blind.
 
-Plugins that ship, thirty three in five classes, and the core has never learned
+Plugins that ship, sixty one in five classes, and the core has never learned
 the name of any of them:
 
 ```
-input    input-angular  input-vue  input-jquery  input-explore
-         input-record   input-shots  input-blackbox
-dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior
-         dsp-improve  dsp-a11y  dsp-i18n  dsp-deadcode
-         dsp-archetype  dsp-modernize  dsp-uplift
+input    input-angular  input-angularjs  input-vue  input-knockout
+         input-backbone  input-jquery  input-jsf  input-aspnet
+         input-openapi  input-explore  input-record  input-shots  input-blackbox
+dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
+         dsp-a11y  dsp-cognitive  dsp-i18n  dsp-deadcode  dsp-dates
+         dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
+         dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries
-output   output-react  output-vue  output-svelte  output-html
-         output-storybook  output-tests  output-openapi  output-msw
-vis      vis-parity  vis-ui
+output   output-react  output-vue  output-svelte  output-angular  output-lit
+         output-html  output-storybook  output-tests  output-openapi
+         output-msw  output-tailwind  output-design-tokens  output-forms
+         output-i18n  output-adr  output-migration
+vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence
 general  general-policy  general-authorization  general-license
+         general-doctor  general-scaffold  general-watch
 ```
 
 An option the CLI does not recognise is passed through to the plugins

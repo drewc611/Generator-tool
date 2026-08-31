@@ -79,6 +79,46 @@ const ARCHETYPES = [
     ],
   },
   {
+    id: "kanban",
+    name: "Cards moved between columns",
+    signals: (f, api, ctx) => [
+      f.nestedLoops > 0 ? "repetition inside repetition, the column of cards shape" : null,
+      ctx.words.some((w) => /\b(todo|doing|done|backlog|in progress|column|lane|board)\b/i.test(w)) ? "board words in the copy" : null,
+      api.writes.some((w) => /status|move|state|lane|column/i.test(w.path)) ? "a write that changes an item's place" : null,
+      f.loops >= 2 ? `${f.loops} repeated regions` : null,
+    ],
+  },
+  {
+    id: "calendar",
+    name: "Time laid out as a grid",
+    signals: (f, api, ctx) => [
+      ctx.words.some((w) => /\b(monday|tuesday|sunday|today|week|month|calendar|schedule)\b/i.test(w)) ? "calendar words in the copy" : null,
+      f.tables > 0 || f.nestedLoops > 0 ? "a grid to lay the days on" : null,
+      api.query.some((q) => /date|from|to|start|end|day|week|month/i.test(q)) ? "requests bounded by dates" : null,
+      f.buttons >= 2 ? "controls to move through time" : null,
+    ],
+  },
+  {
+    id: "chat",
+    name: "A conversation, newest at the bottom",
+    signals: (f, api, ctx) => [
+      f.loops > 0 ? "a repeated region for the messages" : null,
+      (f.inputs > 0 || f.models > 0) && f.submits > 0 ? "an input with a send" : null,
+      ctx.words.some((w) => /\b(send|message|reply|typing|chat)\b/i.test(w)) ? "conversation words in the copy" : null,
+      api.writes.length ? "each entry is a write" : null,
+    ],
+  },
+  {
+    id: "editor",
+    name: "One document, edited at length",
+    signals: (f, api, ctx) => [
+      ctx.hasEditor ? "a contenteditable region or a large text area" : null,
+      ctx.words.some((w) => /\b(save|draft|autosave|saved|publish|revert)\b/i.test(w)) ? "draft words in the copy" : null,
+      api.writes.length ? "the document goes somewhere" : null,
+      f.loops === 0 ? "and it is not a list of anything" : null,
+    ],
+  },
+  {
     id: "selector-soup",
     name: "Behaviour attached to selectors, with no components",
     signals: (f, api, ctx) => [
@@ -111,6 +151,8 @@ export function classify({ shape, calls = [], model = null, widgets = [], compon
     components,
     formScreens: (model?.screens ?? []).filter((s) => s.kind === "form").length,
     chainedTransitions: (model?.transitions ?? []).length,
+    words: shape.texts ?? [],
+    hasEditor: (shape.texts ?? []).length >= 0 && shape.editors > 0,
   };
 
   const scored = ARCHETYPES.map((a) => {

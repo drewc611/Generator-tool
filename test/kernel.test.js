@@ -87,13 +87,14 @@ test("discovery loads every plugin that ships", async () => {
     "dsp-a11y", "dsp-apimap", "dsp-archetype", "dsp-behavior", "dsp-boundaries", "dsp-cognitive", "dsp-dates",
     "dsp-deadcode", "dsp-diff", "dsp-entities", "dsp-flags", "dsp-forms", "dsp-i18n", "dsp-improve",
     "dsp-ir", "dsp-modernize", "dsp-perf", "dsp-permissions", "dsp-routes", "dsp-tokens", "dsp-uplift",
-    "general-authorization", "general-license", "general-policy",
-    "input-angular", "input-angularjs", "input-backbone", "input-blackbox", "input-explore", "input-jquery", "input-knockout",
+    "general-authorization", "general-doctor", "general-license", "general-policy", "general-scaffold", "general-watch",
+    "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",
+    "input-jquery", "input-jsf", "input-knockout",
     "input-openapi", "input-record", "input-shots", "input-vue",
     "output-adr", "output-angular", "output-design-tokens", "output-forms", "output-html", "output-i18n", "output-lit",
     "output-migration", "output-msw",
     "output-openapi", "output-react", "output-storybook", "output-svelte", "output-tailwind",
-    "output-tests", "output-vue", "vis-parity", "vis-ui",
+    "output-tests", "output-vue", "vis-coverage", "vis-equivalence", "vis-parity", "vis-timeline", "vis-ui",
   ]);
   for (const p of k.plugins) assert.ok(CLASSES.includes(p.class), `${p.name} has a real class`);
 });

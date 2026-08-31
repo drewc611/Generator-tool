@@ -3,6 +3,19 @@ on:
   push: { branches: [main] }
   pull_request:
 jobs:
+  # Windows runs the suite and the demo. The bash heavy checks stay on linux;
+  # what Windows is here to catch is path handling, and the tests are where
+  # that lives.
+  windows:
+    runs-on: windows-latest
+    defaults: { run: { shell: bash } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm test
+      - run: npm run demo
+
   check:
     runs-on: ubuntu-latest
     strategy:

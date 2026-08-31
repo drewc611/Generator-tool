@@ -186,6 +186,34 @@ export function readScript(text, rel) {
   return { calls, widgets: [...widgets.values()], edges };
 }
 
+/**
+ * The widget libraries of that era, recognised by the call that summons them.
+ * Each carries the modern equivalent as a proposal: what to reach for is a
+ * decision, but "this is a datepicker" is a fact.
+ */
+const WIDGET_LIBS = [
+  { call: "datepicker", was: "jQuery UI datepicker", instead: "the platform's <input type=\"date\">, which did not exist when this was written" },
+  { call: "autocomplete", was: "jQuery UI autocomplete", instead: "a listbox with aria-autocomplete, or the combobox your design system ships" },
+  { call: "dialog", was: "jQuery UI dialog", instead: "the platform's <dialog> element" },
+  { call: "accordion", was: "jQuery UI accordion", instead: "<details>/<summary>, which the platform grew for exactly this" },
+  { call: "tabs", was: "jQuery UI tabs", instead: "a tablist with roving tabindex, or your design system's tabs" },
+  { call: "sortable", was: "jQuery UI sortable", instead: "a drag and drop library chosen on purpose; there is no free platform answer yet" },
+  { call: "select2", was: "select2", instead: "a combobox; the multivalue case is the part to check" },
+  { call: "chosen", was: "chosen", instead: "a combobox" },
+  { call: "dataTable", was: "DataTables", instead: "a table component with server side paging; DataTables was hiding an unbounded fetch" },
+  { call: "modal", was: "Bootstrap modal", instead: "the platform's <dialog> element" },
+  { call: "tooltip", was: "a tooltip plugin", instead: "title, or a popover with aria-describedby where the content is rich" },
+];
+
+export function recogniseWidgets(text) {
+  const found = [];
+  for (const lib of WIDGET_LIBS) {
+    const re = new RegExp(`\\$\\(\\s*(['"\`])([^'"\`]+)\\1\\s*\\)\\s*\\.${lib.call}\\s*\\(`, "g");
+    for (const m of text.matchAll(re)) found.push({ selector: m[2], ...lib });
+  }
+  return found;
+}
+
 /** A selector that is written to and listened on is doing more than decoration. */
 const interesting = (w) => w.events.length + w.writes.length > 1;
 
@@ -211,8 +239,15 @@ export default {
       }
       if (!widgets.length && !calls.length) return log.debug("nothing that reaches the DOM");
 
+      const recognised = [];
+      for (const file of files) {
+        const text = await readFile(file.path, "utf8").catch(() => "");
+        if (text) recognised.push(...recogniseWidgets(text));
+      }
+
       ctx.widgets = [...(ctx.widgets ?? []), ...widgets];
       ctx.widgetEdges = [...(ctx.widgetEdges ?? []), ...edges];
+      ctx.widgetLibs = recognised;
       ctx.api.calls.push(...calls);
       log.info(`${widgets.length} selector(s), ${calls.length} call(s)`);
 
@@ -231,7 +266,7 @@ export default {
 
     on("emit", async (ctx) => {
       if (!ctx.widgets?.length) return;
-      await ctx.write("WIDGETS.md", render(ctx.widgets));
+      await ctx.write("WIDGETS.md", render(ctx.widgets) + renderLibs(ctx.widgetLibs ?? []));
     });
   },
 };
@@ -255,5 +290,19 @@ everything but name. Start there.
 ${rows.join("\n")}
 
 Nothing here is a component until a person says it is.
+`;
+}
+
+function renderLibs(recognised) {
+  if (!recognised.length) return "";
+  return `
+## Widgets recognised by name
+
+"This is a datepicker" is a fact; what replaces it is a decision. Each row
+carries the usual modern answer as a proposal.
+
+| selector | what it was | the usual answer now |
+| --- | --- | --- |
+${recognised.map((r) => `| \`${r.selector}\` | ${r.was} | ${r.instead} |`).join("\n")}
 `;
 }

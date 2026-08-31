@@ -7,7 +7,7 @@ round out a number, and anything that turns out to be a bad idea gets deleted
 rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-224 tests, on Node 18 and 22.
+284 tests, on Node 18 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -215,42 +215,42 @@ security-extended, run locally when the API would not show the alerts; eleven fi
 
 *The formats the last two decades left behind.*
 
-**58. input-angularjs** ▢  
+**58. input-angularjs** 🔨  
 the 1.x reader: ng-repeat, $scope, controllers as the component boundary Angular never made them.
 
    - read ng-app and ng-controller regions as screens
    - a dialect table for ng-if, ng-repeat, ng-model
    - $http and $resource into the call inventory
 
-**59. input-knockout** ▢  
+**59. input-knockout** 🔨  
 data-bind attributes are a dialect; observables are the model.
 
    - parse data-bind expressions
    - map foreach, visible and click into the IR
    - the ko.observable graph into props
 
-**60. input-backbone** ▢  
+**60. input-backbone** 🔨  
 views, models and hand drawn render() methods, inventoried like jQuery with a model layer.
 
-**61. input-jsf** ▢  
+**61. input-jsf** 🔨  
 the reader that says whether the shape holds where the markup is not in the repository at all.
 
    - read facelets templates and managed bean references
    - pair with input-explore for the rendered truth
 
-**62. input-aspnet** ▢  
+**62. input-aspnet** 🔨  
 WebForms: runat=server, ViewState named for what it was, postbacks into the call inventory.
 
-**63. input-openapi** ▢  
+**63. input-openapi** 🔨  
 an existing spec as a source, cross checked against what the client actually calls.
 
 **64. A real parser for input-vue** ▢  
 the regex reader replaced, behind the same output shape, only when it changes nothing.
 
-**65. Angular built in control flow** ▢  
+**65. Angular built in control flow** 🔨  
 @if, @for and @switch as dialect entries beside *ngIf and *ngFor.
 
-**66. Legacy widget recognition** ▢  
+**66. Legacy widget recognition** 🔨  
 a jQuery datepicker or accordion named as the pattern it is, mapped to a modern equivalent, as a proposal.
 
 
@@ -258,45 +258,45 @@ a jQuery datepicker or accordion named as the pattern it is, mapped to a modern 
 
 *What else the port is the cheapest moment to learn.*
 
-**67. dsp-forms** ▢  
+**67. dsp-forms** 🔨  
 validation rules recovered from attributes, watchers and server complaints, into one schema per form.
 
    - collect required, pattern, min and max from markup
    - fold in rules observed as error messages during exploration
    - emit a schema output-forms can build from
 
-**68. dsp-entities** ▢  
+**68. dsp-entities** 🔨  
 the data model inferred from payload shapes across endpoints; two shapes that agree are one entity.
 
-**69. dsp-permissions** ▢  
+**69. dsp-permissions** 🔨  
 the role checks scattered through templates, collected into one visibility table nobody has seen whole.
 
-**70. dsp-dates** ▢  
+**70. dsp-dates** 🔨  
 every date format, timezone assumption and hand rolled formatter, named before they become bugs twice.
 
-**71. dsp-feature-flags** ▢  
+**71. dsp-feature-flags** 🔨  
 conditions that read like flags, collected; half are dead and which half is a finding.
 
-**72. dsp-perf** ▢  
+**72. dsp-perf** 🔨  
 what the old app ships that the port should not: dead weight, blocking loads, N+1 patterns in the HAR.
 
-**73. dsp-cognitive** ▢  
+**73. dsp-cognitive** 🔨  
 the cognitive accessibility audit: reading level, all caps, unlabeled icons, timeouts, motion that cannot be stopped.
 
    - measure copy against plain language thresholds
    - flag timeouts and autoplay seen during exploration
    - report per screen, severities from WCAG COGA
 
-**74. dsp-diff** ▢  
+**74. dsp-diff** 🔨  
 two runs compared, so a port in progress can see what moved underneath it.
 
-**75. Dark palette derivation** ▢  
+**75. Dark palette derivation** 🔨  
 the uplift's second palette: same hues, lightness order inverted, contrast held to the same targets.
 
 **76. Focus order** ▢  
 measured from the exploration, since it needs the DOM; reported against reading order.
 
-**77. More archetypes** ▢  
+**77. More archetypes** 🔨  
 kanban, calendar, chat, document editor; each with its signals and its modernization decisions.
 
 **78. A calibration corpus** ▢  
@@ -307,38 +307,38 @@ archetype confidence checked against labelled real apps, so 75% means something.
 
 *More ways out, each priced at one printer.*
 
-**79. output-angular** ▢  
+**79. output-angular** 🔨  
 modern Angular as a target; the IR does not care that the source may also have been Angular.
 
-**80. output-lit** ▢  
+**80. output-lit** 🔨  
 the custom element target with a rendering library, for teams that want one.
 
-**81. output-tailwind** ▢  
+**81. output-tailwind** 🔨  
 the measured tokens as a tailwind config, for ports landing where that is the system.
 
-**82. output-design-tokens** ▢  
+**82. output-design-tokens** 🔨  
 the W3C design tokens format, so the uplift can enter a design tool.
 
-**83. output-forms** ▢  
+**83. output-forms** 🔨  
 schema driven forms from dsp-forms, with the recovered validation and every error state.
 
-**84. output-i18n** ▢  
+**84. output-i18n** 🔨  
 the string catalogue as ICU messages, split sentences made whole.
 
-**85. output-adr** ▢  
+**85. output-adr** 🔨  
 the modernization plan as architecture decision records, one per decision, evidence attached.
 
-**86. output-migration** ▢  
+**86. output-migration** 🔨  
 a strangler fig plan from the route table: which path cuts over when, and what proves each step.
 
    - order routes by risk, and by traffic where observed
    - pair each cutover with its conformance tests
    - emit the rollback condition beside every step
 
-**87. Storybook for every target** ▢  
+**87. Storybook for every target** 🔨  
 stories beside the Vue, Svelte and custom element output, not only React.
 
-**88. MSW failure scenarios** ▢  
+**88. MSW failure scenarios** 🔨  
 handlers for latency, errors and empty pages, so the states the port renders get exercised.
 
 
@@ -346,7 +346,7 @@ handlers for latency, errors and empty pages, so the states the port renders get
 
 *Closing the loop between the port and the truth.*
 
-**89. vis-equivalence** ▢  
+**89. vis-equivalence** 🔨  
 run the emitted conformance suite against the port and fold the result back into the report.
 
    - execute via the optional Playwright
@@ -356,25 +356,25 @@ run the emitted conformance suite against the port and fold the result back into
 **90. A real preview in the compare pane** ▢  
 an optional esbuild step so the wipe compares pixels, not source.
 
-**91. vis-coverage** ▢  
+**91. vis-coverage** 🔨  
 how much of the old app the port covers, measured against the exploration, shown per screen.
 
-**92. vis-timeline** ▢  
+**92. vis-timeline** 🔨  
 the exploration replayed as a timeline: what was clicked, what fired, what changed.
 
-**93. Watch mode** ▢  
+**93. Watch mode** 🔨  
 a plugin command that re-runs the pipeline on change and keeps the console current.
 
-**94. portamp doctor** ▢  
+**94. portamp doctor** 🔨  
 what is installed, what is optional and absent, and what each gap turns off.
 
-**95. A plugin scaffolder** ▢  
+**95. A plugin scaffolder** 🔨  
 portamp new-plugin writes the directory, the header contract and the test file.
 
 **96. Published to npm** ▢  
 npx portamp against a legacy tree, no clone.
 
-**97. Windows in CI** ▢  
+**97. Windows in CI** 🔨  
 the fourth leg of the matrix; path handling is where it will hurt.
 
 
@@ -383,10 +383,14 @@ the fourth leg of the matrix; path handling is where it will hurt.
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 13 |
-| planned | 40 |
+| new in this branch | 48 |
+| planned | 5 |
 | total | 97 |
 
-Planned items land in the order they pay off, and each one arrives the way
-everything above arrived: with the honest gaps named, a test that would notice
-it breaking, and nothing guessed.
+The five still open are open for stated reasons, not for lack of time: a Vue
+parser must produce byte identical output to the regex reader before it may
+replace it; a calibration corpus needs labelled real apps, which cannot be
+invented; focus order needs coordinates the explorer only started recording;
+the compare pane preview needs an optional build step chosen carefully; and
+npm publish is one command that belongs to a person, with docs/PUBLISHING.md
+waiting beside it.

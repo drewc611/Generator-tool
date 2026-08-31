@@ -18,7 +18,7 @@ const empty = () => ({
   elements: 0, tables: 0, rows: 0, loops: 0, nestedLoops: 0,
   inputs: 0, selects: 0, checkboxes: 0, forms: 0, submits: 0, destructive: 0,
   buttons: 0, links: 0, headings: 0, conditionals: 0, images: 0, charts: 0,
-  searchFields: 0, stepMarkers: 0, models: 0, pagination: 0,
+  searchFields: 0, stepMarkers: 0, models: 0, pagination: 0, editors: 0,
   collections: [], texts: [],
 });
 
@@ -89,6 +89,9 @@ export function shapeOf(ir) {
           if (SUBMIT_WORDS.test(label)) facts.submits += 1;
           if (DESTRUCTIVE.test(label)) facts.destructive += 1;
         }
+
+        if (attrValue(node, "contenteditable") || (node.attrs ?? []).some((a) => a.name === "contenteditable" && a.kind === "flag")) facts.editors += 1;
+        if (tag === "textarea" && Number(attrValue(node, "rows") || 0) >= 5) facts.editors += 1;
 
         if (STEP_WORDS.test(label)) facts.stepMarkers += 1;
         if (/\b(page|next|previous|prev|showing\s+\d|per\s+page)\b/i.test(label)) facts.pagination += 1;

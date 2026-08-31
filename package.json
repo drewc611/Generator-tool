@@ -1,7 +1,7 @@
 {
   "name": "portamp",
   "version": "0.1.0",
-  "description": "Port a legacy front end to React without losing the look or the API contract. Tiny core, plugins do the work.",
+  "description": "A tiny plugin host that ports legacy front ends. Reads Angular, AngularJS, Vue, Knockout, Backbone, jQuery or a running app with no source; recognises what it is; emits React, Vue, Svelte, Angular, Lit or a custom element, with the proofs beside them.",
   "type": "module",
   "bin": {
     "portamp": "src/cli.js"
@@ -27,12 +27,19 @@
     "record": "node src/cli.js run --allow-live --only input-record"
   },
   "keywords": [
-    "angular",
-    "react",
-    "migration",
     "port",
-    "codemod",
-    "plugins"
+    "migration",
+    "legacy",
+    "angular",
+    "angularjs",
+    "vue",
+    "svelte",
+    "react",
+    "lit",
+    "jquery",
+    "knockout",
+    "modernize",
+    "plugin-host"
   ],
   "dependencies": {},
   "license": "MIT",
@@ -47,5 +54,8 @@
   "optionalDependencies": {
     "playwright": "^1.47.0",
     "typescript": "^5.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

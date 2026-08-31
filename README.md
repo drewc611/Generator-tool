@@ -7,7 +7,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 539
-lines of core, no runtime dependencies, 33 plugins, and the literal output of
+lines of core, no runtime dependencies, 61 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 33 plugin(s)
+node src/cli.js plugins      # 61 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 224 tests, node --test, no framework
+npm test                     # 284 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 33 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 61 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -199,6 +199,36 @@ escaped, and handlers are indexed and attached by one delegated listener per
 event type, on the shadow root rather than the host. It is the target that
 makes the portable claim checkable, because emitting to a platform with no
 framework at all needed nothing upstream to change.
+
+## It reads what your decade actually shipped
+
+Angular, AngularJS, Vue, Knockout, Backbone, jQuery, a facelets tree, a
+WebForms tree, an OpenAPI document, or a running app with no source at all.
+Each reader turns its world into the same middle, which is why the emitters
+never learned any of their names.
+
+And it writes this decade back out: React, Vue, Svelte, modern Angular with
+the block syntax, Lit, or a custom element that depends on nothing, plus the
+proofs beside them: a conformance suite, mocks that carry nobody's data, a
+spec that admits what it never saw, stories for every state of every target.
+
+## On your desk and in your pocket
+
+The console is an installable app now, in both senses that actually make sense
+for a tool whose pipeline runs where Node runs:
+
+- **Desktop.** `desktop/` wraps the console in a window; the pipeline, the
+  policy gates and the server inside it are imported from this repository, so
+  the app can never disagree with the CLI about what a run did. CI builds the
+  installers where installers have to be built: a `.dmg` on macOS runners, an
+  NSIS installer on Windows, an AppImage on Linux, on every version tag.
+- **Phone.** The served console is a progressive web app: install it from the
+  browser and the rack, the wipe and the unverified list are on your phone.
+  The shell caches; the run data deliberately never does, because a report
+  that silently shows yesterday's run is worse than one that says it cannot
+  reach the server.
+- The server still binds 127.0.0.1 only, in every wrapper. A window in front
+  of the console does not change what it serves, or to whom.
 
 ## It works out what it is looking at
 
