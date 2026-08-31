@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>portamp</title>
+<style>
+  :root {
+    --bg: #0e0e11; --panel: #16161a; --sunken: #101014; --line: #26262d; --line-2: #34343d;
+    --ink: #e7e7ec; --muted: #8b8b96; --faint: #5d5d68;
+    --accent: #f0a830; --ok: #6ee7a8; --warn: #fbbf24; --bad: #fb7185;
+    --input: #6ee7a8; --dsp: #7dd3fc; --output: #f0a830; --vis: #c4b5fd; --general: #fb7185;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    height: 100vh; overflow: hidden;
+    background: var(--bg); color: var(--ink); font: 12.5px/1.5 var(--mono);
+    display: grid; grid-template-columns: 268px 1fr; grid-template-rows: 34px minmax(0, 1fr) minmax(0, 216px) minmax(0, 200px);
+    grid-template-areas: "bar bar" "rack compare" "rack endpoints" "unver unver";
+  }
+  .pane { border: 1px solid var(--line); background: var(--panel); overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+  .pane h2 {
+    margin: 0; padding: 7px 10px; font-size: 9.5px; letter-spacing: 1.6px; text-transform: uppercase;
+    color: var(--faint); background: var(--sunken); border-bottom: 1px solid var(--line); flex: none;
+    display: flex; justify-content: space-between; align-items: center; font-weight: 600;
+  }
+  .scroll { overflow: auto; min-height: 0; flex: 1; }
+  .pane h2 .path { text-transform: none; letter-spacing: 0; color: var(--muted); font-weight: 400; }
+  .pane h2 .count-mini { text-transform: none; letter-spacing: 0; }
+
+  /* title bar, the one piece of chrome */
+  .bar {
+    grid-area: bar; display: flex; align-items: center; gap: 14px; padding: 0 12px;
+    background: #08080a; border-bottom: 1px solid var(--line);
+  }
+  .wordmark { color: var(--accent); font-weight: 700; letter-spacing: 3px; font-size: 12px; }
+  .bar .meta { color: var(--faint); }
+  .bar .grow { flex: 1; }
+  .chip { border: 1px solid var(--line-2); border-radius: 999px; padding: 1px 9px; color: var(--muted); }
+
+  /* plugin rack */
+  .rack { grid-area: rack; border-right: 0; }
+  .class-head {
+    display: flex; justify-content: space-between; padding: 9px 10px 3px;
+    color: var(--faint); font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase;
+  }
+  .plugin { padding: 4px 10px 6px; border-left: 2px solid transparent; }
+  .plugin .row { display: flex; align-items: baseline; gap: 6px; }
+  .plugin .nm { color: var(--ink); }
+  .plugin .ms { margin-left: auto; color: var(--faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .plugin .said {
+    color: var(--muted); font-size: 11px; margin-top: 1px;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; overflow-wrap: anywhere;
+  }
+  .meter { height: 2px; background: var(--line); margin-top: 4px; border-radius: 2px; overflow: hidden; }
+  .meter i { display: block; height: 100%; background: currentColor; }
+  .c-input { color: var(--input); } .c-dsp { color: var(--dsp); }
+  .c-output { color: var(--output); } .c-vis { color: var(--vis); } .c-general { color: var(--general); }
+
+  /* screens */
+  .screens { border-top: 1px solid var(--line); flex: none; max-height: 42%; display: flex; flex-direction: column; }
+  .screen {
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+    padding: 6px 10px; background: none; border: 0; border-left: 2px solid transparent;
+    color: var(--ink); font: inherit; cursor: pointer;
+  }
+  .screen:hover { background: #1c1c22; }
+  .screen[aria-current="true"] { background: #1f1a10; border-left-color: var(--accent); color: var(--accent); }
+  .screen:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--muted); flex: none; }
+  .dot.on { background: var(--ok); border-color: var(--ok); }
+  .screen .tag { margin-left: auto; color: var(--faint); font-size: 10.5px; }
+
+  /* comparison */
+  .compare { grid-area: compare; }
+  .stage { position: relative; flex: 1; min-height: 0; background: var(--sunken); overflow: hidden; }
+  .layer { position: absolute; inset: 0; overflow: auto; }
+  .layer.built { background: var(--sunken); }
+  .layer img { display: block; width: 100%; height: auto; }
+  .layer pre { margin: 0; padding: 10px 14px 40px; font-size: 11.5px; line-height: 1.65; tab-size: 2; }
+  .layer .why {
+    position: sticky; top: 0; z-index: 1; padding: 7px 14px; font-size: 11px; color: var(--muted);
+    background: #14141a; border-bottom: 1px solid var(--line);
+  }
+  .empty { position: absolute; inset: 0; display: grid; place-content: center; gap: 6px; text-align: center; padding: 24px; color: var(--muted); }
+  .empty strong { color: var(--ink); font-weight: 600; }
+  .empty span { max-width: 46ch; font-size: 11.5px; }
+  .seam { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent); pointer-events: none; }
+  .seam::after {
+    content: ""; position: absolute; top: 50%; left: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+    border: 1px solid var(--accent); border-radius: 50%; background: #0e0e11cc;
+  }
+  .wipe { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
+  .wipe:focus-visible + .seam { box-shadow: 0 0 0 2px var(--accent); }
+  .side-label {
+    position: absolute; bottom: 8px; font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--faint); background: #0e0e11cc; padding: 2px 7px; border: 1px solid var(--line); pointer-events: none;
+  }
+
+  /* endpoints */
+  .endpoints { grid-area: endpoints; border-top: 0; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 4px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .verb { color: var(--muted); width: 52px; font-size: 11px; }
+  .verb.POST, .verb.PUT, .verb.PATCH { color: var(--warn); }
+  .verb.DELETE { color: var(--bad); }
+  .origin { text-align: right; color: var(--faint); font-size: 10.5px; white-space: nowrap; }
+  .origin.observed { color: var(--dsp); }
+
+  /* unverified */
+  .unver { grid-area: unver; border-top: 1px solid var(--line); background: #14100a; }
+  .unver h2 { background: #191309; color: var(--accent); border-bottom-color: #2a2113; }
+  .unver li { margin: 0 0 4px; color: #d8cdb8; }
+  .unver ul { margin: 0; padding: 8px 12px 10px 26px; }
+  .count { color: var(--accent); font-variant-numeric: tabular-nums; }
+
+  .hint { color: var(--faint); padding: 10px; }
+  /* the small syntax pass */
+  .k { color: #c4b5fd; } .s { color: #6ee7a8; } .c { color: var(--faint); font-style: italic; }
+  .n { color: #f0a830; } .t { color: #7dd3fc; } .a { color: #fbbf24; }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <span class="wordmark">portamp</span>
+  <span class="meta" id="ran"></span>
+  <span class="grow"></span>
+  <span class="chip" id="stat-files"></span>
+  <span class="chip" id="stat-plugins"></span>
+  <span class="chip" id="stat-ms"></span>
+</header>
+
+<section class="pane rack">
+  <h2>Plugin rack <span id="rack-total"></span></h2>
+  <div class="scroll" id="rack"></div>
+  <div class="screens">
+    <h2>Screens <span id="screen-count"></span></h2>
+    <div class="scroll" id="screens"></div>
+  </div>
+</section>
+
+<section class="pane compare">
+  <h2><span id="compare-title">Side by side</span><span id="compare-sub"></span></h2>
+  <div class="stage" id="stage">
+    <div class="layer" id="layer-shot"></div>
+    <div class="layer built" id="layer-built"></div>
+    <span class="side-label" style="left:8px" id="label-left">recorded</span>
+    <span class="side-label" style="right:8px" id="label-right">built</span>
+    <input class="wipe" id="wipe" type="range" min="0" max="100" value="50"
+           aria-label="Wipe between the recorded screenshot and the built component" />
+    <div class="seam" id="seam"></div>
+  </div>
+</section>
+
+<section class="pane endpoints">
+  <h2>Endpoints <span id="endpoint-count"></span></h2>
+  <div class="scroll"><table id="endpoints"></table></div>
+</section>
+
+<section class="pane unver">
+  <h2>Unverified <span class="count" id="unver-count"></span></h2>
+  <div class="scroll"><ul id="unver"></ul></div>
+</section>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const CLASSES = ["input", "dsp", "output", "vis", "general"];
+let run = null;
+let active = null;
+
+/**
+ * Enough of a tokenizer to make emitted JSX readable. One pass, because
+ * sequential replacements match the markup the earlier ones inserted: `class`
+ * is a keyword, and it appears in every span this function writes.
+ */
+const KEYWORDS = new Set(("import from export default const let var function return if else for of in await async " +
+  "new class extends try catch finally throw typeof null undefined true false").split(" "));
+
+function highlight(source) {
+  const RE = /(\/\*[\s\S]*?\*\/|\/\/[^\n]*)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)|(<\/?)([A-Za-z][\w.]*)|([A-Za-z_$][\w$]*)|(\b\d+(?:\.\d+)?\b)/g;
+  let out = "";
+  let last = 0;
+  let m;
+  while ((m = RE.exec(source))) {
+    out += esc(source.slice(last, m.index));
+    if (m[1]) out += '<i class="c">' + esc(m[1]) + "</i>";
+    else if (m[2]) out += '<i class="s">' + esc(m[2]) + "</i>";
+    else if (m[3]) out += esc(m[3]) + '<i class="t">' + esc(m[4]) + "</i>";
+    else if (m[5]) out += KEYWORDS.has(m[5]) ? '<i class="k">' + m[5] + "</i>" : esc(m[5]);
+    else out += '<i class="n">' + esc(m[6]) + "</i>";
+    last = RE.lastIndex;
+  }
+  return out + esc(source.slice(last));
+}
+
+function renderBar() {
+  $("ran").textContent = new Date(run.ranAt).toLocaleString();
+  const ms = run.plugins.reduce((t, p) => t + p.ms, 0);
+  $("stat-files").textContent = run.files.length + " files";
+  $("stat-plugins").textContent = run.plugins.length + " plugins";
+  $("stat-ms").textContent = ms + "ms";
+}
+
+function renderRack() {
+  const slowest = Math.max(1, ...run.plugins.map((p) => p.ms));
+  $("rack-total").textContent = run.plugins.length;
+  $("rack").innerHTML = CLASSES.map((cls) => {
+    const group = run.plugins.filter((p) => p.class === cls);
+    if (!group.length) return "";
+    return (
+      '<div class="class-head c-' + cls + '"><span>' + cls + "</span><span>" + group.length + "</span></div>" +
+      group.map((p) =>
+        '<div class="plugin c-' + cls + '">' +
+          '<div class="row"><span class="nm">' + esc(p.name) + '</span>' +
+          '<span class="ms">' + p.ms + "ms</span></div>" +
+          '<div class="said">' + esc(p.contributed) + "</div>" +
+          '<div class="meter"><i style="width:' + Math.max(2, (p.ms / slowest) * 100) + '%"></i></div>' +
+        "</div>"
+      ).join("")
+    );
+  }).join("");
+}
+
+function renderScreens() {
+  $("screen-count").textContent = run.screens.length;
+  if (!run.screens.length) {
+    $("screens").innerHTML = '<p class="hint">No components were emitted by this run.</p>';
+    return;
+  }
+  $("screens").innerHTML = run.screens.map((s, i) =>
+    '<button class="screen" data-i="' + i + '" aria-current="false">' +
+      '<span class="dot' + (s.matched ? " on" : "") + '"></span>' +
+      "<span>" + esc(s.name) + "</span>" +
+      '<span class="tag">' + (s.origin === "observed" ? "observed" : s.matched ? esc(s.state || "shot") : "no shot") + "</span>" +
+    "</button>"
+  ).join("");
+  for (const button of $("screens").children) {
+    button.addEventListener("click", () => select(Number(button.dataset.i)));
+  }
+}
+
+function renderEndpoints() {
+  $("endpoint-count").textContent = run.endpoints.length;
+  $("endpoints").innerHTML = run.endpoints.length
+    ? run.endpoints.map((e) =>
+        "<tr><td class='verb " + esc(e.method) + "'>" + esc(e.method) + "</td>" +
+        "<td>" + esc(e.path) + "</td>" +
+        "<td class='origin " + e.origin + "'>" + e.origin + "</td></tr>"
+      ).join("")
+    : "<tr><td class='hint'>No endpoints were found.</td></tr>";
+}
+
+function renderUnverified() {
+  $("unver-count").textContent = run.unverified.length;
+  $("unver").innerHTML = run.unverified.length
+    ? run.unverified.map((u) => "<li>" + esc(u) + "</li>").join("")
+    : '<li style="color:var(--muted)">Nothing. Every value in this port came from the source or from the app itself.</li>';
+}
+
+async function select(index) {
+  active = index;
+  const screen = run.screens[index];
+  for (const button of $("screens").children) {
+    button.setAttribute("aria-current", String(Number(button.dataset.i) === index));
+  }
+  $("compare-title").textContent = screen.name;
+  $("compare-sub").innerHTML = '<span class="path">' + esc(screen.component ?? "no component emitted") + "</span>";
+
+  if (screen.screenshot) {
+    const img = new Image();
+    img.alt = "Recorded screenshot of " + screen.name;
+    img.src = "/shots/" + encodeURIComponent(screen.screenshot);
+    // A file that exists but holds nothing is not a screenshot. Saying so beats
+    // a blank rectangle that reads as a rendering bug.
+    img.onerror = () => {
+      $("layer-shot").innerHTML =
+        '<div class="empty"><strong>' + esc(screen.screenshot) + " is a placeholder.</strong>" +
+        "<span>The file is there but it is empty, so there is nothing to compare against. " +
+        "Record the real screen before trusting any parity claim about it.</span></div>";
+      setWipe(false);
+    };
+    $("layer-shot").replaceChildren(img);
+  } else {
+    $("layer-shot").innerHTML =
+      '<div class="empty"><strong>No screenshot for this screen.</strong>' +
+      "<span>Nothing was recorded for it, so there is nothing to compare against. " +
+      "This state was designed rather than matched.</span></div>";
+  }
+  setWipe(Boolean(screen.screenshot));
+
+  if (!screen.component) {
+    $("layer-built").innerHTML = '<div class="empty"><strong>No component was emitted.</strong>' +
+      "<span>This screen is in the model but nothing was written for it.</span></div>";
+  } else {
+    $("layer-built").innerHTML = '<pre class="hint">loading…</pre>';
+    try {
+      const source = await fetch("/source?path=" + encodeURIComponent(screen.component)).then((r) => r.text());
+      $("layer-built").innerHTML =
+        '<p class="why">The built component cannot be rendered without a build, so this is the emitted source. ' +
+        "A preview is not wired yet.</p><pre>" + highlight(source) + "</pre>";
+    } catch {
+      $("layer-built").innerHTML = '<div class="empty"><strong>Could not read the emitted file.</strong></div>';
+    }
+  }
+  applyWipe();
+}
+
+/** Only offer a wipe when there are two things to wipe between. */
+function setWipe(enabled) {
+  for (const id of ["wipe", "seam", "label-left", "label-right"]) {
+    $(id).style.display = enabled ? "" : "none";
+  }
+  $("layer-built").style.clipPath = enabled ? null : "none";
+  if (enabled) applyWipe();
+}
+
+function applyWipe() {
+  const value = Number($("wipe").value);
+  // The built layer is revealed from the right, so the seam is the boundary.
+  $("layer-built").style.clipPath = "inset(0 0 0 " + value + "%)";
+  $("seam").style.left = value + "%";
+  $("wipe").setAttribute("aria-valuetext", value + "% recorded");
+}
+
+function applyTokens() {
+  const accent = run.tokens?.color?.accent;
+  if (accent) document.documentElement.style.setProperty("--accent", accent);
+}
+
+$("wipe").addEventListener("input", applyWipe);
+
+(async function start() {
+  try {
+    run = await fetch("/run.json").then((r) => r.json());
+  } catch {
+    document.body.innerHTML = '<p class="hint" style="padding:20px">No run.json. Run <b>portamp run</b> first.</p>';
+    return;
+  }
+  applyTokens();
+  renderBar(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified();
+  if (run.screens.length) select(0);
+  else {
+    $("layer-shot").innerHTML = '<div class="empty"><strong>Nothing to compare.</strong>' +
+      "<span>This run emitted no components.</span></div>";
+    setWipe(false);
+  }
+})();
+</script>
+</body>
+</html>

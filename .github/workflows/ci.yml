@@ -80,6 +80,43 @@ jobs:
             echo "a customer name reached the model"; exit 1
           fi
 
+      - name: the ui serves the last run on loopback, then exits cleanly
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out /tmp/uiout
+          node src/cli.js ui --src example/legacy --shots example/screenshots --out /tmp/uiout --port 4399 &
+          UI=$!
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:4399/run.json && break || sleep 0.3
+          done
+          curl -sf -o /dev/null http://127.0.0.1:4399/ || { echo "the ui did not serve"; exit 1; }
+          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:4399/source?path=../../../etc/passwd')" = "403"
+          # Nothing outside loopback should ever reach it. `hostname -i` can
+          # itself be 127.0.0.1, which would make this pass without testing
+          # anything, so the address comes from the interface list.
+          node -e "
+            const os = require('node:os');
+            const ext = Object.values(os.networkInterfaces()).flat()
+              .find((a) => a.family === 'IPv4' && !a.internal);
+            if (!ext) { console.log('no external IPv4 here, nothing to test'); process.exit(0); }
+            fetch('http://' + ext.address + ':4399/', { signal: AbortSignal.timeout(2000) })
+              .then((r) => { console.error('the ui answered on ' + ext.address + ' with ' + r.status); process.exit(1); })
+              .catch(() => console.log('refused on ' + ext.address + ', as it should be'));
+          "
+          kill -INT $UI
+          wait $UI || true
+          ! kill -0 $UI 2>/dev/null || { echo "the ui left a process behind"; exit 1; }
+          echo "ui served on loopback and exited on SIGINT"
+
+      - name: the ui added no dependency
+        run: |
+          node -e "
+            const p = require('./package.json');
+            if (Object.keys(p.dependencies ?? {}).length) { console.error('a dependency was added'); process.exit(1); }
+          "
+          if grep -rEn "^import .* from \"(?!node:|\.)" plugins/vis-ui/*.js 2>/dev/null | grep -v "node:" | grep -v 'from "\.'; then
+            echo "vis-ui imports something that is not a builtin"; exit 1
+          fi
+
       - name: policy gate stops on a committed secret, and prints nothing
         run: |
           echo 'const c = { client_secret: "sk_live_notarealvalue1234" };' > example/legacy/src/app/leak.ts

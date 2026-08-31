@@ -4,7 +4,7 @@ Read this before changing anything. It is the contract, not a description.
 
 ## What this is
 
-A tiny plugin host that ports legacy front ends to React. The core is 483 lines
+A tiny plugin host that ports legacy front ends to React. The core is 527 lines
 across four files and knows nothing about Angular, React, screenshots, or HTTP.
 Everything that knows a framework is a plugin. Keeping that true is the single
 most important constraint in the repo.
@@ -67,7 +67,7 @@ checks every file, runs the pipeline, and asserts the secret gate fires.
 
 Plugins that ship: `input-angular`, `input-shots`, `input-blackbox`,
 `input-record`, `input-explore`, `dsp-tokens`, `dsp-apimap`, `dsp-behavior`,
-`dsp-improve`, `output-react`, `vis-parity`, `general-policy`,
+`dsp-improve`, `output-react`, `vis-parity`, `vis-ui`, `general-policy`,
 `general-authorization`.
 
 ## What is honestly incomplete

@@ -11,7 +11,10 @@ const C = {
 
 export function createLogger({ verbose = false, quiet = false } = {}) {
   const out = (s) => !quiet && process.stdout.write(s + "\n");
+  // What each plugin said about itself, kept so it can be attributed later.
+  const transcript = [];
   const base = {
+    transcript,
     info: (m) => out(m),
     warn: (m) => out(C.amber("warn  ") + m),
     error: (m) => process.stderr.write(C.red("error ") + m + "\n"),
@@ -20,7 +23,10 @@ export function createLogger({ verbose = false, quiet = false } = {}) {
     child(prefix) {
       return {
         ...base,
-        info: (m) => out(C.dim(`[${prefix}] `) + m),
+        info: (m) => {
+          transcript.push({ plugin: prefix, message: m });
+          out(C.dim(`[${prefix}] `) + m);
+        },
         warn: (m) => out(C.amber("warn  ") + C.dim(`[${prefix}] `) + m),
         debug: (m) => verbose && out(C.dim(`debug [${prefix}] ${m}`)),
       };
@@ -54,6 +60,9 @@ export function createContext({ config, log, policy }) {
 
     // filled by output plugins
     written: [],
+
+    // filled by the kernel as each hook runs
+    timings: [],
 
     // filled by vis plugins
     report: { parity: [], unverified: [] },

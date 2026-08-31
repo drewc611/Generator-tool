@@ -16,6 +16,7 @@ usage
   portamp run [options]        run the pipeline
   portamp plugins              list what is loaded
   portamp init                 write a starter portamp.config.js
+  portamp ui                   serve the last run at 127.0.0.1:4321
 
 options
   --src <dir>          legacy source tree            (default ./legacy)
@@ -25,6 +26,8 @@ options
   --only <names>       comma separated plugin names to run
   --allow-live         permit calls to real systems  (off by default)
   --allow-billable     permit calls that charge per request
+      --port <n>       port for the ui command      (default 4321)
+      --fresh          make ui run the pipeline again
   -v, --verbose        show plugin timings
   -q, --quiet          errors only
   -h, --help
@@ -48,6 +51,7 @@ function parseArgs(argv) {
     else if (t === "-q" || t === "--quiet") a.quiet = true;
     else if (t === "--allow-live") a.allowLive = true;
     else if (t === "--allow-billable") a.allowBillable = true;
+    else if (t === "--fresh") a.fresh = true;
     else if (t.startsWith("--")) a[t.slice(2)] = argv[++i];
     else a._.push(t);
   }
@@ -124,10 +128,29 @@ async function main() {
     extra: fileConfig.plugins || [],
   });
 
+  // A command a plugin registered. The core dispatches it without knowing what
+  // it is, the same way it dispatches a stage.
+  const command = kernel.commands.get(cmd);
+  if (command) {
+    return command.run({
+      config, log, policy, args,
+      runPipeline: async () => {
+        const ctx = createContext({ config, log, policy });
+        await kernel.run(ctx);
+        return ctx;
+      },
+    });
+  }
+
   if (cmd === "plugins") {
     log.info(`\n${kernel.plugins.length} plugin(s)\n`);
     for (const p of kernel.plugins)
       log.info(`  ${p.class.padEnd(8)} ${p.name.padEnd(24)} ${p.version}`);
+    if (kernel.commands.size) {
+      log.info(`\n${kernel.commands.size} command(s) from plugins\n`);
+      for (const [name, spec] of kernel.commands)
+        log.info(`  portamp ${name.padEnd(22)} ${spec.describe ?? ""}  (${spec.plugin})`);
+    }
     return;
   }
 

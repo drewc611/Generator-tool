@@ -23,6 +23,7 @@ export class Kernel {
     this.log = log;
     this.policy = policy;
     this.bus = new Map();
+    this.commands = new Map();
   }
 
   /** Plugins subscribe to stages; the kernel never calls a plugin directly. */
@@ -42,6 +43,13 @@ export class Kernel {
     if (this.plugins.some((p) => p.name === name))
       throw new Error(`Duplicate plugin name: ${name}`);
     this.plugins.push({ name, version: version || "0.0.0", class: cls });
+    // A plugin may offer a command. The kernel records the name and hands it
+    // back when asked for; it never learns what the command does.
+    for (const [command, spec] of Object.entries(plugin.commands ?? {})) {
+      if (typeof spec?.run !== "function") throw new Error(`Plugin ${name} command "${command}" has no run function.`);
+      if (this.commands.has(command)) throw new Error(`Duplicate command: ${command}`);
+      this.commands.set(command, { ...spec, plugin: name });
+    }
     setup({
       on: (stage, fn) => this.on(stage, fn, { name, class: cls }),
       log: this.log.child(name),
@@ -100,7 +108,11 @@ export class Kernel {
       for (const { fn, meta } of subs) {
         const started = Date.now();
         await fn(ctx);
-        this.log.debug(`${stage}:${meta.name} ${Date.now() - started}ms`);
+        const ms = Date.now() - started;
+        // Kept on the context, not just logged, so a vis plugin can show which
+        // plugin produced which part of the output and what it cost.
+        (ctx.timings ??= []).push({ stage, name: meta.name, class: meta.class, ms });
+        this.log.debug(`${stage}:${meta.name} ${ms}ms`);
       }
     }
     return ctx;

@@ -5,7 +5,7 @@ Port a legacy front end to React without losing the look or the API contract.
 ![The portamp console: a skinned panel showing a pipeline run, plugin meters and the five stage buttons](media/portamp-console.svg)
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
-about where the plugin classes come from. Everything on the panel is real: 483
+about where the plugin classes come from. Everything on the panel is real: 527
 lines of core, no runtime dependencies, ten plugins, and the literal output of
 `npm run demo`.</sub>
 
@@ -27,7 +27,7 @@ writes React instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 10 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 102 tests, node --test, no framework
+npm test                     # 112 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -52,20 +52,20 @@ Each one is a thing it declined to guess.
 
 The constraint is the feature. A core small enough to read in one sitting is a
 core you can be sure about, and it is the only reason the plugin boundary stays
-honest: there is nowhere in 483 lines to hide a special case for Angular.
+honest: there is nowhere in 527 lines to hide a special case for Angular.
 
 | | |
 | --- | --- |
-| Core | **483 lines** across four files |
-| Every line of the tool | 3354 lines of JavaScript |
-| Tests | 1014 lines, 102 cases |
-| Source on disk | **123 KB** |
-| Published package | 153 KB |
+| Core | **527 lines** across four files |
+| Every line of the tool | 3,625 lines of JavaScript |
+| Tests | 1,132 lines, 112 cases |
+| Source on disk | **150 KB** |
+| Published package | 184 KB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
 ```bash
-cat src/core/*.js src/cli.js | wc -l    # 483
+cat src/core/*.js src/cli.js | wc -l    # 527
 du -sh src plugins                      # the whole tool
 ```
 
@@ -358,6 +358,51 @@ Rules the kernel enforces, not suggests:
 
 A plugin that wants to do something consequential asks the policy object first.
 
+## The UI
+
+`portamp ui` serves the last run on `127.0.0.1:4321` and opens a browser.
+
+![The portamp UI: plugin rack, a wipe between the recorded screenshot and the emitted component, endpoints, and the unverified list](media/portamp-ui.png)
+
+Four panes, fixed. No routing, no tabs that hide things.
+
+- **Plugin rack**, left. Every loaded plugin grouped by class, what it
+  contributed, and what it cost. This is the reason the UI is worth building:
+  you can see which plugin produced which part of the output, which is what a
+  plugin architecture needs to stay debuggable.
+- **Side by side**, main. The recorded screenshot and the emitted component with
+  a wipe between them. Drag it, or focus it and use the arrow keys: it is a real
+  range input underneath, so the keyboard and a screen reader work without
+  anything extra. When there is no screenshot the pane says so and the wipe
+  disappears, because a wipe between a message and some source is not a
+  comparison.
+- **Endpoints**, lower right, each marked `source` or `observed`.
+- **Unverified**, bottom bar. Always visible, never behind a click. It is the
+  list people need and the one they will avoid if it is collapsed.
+
+It is a `vis` plugin, which is the Winamp slot exactly: the core does the work,
+the visualization plugin shows it. Nothing about it is required to port
+anything, and `portamp run` never loads it.
+
+The constraints are the interesting part:
+
+- **Zero dependencies.** `node:http` and one HTML file with inline CSS and JS.
+  The tool that ports apps to React does not itself need React, and adding a
+  build step to a tool whose selling point is having no build step would be
+  funny for about a day.
+- **Read only.** It displays a completed run. It cannot trigger one, edit a
+  file, or write anything. A UI that mutates the port is a second source of
+  truth. A test asserts the server contains no write call.
+- **Loopback only.** It binds `127.0.0.1`, never `0.0.0.0`, because it serves
+  screenshots of a customer system. A test asserts the bound address, and both
+  file routes refuse any path that climbs out of their directory.
+- **Under 800 lines**, including the HTML. It is 582, and a test fails the build
+  if that stops being true.
+
+The built component cannot be rendered without a build, so the right pane shows
+the emitted source, syntax highlighted, and says that is what it is rather than
+pretending to be a preview.
+
 ## Configuration
 
 `portamp init` writes a starter file. Everything is optional.
@@ -378,7 +423,8 @@ export default {
 
 ```
 portamp run          run the pipeline
-portamp plugins      list what is loaded
+portamp ui           serve the last run at 127.0.0.1:4321
+portamp plugins      list what is loaded, and what commands they add
 portamp init         write a starter config
 ```
 

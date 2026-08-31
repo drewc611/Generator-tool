@@ -1,5 +1,6 @@
 node_modules/
 example/out/
+out/
 *.log
 
 # An attestation names a real system and a real owner. Only the example ships.
