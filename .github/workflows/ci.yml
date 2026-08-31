@@ -52,11 +52,17 @@ jobs:
             echo "the component body is still a placeholder"; exit 1
           fi
 
-      - name: no endpoint reaches a component
+      # The engine enforces this now, so CI asserts the gate fires rather than
+      # grepping for the thing the gate exists to catch.
+      - name: the endpoint gate fires on a component that hardcodes a path
         run: |
-          if grep -rEn "https?://|/api/" example/out/src/features; then
-            echo "a component carries an endpoint"; exit 1
+          if node src/cli.js run --src test/fixtures/hardcoded --shots example/screenshots --out /tmp/hc; then
+            echo "the endpoint gate did not fire"; exit 1
           fi
+          echo "endpoint gate fired as expected"
+
+      - name: the endpoint gate leaves an external link alone
+        run: node src/cli.js run --src test/fixtures/externallink --shots example/screenshots --out /tmp/ex
 
       - name: policy gate stops on a committed secret, and prints nothing
         run: |

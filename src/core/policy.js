@@ -18,12 +18,13 @@ const SECRET_PATTERNS = [
 ];
 
 export class PolicyViolation extends Error {
-  constructor(message, { rule, file, line } = {}) {
+  constructor(message, { rule, file, line, path } = {}) {
     super(message);
     this.name = "PolicyViolation";
     this.rule = rule;
     this.file = file;
     this.line = line;
+    this.path = path;
   }
 }
 
@@ -33,6 +34,11 @@ export class Policy {
     this.allowBillable = allowBillable;
     this.log = log;
     this.findings = [];
+
+    // A gate that can be reassigned is a gate that will be, by a plugin that
+    // finds it inconvenient. findings stays pushable because the array itself
+    // is not frozen, only the binding to it.
+    Object.freeze(this);
   }
 
   /**
@@ -88,6 +94,31 @@ export class Policy {
         `Re run with --allow-billable if that is intended.`,
       { rule: "no-billable-calls" }
     );
+  }
+
+  /**
+   * Endpoints live in one module. A path baked into a component is a path
+   * nobody can change without editing the view, and it is how a port ends up
+   * with staging in three screens and production in the rest.
+   *
+   * Checked against the endpoint map rather than against a URL shaped regular
+   * expression, because a template may legitimately link to somewhere that is
+   * not an endpoint, and refusing to port a documentation link would be the
+   * gate getting in the way of correct work.
+   */
+  assertNoEndpointLiteral(text, file, paths = []) {
+    const body = text ?? "";
+    for (const path of paths) {
+      if (!path || path.length < 2) continue;
+      if (body.includes(path)) {
+        throw new PolicyViolation(
+          `${file} contains the endpoint ${path}. Endpoints belong in src/api/endpoints.js, ` +
+            `so that moving one is a single edit and no screen can disagree about it.`,
+          { rule: "no-endpoints-in-components", file, path }
+        );
+      }
+    }
+    return true;
   }
 
   /** Screenshots of a real system routinely carry customer data. */

@@ -87,6 +87,10 @@ Named plainly so nobody rediscovers it as a surprise.
   far tells you what the spacing scale was meant to be, only what it rendered as.
 - `vis-parity` reports in markdown and compares nothing visually. It says so in
   the notes rather than claiming a pass.
+- The endpoint gate runs at `verify`, so unlike the secret gate it cannot stop
+  the write. It fails the run and names the file; the offending component is
+  still on disk to look at. Moving it earlier would mean checking a component
+  before it exists.
 - The design extraction, framework mapping, and API extraction judgment lives in
   `skills/`, not in code. Some of it should migrate into plugins over time; not
   all of it can.

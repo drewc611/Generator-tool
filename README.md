@@ -246,8 +246,14 @@ protection circumvention is refused outright, regardless of who owns what.
 
 Rules the kernel enforces, not suggests:
 
-- A credential in legacy source stops the run. The location is reported, the
-  value never is, and nothing is copied into the port.
+- A credential in legacy source stops the run at `extract`, before anything is
+  written. The location is reported, the value never is, and nothing is copied
+  into the port.
+- An endpoint that reached a component fails the run at `verify` and names the
+  file. It is checked against the endpoint map rather than by looking for
+  URL shaped strings, so a template that links to documentation still ports.
+- The policy object is frozen once built. A plugin that finds a gate
+  inconvenient cannot reassign it.
 - Live calls are off by default. `--allow-live` is a statement that you are
   authorized to call the thing.
 - Billable endpoints need `--allow-billable` on top of that, because some

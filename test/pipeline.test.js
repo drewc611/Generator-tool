@@ -94,6 +94,26 @@ test("what could not be verified is written down rather than dropped", async (t)
   }
 });
 
+// The gate runs at verify, so unlike the secret gate it cannot stop the write.
+// It fails the run and names the file, which is what verify is for.
+test("an endpoint baked into a component fails the run", async (t) => {
+  const { error, cleanup } = await runPipeline({ src: join(ROOT, "test/fixtures/hardcoded") });
+  t.after(cleanup);
+
+  assert.ok(error instanceof PolicyViolation, "the run should have been stopped by policy");
+  assert.equal(error.rule, "no-endpoints-in-components");
+  assert.equal(error.path, "/api/v1/orders");
+  assert.match(error.file, /\.jsx$/);
+});
+
+test("a component that only links somewhere external is left alone", async (t) => {
+  const { ctx, error, cleanup } = await runPipeline({ src: join(ROOT, "test/fixtures/externallink") });
+  t.after(cleanup);
+
+  assert.equal(error, null, "a documentation link is not an endpoint");
+  assert.ok(ctx.written.some((f) => f.endsWith(".jsx")));
+});
+
 test("a credential in the legacy source stops the run before anything is written", async (t) => {
   const { ctx, error, cleanup } = await runPipeline({ src: join(ROOT, "test/fixtures/leaky") });
   t.after(cleanup);

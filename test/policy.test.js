@@ -79,6 +79,50 @@ test("allowing billable alone does not let a live call through", () => {
   assert.throws(() => policy({ allowBillable: true }).assertLiveAllowed("x"), PolicyViolation);
 });
 
+// A gate that can be reassigned is a gate that will be, by a plugin that finds
+// it inconvenient.
+test("a gate cannot be removed after the policy is built", () => {
+  const p = policy();
+  assert.throws(() => { p.assertNoSecrets = () => true; }, TypeError);
+  assert.throws(() => { p.allowLive = true; }, TypeError);
+  assert.throws(() => { p.somethingNew = 1; }, TypeError);
+  assert.equal(p.allowLive, false);
+});
+
+test("freezing the policy does not stop it recording findings", () => {
+  const p = policy();
+  p.scanForSecrets(`const id = "AKIAIOSFODNN7EXAMPLE";`, "a.ts");
+  assert.equal(p.findings.length, 1, "the array is still pushable, only the binding is frozen");
+});
+
+test("an endpoint in a component is refused", () => {
+  const paths = ["/api/v1/orders", "/api/v1/accounts/orders"];
+  assert.throws(
+    () => policy().assertNoEndpointLiteral(`<a href="/api/v1/orders">x</a>`, "A.jsx", paths),
+    (error) => {
+      assert.equal(error.rule, "no-endpoints-in-components");
+      assert.equal(error.path, "/api/v1/orders");
+      assert.match(error.message, /belong in src\/api\/endpoints\.js/);
+      return true;
+    }
+  );
+});
+
+// The false positive this guards: refusing to port a template because it links
+// to documentation. An external link is not an endpoint.
+test("a link that is not an endpoint is left alone", () => {
+  const paths = ["/api/v1/orders"];
+  const p = policy();
+  assert.equal(p.assertNoEndpointLiteral(`<a href="https://docs.example.com/orders">Help</a>`, "A.jsx", paths), true);
+  assert.equal(p.assertNoEndpointLiteral(`import { createClient } from "../api/client.js";`, "A.jsx", paths), true);
+  assert.equal(p.assertNoEndpointLiteral(`<a href="/help">Help</a>`, "A.jsx", paths), true);
+});
+
+test("with no endpoint map there is nothing to check against", () => {
+  assert.equal(policy().assertNoEndpointLiteral(`anything at all /api/v1/orders`, "A.jsx", []), true);
+  assert.equal(policy().assertNoEndpointLiteral(`x`, "A.jsx", ["", "/"]), true, "a path too short to mean anything is skipped");
+});
+
 test("fixtures that look like customer data are flagged, not blocked", () => {
   const warned = [];
   const p = new Policy({ log: { ...quietLogger(), warn: (m) => warned.push(m) } });
