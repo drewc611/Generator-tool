@@ -97,6 +97,49 @@ ${body}
 `;
 }
 
+/**
+ * The states nobody exercises are the states nobody built. These wrap the
+ * same endpoints in the three conditions a front end meets in the field and a
+ * developer machine never shows: a slow answer, a failing one, and an empty
+ * one. Use them one at a time; a suite that runs against all three has
+ * exercised every state the emitted components render.
+ */
+export function renderScenarios(handlers) {
+  const routes = handlers.map((h) => `  ["${h.method.toLowerCase()}", ${JSON.stringify(h.path)}],`).join("\n");
+  return `import { http, HttpResponse, delay } from "msw";
+import { handlers } from "./handlers.js";
+
+const ROUTES = [
+${routes}
+];
+
+/** Every endpoint, three seconds late. Loading states live or die here. */
+export const slow = (ms = 3000) =>
+  ROUTES.map(([method, path]) =>
+    http[method](path, async (info) => {
+      await delay(ms);
+      for (const handler of handlers) {
+        const result = await handler.run(info);
+        if (result?.response) return result.response;
+      }
+      return HttpResponse.json({}, { status: 200 });
+    })
+  );
+
+/** Every endpoint refusing. The error states, and the retry buttons. */
+export const failing = (status = 500) =>
+  ROUTES.map(([method, path]) => http[method](path, () => HttpResponse.json(
+    { error: "scenario", description: "the failing() scenario is on" }, { status }
+  )));
+
+/** Every collection empty. The most commonly missing state there is. */
+export const empty = () =>
+  ROUTES.map(([method, path]) => http[method](path, () => HttpResponse.json(
+    method === "get" ? [] : {}, { status: 200 }
+  )));
+`;
+}
+
 const BROWSER = `import { setupWorker } from "msw/browser";
 import { handlers } from "./handlers.js";
 
@@ -123,6 +166,7 @@ export default {
       if (!handlers.length) return log.info("no endpoints to mock");
 
       await ctx.write("src/mocks/handlers.js", renderHandlers(handlers));
+      await ctx.write("src/mocks/scenarios.js", renderScenarios(handlers));
       await ctx.write("src/mocks/browser.js", BROWSER);
       await ctx.write("src/mocks/server.js", NODE);
       for (const note of unverified) ctx.unverified(note);

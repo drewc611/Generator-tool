@@ -49,14 +49,25 @@ export function extractStrings(ir, selector) {
     if (!node) return;
     switch (node.kind) {
       case "text":
-        // Only the literal halves. An interpolation is a value, not copy, and
-        // the fragments around it are a sentence somebody split with code.
+        // Only the literal halves are copy. But the whole sentence, values and
+        // all, is kept as a pattern, so a message format can put it back
+        // together instead of shipping the fragments.
         if (node.parts.some((p) => p.expression !== undefined)) {
           const literal = node.parts.filter((p) => p.literal !== undefined).map((p) => p.literal).join(" ").replace(/\s+/g, " ").trim();
           if (isCopy(literal)) {
+            let anonymous = 0;
+            const pattern = node.parts.map((part) => {
+              if (part.expression === undefined) return part.literal;
+              // A simple name keeps its name; an expression gets a numbered
+              // placeholder, because `{orders.filter(...).length}` is not a
+              // message variable anybody wants to see.
+              return /^[A-Za-z_$][\w$]*$/.test(part.expression.trim())
+                ? `{${part.expression.trim()}}`
+                : `{value${++anonymous || ""}}`;
+            }).join("").replace(/\s+/g, " ").trim();
             found.push({
               selector, key: `${selector}.${slug(literal)}`, value: literal, where: "text",
-              interpolated: true,
+              interpolated: true, pattern,
             });
           }
         } else {
