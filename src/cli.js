@@ -10,7 +10,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const BUILTIN = resolve(here, "../plugins");
 
 const HELP = `
-portamp  port a legacy front end to React, without losing the look or the API contract
+portamp  port a legacy front end, without losing the look or the API contract
 
 usage
   portamp run [options]        run the pipeline
@@ -31,6 +31,11 @@ options
   -v, --verbose        show plugin timings
   -q, --quiet          errors only
   -h, --help
+
+plugin options
+  Any option the core does not recognise is passed to the plugins untouched,
+  so a target is turned on by naming it. Run "portamp plugins" to see what is
+  loaded, and read each plugin's header for the option it answers to.
 
 no source available
   Put a HAR, a schema dump, or report exports in ./artifacts, or configure
@@ -101,11 +106,18 @@ async function main() {
   }
 
   const fileConfig = await loadConfig(cwd);
+
+  // An option the core does not recognise belongs to a plugin, so it is passed
+  // through rather than rejected. The core still learns nothing: it does not
+  // know which plugin asked for it, or that any plugin did.
+  const { _: _positional, ...flags } = args;
+
   const config = {
     // Everything from the config file passes through untouched, so a plugin
     // can read its own settings without the core learning that it exists. The
     // keys below are the ones the core itself resolves to absolute paths.
     ...fileConfig,
+    ...flags,
     src: resolve(cwd, args.src || fileConfig.src || "./legacy"),
     shots: resolve(cwd, args.shots || fileConfig.shots || "./screenshots"),
     out: resolve(cwd, args.out || fileConfig.out || "./out"),

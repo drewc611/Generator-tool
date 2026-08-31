@@ -20,6 +20,8 @@ export async function runPipeline({
   allowLive = false,
   storybook = false,
   svelte = false,
+  // Anything else a plugin reads, passed through the way the CLI passes it.
+  ...options
 } = {}) {
   const out = await mkdtemp(join(tmpdir(), "portamp-"));
   const log = createLogger({ quiet: true });
@@ -34,7 +36,7 @@ export async function runPipeline({
   }
 
   const ctx = createContext({
-    config: { src, shots, out, artifacts, tokens, record: null, only, storybook, svelte },
+    config: { ...options, src, shots, out, artifacts, tokens, record: null, only, storybook, svelte },
     log,
     policy,
   });
