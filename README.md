@@ -7,7 +7,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 539
-lines of core, no runtime dependencies, 28 plugins, and the literal output of
+lines of core, no runtime dependencies, 31 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 28 plugin(s)
+node src/cli.js plugins      # 31 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 181 tests, node --test, no framework
+npm test                     # 209 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 28 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 31 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -199,6 +199,91 @@ escaped, and handlers are indexed and attached by one delegated listener per
 event type, on the shadow root rather than the host. It is the target that
 makes the portable claim checkable, because emitting to a platform with no
 framework at all needed nothing upstream to change.
+
+## It works out what it is looking at
+
+A codemod translates syntax. It has no opinion about what the application *is*,
+so it cannot have one about what it should become, and you get the same app with
+newer punctuation.
+
+`dsp-archetype` reads the structure, not the framework, off the same IR
+everything else uses. So it answers the same question whether the app arrived as
+Angular, as Vue, as jQuery, or as a running thing somebody drove with no source
+at all.
+
+```
+[dsp-archetype] crud-table (3/4 signals), 2 observation(s)
+[dsp-modernize] 7 decision(s) proposed for a crud-table
+[dsp-uplift]    6 colour pair(s) brought to contrast, 2 already passing
+```
+
+It never reports only a verdict. Every candidate carries the signals it matched
+and the ones it did not, because what a rule looked for and failed to find is
+exactly what would have to be true for the answer to be different:
+
+```
+### Table of records, edited in place  (crud-table)
+Matched 3 of 4 signals, 75%.
+- 1 table(s)
+- 1 read endpoint(s)
+- 2 write endpoint(s) on the same resource
+1 signal(s) this shape usually shows were not found.
+```
+
+When two readings land within twenty points the report says so and sets out
+both, rather than picking one and sounding certain.
+
+Then `dsp-modernize` turns the reading into a plan, and every decision names the
+thing in the old app that makes it necessary, so you can disagree with the
+premise instead of the taste:
+
+> **Put the filters in the address bar**
+> **Because** filter state lives in the component, so a filtered view cannot be
+> linked, bookmarked, or restored by a reload.
+> **Instead** the query string is the source of truth.
+
+It proposes and does not perform. How an application fetches, routes and holds
+state is a decision about the product, and a tool that made it quietly would be
+worse than one that did not make it at all.
+
+### And it makes it look like something from this decade
+
+`dsp-uplift` does the visual half, under one rule: **a legacy palette contains
+one thing somebody genuinely chose, and a lot of things nobody did.**
+
+The brand colour is kept. What changes is lightness, and only as far as a
+contrast ratio requires:
+
+```
+inkMuted on surface   #999999 -> #757575    2.85:1 -> 4.61:1   moved -14%
+accent   on surface   #5BA4E6 -> #1F79CB    2.66:1 -> 4.51:1   moved -17%
+warn     on surface   #E8C25D -> #927015    1.71:1 -> 4.61:1   moved -31%
+ink      on surface   #555555 -> #555555    7.46:1 -> 7.46:1   kept
+```
+
+Same blue. Readable now. A pair that already passed is not touched, and on a
+dark ground it lightens rather than inverting, because a palette that flips a
+colour to meet a number has stopped being the same palette. CI asserts no run
+ever lowers a ratio.
+
+The type scale is the app's own, recovered by fitting a line through its sizes
+rather than imposed. An app whose display size is 28px next to a 13px body has
+made a decision, and replacing it with 19px because a minor third says so is a
+redesign nobody asked for:
+
+```
+was      xs 10   sm 11   md 13   lg 18   xl 28
+becomes  xs  8   sm 10   md 13   lg 17   xl 22   2xl 28
+```
+
+Elevation, motion, a focus ring and a spacing rhythm are added outright, because
+an app written before those were easy has nothing there to preserve. The shadows
+are tinted with the palette's own ink rather than black, which is the difference
+between a card that looks placed and one that looks pasted.
+
+All of it lands in `src/tokens.modern.js` and `src/tokens.modern.css`. The
+emitted components keep importing `src/tokens.js`. Adopting a new palette is not
+a thing to do to somebody quietly.
 
 ## Conformance: the part nobody else does
 
@@ -589,6 +674,9 @@ The plugin classes are the point. Everything below is a directory and an
 | `dsp-a11y` | Contrast and target size over the palette the port will use |
 | `dsp-i18n` | The copy welded into the markup, and the sentences split around a value |
 | `dsp-deadcode` | What is declared and never used, as candidates and never as a verdict |
+| `dsp-archetype` | What kind of app this is, from its structure rather than its framework |
+| `dsp-modernize` | What to build instead, with the evidence for every decision |
+| `dsp-uplift` | The old palette brought to contrast, without losing the brand |
 | `output-vue` | The third target on the IR |
 | `output-svelte` | The second target on the IR |
 | `output-html` | A custom element, depending on nothing |

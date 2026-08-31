@@ -172,6 +172,65 @@ jobs:
       - name: the endpoint gate leaves an external link alone
         run: node src/cli.js run --src test/fixtures/externallink --shots example/screenshots --out /tmp/ex
 
+      # A reading that cannot show its evidence is an opinion.
+      - name: the app is recognised, and the reading shows its working
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out /tmp/arch
+          test -s /tmp/arch/ARCHITECTURE.md
+          test -s /tmp/arch/MODERNIZATION.md
+          grep -q "crud-table" /tmp/arch/ARCHITECTURE.md
+          grep -q "Every candidate, and what it rested on" /tmp/arch/ARCHITECTURE.md
+          # Every decision names the legacy fact that makes it necessary.
+          node -e "
+            const fs = require('fs');
+            const plan = fs.readFileSync('/tmp/arch/MODERNIZATION.md', 'utf8');
+            const headings = plan.split(/^### /m).slice(1);
+            if (!headings.length) throw new Error('the plan proposes nothing');
+            for (const section of headings) {
+              if (!section.includes('**Because**')) throw new Error('a decision with no premise: ' + section.split('\n')[0]);
+              if (!section.includes('**Instead**')) throw new Error('a decision that proposes nothing');
+            }
+            console.log(headings.length + ' decision(s), each with its evidence');
+          "
+
+      # The same reading has to come out of an app with no source at all, or the
+      # IR is not doing the job it exists for.
+      - name: an app with no source is recognised too
+        run: |
+          node src/cli.js run --src example/nosource --shots test/fixtures/explored --out /tmp/archb
+          test -s /tmp/archb/ARCHITECTURE.md
+          grep -qE "crud-table|master-detail" /tmp/archb/ARCHITECTURE.md
+
+      # The uplift exists to raise contrast. A run that lowered one would be
+      # worse than no run at all.
+      - name: the design uplift never lowers a contrast ratio
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out /tmp/up
+          test -s /tmp/up/src/tokens.modern.js
+          test -s /tmp/up/src/tokens.modern.css
+          grep -q "prefers-reduced-motion" /tmp/up/src/tokens.modern.css
+          node -e "
+            const { uplift } = await import('./plugins/dsp-uplift/index.js');
+            const { ratio } = await import('./plugins/dsp-a11y/index.js');
+            const legacy = {
+              size: { xs: 10, sm: 11, md: 13, lg: 18, xl: 28 },
+              color: {
+                bg: '#FFFFFF', surface: '#FFFFFF', ink: '#555555', inkMuted: '#999999',
+                inkFaint: '#CCCCCC', accent: '#5BA4E6', danger: '#E85D5D', warn: '#E8C25D', ok: '#7DD87D',
+              },
+            };
+            const { changes, tokens } = uplift(legacy);
+            let raised = 0;
+            for (const c of changes) {
+              if (c.after < c.before) throw new Error('contrast went down for ' + c.role + ' on ' + c.ground);
+              if (!c.kept) raised++;
+            }
+            if (!raised) throw new Error('a palette this bad should have been corrected');
+            // The display size the app chose has to survive the new scale.
+            if (tokens.size['2xl'] < 26) throw new Error('the display size was thrown away: ' + tokens.size['2xl']);
+            console.log(raised + ' pair(s) raised, none lowered, display size kept');
+          " --input-type=module
+
       # The whole no source chain, from a recording rather than a live browser.
       - name: a recorded exploration rebuilds the app it explored
         run: |

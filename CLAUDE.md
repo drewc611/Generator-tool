@@ -70,7 +70,7 @@ same screen written in Angular and in Vue produces byte identical React, Vue,
 Svelte and custom element output, which is the only honest way to claim the
 middle is framework blind.
 
-Plugins that ship, twenty eight in five classes, and the core has never learned
+Plugins that ship, thirty one in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -78,6 +78,7 @@ input    input-angular  input-vue  input-jquery  input-explore
          input-record   input-shots  input-blackbox
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior
          dsp-improve  dsp-a11y  dsp-i18n  dsp-deadcode
+         dsp-archetype  dsp-modernize  dsp-uplift
 output   output-react  output-vue  output-svelte  output-html
          output-storybook  output-tests  output-openapi  output-msw
 vis      vis-parity  vis-ui
@@ -129,6 +130,18 @@ Named plainly so nobody rediscovers it as a surprise.
   and names that case in the notes when it meets it.
 - `dsp-deadcode` reports candidates and never verdicts: a class name assembled
   at runtime looks unused and is not, so the report says what was searched.
+- `dsp-archetype` recognises the shape of an app from its structure and its
+  traffic, and reports a reading rather than a fact: every candidate carries the
+  signals it matched and the ones it did not, and two readings within twenty
+  points are reported as contested rather than resolved.
+- `dsp-modernize` proposes and never performs. Rewriting how an app fetches,
+  routes and holds state is a decision about the product, and each proposal
+  names the legacy fact that makes it necessary so the premise can be argued
+  with rather than the taste.
+- `dsp-uplift` changes lightness and never hue. A brand colour is the one value
+  in a legacy palette somebody actually chose. It writes `src/tokens.modern.js`
+  alongside `src/tokens.js` and the emitted components keep importing the
+  latter, because adopting a new palette is not a thing to do quietly.
 - The design extraction, framework mapping, and API extraction judgment lives in
   `skills/`, not in code. Some of it should migrate into plugins over time; not
   all of it can.

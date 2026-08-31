@@ -13,7 +13,10 @@ test("the example runs end to end and writes the port", async (t) => {
 
   assert.deepEqual(ctx.written.sort(), [
     "A11Y.md",
+    "ARCHITECTURE.md",
     "DEAD_CODE.md",
+    "DESIGN_UPLIFT.md",
+    "MODERNIZATION.md",
     "PORT_NOTES.md",
     "src/api/client.js",
     "src/api/endpoints.js",
@@ -21,6 +24,8 @@ test("the example runs end to end and writes the port", async (t) => {
     "src/i18n/README.md",
     "src/i18n/en.json",
     "src/tokens.js",
+    "src/tokens.modern.css",
+    "src/tokens.modern.js",
   ]);
   for (const file of ctx.written) {
     const text = await readFile(join(out, file), "utf8");
