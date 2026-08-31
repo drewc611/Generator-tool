@@ -80,6 +80,37 @@ export function readRoutes(text, file) {
       if (route) routes.push(route);
     }
   }
+
+  // AngularJS declared its table as a chain of calls, not an array. The shape
+  // is the same table: a path, what renders there, and a fallback.
+  if (/\$routeProvider/.test(text)) {
+    for (const m of text.matchAll(/\.when\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*\{/g)) {
+      const body = balanced(text, m.index + m[0].length - 1);
+      if (!body) continue;
+      const controller = FIELD("controller").exec(body);
+      const templateUrl = FIELD("templateUrl").exec(body);
+      const redirect = FIELD("redirectTo").exec(body);
+      routes.push({
+        path: m[1],
+        component: controller ? (controller[1] ?? controller[2]) : templateUrl ? (templateUrl[1] ?? templateUrl[2]) : null,
+        redirectTo: redirect ? (redirect[1] ?? redirect[2]) : null,
+        lazy: false,
+        file,
+        children: [],
+      });
+    }
+    const otherwise = /\.otherwise\s*\(\s*(?:['"`]([^'"`]+)['"`]|\{)/.exec(text);
+    if (otherwise) {
+      let target = otherwise[1] ?? null;
+      if (!target) {
+        const body = balanced(text, otherwise.index + otherwise[0].length - 1);
+        const redirect = body && FIELD("redirectTo").exec(body);
+        target = redirect ? (redirect[1] ?? redirect[2]) : null;
+      }
+      if (target) routes.push({ path: "**", component: null, redirectTo: target, lazy: false, file, children: [] });
+    }
+  }
+
   return routes;
 }
 

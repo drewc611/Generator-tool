@@ -1,0 +1,10 @@
+{
+  "label": "form-entry",
+  "html": "<form (submit)=\"save()\"><input [(ngModel)]=\"name\"><input [(ngModel)]=\"email\"><select [(ngModel)]=\"country\"></select><button type=\"submit\">Submit</button></form>",
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/applications"
+    }
+  ]
+}

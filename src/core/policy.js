@@ -29,9 +29,15 @@ export class PolicyViolation extends Error {
 }
 
 export class Policy {
-  constructor({ allowLive = false, allowBillable = false, log } = {}) {
+  constructor({ allowLive = false, allowBillable = false, allowedDomains = null, log } = {}) {
     this.allowLive = allowLive;
     this.allowBillable = allowBillable;
+    // Domains the attestation names. null means the attestation named none
+    // and --allow-live alone governs; a list narrows the gate further and
+    // nothing widens it back.
+    this.allowedDomains = Array.isArray(allowedDomains) && allowedDomains.length
+      ? Object.freeze(allowedDomains.map((d) => String(d).toLowerCase().replace(/^\*\./, "")))
+      : null;
     this.log = log;
     this.findings = [];
 
@@ -74,15 +80,44 @@ export class Policy {
     );
   }
 
-  /** Any network call against a real system needs an explicit opt in. */
+  /**
+   * Any network call against a real system needs an explicit opt in, and when
+   * the attestation names domains, the call must be to one of them. The list
+   * only ever narrows the gate: an attestation for one system is not
+   * permission to drive whatever the tool finds a link to.
+   */
   assertLiveAllowed(target) {
-    if (this.allowLive) return true;
-    throw new PolicyViolation(
-      `Refusing to call ${target}. Live calls are off by default. ` +
-        `Re run with --allow-live once you have confirmed you are authorized ` +
-        `to call it, or record fixtures instead.`,
-      { rule: "no-live-calls" }
-    );
+    if (!this.allowLive) {
+      throw new PolicyViolation(
+        `Refusing to call ${target}. Live calls are off by default. ` +
+          `Re run with --allow-live once you have confirmed you are authorized ` +
+          `to call it, or record fixtures instead.`,
+        { rule: "no-live-calls" }
+      );
+    }
+    if (this.allowedDomains) {
+      let host = null;
+      try {
+        host = new URL(String(target)).hostname.toLowerCase();
+      } catch {
+        // A target that is not a URL (a bare host, a socket) is judged as a
+        // hostname string rather than waved through.
+        host = String(target).toLowerCase().split("/")[0].split(":")[0];
+      }
+      // A loopback call cannot leave the machine, so the domain list does not
+      // govern it; --allow-live still does.
+      if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host.endsWith(".localhost")) return true;
+      const allowed = this.allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
+      if (!allowed) {
+        throw new PolicyViolation(
+          `Refusing to call ${target}. The attestation authorizes ${this.allowedDomains.join(", ")} ` +
+            `and this call is to ${host}. Add the domain to portamp.authorization.json only if the ` +
+            `authorization actually covers it.`,
+          { rule: "live-call-outside-attested-domains" }
+        );
+      }
+    }
+    return true;
   }
 
   /** Some endpoints charge per request against a payment account. */

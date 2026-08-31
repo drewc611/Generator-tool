@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
-import { join, relative, extname, dirname, resolve } from "node:path";
+import { join, relative, extname, dirname, resolve, sep } from "node:path";
 import { loadTypeScript, readSourceFile } from "./ast.js";
 import { readWithRegex } from "./regex.js";
 
@@ -16,7 +16,9 @@ async function walk(dir, root, out = []) {
     const s = await stat(p).catch(() => null);
     if (!s) continue;
     if (s.isDirectory()) await walk(p, root, out);
-    else if (KEEP.has(extname(e))) out.push({ path: p, rel: relative(root, p) });
+    // rel always uses forward slashes, whatever the platform, so every
+    // plugin that reads it can split on one separator.
+    else if (KEEP.has(extname(e))) out.push({ path: p, rel: relative(root, p).split(sep).join("/") });
   }
   return out;
 }

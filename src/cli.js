@@ -127,9 +127,20 @@ async function main() {
     only: args.only ? args.only.split(",").map((s) => s.trim()) : null,
   };
 
+  // The attestation may scope live calls to the domains it names. Read here
+  // because the policy object is immutable once built; the plugin that
+  // validates the attestation's content still runs at scan.
+  let allowedDomains = null;
+  try {
+    const { readFile } = await import("node:fs/promises");
+    const att = JSON.parse(await readFile(join(cwd, "portamp.authorization.json"), "utf8"));
+    if (Array.isArray(att.domains)) allowedDomains = att.domains;
+  } catch { /* no attestation, no domain scope */ }
+
   const policy = new Policy({
     allowLive: args.allowLive ?? fileConfig.allowLive ?? false,
     allowBillable: args.allowBillable ?? fileConfig.allowBillable ?? false,
+    allowedDomains,
     log,
   });
 

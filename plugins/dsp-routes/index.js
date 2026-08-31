@@ -30,7 +30,7 @@ export default {
       for (const file of candidates) {
         const text = await readFile(file.path, "utf8").catch(() => "");
         if (!text) continue;
-        if (/RouterModule|createRouter|new\s+VueRouter|\broutes\s*[:=]\s*\[/.test(text)) {
+        if (/RouterModule|createRouter|new\s+VueRouter|\$routeProvider|\broutes\s*[:=]\s*\[/.test(text)) {
           routes.push(...readRoutes(text, file.rel));
         }
         // "hashchange" as a substring on purpose: window.onhashchange is one

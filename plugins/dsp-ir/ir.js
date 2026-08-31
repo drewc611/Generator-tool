@@ -1,5 +1,6 @@
 import { objectLiteralEntries, parse, splitPipes, styleEntries, VOID } from "./parse.js";
 import { lowerBlocks } from "./blocks.js";
+import { jsString } from "./emit.js";
 
 /**
  * One representation, in the middle.
@@ -50,7 +51,13 @@ export const DIALECTS = {
     show: (n) => (n === "ng-show" ? "show" : n === "ng-hide" ? "hide" : false),
     slot: (t) => t === "ng-transclude",
     transparent: (t) => t === "ng-transclude",
-    structural: (n) => /^(?:data-)?ng-(controller|app|init|cloak|repeat-start|repeat-end|bind)$/.test(n),
+    // ng-switch-when carries a literal, not an expression: `ng-switch-when="new"`
+    // compares against the string "new". Reading it as code would turn a label
+    // into a variable.
+    switchOn: (n) => (n === "ng-switch" || n === "data-ng-switch" ? "expr" : null),
+    switchCase: (n) => (n === "ng-switch-when" || n === "data-ng-switch-when" ? "literal" : null),
+    switchDefault: (n) => n === "ng-switch-default" || n === "data-ng-switch-default",
+    structural: (n) => /^(?:data-)?ng-(controller|app|init|cloak|repeat-start|repeat-end|bind|switch|switch-when|switch-default)$/.test(n),
     loop: (value) => {
       // `item in items | filter:q track by item.id`, and the (key, value)
       // form over an object. The filter narrows the list at runtime, which a
@@ -123,6 +130,9 @@ export const DIALECTS = {
     name: "angular",
     when: (n) => (n === "*ngIf" ? "test" : null),
     each: (n) => (n === "*ngFor" ? "loop" : null),
+    switchOn: (n) => (n === "[ngSwitch]" || n === "ngSwitch" ? "expr" : null),
+    switchCase: (n) => (n === "*ngSwitchCase" ? "expr" : null),
+    switchDefault: (n) => n === "*ngSwitchDefault",
     model: (n) => /^\[\(ngModel\)\]$/.test(n),
     bound: (n) => (/^\[[^\]]+\]$/.test(n) ? n.slice(1, -1) : null),
     event: (n) => (/^\([\w.:-]+\)$/.test(n) ? n.slice(1, -1) : null),
@@ -144,9 +154,11 @@ export const DIALECTS = {
   },
   vue: {
     name: "vue",
-    when: (n) => (n === "v-if" || n === "v-else-if" ? "test" : null),
+    when: (n) => (n === "v-if" ? "test" : null),
+    elseIf: (n) => n === "v-else-if",
+    elseFlag: (n) => n === "v-else",
     each: (n) => (n === "v-for" ? "loop" : null),
-    model: (n) => n === "v-model" || n.startsWith("v-model:"),
+    model: (n) => n === "v-model" || n.startsWith("v-model:") || n.startsWith("v-model."),
     bound: (n) => (n.startsWith(":") && n.length > 1 ? n.slice(1) : /^v-bind:(.+)$/.exec(n)?.[1] ?? null),
     event: (n) => (n.startsWith("@") ? n.slice(1).split(".")[0] : /^v-on:(.+)$/.exec(n)?.[1]?.split(".")[0] ?? null),
     html: (n) => n === "v-html",
@@ -165,12 +177,46 @@ export const DIALECTS = {
 export function detectDialect(html) {
   const text = String(html ?? "");
   const angular = (text.match(/\*ngIf|\*ngFor|\[\(ngModel\)\]|\(click\)|\[[\w.]+\]=/g) ?? []).length;
-  const vue = (text.match(/v-if|v-for|v-model|v-show|v-html|v-bind|v-on|@[\w-]+=|:[\w-]+=/g) ?? []).length;
-  const angularjs = (text.match(/\bng-(if|repeat|model|click|show|hide|controller|class|src|href|change|submit)=/g) ?? []).length;
+  const vue = (text.match(/v-if|v-else|v-for|v-model|v-show|v-html|v-bind|v-on|@[\w-]+=|:[\w-]+=/g) ?? []).length;
+  const angularjs = (text.match(/\bng-(if|repeat|model|click|show|hide|controller|class|src|href|change|submit|switch|switch-when|switch-default|bind-html)[= ]/g) ?? []).length;
   const knockout = (text.match(/\bko-(if|foreach|model|visible|on-\w+|html|css|attr-\w+)=/g) ?? []).length;
   if (knockout > angular && knockout > vue && knockout > angularjs) return DIALECTS.knockout;
   if (angularjs > angular && angularjs > vue) return DIALECTS.angularjs;
   return vue > angular ? DIALECTS.vue : DIALECTS.angular;
+}
+
+/**
+ * Filters with an exact JS spelling are rewritten instead of noted. The table
+ * holds only transforms whose meaning is complete in the name: casing, JSON,
+ * slicing. `currency`, `date` and `number` are locale decisions and stay
+ * reported, because a wrong format that parses is worse than a visible gap.
+ */
+const PIPE_MAP = {
+  uppercase: (v) => `String(${v}).toUpperCase()`,
+  lowercase: (v) => `String(${v}).toLowerCase()`,
+  // jinja spells the same two transforms shorter.
+  upper: (v) => `String(${v}).toUpperCase()`,
+  lower: (v) => `String(${v}).toLowerCase()`,
+  length: (v) => `(${v}).length`,
+  json: (v) => `JSON.stringify(${v}, null, 2)`,
+  slice: (v, args) => (args.length ? `(${v}).slice(${args.join(", ")})` : null),
+  limitTo: (v, args) => (args.length === 1 ? `(${v}).slice(0, ${args[0]})` : null),
+};
+
+/** `slice:1:3` into its arguments, without cutting a colon inside a string. */
+function splitColons(text) {
+  const parts = [];
+  let start = 0;
+  let quote = null;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote) {
+      if (c === quote && text[i - 1] !== "\\") quote = null;
+    } else if (c === "'" || c === '"' || c === "`") quote = c;
+    else if (c === ":") { parts.push(text.slice(start, i)); start = i + 1; }
+  }
+  parts.push(text.slice(start));
+  return parts.map((p) => p.trim());
 }
 
 const GLOBALS = new Set(["true", "false", "null", "undefined", "this", "new", "typeof", "in", "of",
@@ -202,9 +248,17 @@ export function buildIr(html, { dialect } = {}) {
   };
 
   const expr = (raw) => {
-    const { value, pipes } = splitPipes(String(raw ?? "").trim());
-    if (pipes) {
-      note(`The \`${pipes.split(":")[0].trim()}\` filter has no direct equivalent. \`${value}\` is passed through unformatted.`);
+    let { value, pipes } = splitPipes(String(raw ?? "").trim());
+    while (pipes) {
+      const step = splitPipes(pipes);
+      const [name, ...args] = splitColons(step.value);
+      const rewritten = PIPE_MAP[name] ? PIPE_MAP[name](value, args) : null;
+      if (!rewritten) {
+        note(`The \`${name}\` filter has no direct equivalent. \`${value}\` is passed through unformatted.`);
+        break;
+      }
+      value = rewritten;
+      pipes = step.pipes;
     }
     const code = value.replace(/\$event/g, "event");
     for (const id of rootIdentifiers(code)) reads.add(id);
@@ -214,8 +268,7 @@ export function buildIr(html, { dialect } = {}) {
   // Angular's block syntax cannot be parsed as markup, so it is lowered onto
   // the attribute dialect first. Any other dialect passes through untouched.
   const lowered = lowerBlocks(html ?? "", note);
-  const nodes = parse(lowered).map((n) => convert(n, d, { expr, note, models, locals, lists }));
-  const clean = nodes.filter(Boolean);
+  const clean = convertList(parse(lowered), d, { expr, note, models, locals, lists }, null);
   const root = clean.length === 1 ? clean[0] : { kind: "fragment", children: clean };
 
   const modelRoots = new Set([...models].map((m) => m.split(".")[0]));
@@ -227,6 +280,69 @@ export function buildIr(html, { dialect } = {}) {
     reads: [...reads].filter((n) => !locals.has(n) && !modelRoots.has(n)).sort(),
     collections: [...lists],
   };
+}
+
+/**
+ * Siblings are where else lives. A branch that says "otherwise" only means
+ * something next to the branch it follows, so the chain is folded here, at the
+ * list level: each later branch carries the negation of everything before it,
+ * exactly as blocks.js does for Angular's @else. Whitespace and comments
+ * between branches do not break the chain; anything rendered does.
+ */
+function convertList(nodes, d, ctx, sw) {
+  const out = [];
+  let chain = null;
+  for (const node of nodes) {
+    if (node.type === "text") {
+      const converted = convert(node, d, ctx);
+      if (converted) { out.push(converted); chain = null; }
+      continue;
+    }
+    if (node.type === "comment") { out.push(convert(node, d, ctx)); continue; }
+
+    // Direct children of a switch container: each case is an equality test
+    // against the subject, and the default is everything the cases are not.
+    const caseAttr = sw ? node.attrs.find((a) => d.switchCase?.(a.name)) : null;
+    const defaultAttr = sw && !caseAttr ? node.attrs.find((a) => d.switchDefault?.(a.name)) : null;
+    if (caseAttr || defaultAttr) {
+      node.attrs = node.attrs.filter((a) => a !== caseAttr && a !== defaultAttr);
+      const converted = convert(node, d, ctx);
+      if (converted) {
+        const test = caseAttr
+          ? `(${sw.subject}) === (${d.switchCase(caseAttr.name) === "literal" ? jsString(caseAttr.value ?? "") : ctx.expr(caseAttr.value)})`
+          : sw.seen.map((t) => `!(${t})`).join(" && ") || "true";
+        if (caseAttr) sw.seen.push(test);
+        out.push({ kind: "when", test, children: [converted] });
+      }
+      chain = null;
+      continue;
+    }
+
+    const elseIf = d.elseIf ? node.attrs.find((a) => d.elseIf(a.name)) : null;
+    const elseFlag = !elseIf && d.elseFlag ? node.attrs.find((a) => d.elseFlag(a.name)) : null;
+    if (elseIf || elseFlag) {
+      if (!chain) {
+        ctx.note(`<${node.tag}> carries an else with no if beside it. Its condition was kept as written; check the branch it was meant to follow.`);
+      }
+      node.attrs = node.attrs.filter((a) => a !== elseIf && a !== elseFlag);
+      const converted = convert(node, d, ctx);
+      const own = elseIf ? ctx.expr(elseIf.value) : null;
+      const nots = (chain ?? []).map((t) => `!(${t})`);
+      const test = own ? (nots.length ? [...nots, `(${own})`].join(" && ") : own) : nots.join(" && ");
+      if (converted) {
+        if (test) out.push({ kind: "when", test, children: [converted] });
+        else out.push(converted);
+      }
+      chain = own ? [...(chain ?? []), own] : null;
+      continue;
+    }
+
+    const opensChain = node.attrs.some((a) => d.when(a.name));
+    const converted = convert(node, d, ctx);
+    if (converted) out.push(converted);
+    chain = opensChain && converted?.kind === "when" ? [converted.test] : null;
+  }
+  return out;
 }
 
 function convert(node, d, ctx) {
@@ -250,9 +366,26 @@ function convert(node, d, ctx) {
     ctx.note(`<${node.tag}> injected raw markup. It is kept, and it is the same trust decision under whatever name the target gives it.`);
   }
 
+  // A switch names its subject on the container and its values on the
+  // children, so the subject is read here and handed to the child pass.
+  let childSw = null;
+  const switchAttr = d.switchOn ? node.attrs.find((a) => d.switchOn(a.name)) : null;
+  if (switchAttr) {
+    const consumed = [switchAttr];
+    let subject = switchAttr.value;
+    if (!subject) {
+      // AngularJS also spells it `ng-switch on="status"`.
+      const on = node.attrs.find((a) => a.name === "on");
+      if (on) { subject = on.value; consumed.push(on); }
+    }
+    node.attrs = node.attrs.filter((a) => !consumed.includes(a));
+    if (subject) childSw = { subject: ctx.expr(subject), seen: [] };
+    else ctx.note(`<${node.tag}> switches on nothing readable; its cases render unconditionally.`);
+  }
+
   const element = structural.html !== undefined
     ? { kind: "html", expression: ctx.expr(structural.html) }
-    : buildElement(node, d, ctx);
+    : buildElement(node, d, ctx, childSw);
 
   let out = element;
 
@@ -323,11 +456,12 @@ function convert(node, d, ctx) {
   return out;
 }
 
-function buildElement(node, d, ctx) {
+function buildElement(node, d, ctx, sw = null) {
   const attrs = [];
   const classes = [];
   const styles = [];
   const events = [];
+  const modelModifiers = [];
   let model = null;
   let staticClass = null;
 
@@ -350,6 +484,8 @@ function buildElement(node, d, ctx) {
     if (d.model(name)) {
       model = ctx.expr(value);
       ctx.models.add(model);
+      // v-model.trim / v-model.number: the modifiers ride on the name.
+      for (const mod of name.split(".").slice(1)) modelModifiers.push(mod);
       continue;
     }
 
@@ -404,12 +540,22 @@ function buildElement(node, d, ctx) {
   if (staticClass !== null) classes.unshift({ kind: "literal", value: staticClass });
 
   const tag = node.tag.toLowerCase();
+  // A checked box holds its state in `checked`, not `value`; a radio holds it
+  // in which one of the group is checked. A printer that wires `value` to a
+  // checkbox writes "on" into the model forever.
+  const typeAttr = attrs.find((a) => a.name.toLowerCase() === "type" && a.kind === "static");
+  const modelKind = model && tag === "input" && typeAttr && /^(checkbox|radio)$/i.test(typeAttr.value ?? "")
+    ? typeAttr.value.toLowerCase()
+    : model && tag === "select" && attrs.some((a) => a.name.toLowerCase() === "multiple")
+      ? "select-multiple"
+      : null;
   return {
     kind: "element",
     tag: TRANSPARENT.has(tag) ? null : node.tag,
     void: VOID.has(tag),
-    attrs, classes, styles, events, model,
-    children: node.children.map((c) => convert(c, d, ctx)).filter(Boolean),
+    attrs, classes, styles, events, model, modelKind,
+    modelModifiers,
+    children: convertList(node.children, d, ctx, sw),
   };
 }
 

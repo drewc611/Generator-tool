@@ -60,7 +60,7 @@ function styleAttribute(styles) {
   return `style={{ ${parts.join(", ")} }}`;
 }
 
-function attributes(node) {
+function attributes(node, ctx) {
   const out = [];
   const className = classAttribute(node.classes);
   if (className) out.push(className);
@@ -80,10 +80,47 @@ function attributes(node) {
   // and whichever loses is dropped without a word.
   const changeLike = node.model ? node.events.filter((e) => /^(change|input)$/.test(e.name)) : [];
   if (node.model) {
-    const setter = `${setterFor(node.model)}(event.target.value)`;
-    out.push(`value={${node.model}}`, changeLike.length
+    // A checkbox's state lives in `checked`; a radio's in which of the group
+    // is checked, keyed by its value. Wiring `value` to either writes "on"
+    // into the model and the form breaks quietly.
+    let bind = `value={${node.model}}`;
+    let setter = `${setterFor(node.model)}(event.target.value)`;
+    const mods = node.modelModifiers ?? [];
+    if (mods.includes("number")) {
+      // Vue's .number: cast when it parses, keep the text when it does not.
+      setter = `${setterFor(node.model)}(Number.isNaN(event.target.valueAsNumber) ? event.target.value : event.target.valueAsNumber)`;
+    }
+    if (node.modelKind === "select-multiple") {
+      // The multiple flag itself is already among the printed attributes.
+      setter = `${setterFor(node.model)}([...event.target.selectedOptions].map((o) => o.value))`;
+    } else if (node.modelKind === "checkbox") {
+      bind = `checked={${node.model}}`;
+      setter = `${setterFor(node.model)}(event.target.checked)`;
+    } else if (node.modelKind === "radio") {
+      const own = node.attrs.find((a) => a.name.toLowerCase() === "value");
+      const option = own?.kind === "static" ? jsString(own.value) : own?.kind === "bound" ? `(${own.expression})` : null;
+      if (option) {
+        bind = `checked={${node.model} === ${option}}`;
+        setter = `${setterFor(node.model)}(${option})`;
+      } else {
+        // Without a value there is nothing to compare the model against, so
+        // the write half is kept and the read half is left to a person.
+        bind = null;
+        ctx?.note?.(`A radio bound to \`${node.model}\` has no value attribute, so its checked state cannot be derived. The setter is wired; add the value and the checked binding by hand.`);
+      }
+    }
+    if (bind) out.push(bind);
+    out.push(changeLike.length
       ? `onChange={(event) => { ${setter}; ${changeLike.map((e) => `${e.handler};`).join(" ")} }}`
       : `onChange={(event) => ${setter}}`);
+    // Vue's .trim applies when the field settles, not per keystroke, so the
+    // port trims on blur and typing stays undisturbed.
+    if (mods.includes("trim")) {
+      out.push(`onBlur={(event) => ${setterFor(node.model)}(event.target.value.trim())}`);
+    }
+    if (mods.includes("lazy")) {
+      ctx?.note?.(`\`v-model.lazy\` updated \`${node.model}\` only when the field settled. React's onChange fires per keystroke; debounce the effect, not the state, if the difference matters.`);
+    }
   }
 
   for (const event of node.events) {
@@ -160,7 +197,7 @@ function print(node, depth, ctx) {
         ctx.note(`<${node.tag}> looks like a component and is not in this run, so it is emitted as an unknown element. Port it in the same run and the reference will resolve.`);
       }
 
-      const props = attributes(node);
+      const props = attributes(node, ctx);
       const open = `<${tag}${props.length ? " " + props.join(" ") : ""}`;
       const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
       if (!children.length) return `${indent}${open} />`;

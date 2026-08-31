@@ -84,16 +84,21 @@ test("discovery loads every plugin that ships", async () => {
   await k.discover({ builtinDir: BUILTIN });
   const names = k.plugins.map((p) => p.name).sort();
   assert.deepEqual(names, [
-    "dsp-a11y", "dsp-apimap", "dsp-archetype", "dsp-behavior", "dsp-boundaries", "dsp-cognitive", "dsp-dates",
-    "dsp-deadcode", "dsp-diff", "dsp-entities", "dsp-flags", "dsp-forms", "dsp-i18n", "dsp-improve",
-    "dsp-ir", "dsp-modernize", "dsp-perf", "dsp-permissions", "dsp-routes", "dsp-tokens", "dsp-uplift",
-    "general-authorization", "general-doctor", "general-license", "general-policy", "general-scaffold", "general-watch",
+    "dsp-a11y", "dsp-apimap", "dsp-apistyle", "dsp-archetype", "dsp-assets", "dsp-auth", "dsp-behavior",
+    "dsp-boundaries", "dsp-cognitive", "dsp-css", "dsp-dates",
+    "dsp-deadcode", "dsp-diff", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-flags", "dsp-forms",
+    "dsp-i18n", "dsp-improve",
+    "dsp-ir", "dsp-modernize", "dsp-perf", "dsp-permissions", "dsp-routes", "dsp-state", "dsp-tokens",
+    "dsp-uplift", "dsp-weight",
+    "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-scaffold", "general-watch",
     "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",
-    "input-jquery", "input-jsf", "input-knockout",
-    "input-openapi", "input-record", "input-shots", "input-vue",
-    "output-adr", "output-angular", "output-design-tokens", "output-forms", "output-html", "output-i18n", "output-lit",
+    "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-knockout",
+    "input-openapi", "input-record", "input-shots", "input-static", "input-underscore", "input-vue",
+    "output-adr", "output-alpine", "output-angular", "output-cem", "output-ci", "output-curl",
+    "output-design-tokens", "output-fixtures", "output-forms", "output-html", "output-i18n", "output-lit",
     "output-migration", "output-msw",
-    "output-openapi", "output-react", "output-storybook", "output-svelte", "output-tailwind",
+    "output-openapi", "output-postman", "output-preact", "output-react", "output-readme", "output-solid",
+    "output-storybook", "output-svelte", "output-tailwind",
     "output-tests", "output-vue", "vis-coverage", "vis-equivalence", "vis-parity", "vis-timeline", "vis-ui",
   ]);
   for (const p of k.plugins) assert.ok(CLASSES.includes(p.class), `${p.name} has a real class`);

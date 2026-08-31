@@ -70,8 +70,18 @@ function attributes(node, ctx) {
   }
 
   if (node.model) {
-    out.push(` value="\${esc(${node.model})}"`);
-    out.push(` data-on-input="${ctx.handler("input", `${setterFor(node.model)} = event.target.value`)}"`);
+    if (node.modelKind === "checkbox") {
+      out.push(`\${${node.model} ? " checked" : ""}`);
+      out.push(` data-on-change="${ctx.handler("change", `${setterFor(node.model)} = event.target.checked`)}"`);
+    } else if (node.modelKind === "radio") {
+      const own = node.attrs.find((a) => a.name.toLowerCase() === "value");
+      const option = own?.kind === "static" ? jsString(own.value) : own?.kind === "bound" ? `(${own.expression})` : null;
+      if (option) out.push(`\${${node.model} === ${option} ? " checked" : ""}`);
+      out.push(` data-on-change="${ctx.handler("change", `${setterFor(node.model)} = event.target.value`)}"`);
+    } else {
+      out.push(` value="\${esc(${node.model})}"`);
+      out.push(` data-on-input="${ctx.handler("input", `${setterFor(node.model)} = event.target.value`)}"`);
+    }
   }
   for (const event of node.events) out.push(` data-on-${event.name}="${ctx.handler(event.name, event.handler)}"`);
   // A delegated listener fires long after the row that owns it was printed, so

@@ -181,6 +181,8 @@
   input[type=range]:focus-visible { outline: 1px dotted var(--amber); outline-offset: 2px; }
 
   /* endpoints and unverified */
+  .cap input[type=search] { flex: 1; min-width: 0; margin: 0 8px; background: var(--sunk, #14161b); color: inherit;
+    border: 1px solid rgba(255,255,255,.12); border-radius: 3px; font: inherit; font-size: 10px; padding: 2px 6px; }
   .notes { grid-area: notes; }
   table { width: 100%; border-collapse: collapse; }
   td { padding: 2px 6px; }
@@ -261,7 +263,7 @@
       <div class="sunk"><div class="scroll"><table id="endpoints"></table></div></div>
     </div>
     <div style="display:flex;flex-direction:column;min-height:0">
-      <div class="cap"><span>unverified</span><b id="un-total"></b></div>
+      <div class="cap"><span>unverified</span><input id="un-q" type="search" placeholder="/ to filter" aria-label="filter unverified items"><b id="un-total"></b></div>
       <div class="sunk unver"><div class="scroll"><ul id="unver"></ul></div></div>
     </div>
   </div>
@@ -406,14 +408,21 @@ function renderEndpoints() {
 }
 
 function renderUnverified() {
-  $("un-total").textContent = run.unverified.length;
+  const query = $("un-q").value.trim().toLowerCase();
+  const shown = query ? run.unverified.filter((u) => u.toLowerCase().includes(query)) : run.unverified;
+  $("un-total").textContent = query ? shown.length + "/" + run.unverified.length : run.unverified.length;
   $("unver").innerHTML = run.unverified.length
-    ? run.unverified.map((u) => "<li>" + esc(u) + "</li>").join("")
+    ? (shown.length
+        ? shown.map((u) => "<li>" + esc(u) + "</li>").join("")
+        : '<li style="color:var(--p-dim)">nothing matches the filter.</li>')
     : '<li style="color:var(--p-dim)">nothing. every value came from the source or from the app itself.</li>';
 }
+$("un-q") && $("un-q").addEventListener("input", () => run && renderUnverified());
 
+let currentIndex = 0;
 async function select(index) {
   const screen = run.screens[index];
+  currentIndex = index;
   for (const b of $("screens").children) b.setAttribute("aria-current", String(Number(b.dataset.i) === index));
   $("now").textContent = screen.name;
   $("cmp-name").textContent = screen.name;
@@ -445,13 +454,42 @@ async function select(index) {
     return;
   }
   $("layer-built").innerHTML = '<pre class="hint">loading…</pre>';
+
+  // The custom element target runs without a build, so when this run emitted
+  // one for the screen, the pane can show real pixels instead of source. The
+  // React source stays one toggle away.
+  const compact = screen.name.replace(/-/g, "").toLowerCase();
+  const element = (run.files ?? []).find(
+    (f) => /^src\/elements\/[\w-]+\.js$/.test(f) && f.split("/").pop().replace(/\.js$/, "").toLowerCase().includes(compact)
+  );
   try {
+    if (element) return showPreview(screen, element, "empty");
     const source = await fetch("/source?path=" + encodeURIComponent(screen.component)).then((r) => r.text());
-    $("layer-built").innerHTML = '<p class="why">The built component cannot be rendered without a build, so this is ' +
-      "the emitted source. A preview is not wired yet.</p><pre>" + highlight(source) + "</pre>";
+    $("layer-built").innerHTML = '<p class="why">This run emitted no custom element for the screen (--html true adds one), ' +
+      "so this is the emitted source rather than pixels.</p><pre>" + highlight(source) + "</pre>";
   } catch {
     $("layer-built").innerHTML = '<div class="empty"><strong>Could not read the emitted file.</strong></div>';
   }
+}
+
+async function showPreview(screen, element, state) {
+  const bar =
+    '<div class="why" id="pv-bar">live element · state: ' +
+    ["empty", "loading", "error"].map((s) =>
+      '<button class="key" data-state="' + s + '" aria-pressed="' + String(s === state) + '">' + s + "</button>").join(" ") +
+    ' <button class="key" id="pv-src">view source</button></div>';
+  $("layer-built").innerHTML = bar +
+    '<iframe title="live preview of ' + esc(screen.name) + '" style="border:0;width:100%;height:calc(100% - 30px);background:#fff"' +
+    ' src="/preview?path=' + encodeURIComponent(element) + "&state=" + encodeURIComponent(state) + '"></iframe>';
+  for (const button of $("pv-bar").querySelectorAll("button[data-state]")) {
+    button.addEventListener("click", () => showPreview(screen, element, button.dataset.state));
+  }
+  $("pv-src").addEventListener("click", async () => {
+    const source = await fetch("/source?path=" + encodeURIComponent(screen.component ?? element)).then((r) => r.text());
+    $("layer-built").innerHTML = '<p class="why">emitted source. <button class="key" id="pv-back">back to preview</button></p>' +
+      "<pre>" + highlight(source) + "</pre>";
+    $("pv-back").addEventListener("click", () => showPreview(screen, element, state));
+  });
 }
 
 /** Only offer a wipe when there are two things to wipe between. */
@@ -499,6 +537,47 @@ $("run").addEventListener("click", async () => {
   }
 });
 
+// The console is keyboard first: j/k or the arrows walk the screens, / jumps
+// to the unverified filter. Keys inside an input belong to the input.
+document.addEventListener("keydown", (event) => {
+  if (!run || event.target.matches("input, textarea, select")) {
+    if (event.key === "Escape" && event.target.id === "un-q") { event.target.value = ""; renderUnverified(); event.target.blur(); }
+    return;
+  }
+  if (event.key === "/") { event.preventDefault(); $("un-q").focus(); return; }
+  if (!run.screens.length) return;
+  if (event.key === "j" || event.key === "ArrowDown") { event.preventDefault(); select(Math.min(currentIndex + 1, run.screens.length - 1)); }
+  if (event.key === "k" || event.key === "ArrowUp") { event.preventDefault(); select(Math.max(currentIndex - 1, 0)); }
+});
+
+// A watch task rewrites run.json behind this window. Polling is enough: the
+// console re-renders only when the run's timestamp actually moved, and the
+// selection survives the refresh.
+setInterval(async () => {
+  if (!run) return;
+  try {
+    const fresh = await fetch("/run.json").then((r) => r.json());
+    if (fresh.ranAt === run.ranAt) return;
+    run = fresh;
+    renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified();
+    if (run.screens.length) select(Math.min(currentIndex, run.screens.length - 1));
+    $("now-sub").textContent = "refreshed from a newer run";
+  } catch { /* the server may be restarting; the next tick asks again */ }
+}, 5000);
+
+// One line of trend under the readout: the unverified count against the run
+// before, from the history general-history keeps.
+async function renderTrend() {
+  try {
+    const entries = await fetch("/history.json").then((r) => r.json());
+    if (entries.length < 2) return;
+    const delta = entries.at(-1).unverified - entries.at(-2).unverified;
+    $("now-sub").textContent = delta === 0 ? "unverified: level with the previous run"
+      : delta > 0 ? "unverified: +" + delta + " since the previous run"
+      : "unverified: " + delta + " since the previous run";
+  } catch { /* no history yet */ }
+}
+
 (async function start() {
   try {
     run = await fetch("/run.json").then((r) => r.json());
@@ -506,6 +585,7 @@ $("run").addEventListener("click", async () => {
     $("now").textContent = "no run.json — run portamp first";
     return;
   }
+  renderTrend();
   renderTokens();
   renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified();
   if (run.screens.length) select(0);

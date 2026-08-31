@@ -103,8 +103,37 @@ export function buildRun(ctx, self = null) {
     notes: ctx.plan?.notes ?? [],
     improvements: ctx.improvements ?? [],
     files: ctx.written ?? [],
+    provenance: ctx.provenance ?? {},
     tokens: ctx.tokens ?? null,
   };
+}
+
+/**
+ * The page the compare pane renders: the emitted element, live, in the state
+ * the query names. Loading and error go through the element's own set();
+ * the empty state is the element with nothing, which is the point of having
+ * one. Values are escaped into the page; the state name is checked against a
+ * list rather than echoed.
+ */
+export function previewPage(tag, rel, state) {
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const wanted = ["empty", "loading", "error"].includes(state) ? state : "empty";
+  return `<!doctype html>
+<meta charset="utf-8">
+<title>preview: ${esc(tag)}</title>
+<style>body { margin: 0; padding: 12px; background: #fff; font-family: system-ui, sans-serif; }</style>
+<${esc(tag)} id="el"></${esc(tag)}>
+<script type="module">
+  import "/elements/${encodeURIComponent(rel.split("/").pop())}";
+  const el = document.getElementById("el");
+  const state = ${JSON.stringify(wanted)};
+  // Real pixels from the real element. The data is deliberately absent: what
+  // renders is the state machine the port ships, not fixture rows that would
+  // read as customer data.
+  if (state === "loading") el.set({ loading: true });
+  if (state === "error") el.set({ error: new Error("preview: a request failed") });
+</script>
+`;
 }
 
 /** Never serve anything outside the directory that was opened. */
@@ -155,6 +184,10 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         }
       }
       if (url.pathname === "/run.json") return send(200, TYPES[".json"], await readFile(runPath, "utf8"));
+      if (url.pathname === "/history.json") {
+        const raw = await readFile(join(outDir, ".portamp", "history.jsonl"), "utf8").catch(() => "");
+        return send(200, TYPES[".json"], JSON.stringify(raw.split("\n").filter(Boolean).map((line) => JSON.parse(line))));
+      }
 
       if (url.pathname.startsWith("/shots/")) {
         const file = within(shotsDir, decodeURIComponent(url.pathname.slice(7)));
@@ -170,6 +203,33 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         const file = within(outDir, decodeURIComponent(url.searchParams.get("path") ?? ""));
         if (!file) return send(403, TYPES[".json"], '{"error":"outside the output directory"}');
         return send(200, TYPES[".js"], await readFile(file, "utf8"));
+      }
+
+      // The custom element target needs no build, which makes it the one
+      // target the compare pane can render as pixels. Only files directly in
+      // src/elements/ are served executable, under a path shaped URL so the
+      // element's own relative imports (./runtime.js) resolve; /source stays
+      // text/plain.
+      const elementFile = /^\/elements\/([\w-]+(?:\.lit)?\.js)$/.exec(url.pathname);
+      if (elementFile) {
+        if (/\.lit\.js$/.test(elementFile[1])) {
+          return send(403, TYPES[".json"], '{"error":"the lit element needs its dependency; preview uses the dependency free one"}');
+        }
+        const file = within(outDir, `src/elements/${elementFile[1]}`);
+        if (!file) return send(403, TYPES[".json"], '{"error":"outside the output directory"}');
+        return send(200, "text/javascript; charset=utf-8", await readFile(file, "utf8"));
+      }
+
+      if (url.pathname === "/preview") {
+        const rel = decodeURIComponent(url.searchParams.get("path") ?? "");
+        const file = within(outDir, rel);
+        if (!file || !/^src\/elements\/[\w-]+\.js$/.test(rel)) {
+          return send(403, TYPES[".json"], '{"error":"only emitted elements can be previewed"}');
+        }
+        const source = await readFile(file, "utf8");
+        const tag = /customElements\.define\(\s*["']([\w-]+)["']/.exec(source)?.[1];
+        if (!tag) return send(404, TYPES[".json"], '{"error":"the file defines no custom element"}');
+        return send(200, TYPES[".html"], previewPage(tag, rel, url.searchParams.get("state") ?? "empty"));
       }
 
       send(404, TYPES[".json"], '{"error":"not found"}');

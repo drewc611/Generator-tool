@@ -4,7 +4,7 @@ Read this before changing anything. It is the contract, not a description.
 
 ## What this is
 
-A tiny plugin host that ports legacy front ends. The core is 539 lines across
+A tiny plugin host that ports legacy front ends. The core is 595 lines across
 four files and knows nothing about Angular, React, screenshots, or HTTP.
 Everything that knows a framework is a plugin. Keeping that true is the single
 most important constraint in the repo.
@@ -61,34 +61,39 @@ test/                  node --test, kernel, policy, translator, end to end
 ## Current state
 
 Working end to end. The demo reads the example Angular app, finds one component,
-three endpoints and two interceptors, writes tokens, an endpoint map, a client, a
-React skeleton, and `PORT_NOTES.md` listing three unverified items. CI syntax
-checks every file, runs the pipeline, and asserts the secret gate fires.
+three endpoints and two interceptors, writes tokens, an endpoint map, a client,
+a React skeleton, a dozen analysis reports, and `PORT_NOTES.md` listing ten
+unverified items. CI syntax checks every file, runs the pipeline, and asserts
+the secret gate fires.
 
-Four emit targets sit on one intermediate representation. CI asserts that the
-same screen written in Angular and in Vue produces byte identical React, Vue,
-Svelte and custom element output, which is the only honest way to claim the
-middle is framework blind.
+Nine component targets sit on one intermediate representation. CI asserts that
+the same screen written in Angular and in Vue produces byte identical React,
+Vue, Svelte and custom element output, which is the only honest way to claim
+the middle is framework blind.
 
-Plugins that ship, sixty one in five classes, and the core has never learned
+Plugins that ship, eighty three in five classes, and the core has never learned
 the name of any of them:
 
 ```
 input    input-angular  input-angularjs  input-vue  input-knockout
-         input-backbone  input-jquery  input-jsf  input-aspnet
+         input-backbone  input-jquery  input-jsf  input-aspnet  input-static
+         input-underscore  input-handlebars  input-jinja
          input-openapi  input-explore  input-record  input-shots  input-blackbox
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
-         dsp-routes  dsp-boundaries
+         dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy
+         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight
 output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-html  output-storybook  output-tests  output-openapi
          output-msw  output-tailwind  output-design-tokens  output-forms
-         output-i18n  output-adr  output-migration
+         output-i18n  output-adr  output-migration  output-preact  output-solid
+         output-alpine  output-cem  output-postman  output-curl
+         output-fixtures  output-readme  output-ci
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence
 general  general-policy  general-authorization  general-license
-         general-doctor  general-scaffold  general-watch
+         general-doctor  general-scaffold  general-watch  general-history
 ```
 
 An option the CLI does not recognise is passed through to the plugins
@@ -100,11 +105,13 @@ for it, or that any plugin did.
 
 Named plainly so nobody rediscovers it as a surprise.
 
-- `output-react` translates the four constructs that make up most of a template
-  and reports the rest rather than guessing: a pipe becomes an unformatted value
-  with a note, an `else` branch is named and left for a person, `ng-template`
-  renders inline. A tag naming another screen in the run resolves to that ported
-  component; one the run has not seen stays an unknown element, and says so.
+- `output-react` now translates conditions with their else chains, loops,
+  switches, models including checkbox, radio and multiple select, and the
+  filters with an exact JS spelling; what remains is reported rather than
+  guessed: a locale filter becomes an unformatted value with a note, and
+  `ng-template` renders inline. A tag naming another screen in the run resolves
+  to that ported component; one the run has not seen stays an unknown element,
+  and says so.
 - `input-angular` reads the syntax tree when `typescript` is installed and falls
   back to regular expressions when it is not. The fallback is narrower and says
   so in the run. Neither pass uses a type checker, so a URL built from anything
@@ -112,8 +119,10 @@ Named plainly so nobody rediscovers it as a surprise.
 - `dsp-tokens` measures a recording when there is one and reads declared
   variables when there is not. Spacing is still a default: nothing measured so
   far tells you what the spacing scale was meant to be, only what it rendered as.
-- `vis-parity` reports in markdown and compares nothing visually. It says so in
-  the notes rather than claiming a pass.
+- `vis-parity` reports in markdown and compares nothing visually; it says so
+  rather than claiming a pass. The console's compare pane now renders the
+  dependency free element target live beside the recording, but a pixel diff
+  as a report is still not written.
 - `input-explore` finds a control the way a person does, which means it finds
   the ones the app makes visible. A control with no affordance, behind a
   keyboard shortcut, or three states deep past a form it cannot fill is not in
@@ -154,19 +163,15 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: ninety seven features in ten phases, statuses
-honest. The next few from it:
+The full picture is ROADMAP.md: one hundred and fifty two features in fourteen
+phases, statuses honest. What remains open, and why:
 
-1. **`vis-equivalence`.** `output-tests` writes the suite; running it against
-   the port and folding the result back into the report is the other half.
-2. **`input-angularjs`.** The 1.x reader; ng-repeat is a dialect table away.
-3. **`dsp-forms`.** Validation recovered from markup and observed complaints,
-   as one schema per form.
-4. **A real preview in the compare pane.** An optional esbuild step would make
-   the wipe compare pixels rather than source.
-5. **`input-jsf`.** The reader that would say whether the shape holds where the
-   markup is not in the repository at all.
-6. **A parser for `input-vue`.** It is regular expressions, and the run says so.
+1. **A parser for `input-vue`.** It is regular expressions, and the run says
+   so. The replacement may land only behind the byte identical output gate.
+2. **npm publish.** One command that belongs to a person;
+   docs/PUBLISHING.md waits beside it.
+3. **Growing the calibration corpus.** v0 is eight labelled miniatures; real
+   labelled apps would make the archetype confidence numbers mean more.
 
 ## Conventions
 

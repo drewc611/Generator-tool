@@ -34,7 +34,16 @@ function attributes(node) {
   }
   if (node.model) {
     const leaf = node.model.split(".").pop().replace(/[^\w$]/g, "");
-    out.push(`.value=\${this.${leaf}}`, `@input=\${(e) => { this.${leaf} = e.target.value; }}`);
+    if (node.modelKind === "checkbox") {
+      out.push(`.checked=\${this.${leaf}}`, `@change=\${(e) => { this.${leaf} = e.target.checked; }}`);
+    } else if (node.modelKind === "radio") {
+      const own = node.attrs.find((a) => a.name.toLowerCase() === "value");
+      const option = own?.kind === "static" ? jsString(own.value) : own?.kind === "bound" ? `(${own.expression})` : null;
+      if (option) out.push(`.checked=\${this.${leaf} === ${option}}`, `@change=\${() => { this.${leaf} = ${option}; }}`);
+      else out.push(`@change=\${(e) => { this.${leaf} = e.target.value; }}`);
+    } else {
+      out.push(`.value=\${this.${leaf}}`, `@input=\${(e) => { this.${leaf} = e.target.value; }}`);
+    }
   }
   for (const event of node.events) {
     out.push(`@${event.name}=\${(event) => ${event.handler.startsWith("this.") ? event.handler : `this.${event.handler}`}}`);

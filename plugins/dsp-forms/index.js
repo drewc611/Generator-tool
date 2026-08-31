@@ -52,7 +52,8 @@ export function fieldsFromIr(ir) {
         const name = node.model?.split(".").pop()
           ?? (typeof attrValue(node, "name") === "string" ? attrValue(node, "name") : undefined)
           ?? (typeof attrValue(node, "id") === "string" ? attrValue(node, "id") : undefined);
-        if (name) fields.push({ name, tag, constraints, from: "markup" });
+        const radioValue = type === "radio" ? attrValue(node, "value") : undefined;
+        if (name) fields.push({ name, tag, constraints, from: "markup", ...(type === "radio" ? { radioValue } : {}) });
       }
       if (tag === "button" || tag === "form") {
         const type = attrValue(node, "type");
@@ -62,7 +63,26 @@ export function fieldsFromIr(ir) {
     } else if (node.children) node.children.forEach(walk);
   };
   walk(ir.root);
-  return { fields, submits };
+
+  // Radios sharing a name are one question, and its answers are an enum the
+  // markup already states. Only literal values make the list; a bound value
+  // leaves the enum open and says so.
+  const merged = [];
+  const radioGroups = new Map();
+  for (const field of fields) {
+    if (!("radioValue" in field)) { merged.push(field); continue; }
+    if (!radioGroups.has(field.name)) {
+      const group = { ...field, constraints: { ...field.constraints, oneOf: [] } };
+      delete group.radioValue;
+      radioGroups.set(field.name, group);
+      merged.push(group);
+    }
+    const group = radioGroups.get(field.name);
+    if (typeof field.radioValue === "string") group.constraints.oneOf.push(field.radioValue);
+    else group.constraints.oneOfOpen = "one option's value is computed, so the list is not closed";
+  }
+
+  return { fields: merged, submits };
 }
 
 export default {

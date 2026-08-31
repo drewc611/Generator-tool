@@ -60,7 +60,14 @@ function attributes(node) {
     }
   }
 
-  if (node.model) out.push(`bind:value={${setterFor(node.model)}}`);
+  // Svelte spells the three input shapes differently: a checkbox binds its
+  // checked flag and a radio group binds through the shared model.
+  if (node.model) {
+    const target = setterFor(node.model);
+    if (node.modelKind === "checkbox") out.push(`bind:checked={${target}}`);
+    else if (node.modelKind === "radio") out.push(`bind:group={${target}}`);
+    else out.push(`bind:value={${target}}`);
+  }
   for (const event of node.events) out.push(`on:${event.name}={${/\bevent\b/.test(event.handler) ? `(event) => ${event.handler}` : `() => ${event.handler}`}}`);
   styleAttribute(node.styles, out);
   return out;

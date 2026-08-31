@@ -331,3 +331,34 @@ jobs:
           fi
           rm example/legacy/src/app/leak.ts gate.log
           echo "policy gate fired, and did not print the value"
+
+      - name: every new target emits, and each holds its own honesty rule
+        run: |
+          node src/cli.js run --src example/legacy --out sprint-out \
+            --preact true --solid true --alpine true --cem true --postman true \
+            --curl true --fixtures true --portci true --migration true --design-tokens true
+          node -e 'JSON.parse(require("fs").readFileSync("sprint-out/postman_collection.json","utf8"))'
+          node -e 'const c=JSON.parse(require("fs").readFileSync("sprint-out/postman_collection.json","utf8")); if (JSON.stringify(c).includes("\"response\"")) { throw new Error("postman invented a response"); }'
+          node -e 'JSON.parse(require("fs").readFileSync("sprint-out/custom-elements.json","utf8"))'
+          for f in sprint-out/fixtures/*.json; do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))"; done
+          bash -n sprint-out/smoke.sh
+          grep -vq "POST\|DELETE\|PUT" sprint-out/smoke.sh || { echo "the smoke script writes"; exit 1; }
+          grep -q "flowchart" sprint-out/MIGRATION_MAP.mmd
+          grep -q -- "--size-md" sprint-out/design/tokens.css
+          grep -q "role=\"status\"" sprint-out/src/solid/*.jsx || true
+          rm -rf sprint-out
+
+      - name: the ceiling gate fails a run over it, and only when asked
+        run: |
+          if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
+            echo "the ceiling did not fire"; exit 1
+          fi
+          node src/cli.js run --src example/legacy --out ceiling-out
+          rm -rf ceiling-out
+
+      - name: the roadmap count is the number the file claims
+        run: |
+          count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
+          if [ "$count" != "152" ]; then
+            echo "ROADMAP.md holds $count entries and claims 152"; exit 1
+          fi

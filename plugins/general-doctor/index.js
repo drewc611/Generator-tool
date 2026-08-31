@@ -26,7 +26,51 @@ export default {
           log.info(`  ${dep.name.padEnd(18)} ${state}`);
           log.info(`    ${state === "installed" ? `enables ${dep.turnsOn}` : `without it, ${dep.without}`}`);
         }
+        // playwright without a browser binary fails at run time, not install
+        // time, which is exactly when nobody wants to learn it.
+        try {
+          const pw = await import("playwright");
+          const path = pw.chromium?.executablePath?.();
+          const { access } = await import("node:fs/promises");
+          if (path) {
+            await access(path).then(
+              () => log.info(`  chromium            present at ${path}`),
+              () => log.info(`  chromium            MISSING: playwright is installed but its browser is not. Run: npx playwright install chromium`)
+            );
+          }
+        } catch { /* playwright absent; already reported above */ }
         log.info("\nNothing above is required. The core has zero runtime dependencies, and that is a promise, not an accident.");
+      },
+    },
+    explain: {
+      describe: "which plugin wrote a file, and at which stage",
+      async run({ args, config, log }) {
+        const { readFile } = await import("node:fs/promises");
+        const { join } = await import("node:path");
+        const target = args._[1];
+        if (!target) {
+          log.error("Usage: portamp explain <file as listed in the run, e.g. PORT_NOTES.md>");
+          process.exitCode = 1;
+          return;
+        }
+        let run;
+        try {
+          run = JSON.parse(await readFile(join(config.out, ".portamp", "run.json"), "utf8"));
+        } catch {
+          log.error(`No run recorded under ${config.out}. Run the pipeline first; explain reads its record.`);
+          process.exitCode = 1;
+          return;
+        }
+        const hit = run.provenance?.[target] ?? Object.entries(run.provenance ?? {}).find(([f]) => f.endsWith(target))?.[1];
+        if (!hit) {
+          const known = Object.keys(run.provenance ?? {});
+          log.error(`Nothing in the last run wrote ${target}.${known.length ? ` It wrote: ${known.join(", ")}` : ""}`);
+          process.exitCode = 1;
+          return;
+        }
+        log.info(`${target} was written by ${hit.plugin} at the ${hit.stage} stage.`);
+        const said = run.plugins?.find((p) => p.name === hit.plugin)?.contributed;
+        if (said) log.info(`In that run it reported: ${said}`);
       },
     },
   },

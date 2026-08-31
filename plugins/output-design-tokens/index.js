@@ -54,7 +54,32 @@ export default {
         await ctx.write("design/tokens.modern.json", JSON.stringify(
           buildDocument(ctx.uplift.tokens, "Proposed by portamp's uplift. Hues kept, contrast fixed; see DESIGN_UPLIFT.md before adopting."), null, 2) + "\n");
       }
-      log.info("design tokens written, W3C format");
+      await ctx.write("design/tokens.css", cssProperties(measured));
+      log.info("design tokens written, W3C format and CSS custom properties");
     });
   },
 };
+
+/**
+ * The same measurements as CSS custom properties, for a consumer with no
+ * build step. Names flatten with dashes; space gets an index because it is
+ * an array; sizes carry px because they were measured in px.
+ */
+function cssProperties(tokens) {
+  const lines = [
+    "/* Measured from the legacy app by portamp. What it rendered, not a recommendation. */",
+    ":root {",
+  ];
+  const walk = (value, path) => {
+    if (Array.isArray(value)) value.forEach((v, i) => walk(v, [...path, i]));
+    else if (value && typeof value === "object") for (const [k, v] of Object.entries(value)) walk(v, [...path, k]);
+    else if (typeof value === "number" || typeof value === "string") {
+      const name = path.join("-").replace(/[^\w-]/g, "-").toLowerCase();
+      const px = typeof value === "number" && /^(size|space)\b/.test(path[0]) ? `${value}px` : String(value);
+      lines.push(`  --${name}: ${px};`);
+    }
+  };
+  walk(tokens, []);
+  lines.push("}", "");
+  return lines.join("\n");
+}

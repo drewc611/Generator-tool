@@ -101,11 +101,20 @@ export class Kernel {
    * no ported screen.
    */
   async run(ctx) {
+    // Every write is attributed to the plugin whose turn it was. The kernel
+    // still has no idea what any file is; it only remembers who to ask.
+    const write = ctx.write?.bind(ctx);
     for (const stage of STAGES) {
       const subs = this.bus.get(stage) || [];
       if (!subs.length) continue;
       this.log.stage(stage, subs.length);
       for (const { fn, meta } of subs) {
+        if (write) {
+          ctx.write = (relPath, contents) => {
+            (ctx.provenance ??= {})[relPath] = { plugin: meta.name, stage };
+            return write(relPath, contents);
+          };
+        }
         const started = Date.now();
         await fn(ctx);
         const ms = Date.now() - started;
@@ -115,6 +124,7 @@ export class Kernel {
         this.log.debug(`${stage}:${meta.name} ${ms}ms`);
       }
     }
+    if (write) ctx.write = write;
     return ctx;
   }
 }

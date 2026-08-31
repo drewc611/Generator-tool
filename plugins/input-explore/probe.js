@@ -79,7 +79,11 @@ export const SNAPSHOT = () => {
             (el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`)) ||
             el.closest("label")
         ),
-        box: { w: Math.round(box.width), h: Math.round(box.height) },
+        // Position and tab index make the focus order checkable offline: the
+        // reading order comes from x and y, the tab order from the DOM and
+        // any explicit tabindex.
+        box: { x: Math.round(box.x), y: Math.round(box.y), w: Math.round(box.width), h: Math.round(box.height) },
+        tabindex: el.hasAttribute("tabindex") ? parseInt(el.getAttribute("tabindex"), 10) : null,
         color: style.color,
         background: style.backgroundColor,
         fontSize: parseFloat(style.fontSize),

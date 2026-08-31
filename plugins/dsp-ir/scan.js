@@ -61,13 +61,22 @@ export function topLevelBlocks(body, openChar = "{") {
  * rest of the text with it, which is exactly what a browser would have done.
  */
 export function stripScripts(markup) {
+  return stripElement(markup, "script");
+}
+
+/** Same removal for style elements; a page reader wants markup, not CSS. */
+export function stripStyles(markup) {
+  return stripElement(markup, "style");
+}
+
+function stripElement(markup, tag) {
   let text = String(markup ?? "");
-  const one = /<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi;
+  const one = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?</${tag}\\b[^>]*>`, "gi");
   for (let i = 0; i < 100; i++) {
     const next = text.replace(one, "");
     if (next === text) break;
     text = next;
   }
-  const unclosed = text.search(/<script\b/i);
+  const unclosed = text.search(new RegExp(`<${tag}\\b`, "i"));
   return unclosed === -1 ? text : text.slice(0, unclosed);
 }

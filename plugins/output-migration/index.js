@@ -53,6 +53,7 @@ export default {
       const hasConformance = ctx.written.some((f) => /conformance\.spec\.js$/.test(f));
       const steps = planSteps(ctx.routes.table, ctx.screens, { hasConformance });
       await ctx.write("MIGRATION.md", render(steps, hasConformance));
+      await ctx.write("MIGRATION_MAP.mmd", mermaid(steps, ctx));
       log.info(`${steps.length} cutover step(s) planned, ${steps.filter((s) => s.rank === 0).length} provable`);
     });
   },
@@ -91,4 +92,31 @@ ${hasConformance
 - **The old app is decommissioned last**, when nothing routes to it, and not
   one step before.
 `;
+}
+
+/**
+ * The same plan as a picture. GitHub renders .mmd inline, so the map is
+ * readable where the pull request is reviewed. Labels are quoted through
+ * JSON.stringify and the ids are sanitised, because a route named after an
+ * expression must not become mermaid syntax.
+ */
+function mermaid(steps, ctx) {
+  const id = (s) => String(s).replace(/[^\w]/g, "_") || "root";
+  const label = (s) => JSON.stringify(String(s));
+  const lines = ["flowchart LR", `  legacy[${label("legacy app")}]`, `  port[${label("the port")}]`];
+  for (const step of steps) {
+    const node = `r_${id(step.route)}`;
+    lines.push(`  ${node}[${label(step.route)}]`);
+    if (step.screen) {
+      lines.push(`  ${node} --> s_${id(step.screen)}[${label(step.screen)}]`);
+      lines.push(`  s_${id(step.screen)} --> port`);
+    } else {
+      lines.push(`  ${node} -.->|${label("still legacy")}| legacy`);
+    }
+  }
+  const endpoints = [...new Set((ctx.api?.calls ?? []).map((c) => `${c.method} ${String(c.path).split("?")[0]}`))].slice(0, 20);
+  for (const endpoint of endpoints) {
+    lines.push(`  port --> e_${id(endpoint)}[${label(endpoint)}]`);
+  }
+  return lines.join("\n") + "\n";
 }

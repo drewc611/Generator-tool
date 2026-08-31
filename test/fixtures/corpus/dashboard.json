@@ -1,0 +1,18 @@
+{
+  "label": "dashboard",
+  "html": "<h2>Revenue</h2><canvas></canvas><h2>Signups</h2><canvas></canvas><h2>Errors</h2><canvas></canvas><h2>Latency</h2>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/metrics/revenue"
+    },
+    {
+      "method": "GET",
+      "path": "/api/metrics/signups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/metrics/errors"
+    }
+  ]
+}

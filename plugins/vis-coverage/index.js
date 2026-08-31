@@ -54,6 +54,35 @@ ${rows.map((r) => `| ${r.name} | ${r.isPorted ? "yes" : "**no**"} | ${r.isRouted
 A screen this census never held is not in the denominator: the number is
 honest about what was seen, not omniscient about what exists.
 `);
+
+      // The same numbers as badges, for a README that wants them inline. Local
+      // files, no badge service: the number should not need a network to be
+      // seen, and this repo does not send its stats anywhere.
+      await ctx.write("badges/ported.svg", badge("ported", `${ctx.coverage.ported}%`, ctx.coverage.ported >= 80 ? "#2da44e" : ctx.coverage.ported >= 40 ? "#bf8700" : "#cf222e"));
+      await ctx.write("badges/unverified.svg", badge("unverified", String(ctx.report.unverified.length), ctx.report.unverified.length === 0 ? "#2da44e" : "#bf8700"));
+      if (ctx.archetype?.best) {
+        // Grey on purpose: a reading is not a pass or a fail.
+        await ctx.write("badges/archetype.svg", badge("reads as", ctx.archetype.contested ? `${ctx.archetype.best.id} (contested)` : ctx.archetype.best.id, "#57606a"));
+      }
     });
   },
 };
+
+/** A shields style badge with no shield service. Text is XML escaped. */
+export function badge(label, value, color) {
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const w1 = 12 + label.length * 7;
+  const w2 = 14 + value.length * 8;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w1 + w2}" height="20" role="img" aria-label="${esc(label)}: ${esc(value)}">
+  <rect width="${w1}" height="20" rx="3" fill="#57606a"/>
+  <rect x="${w1 - 3}" width="3" height="20" fill="#57606a"/>
+  <rect x="${w1}" width="${w2}" height="20" fill="${esc(color)}"/>
+  <rect x="${w1}" width="3" height="20" fill="${esc(color)}"/>
+  <rect width="${w1 + w2}" height="20" rx="3" fill="none"/>
+  <g fill="#fff" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" text-anchor="middle">
+    <text x="${w1 / 2}" y="14">${esc(label)}</text>
+    <text x="${w1 + w2 / 2}" y="14">${esc(value)}</text>
+  </g>
+</svg>
+`;
+}

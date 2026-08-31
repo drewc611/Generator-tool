@@ -200,9 +200,9 @@ ${handlers.join("\n") || "    // no handlers in this template"}
     paint(this.shadowRoot, \`
       <slot name="styles"></slot>
       \${loading ? \`
-        <p class="state state--loading">Loading…</p>
+        <p class="state state--loading" role="status">Loading…</p>
       \` : error ? \`
-        <div class="state state--error">
+        <div class="state state--error" role="alert">
           <strong>Could not load</strong>
           <p>\${esc(error.message ?? error)}</p>
           <button type="button" data-on-click="${retry}">Try again</button>

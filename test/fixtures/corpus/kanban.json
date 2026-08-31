@@ -1,0 +1,14 @@
+{
+  "label": "kanban",
+  "html": "<div *ngFor=\"let col of board\"><h3>{{col.name}}</h3><div *ngFor=\"let card of col.cards\">{{card.title}}</div></div><p>Backlog, In Progress, Done</p>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/cards"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/cards/${id}/status"
+    }
+  ]
+}

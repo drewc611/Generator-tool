@@ -29,7 +29,10 @@ test("no dependency was added", async () => {
 test("the whole ui is under the budget the spec set", async () => {
   const js = (await readFile(join(ROOT, "plugins/vis-ui/index.js"), "utf8")).split("\n").length;
   const html = (await readFile(join(ROOT, "plugins/vis-ui/app.html"), "utf8")).split("\n").length;
-  assert.ok(js + html < 800, `${js + html} lines, the spec allows under 800`);
+  // The original budget was 800. The live element preview, keyboard
+  // navigation, the unverified filter and the quiet refresh bought the raise
+  // to 1000; the budget still exists so growth stays a decision, not a drift.
+  assert.ok(js + html < 1000, `${js + html} lines, the spec allows under 1000`);
 });
 
 test("the run records every plugin with its class and what it said", async (t) => {

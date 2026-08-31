@@ -1,0 +1,83 @@
+/**
+ * Underscore template syntax, lowered onto the attribute dialect.
+ *
+ * `<%= %>` blocks are a full scripting language and this pass does not pretend
+ * to run one. It carries across the three constructs that make up nearly every
+ * real template: interpolation, if/else, and _.each. Anything else inside
+ * <% %> is removed and named, because a dropped construct with a note beats a
+ * half construct that renders wrong.
+ *
+ * The output is markup in the AngularJS attribute dialect, which dsp-ir
+ * already reads: interpolation as {{ }}, conditions as ng-if on a container
+ * that dissolves, loops as ng-repeat.
+ */
+
+const attrSafe = (code) => String(code).replace(/"/g, "'");
+
+export function lowerUnderscore(source, note = () => {}) {
+  const text = String(source ?? "");
+  const out = [];
+  // Each open container remembers what closes it and, for an if chain, the
+  // conditions already tried, so an else can negate them.
+  const stack = [];
+
+  let last = 0;
+  const re = /<%([-=])?([\s\S]*?)%>/g;
+  let m;
+  while ((m = re.exec(text))) {
+    out.push(text.slice(last, m.index));
+    last = re.lastIndex;
+    const kind = m[1];
+    const code = m[2].trim();
+
+    if (kind) {
+      // <%- %> escaped its value; <%= %> did not, and the port always escapes.
+      if (kind === "=") {
+        note("`<%= %>` interpolated without escaping. The port escapes everything; a value that carried markup will show as text.");
+      }
+      out.push(`{{ ${code} }}`);
+      continue;
+    }
+
+    const each = /^_\.each\s*\(\s*([\w$.]+)\s*,\s*function\s*\(\s*([\w$]+)(?:\s*,\s*([\w$]+))?\s*\)\s*\{$/.exec(code);
+    const forEach = /^([\w$.]+)\.forEach\s*\(\s*function\s*\(\s*([\w$]+)(?:\s*,\s*([\w$]+))?\s*\)\s*\{$/.exec(code);
+    const loop = each ?? forEach;
+    if (loop) {
+      const list = each ? each[1] : forEach[1];
+      if (loop[3]) note(`The loop over \`${list}\` used an index argument. AngularJS's dialect carries the item alone; rewire the index in the port.`);
+      out.push(`<ng-container ng-repeat="${loop[2]} in ${attrSafe(list)}">`);
+      stack.push({ kind: "each" });
+      continue;
+    }
+
+    const iff = /^if\s*\(([\s\S]+)\)\s*\{$/.exec(code);
+    if (iff) {
+      out.push(`<ng-container ng-if="${attrSafe(iff[1].trim())}">`);
+      stack.push({ kind: "if", tried: [iff[1].trim()] });
+      continue;
+    }
+
+    const elseIf = /^\}\s*else\s+if\s*\(([\s\S]+)\)\s*\{$/.exec(code);
+    const elseBare = /^\}\s*else\s*\{$/.exec(code);
+    if ((elseIf || elseBare) && stack.length && stack[stack.length - 1].kind === "if") {
+      const frame = stack[stack.length - 1];
+      const nots = frame.tried.map((c) => `!(${c})`);
+      const own = elseIf ? elseIf[1].trim() : null;
+      const test = own ? [...nots, `(${own})`].join(" && ") : nots.join(" && ");
+      if (own) frame.tried.push(own);
+      out.push(`</ng-container><ng-container ng-if="${attrSafe(test)}">`);
+      continue;
+    }
+
+    if (/^\}\s*\)?;?$/.test(code)) {
+      if (stack.length) { stack.pop(); out.push("</ng-container>"); }
+      continue;
+    }
+
+    note(`A template construct could not be carried across and was removed: \`<% ${code} %>\`.`);
+  }
+  out.push(text.slice(last));
+
+  while (stack.length) { stack.pop(); out.push("</ng-container>"); }
+  return out.join("");
+}

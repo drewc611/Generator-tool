@@ -6,8 +6,8 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 ![The portamp console: a skinned panel showing a pipeline run, plugin meters and the five stage buttons](media/portamp-console.svg)
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
-about where the plugin classes come from. Everything on the panel is real: 539
-lines of core, no runtime dependencies, 61 plugins, and the literal output of
+about where the plugin classes come from. Everything on the panel is real: 595
+lines of core, no runtime dependencies, 83 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 61 plugin(s)
+node src/cli.js plugins      # 83 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 284 tests, node --test, no framework
+npm test                     # 345 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 61 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 83 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -722,7 +722,7 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): ninety seven features in ten
+The whole picture is [ROADMAP.md](ROADMAP.md): one hundred and fifty two features in fourteen
 phases, forty four shipped, thirteen new in the current branch, forty planned,
 every status honest. The next few are `vis-equivalence`, the AngularJS 1.x
 reader, recovered form schemas, and a real pixel compare in the UI.

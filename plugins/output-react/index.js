@@ -108,11 +108,11 @@ ${notes.length ? notes.join("\n") : " *"}
  * checked the legacy screen genuinely cannot reach it.
  */
 export default function ${Name}({ ${props.join(", ")} }) {
-${state ? state + "\n" : ""}  if (loading) return <div style={{ padding: T.space[4], color: T.color.inkMuted }}>Loading…</div>;
+${state ? state + "\n" : ""}  if (loading) return <div role="status" style={{ padding: T.space[4], color: T.color.inkMuted }}>Loading…</div>;
 
   if (error)
     return (
-      <div style={{ padding: T.space[4] }}>
+      <div role="alert" style={{ padding: T.space[4] }}>
         <div style={{ fontWeight: T.weight.bold, marginBottom: T.space[0] }}>Could not load</div>
         <div style={{ color: T.color.inkMuted, fontSize: T.size.sm }}>{String(error.message ?? error)}</div>
         <button onClick={onRetry} style={{ marginTop: T.space[2] }}>Try again</button>

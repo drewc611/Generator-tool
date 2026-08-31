@@ -34,6 +34,23 @@ export default {
         policy.assertNoEndpointLiteral(text, rel, paths);
       }
       log.info(`no endpoint in ${components.length} component(s), ${paths.length} path(s) checked`);
+
+      // An opt in ceiling for CI: --max-unverified N fails the run when the
+      // gaps exceed it. It only ever adds a gate; there is no flag that
+      // relaxes one. The count is as it stood when this check ran; the late
+      // reporters list, they do not add.
+      const ceiling = ctx.config.maxUnverified ?? ctx.config["max-unverified"];
+      if (ceiling !== undefined && ceiling !== null && ceiling !== false) {
+        const max = Number(ceiling);
+        if (!Number.isFinite(max)) throw new Error(`--max-unverified needs a number, got "${ceiling}".`);
+        if (ctx.report.unverified.length > max) {
+          throw new Error(
+            `${ctx.report.unverified.length} unverified item(s) against a ceiling of ${max}. ` +
+              `The items are in PORT_NOTES.md; resolve them or raise the ceiling knowingly.`
+          );
+        }
+        log.info(`${ctx.report.unverified.length} unverified, under the ceiling of ${max}`);
+      }
     });
   },
 };

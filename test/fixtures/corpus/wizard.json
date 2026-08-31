@@ -1,0 +1,33 @@
+{
+  "label": "wizard",
+  "html": "<p>Step 2 of 4</p><p>Step</p><input [(ngModel)]=\"ssn\"><input [(ngModel)]=\"dob\"><button>Continue</button>",
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/enrollment"
+    }
+  ],
+  "model": {
+    "screens": [
+      {
+        "kind": "form"
+      },
+      {
+        "kind": "form"
+      },
+      {
+        "kind": "form"
+      }
+    ],
+    "transitions": [
+      {
+        "from": "a",
+        "to": "b"
+      },
+      {
+        "from": "b",
+        "to": "c"
+      }
+    ]
+  }
+}

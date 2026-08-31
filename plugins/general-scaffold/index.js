@@ -52,6 +52,45 @@ export default {
   },
 };
 
+// Each class has a shape: the stage it belongs in, the part of the context it
+// fills, and the mistake its kind of plugin usually makes. The stub starts
+// from that shape instead of from a generic hook.
+const BODIES = {
+  input: `    on("extract", async (ctx) => {
+      // Read the legacy source and push what it declares. A screen carries at
+      // least: selector, className, file, template, templateOrigin, inputs,
+      // outputs, rxjs (arrays may be empty), usesTwoWay, readBy.
+      // ctx.screens.push({ ... });
+      // ctx.api.calls.push({ method, path, file, headers: null, body: null });
+      log.debug("nothing read yet");
+    });`,
+  dsp: `    on("plan", async (ctx) => {
+      // Derive, never invent: read ctx.screens / ctx.api / ctx.sources,
+      // measure something, and put the result on ctx under one new key.
+      log.debug("nothing measured yet");
+    });
+
+    on("emit", async (ctx) => {
+      // One report, named in caps: await ctx.write("REPORT.md", ...);
+    });`,
+  output: `    on("emit", async (ctx) => {
+      // A target is turned on by naming it: portamp run --${"$"}{subject} true.
+      // if (!ctx.config.${"$"}{subject}) return log.debug("not requested");
+      // Never write a URL into a component; endpoints live in src/api/.
+      log.debug("nothing emitted yet");
+    });`,
+  vis: `    on("verify", async (ctx) => {
+      // Report what the run did, honestly: a claim the run cannot back
+      // belongs in ctx.unverified(...), not in the report.
+      log.debug("nothing to report yet");
+    });`,
+  general: `    on("scan", async (ctx) => {
+      // Cross cutting concerns run first. A gate that fails should throw;
+      // a gap that is survivable calls ctx.unverified(...) and continues.
+      log.debug("nothing to check yet");
+    });`,
+};
+
 const PLUGIN = (name, cls) => `/**
  * What this plugin knows that the core must not.
  *
@@ -66,9 +105,7 @@ export default {
   version: "0.1.0",
   class: "${cls}",
   setup({ on, log, policy }) {
-    on("plan", async (ctx) => {
-      log.debug("nothing to do yet");
-    });
+${(BODIES[cls] ?? BODIES.general).replaceAll("${subject}", name.split("-").slice(1).join("-"))}
   },
 };
 `;
