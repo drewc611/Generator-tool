@@ -26,10 +26,54 @@ export function readSpec(document) {
         path,
         operationId: op?.operationId ?? null,
         deprecated: Boolean(op?.deprecated),
+        // What the document claims comes back. A claim, not an observation:
+        // consumers must label it as the spec's word, never as portamp's.
+        declaredShape: declaredShape(document, op),
       });
     }
   }
   return operations;
+}
+
+/** Follow a local $ref inside the same document; anything remote stays unread. */
+function deref(document, schema, depth = 0) {
+  if (!schema || depth > 6) return null;
+  if (schema.$ref) {
+    if (!String(schema.$ref).startsWith("#/")) return null;
+    let node = document;
+    for (const step of schema.$ref.slice(2).split("/")) node = node?.[step];
+    return deref(document, node, depth + 1);
+  }
+  return schema;
+}
+
+/** The 2xx json response's top level shape as {name: type}, or null. */
+export function declaredShape(document, op) {
+  const responses = op?.responses ?? {};
+  const success = responses["200"] ?? responses["201"] ?? responses["2XX"] ?? responses.default;
+  const schema = deref(
+    document,
+    success?.content?.["application/json"]?.schema ?? success?.schema ?? null
+  );
+  if (!schema) return null;
+  const describe = (node, depth) => {
+    const s = deref(document, node, depth);
+    if (!s || depth > 3) return null;
+    if (s.type === "array") {
+      const item = describe(s.items, depth + 1);
+      return item ? { kind: "array", props: item.props ?? { value: s.items?.type ?? "string" } } : null;
+    }
+    if (s.type === "object" || s.properties) {
+      const props = {};
+      for (const [key, value] of Object.entries(s.properties ?? {})) {
+        const resolved = deref(document, value, depth + 1);
+        props[key] = resolved?.type === "array" ? "object" : resolved?.type ?? (resolved?.properties ? "object" : "string");
+      }
+      return Object.keys(props).length ? { kind: "object", props } : null;
+    }
+    return null;
+  };
+  return describe(schema, 0);
 }
 
 /** `/orders/{id}` and `/orders/:id` and `/orders/${id}` are one shape. */

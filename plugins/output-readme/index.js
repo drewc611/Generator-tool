@@ -57,11 +57,17 @@ export default {
         "",
         "## Reports",
         "",
-        ...reports.map((f) => `- \`${f}\`${describe(f) ? ` — ${describe(f)}` : ""}`),
+        ...reports.map((f) => {
+          const author = ctx.provenance?.[f]?.plugin ?? (f === "PORT_NOTES.md" ? "vis-parity" : null);
+          return `- \`${f}\`${describe(f) ? ` — ${describe(f)}` : ""}${author ? ` *(${author})*` : ""}`;
+        }),
+        "",
+        "Every artifact names the plugin that wrote it; `portamp explain <file>`",
+        "answers the same question from the terminal.",
         "",
         "## Code and data",
         "",
-        ...groupedCode(code),
+        ...groupedCode(code, ctx.provenance ?? {}),
         "",
         "COVERAGE.md, and TIMELINE.md or DIFF.md when the run has an exploration",
         "or a history, are written moments after this index and may not be in the",
@@ -76,7 +82,7 @@ export default {
   },
 };
 
-function groupedCode(files) {
+function groupedCode(files, provenance) {
   const groups = new Map();
   for (const file of files) {
     const dir = file.includes("/") ? file.split("/").slice(0, -1).join("/") + "/" : "./";
@@ -85,7 +91,8 @@ function groupedCode(files) {
   const lines = [];
   for (const [dir, members] of [...groups.entries()].sort()) {
     const what = describe(members[0]) ?? describe(dir);
-    lines.push(`- \`${dir}\` (${members.length} file(s))${what ? ` — ${what}` : ""}`);
+    const authors = [...new Set(members.map((f) => provenance[f]?.plugin).filter(Boolean))];
+    lines.push(`- \`${dir}\` (${members.length} file(s))${what ? ` — ${what}` : ""}${authors.length ? ` *(${authors.join(", ")})*` : ""}`);
   }
   return lines;
 }

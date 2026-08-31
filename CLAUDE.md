@@ -117,12 +117,13 @@ Named plainly so nobody rediscovers it as a surprise.
   so in the run. Neither pass uses a type checker, so a URL built from anything
   but a literal in the same file keeps its `${...}` shape rather than resolving.
 - `dsp-tokens` measures a recording when there is one and reads declared
-  variables when there is not. Spacing is still a default: nothing measured so
-  far tells you what the spacing scale was meant to be, only what it rendered as.
-- `vis-parity` reports in markdown and compares nothing visually; it says so
-  rather than claiming a pass. The console's compare pane now renders the
-  dependency free element target live beside the recording, but a pixel diff
-  as a report is still not written.
+  variables when there is not. Spacing now comes from gaps between recorded
+  element boxes when an exploration carries positions; rungs the recording
+  cannot prove stay default and the evidence says which are which.
+- `vis-parity` compares pixels only when asked (`--pixels true`) and prints
+  the number's limits beside it: framing and data differences dominate, so it
+  measures drift between runs, not fidelity. The compare pane stays where
+  fidelity is judged.
 - `input-explore` finds a control the way a person does, which means it finds
   the ones the app makes visible. A control with no affordance, behind a
   keyboard shortcut, or three states deep past a form it cannot fill is not in
@@ -137,7 +138,8 @@ Named plainly so nobody rediscovers it as a surprise.
 - `input-jquery` produces an inventory, not components. jQuery declares no
   boundaries and portamp does not invent them, so it reports which selector is
   written to, listened on and called from, and leaves the boundaries to a
-  person. `input-vue` and `input-jquery` both parse with regular expressions.
+  person. `input-jquery` parses with regular expressions; `input-vue` now
+  scans structurally, landed behind the byte identical output gate.
 - `output-openapi` describes requests and deliberately describes no response.
   The client says what goes out; it never says what comes back, and a schema
   nobody verified is the failure this tool exists to avoid.
@@ -163,15 +165,16 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: one hundred and fifty two features in fourteen
+The full picture is ROADMAP.md: one hundred and fifty eight features in fifteen
 phases, statuses honest. What remains open, and why:
 
-1. **A parser for `input-vue`.** It is regular expressions, and the run says
-   so. The replacement may land only behind the byte identical output gate.
-2. **npm publish.** One command that belongs to a person;
+1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.
-3. **Growing the calibration corpus.** v0 is eight labelled miniatures; real
+2. **Growing the calibration corpus.** v0 is eight labelled miniatures; real
    labelled apps would make the archetype confidence numbers mean more.
+3. **A grammar for the template dialects.** The readers are structural
+   scanners now, not regexes, but a real grammar with positions would make
+   every note able to say the line it came from.
 
 ## Conventions
 

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import {
-  flattenSamples, measureColors, measureDensity, measureRadius, measureTypeScale,
+  flattenSamples, measureColors, measureDensity, measureRadius, measureSpacing, measureTypeScale,
   readStyleVariables, rolesFromVariables,
 } from "./measure.js";
 
@@ -73,6 +73,14 @@ export default {
           recovered.font = font;
           evidence.push("font family from the running app");
         }
+      }
+
+      // Spacing needs positions, which only an exploration records. Without
+      // one the scale stays a default and the note below still says so.
+      const spacing = measureSpacing(ctx.sources.exploration, DEFAULTS.space);
+      if (spacing) {
+        recovered.space = spacing.scale;
+        evidence.push(spacing.evidence);
       }
 
       const density = measureDensity(rowHeights);

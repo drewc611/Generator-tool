@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-One hundred and fifty two features across fourteen phases. The statuses are
+One hundred and fifty eight features across fifteen phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-345 tests, on Node 18, 20 and 22, and on Windows in CI.
+357 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -244,8 +244,8 @@ WebForms: runat=server, ViewState named for what it was, postbacks into the call
 **63. input-openapi** 🔨  
 an existing spec as a source, cross checked against what the client actually calls.
 
-**64. A real parser for input-vue** ▢  
-the regex reader replaced, behind the same output shape, only when it changes nothing.
+**64. A real parser for input-vue** 🔨  
+replaced by structural scanning behind the byte identical gate: blocks by nesting count, props out of the real object literal. A grammar it still is not, and says so; the templates were always the dialect parser's to parse.
 
 **65. Angular built in control flow** 🔨  
 @if, @for and @switch as dialect entries beside *ngIf and *ngFor.
@@ -563,20 +563,44 @@ the string masked identifier rewriter that makes 126 safe, tested on keys, strin
 the checkbox, radio, switch and else chain work lands in the same IR every printer reads, so the byte identity claim covers it automatically.
 
 
+
+## Phase 15 · The six that closed the honesty gaps
+
+*Each of these retires a caveat the docs had to carry.*
+
+**153. The structural Vue reader** 🔨  
+same entry as 64, landed: a template containing a template reads whole, a nested default object no longer swallows the props after it, and every existing byte of output stayed identical.
+
+**154. Spacing, measured** 🔨  
+the one token that stayed a default now comes from gaps between recorded element boxes, clustered within two pixels; rungs the recording cannot prove stay default and the evidence says which are which.
+
+**155. The pixel diff, written** 🔨  
+--pixels renders the element target in a real browser against the recording and reports the share of differing pixels, with its limits printed beside it: framing and data dominate the number, so it measures drift, not fidelity.
+
+**156. A pseudo locale** 🔨  
+en-XA beside the ICU catalogue: accented, bracketed, a third longer, placeholders untouched, so hardcoded copy shows itself before a translator has to.
+
+**157. Fixtures from the spec's claim** 🔨  
+a declared response shape reaches fixtures through its local ref, typed, and the payload says whose claim it is; an observed shape still outranks it.
+
+**158. Provenance in the index** 🔨  
+PORT_README names the plugin behind every artifact, the same record portamp explain reads.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 106 |
-| planned | 2 |
-| total | 152 |
+| new in this branch | 113 |
+| planned | 1 |
+| total | 158 |
 
-The two still open are open for stated reasons, not for lack of time: a Vue
-parser must produce byte identical output to the regex reader before it may
-replace it, and npm publish is one command that belongs to a person, with
-docs/PUBLISHING.md waiting beside it. Three that were open closed in this
-branch: focus order once the probe recorded positions, the calibration corpus
-at v0 with eight labelled miniatures, and the compare pane preview the moment
-it was noticed that the dependency free element target never needed a build
-step at all.
+The one still open is open for a stated reason, not for lack of time: npm
+publish is one command that belongs to a person, with docs/PUBLISHING.md
+waiting beside it. Four that were open closed in this branch: focus order once
+the probe recorded positions, the calibration corpus at v0 with eight labelled
+miniatures, the compare pane preview the moment it was noticed that the
+dependency free element target never needed a build step, and the Vue reader
+once structural scanning produced byte identical output to the regexes it
+retired.

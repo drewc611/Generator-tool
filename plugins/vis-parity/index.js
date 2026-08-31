@@ -1,3 +1,8 @@
+import { pixelDiff } from "./pixels.js";
+
+const pascal = (sel) =>
+  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
+
 /**
  * Writes the record of what was ported, what deviates, and what nobody could
  * verify. The last list is the point: the next person inherits the uncertainty
@@ -8,6 +13,33 @@ export default {
   version: "0.1.0",
   class: "vis",
   setup({ on, log }) {
+    // Opt in with --pixels true. It needs playwright, an emitted element and
+    // a real recording, and it degrades to a named skip when any is missing.
+    on("verify", async (ctx) => {
+      if (!ctx.config.pixels) return;
+      const rows = [];
+      for (const screen of ctx.screens) {
+        const elementRel = `src/elements/${pascal(screen.selector) || "Screen"}.js`;
+        if (!ctx.written.includes(elementRel)) {
+          rows.push({ screen: screen.selector, skipped: "no element target was emitted (--html true adds one)" });
+          continue;
+        }
+        const shot = ctx.sources.screenshots.find((x) => x.name.toLowerCase().includes(screen.selector.replace(/^app-/, "")));
+        if (!shot) {
+          rows.push({ screen: screen.selector, skipped: "no recording matches the screen" });
+          continue;
+        }
+        const result = await pixelDiff({ outDir: ctx.config.out, elementRel, shotPath: shot.path });
+        rows.push({ screen: screen.selector, shot: shot.name, ...result });
+      }
+      const measured = rows.filter((r) => r.pct !== undefined);
+      log.info(measured.length ? `${measured.length} pixel diff(s) measured` : "pixel diff requested, nothing measurable");
+      await ctx.write("PARITY_PIXELS.md", renderPixels(rows));
+      for (const row of rows.filter((r) => r.skipped)) {
+        ctx.unverified(`Pixel diff for ${row.screen} was skipped: ${row.skipped}.`);
+      }
+    });
+
     on("verify", async (ctx) => {
       const shots = ctx.sources.screenshots;
       const rows = ctx.screens.map((s) => {
@@ -51,3 +83,22 @@ export default {
     });
   },
 };
+
+function renderPixels(rows) {
+  return [
+    "# Pixel difference, coarse on purpose",
+    "",
+    "The element target rendered live against the recording, both at the same",
+    "width. Framing and data differences dominate this number, so it measures",
+    "drift between runs, not fidelity; judge fidelity in the compare pane.",
+    "",
+    "| screen | recording | differing pixels |",
+    "| --- | --- | --- |",
+    ...rows.map((r) =>
+      r.pct !== undefined
+        ? `| \`${r.screen}\` | \`${r.shot}\` | ${r.pct}% of ${r.width}×${r.height} |`
+        : `| \`${r.screen}\` | ${r.shot ? `\`${r.shot}\`` : "—"} | skipped: ${r.skipped} |`
+    ),
+    "",
+  ].join("\n");
+}

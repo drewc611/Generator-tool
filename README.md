@@ -28,7 +28,7 @@ writes components instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 83 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 345 tests, node --test, no framework
+npm test                     # 357 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -722,7 +722,7 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): one hundred and fifty two features in fourteen
+The whole picture is [ROADMAP.md](ROADMAP.md): one hundred and fifty eight features in fifteen
 phases, forty four shipped, thirteen new in the current branch, forty planned,
 every status honest. The next few are `vis-equivalence`, the AngularJS 1.x
 reader, recovered form schemas, and a real pixel compare in the UI.

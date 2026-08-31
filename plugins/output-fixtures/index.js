@@ -15,8 +15,16 @@ const placeholder = (type, name) => {
   return `<${name}>`;
 };
 
+// `/orders/{id}` in a spec and `/orders/:id` in a call are one shape.
+const comparable = (path) => templated(path).replace(/\{[\w$]+\}|:[\w$]+/g, "*");
+
 export function buildFixtures(ctx) {
   const observed = new Map((ctx.model?.endpoints ?? []).map((e) => [`${e.method} ${templated(e.path)}`, e]));
+  const declared = new Map(
+    (ctx.spec?.operations ?? [])
+      .filter((op) => op.declaredShape)
+      .map((op) => [`${op.method} ${comparable(op.path)}`, op.declaredShape])
+  );
   const fixtures = [];
   const seen = new Set();
   for (const call of ctx.api?.calls ?? []) {
@@ -27,13 +35,25 @@ export function buildFixtures(ctx) {
     const name = (path.split("/").filter((s) => s && !s.startsWith(":")).at(-1) ?? "items").replace(/[^\w-]/g, "-");
     const endpoint = observed.get(`GET ${path}`);
     const shape = endpoint?.observedBody;
+    const spec = declared.get(`GET ${comparable(path)}`);
     let body;
+    let source = null;
     if (shape && shape !== "not json" && typeof shape === "object") {
       body = Object.fromEntries(Object.entries(shape).map(([k, t]) => [k, placeholder(t, k)]));
+      source = "observed";
+    } else if (spec) {
+      // The document's word, never portamp's: a declared shape is a claim,
+      // and the payload says whose.
+      const row = Object.fromEntries(Object.entries(spec.props).map(([k, t]) => [k, placeholder(t, k)]));
+      body = spec.kind === "array" ? [row] : row;
+      const note = `This shape is the API document's claim for GET ${path}; no response was observed to confirm it.`;
+      if (Array.isArray(body)) body.push({ _portamp: note });
+      else body._portamp = note;
+      source = "spec";
     } else {
       body = { _portamp: `No response was observed for GET ${path}. Replace this file with the real shape once you have verified one.` };
     }
-    fixtures.push({ name, path, body, observed: Boolean(shape && shape !== "not json") });
+    fixtures.push({ name, path, body, observed: source === "observed", fromSpec: source === "spec" });
   }
   return fixtures;
 }
@@ -55,8 +75,12 @@ export default {
         used.add(file);
         await ctx.write(`fixtures/${file}.json`, JSON.stringify(fixture.body, null, 2) + "\n");
       }
-      const blind = fixtures.filter((f) => !f.observed).length;
-      log.info(`${fixtures.length} fixture(s), ${blind} from shape unknown`);
+      const fromSpec = fixtures.filter((f) => f.fromSpec).length;
+      const blind = fixtures.filter((f) => !f.observed && !f.fromSpec).length;
+      log.info(`${fixtures.length} fixture(s): ${fixtures.length - blind - fromSpec} observed, ${fromSpec} from the spec's claim, ${blind} unknown`);
+      if (fromSpec) {
+        ctx.unverified(`${fromSpec} fixture(s) carry the API document's declared shape, unconfirmed by any observed response; each says so in its payload.`);
+      }
       if (blind) {
         ctx.unverified(`${blind} fixture(s) describe endpoints whose response was never observed; each says so in its payload.`);
       }
