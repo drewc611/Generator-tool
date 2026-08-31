@@ -1,12 +1,13 @@
 # portamp
 
-Port a legacy front end to React without losing the look or the API contract.
+Port a legacy front end without losing the look or the API contract.
+Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 ![The portamp console: a skinned panel showing a pipeline run, plugin meters and the five stage buttons](media/portamp-console.svg)
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
-about where the plugin classes come from. Everything on the panel is real: 527
-lines of core, no runtime dependencies, ten plugins, and the literal output of
+about where the plugin classes come from. Everything on the panel is real: 539
+lines of core, no runtime dependencies, 28 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -19,15 +20,15 @@ up playing formats its authors had never heard of.
 portamp is that idea pointed at front end migration. Same five classes, same
 small core, same rule that everything interesting lives outside it. `input`
 reads a legacy app instead of a file, `dsp` transforms what was read, `output`
-writes React instead of audio, and `vis` shows you what you got.
+writes components instead of audio, and `vis` shows you what you got.
 
 ## Thirty seconds
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 10 plugin(s)
+node src/cli.js plugins      # 28 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 149 tests, node --test, no framework
+npm test                     # 181 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -112,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: ten plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 28 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -160,9 +161,11 @@ is a printer.
 
 ```
   input-angular ─┐                             ┌─ output-react
-  input-vue     ─┼──▶  dsp-ir  ──▶  the IR ──▶ ┼─ output-svelte
-  input-explore ─┘                             ├─ output-storybook
-  (used, not read)                             └─ output-tests
+  input-vue     ─┤                             ├─ output-vue
+  input-jquery  ─┼──▶  dsp-ir  ──▶  the IR ──▶ ┼─ output-svelte
+  input-explore ─┤                             ├─ output-html   (no framework)
+  (used, not read)                             ├─ output-storybook
+                 │                             └─ output-tests
 ```
 
 The IR says what markup means, not how anybody spells it: `when`, `each`,
@@ -179,12 +182,23 @@ The proof is not a diagram. This screen, written twice:
 <li v-for="o in orders" :class="{hot: o.hot}" @click="pick(o)">{{o.n}}</li>
 ```
 
-produces byte identical React, and byte identical Svelte, from both. CI asserts
-it. The Svelte printer is 150 lines and nothing else changed to add it, which is
-the only honest way to claim the middle is framework blind.
+produces byte identical React, Vue, Svelte and custom element output, from both.
+CI asserts all four. Each printer is around 150 lines and nothing upstream
+changed to add any of them, which is the only honest way to claim the middle is
+framework blind.
 
-Svelte gets `class:hot={o.hot}` rather than a joined string, because a printer
-per target beats one shared printer that speaks nobody's language well.
+Each target gets what its own language does best rather than a lowest common
+denominator: Svelte gets `class:hot={o.hot}`, Vue gets `:class="{ hot: o.hot }"`,
+React gets a joined string, because a printer per target beats one shared
+printer that speaks nobody's language well.
+
+`output-html` is the one worth reading. A custom element supplies no renderer,
+no way to spell a condition and no way to attach a handler, so the printer
+answers all three itself: markup prints as a template literal with every value
+escaped, and handlers are indexed and attached by one delegated listener per
+event type, on the shadow root rather than the host. It is the target that
+makes the portable claim checkable, because emitting to a platform with no
+framework at all needed nothing upstream to change.
 
 ## Conformance: the part nobody else does
 
@@ -567,11 +581,21 @@ The plugin classes are the point. Everything below is a directory and an
 | | |
 | --- | --- |
 | `input-vue` | Single file components, into the same shape the Angular reader produces |
+| `input-jquery` | A front end that never declared a component, inventoried without inventing one |
 | `input-explore` | Drives a running app and works out what it is |
-| `dsp-behavior` | Turns that into screens, fields, flow and endpoints |
+| `dsp-ir` | One representation in the middle, so a target costs a printer |
+| `dsp-behavior` | Turns an exploration into screens, fields, flow and endpoints |
 | `dsp-improve` | What the original got wrong, measured while it ran |
 | `dsp-a11y` | Contrast and target size over the palette the port will use |
+| `dsp-i18n` | The copy welded into the markup, and the sentences split around a value |
+| `dsp-deadcode` | What is declared and never used, as candidates and never as a verdict |
+| `output-vue` | The third target on the IR |
+| `output-svelte` | The second target on the IR |
+| `output-html` | A custom element, depending on nothing |
 | `output-storybook` | A story per component, one per state |
+| `output-tests` | A conformance suite, written from what the original did |
+| `output-openapi` | The requests the port makes, and no response it never saw |
+| `output-msw` | Something for the port to talk to, carrying nobody's data |
 | `general-license` | Fonts and icon sets whose licence does not travel |
 | `vis-ui` | The comparison view, which is where `vis-diff` landed |
 
@@ -583,10 +607,12 @@ The plugin classes are the point. Everything below is a directory and an
 2. **Component references in templates.** A template using `<app-row>` emits
    `<app-row>` and leaves you to wire it. Resolving it against the other
    components in the same run is the next real step in the translator.
-3. **`input-jsf`, `input-jquery`.** The readers that would prove the shape holds
-   for something that is not a component framework at all.
-4. **`output-svelte`, `output-vue`.** The emitters are the least framework blind
-   part of the tool, and a second one would say how much.
+3. **Boundaries for the jQuery reader.** It inventories selectors and says
+   plainly that drawing the component boundaries is a person's job. Clustering
+   them by the markup they share is the honest next step, and it is inference,
+   so whatever it produces has to arrive as a proposal.
+4. **`input-jsf`.** The reader that would say whether the shape holds for a
+   server rendered framework, where the markup is not in the repository at all.
 5. **Focus order in `dsp-a11y`.** It measures contrast and target size. Focus
    order needs the DOM, which means it belongs on the exploration rather than
    on the tokens.

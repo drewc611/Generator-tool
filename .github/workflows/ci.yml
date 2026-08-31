@@ -27,6 +27,16 @@ jobs:
       - name: plugins load
         run: node src/cli.js plugins
 
+      # A picture that states a number has to be generated from the thing it
+      # counts, or it becomes a claim nobody rechecks. This one said "10 loaded"
+      # long after there were more than ten.
+      - name: the plugin rack matches the roster
+        run: |
+          node tools/plugin-rack.mjs
+          git diff --exit-code -- media/plugin-rack.svg || {
+            echo "media/plugin-rack.svg is stale; run node tools/plugin-rack.mjs"; exit 1;
+          }
+
       # typescript is optional, so the suite has to be green without it first.
       # Where it is missing the AST tests skip and the reader falls back.
       - name: tests, without the optional dependencies
@@ -50,19 +60,65 @@ jobs:
         run: |
           npm run demo 2>&1 | grep -q "1 component(s), 3 call(s), 2 interceptor(s)"
 
-      # One IR, two dialects in, two targets out. If either pair diverges the
+      # One IR, two dialects in, four targets out. If any pair diverges the
       # claim that the middle is framework blind is decoration.
       - name: the same screen written two ways emits the same code
         run: |
           node -e "
             const { translate } = await import('./plugins/output-react/template.js');
             const { toSvelte } = await import('./plugins/output-svelte/print.js');
+            const { toVue } = await import('./plugins/output-vue/print.js');
+            const { toHtml } = await import('./plugins/output-html/print.js');
             const ng = '<div *ngIf=\"a\">x</div><li *ngFor=\"let o of xs\" (click)=\"p(o)\">{{o.n}}</li>';
             const vue = '<div v-if=\"a\">x</div><li v-for=\"o in xs\" @click=\"p(o)\">{{o.n}}</li>';
             if (translate(ng, { indent: 0 }).jsx !== translate(vue, { indent: 0 }).jsx) throw new Error('react output diverged');
             if (toSvelte(ng).markup !== toSvelte(vue).markup) throw new Error('svelte output diverged');
-            console.log('angular and vue produce identical react and svelte');
+            if (toVue(ng).markup !== toVue(vue).markup) throw new Error('vue output diverged');
+            if (toHtml(ng).markup !== toHtml(vue).markup) throw new Error('html output diverged');
+            console.log('angular and vue produce identical react, svelte, vue and html');
           " --input-type=module
+
+      # A string renderer that forgets to escape is an injection in every
+      # component it emits. The scan itself lives in the suite, where it can be
+      # written against the printer instead of against escaped YAML.
+      - name: the custom element emits and parses
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out /tmp/elem --html true
+          test -s /tmp/elem/src/elements/AppOrders.js
+          for f in /tmp/elem/src/elements/*.js; do node --check "$f"; done
+          # The delegated listener has to sit on the shadow root. On the host it
+          # sees a retargeted event and can never find the node that was clicked.
+          grep -q "root.addEventListener" /tmp/elem/src/elements/runtime.js
+          # A handler inside a loop is useless without the row it belongs to.
+          grep -q 'data-on-click' /tmp/elem/src/elements/AppOrders.js || true
+
+      # The client says what goes out. It never says what comes back.
+      - name: the api document describes no response it never saw
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out /tmp/oas --openapi true
+          test -s /tmp/oas/openapi.json
+          node -e "
+            const doc = require('/tmp/oas/openapi.json');
+            for (const [path, item] of Object.entries(doc.paths)) {
+              for (const [verb, op] of Object.entries(item)) {
+                for (const [code, res] of Object.entries(op.responses)) {
+                  if (res.schema || res.content) throw new Error('a response schema was invented for ' + verb + ' ' + path + ' ' + code);
+                }
+              }
+            }
+            console.log(Object.keys(doc.paths).length + ' path(s), no invented response');
+          "
+
+      # Recorded traffic is somebody's real data. A mock carrying it is a copy
+      # of that data in a repository.
+      - name: no captured value reaches the mocks
+        run: |
+          node src/cli.js run --src example/nosource --shots test/fixtures/explored --out /tmp/mock --msw true
+          test -s /tmp/mock/src/mocks/handlers.js
+          node --check /tmp/mock/src/mocks/handlers.js
+          if grep -rEn "Northwind|Contoso|Fabrikam" /tmp/mock/src/mocks/; then
+            echo "a captured value reached the mocks"; exit 1
+          fi
 
       - name: a conformance suite is written from the recorded exploration
         run: |

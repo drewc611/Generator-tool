@@ -64,9 +64,54 @@ test("the same markup in either dialect produces byte identical output", () => {
 
 /* ---------------------------------------------------------- output-html */
 
-test("every interpolation in a string renderer is escaped", () => {
-  const out = toHtml(`<p>{{ body }}</p>`).markup;
-  assert.match(out, /\$\{esc\(body\)\}/);
+/**
+ * Every `${...}` in the printed markup, innermost included.
+ *
+ * A regular expression cannot do this: the loops and conditions the printer
+ * emits are themselves template literals, so an interpolation inside one is
+ * nested, and a pattern that stops at the first closing brace swallows it into
+ * the enclosing match instead of seeing it.
+ */
+function interpolations(source) {
+  const found = [];
+  for (let i = 0; i < source.length - 1; i++) {
+    if (source[i] !== "$" || source[i + 1] !== "{" || source[i - 1] === "\\") continue;
+    let depth = 1;
+    let j = i + 2;
+    while (j < source.length && depth > 0) {
+      if (source[j] === "{") depth += 1;
+      else if (source[j] === "}") depth -= 1;
+      if (depth === 0) break;
+      j += 1;
+    }
+    found.push(source.slice(i + 2, j).trim());
+  }
+  return found;
+}
+
+/** A value being printed, as opposed to a loop or a condition doing the printing. */
+const isLeaf = (code) => !code.includes("${");
+
+test("the scanner sees a nested interpolation, or it proves nothing", () => {
+  const nested = "${(xs).map((o) => `${esc(o.id)}`)}";
+  assert.deepEqual(interpolations(nested).filter(isLeaf), ["esc(o.id)"]);
+});
+
+test("every value the string renderer prints is escaped", () => {
+  const out = toHtml(`<div><p>{{ body }}</p><li *ngFor="let o of xs">{{ o.id }}</li><img [src]="u"></div>`).markup;
+  const leaves = interpolations(out).filter(isLeaf);
+  assert.ok(leaves.length >= 3, "there is something to check");
+  for (const code of leaves) {
+    assert.match(code, /^(esc|attr)\(/, `an unescaped value reached the markup: ${code}`);
+  }
+});
+
+// The bug this guards: the check above passing on markup that is not escaped.
+test("the escaping check fails when the escaping is removed", () => {
+  const out = toHtml(`<li *ngFor="let o of xs">{{ o.id }}</li>`).markup.replace("esc(o.id)", "o.id");
+  const leaves = interpolations(out).filter(isLeaf);
+  assert.ok(leaves.includes("o.id"), "the scanner reached the interpolation inside the loop");
+  assert.ok(leaves.some((code) => !/^(esc|attr)\(/.test(code)), "and the check would have failed");
 });
 
 // The one exception, and it is the node the IR already labelled raw.

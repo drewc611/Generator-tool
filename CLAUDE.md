@@ -4,8 +4,8 @@ Read this before changing anything. It is the contract, not a description.
 
 ## What this is
 
-A tiny plugin host that ports legacy front ends to React. The core is 527 lines
-across four files and knows nothing about Angular, React, screenshots, or HTTP.
+A tiny plugin host that ports legacy front ends. The core is 539 lines across
+four files and knows nothing about Angular, React, screenshots, or HTTP.
 Everything that knows a framework is a plugin. Keeping that true is the single
 most important constraint in the repo.
 
@@ -65,12 +65,29 @@ three endpoints and two interceptors, writes tokens, an endpoint map, a client, 
 React skeleton, and `PORT_NOTES.md` listing three unverified items. CI syntax
 checks every file, runs the pipeline, and asserts the secret gate fires.
 
-Plugins that ship: `input-angular`, `input-shots`, `input-blackbox`,
-`input-record`, `input-explore`, `dsp-tokens`, `dsp-apimap`, `dsp-behavior`,
-`dsp-improve`, `dsp-a11y`, `input-vue`, `output-react`, `output-storybook`,
-`vis-parity`, `vis-ui`, `general-policy`, `general-authorization`,
-`general-license`, `dsp-ir`, `output-svelte`, `output-tests`. Twenty one in five classes, and the core has never learned
-the name of any of them.
+Four emit targets sit on one intermediate representation. CI asserts that the
+same screen written in Angular and in Vue produces byte identical React, Vue,
+Svelte and custom element output, which is the only honest way to claim the
+middle is framework blind.
+
+Plugins that ship, twenty eight in five classes, and the core has never learned
+the name of any of them:
+
+```
+input    input-angular  input-vue  input-jquery  input-explore
+         input-record   input-shots  input-blackbox
+dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior
+         dsp-improve  dsp-a11y  dsp-i18n  dsp-deadcode
+output   output-react  output-vue  output-svelte  output-html
+         output-storybook  output-tests  output-openapi  output-msw
+vis      vis-parity  vis-ui
+general  general-policy  general-authorization  general-license
+```
+
+An option the CLI does not recognise is passed through to the plugins
+untouched, so a target is turned on by naming it: `--vue true`, `--html true`,
+`--openapi true`, `--msw true`. The core still does not know which plugin asked
+for it, or that any plugin did.
 
 ## What is honestly incomplete
 
@@ -101,6 +118,17 @@ Named plainly so nobody rediscovers it as a surprise.
   the write. It fails the run and names the file; the offending component is
   still on disk to look at. Moving it earlier would mean checking a component
   before it exists.
+- `input-jquery` produces an inventory, not components. jQuery declares no
+  boundaries and portamp does not invent them, so it reports which selector is
+  written to, listened on and called from, and leaves the boundaries to a
+  person. `input-vue` and `input-jquery` both parse with regular expressions.
+- `output-openapi` describes requests and deliberately describes no response.
+  The client says what goes out; it never says what comes back, and a schema
+  nobody verified is the failure this tool exists to avoid.
+- `output-html` binds only the innermost row to a handler inside nested loops,
+  and names that case in the notes when it meets it.
+- `dsp-deadcode` reports candidates and never verdicts: a class name assembled
+  at runtime looks unused and is not, so the report says what was searched.
 - The design extraction, framework mapping, and API extraction judgment lives in
   `skills/`, not in code. Some of it should migrate into plugins over time; not
   all of it can.
@@ -114,9 +142,11 @@ Named plainly so nobody rediscovers it as a surprise.
    unknown element. Resolve it against the other components in the run.
 3. **`vis-equivalence`.** `output-tests` writes the suite; running it against
    the port and folding the result back into the report is the other half.
-4. **A parser for `input-vue`.** It is regular expressions, and the run says so.
-5. **`input-jsf` or `input-jquery`.** The reader that would prove the IR holds
-   for something that is not a component framework at all.
+4. **Boundaries for `input-jquery`.** Cluster the inventoried selectors by the
+   markup they share and emit the result as a proposal, never as a result.
+5. **`input-jsf`.** The reader that would say whether the shape holds where the
+   markup is not in the repository at all.
+6. **A parser for `input-vue`.** It is regular expressions, and the run says so.
 
 ## Conventions
 
