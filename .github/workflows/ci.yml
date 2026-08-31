@@ -64,6 +64,22 @@ jobs:
       - name: the endpoint gate leaves an external link alone
         run: node src/cli.js run --src test/fixtures/externallink --shots example/screenshots --out /tmp/ex
 
+      # The whole no source chain, from a recording rather than a live browser.
+      - name: a recorded exploration rebuilds the app it explored
+        run: |
+          node src/cli.js run --src example/nosource --shots test/fixtures/explored --out /tmp/replay
+          test -s /tmp/replay/BEHAVIOR_MODEL.md
+          test -s /tmp/replay/IMPROVEMENTS.md
+          grep -q "/api/v1/orders/:id" /tmp/replay/BEHAVIOR_MODEL.md
+          grep -q "Customer is required" /tmp/replay/BEHAVIOR_MODEL.md
+          grep -q "a row" /tmp/replay/BEHAVIOR_MODEL.md
+
+      - name: the model describes the product, not somebody's records
+        run: |
+          if grep -rEn "Northwind|Contoso|Fabrikam" /tmp/replay/BEHAVIOR_MODEL.md /tmp/replay/src; then
+            echo "a customer name reached the model"; exit 1
+          fi
+
       - name: policy gate stops on a committed secret, and prints nothing
         run: |
           echo 'const c = { client_secret: "sk_live_notarealvalue1234" };' > example/legacy/src/app/leak.ts

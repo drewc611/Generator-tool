@@ -98,6 +98,10 @@ async function main() {
 
   const fileConfig = await loadConfig(cwd);
   const config = {
+    // Everything from the config file passes through untouched, so a plugin
+    // can read its own settings without the core learning that it exists. The
+    // keys below are the ones the core itself resolves to absolute paths.
+    ...fileConfig,
     src: resolve(cwd, args.src || fileConfig.src || "./legacy"),
     shots: resolve(cwd, args.shots || fileConfig.shots || "./screenshots"),
     out: resolve(cwd, args.out || fileConfig.out || "./out"),

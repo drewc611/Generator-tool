@@ -1,3 +1,9 @@
 node_modules/
 example/out/
 *.log
+
+# An attestation names a real system and a real owner. Only the example ships.
+portamp.authorization.json
+portamp.config.js
+example/explored/
+example/out-blackbox/

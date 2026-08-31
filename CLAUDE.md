@@ -4,7 +4,7 @@ Read this before changing anything. It is the contract, not a description.
 
 ## What this is
 
-A tiny plugin host that ports legacy front ends to React. The core is 448 lines
+A tiny plugin host that ports legacy front ends to React. The core is 483 lines
 across four files and knows nothing about Angular, React, screenshots, or HTTP.
 Everything that knows a framework is a plugin. Keeping that true is the single
 most important constraint in the repo.
@@ -66,8 +66,9 @@ React skeleton, and `PORT_NOTES.md` listing three unverified items. CI syntax
 checks every file, runs the pipeline, and asserts the secret gate fires.
 
 Plugins that ship: `input-angular`, `input-shots`, `input-blackbox`,
-`input-record`, `dsp-tokens`, `dsp-apimap`, `output-react`, `vis-parity`,
-`general-policy`, `general-authorization`.
+`input-record`, `input-explore`, `dsp-tokens`, `dsp-apimap`, `dsp-behavior`,
+`dsp-improve`, `output-react`, `vis-parity`, `general-policy`,
+`general-authorization`.
 
 ## What is honestly incomplete
 
@@ -87,6 +88,13 @@ Named plainly so nobody rediscovers it as a surprise.
   far tells you what the spacing scale was meant to be, only what it rendered as.
 - `vis-parity` reports in markdown and compares nothing visually. It says so in
   the notes rather than claiming a pass.
+- `input-explore` finds a control the way a person does, which means it finds
+  the ones the app makes visible. A control with no affordance, behind a
+  keyboard shortcut, or three states deep past a form it cannot fill is not in
+  the model, and the run says how many steps it took so the gap has a size.
+- `dsp-improve` reports what it measured: names, labels, contrast, target size,
+  and states never observed. It does not judge information architecture, and a
+  state it never reached is reported as unseen rather than as missing.
 - The endpoint gate runs at `verify`, so unlike the secret gate it cannot stop
   the write. It fails the run and names the file; the offending component is
   still on disk to look at. Moving it earlier would mean checking a component

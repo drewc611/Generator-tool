@@ -47,6 +47,32 @@ export default {
         }
       }
 
+      // An exploration is expensive and it is a recording. Replaying one lets a
+      // port be re run, reviewed and tested without driving the app again.
+      const explored = await readFile(join(ctx.config.shots, "exploration.json"), "utf8").catch(() => null);
+      if (explored && !ctx.sources.exploration) {
+        try {
+          const parsed = JSON.parse(explored);
+          ctx.sources.exploration = parsed;
+          ctx.sources.observedStyles.push(
+            ...(parsed.screens ?? []).map((sc) => ({
+              route: sc.id,
+              font: sc.font,
+              pageBackground: sc.pageBackground,
+              sample: sc.sample,
+              rowHeights: sc.rowHeights,
+            }))
+          );
+          log.info(`replayed an exploration of ${parsed.baseUrl}: ${(parsed.screens ?? []).length} screen(s)`);
+          ctx.unverified(
+            `The model was replayed from a recording of ${parsed.baseUrl}, taken ${parsed.recordedAt ?? "at an unknown time"}. ` +
+              "If the app has changed since, this describes what it used to do."
+          );
+        } catch (err) {
+          log.warn(`exploration.json is not readable json, ignoring it: ${err.message}`);
+        }
+      }
+
       const covered = new Set(ctx.sources.screenshots.map((s) => s.state));
       const missing = ["empty", "error", "loading"].filter((s) => !covered.has(s));
       log.info(`${ctx.sources.screenshots.length} screenshot(s), states: ${[...covered].join(", ") || "none"}`);

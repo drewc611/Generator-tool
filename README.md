@@ -5,7 +5,7 @@ Port a legacy front end to React without losing the look or the API contract.
 ![The portamp console: a skinned panel showing a pipeline run, plugin meters and the five stage buttons](media/portamp-console.svg)
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
-about where the plugin classes come from. Everything on the panel is real: 448
+about where the plugin classes come from. Everything on the panel is real: 483
 lines of core, no runtime dependencies, ten plugins, and the literal output of
 `npm run demo`.</sub>
 
@@ -27,7 +27,7 @@ writes React instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 10 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 70 tests, node --test, no framework
+npm test                     # 102 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -52,20 +52,20 @@ Each one is a thing it declined to guess.
 
 The constraint is the feature. A core small enough to read in one sitting is a
 core you can be sure about, and it is the only reason the plugin boundary stays
-honest: there is nowhere in 448 lines to hide a special case for Angular.
+honest: there is nowhere in 483 lines to hide a special case for Angular.
 
 | | |
 | --- | --- |
-| Core | **448 lines** across four files |
-| Every line of the tool | 2,257 lines of JavaScript |
-| Tests | 721 lines, 70 cases |
-| Source on disk | **80 KB** |
-| Published package | 110 KB |
+| Core | **483 lines** across four files |
+| Every line of the tool | 3354 lines of JavaScript |
+| Tests | 1014 lines, 102 cases |
+| Source on disk | **123 KB** |
+| Published package | 153 KB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
 ```bash
-cat src/core/*.js src/cli.js | wc -l    # 448
+cat src/core/*.js src/cli.js | wc -l    # 483
 du -sh src plugins                      # the whole tool
 ```
 
@@ -177,19 +177,113 @@ uncertainty either way.
 
 Most legacy modernization starts with a system nobody can build anymore. The
 binary runs, the repo is missing or does not compile, and the person who wrote
-it left in 2016. portamp handles that two ways, and both go through the same
-gate.
+it left in 2016.
 
-**Passive.** Drop whatever survived into `./artifacts` and `input-blackbox`
-reads it: a HAR of the app's traffic, a schema dump (usually the most honest
-description of a legacy app's real data model), an OpenAPI export if one
-exists, report exports whose column headers reveal field names and formats,
-and any documentation.
+The answer is to use the thing. `input-explore` drives the running app the way
+a person would, and writes down what it learns.
 
-**Active.** Configure `record` and `input-record` drives the running app with
-Playwright, capturing a screenshot per route and state, a HAR of every request,
-and the computed styles that let the token extractor recover a real design
-system instead of defaulting to one.
+```
+portamp run --allow-live
+
+[input-explore]  3 screen(s), 60 step(s), 183 request(s), 0 skipped
+[dsp-behavior]   3 screen(s), 5 transition(s), 3 endpoint(s) recovered from use
+[dsp-improve]    16 improvement(s) over the original, 5 of them serious
+[output-react]   3 component(s) emitted
+```
+
+It clicks what it finds, fills forms and submits them empty to see what the
+validation says, and follows what opens. Rows in a table are found the only way
+a legacy app reliably announces them: `cursor: pointer`. Each step runs from a
+fresh load, so one action cannot poison the next.
+
+Out of that comes `BEHAVIOR_MODEL.md`, which is the app as it behaves:
+
+```
+### New order  `screen-3`
+- Kind: form
+- Seen in: body. Never seen in: loading, empty, error
+
+| field      | type | required | rule the app stated  |
+| ---------- | ---- | -------- | -------------------- |
+| `customer` | text | yes      | Customer is required |
+
+## Flow
+screen-1 --[ a row ]--> screen-2
+screen-1 --[ New order ]--> screen-3
+screen-3 --[ Create order ]--> screen-1
+
+## Endpoints
+| GET  | `/api/v1/orders`     | q | 200 | none                    | Search, a row |
+| GET  | `/api/v1/orders/:id` |   | 200 | none                    | a row         |
+| POST | `/api/v1/orders`     |   | 201 | `{"customer":"string"}` | Create order  |
+```
+
+Nothing there was assumed. `customer` is required because submitting without it
+made the app say so. `:id` is a parameter because several paths differed only in
+that segment; one example would have stayed a path. The request body is recorded
+as types, never as values, so whatever got typed during the exploration is not
+written down anywhere. Neither is a customer name: a control labelled with the
+record it sits on becomes "a row".
+
+### Making it better, not copying it faithfully
+
+A port that reproduces the original's defects is not a good port. `dsp-improve`
+measures the original while it runs and says what the rebuild does instead:
+
+```
+## Controls with no accessible name (1)
+- `#refresh` on `screen-1`, high.
+  - Observed: Its only content is "↻", which carries no name for a screen reader.
+  - Instead: The rebuild gives it an aria-label.
+
+## Text below the contrast threshold (1)
+- `p` on `screen-1`, high.
+  - Observed: rgb(187,187,187) on rgb(251,250,248) is 1.84:1 at 12px, under
+    the 4.5:1 this size needs.
+
+## States the original never showed (5)
+- `list-screen`, high.
+  - Observed: No error state was seen across the whole exploration, and it
+    loads data.
+  - Instead: Without one a failed request leaves the last good screen up,
+    which reads as success.
+```
+
+Contrast is the WCAG ratio, computed from the colours as they rendered. Tap
+targets are measured. A state is reported as never seen rather than as absent,
+because the explorer not reaching something is not proof it does not exist.
+
+### Replaying instead of re driving
+
+An exploration is a recording. Drop `exploration.json` beside the screenshots
+and the whole chain runs again with no browser, which is how it is tested:
+
+```bash
+portamp run --src ./nosource --shots ./explored --out ./out
+```
+
+### What it will not do
+
+Anything that reads as destructive is skipped and listed, never performed.
+Exploring somebody's admin panel should not delete a customer.
+
+```
+## Not exercised
+- `#delete-account` (Delete account): "Delete account" reads as destructive
+```
+
+`explore.allowDestructive` exists and is off. Turning it on is a decision about
+somebody's production data, so it is a decision you have to make out loud.
+
+**Passive, when you cannot drive it either.** Drop whatever survived into
+`./artifacts` and `input-blackbox` reads it: a HAR of the app's traffic, a schema
+dump (usually the most honest description of a legacy app's real data model), an
+OpenAPI export if one exists, report exports whose column headers reveal field
+names and formats, and any documentation.
+
+**Recording routes you already know.** `input-record` visits a list of routes
+you supply and captures a screenshot, a HAR and the computed styles for each.
+Use it when you know the map already and only want the pixels and the traffic.
 
 ```js
 record: {
@@ -301,7 +395,8 @@ src/cli.js             argument parsing and wiring
 plugins/*/index.js     everything that knows a framework
 skills/                agent playbooks: legacy-to-react, adhd-brief
 docs/PLUGIN-API.md     write your own
-example/               a small Angular app to run against
+example/legacy         a small Angular app to read
+example/blackbox-app   a running app to use, never read
 test/                  node --test, no framework
 media/                 the artwork in this README, out of the package
 ```

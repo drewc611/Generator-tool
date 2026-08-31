@@ -84,8 +84,9 @@ test("discovery loads every plugin that ships", async () => {
   await k.discover({ builtinDir: BUILTIN });
   const names = k.plugins.map((p) => p.name).sort();
   assert.deepEqual(names, [
-    "dsp-apimap", "dsp-tokens", "general-authorization", "general-policy",
-    "input-angular", "input-blackbox", "input-record", "input-shots",
+    "dsp-apimap", "dsp-behavior", "dsp-improve", "dsp-tokens",
+    "general-authorization", "general-policy",
+    "input-angular", "input-blackbox", "input-explore", "input-record", "input-shots",
     "output-react", "vis-parity",
   ]);
   for (const p of k.plugins) assert.ok(CLASSES.includes(p.class), `${p.name} has a real class`);

@@ -60,6 +60,7 @@ export default {
     });
 
     on("extract", async (ctx) => {
+      const before = { screens: ctx.screens.length, calls: ctx.api.calls.length, interceptors: ctx.api.interceptors.length };
       const ts = await loadTypeScript();
       if (!ts) {
         const present = loadTypeScript.unusable;
@@ -113,9 +114,12 @@ export default {
         }
       }
 
+      // Count what this plugin found, not what is on the context: another
+      // input may have put its own screens there first.
       log.info(
-        `${ctx.screens.length} component(s), ${ctx.api.calls.length} call(s), ` +
-          `${ctx.api.interceptors.length} interceptor(s)` + (ts ? "" : ", read with regular expressions")
+        `${ctx.screens.length - before.screens} component(s), ${ctx.api.calls.length - before.calls} call(s), ` +
+          `${ctx.api.interceptors.length - before.interceptors} interceptor(s)` +
+          (ts ? "" : ", read with regular expressions")
       );
       if (ctx.api.interceptors.length)
         ctx.unverified("Interceptors add headers at no call site. Confirm each is reproduced in the client.");
