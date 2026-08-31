@@ -104,9 +104,12 @@ const GLOBALS = new Set(["true", "false", "null", "undefined", "this", "new", "t
  */
 function rootIdentifiers(code) {
   const found = [];
+  // A word inside a string is text, not a name. Without this, `'Filter ' + x`
+  // declares a prop called Filter.
+  const bare = String(code).replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/g, '""');
   const re = /(\.\s*)?\b([A-Za-z_$][\w$]*)\b(\s*:)?/g;
   let match;
-  while ((match = re.exec(code))) {
+  while ((match = re.exec(bare))) {
     if (match[1]) continue;           // a property access, not a root
     if (match[3]) continue;           // an object literal key
     if (GLOBALS.has(match[2])) continue;
@@ -212,6 +215,23 @@ function attributes(node, report) {
 
   for (const { name, value } of node.attrs) {
     if (/^\*ng/.test(name) || name.startsWith("#")) continue;
+    if (/^(v-if|v-else-if|v-else|v-for|v-cloak|v-pre|v-once)$/.test(name)) continue;
+
+    if (name === "v-model" || name.startsWith("v-model:")) {
+      const target = expr(value, report);
+      report.model(target);
+      out.push(`value={${target}}`, `onChange={(event) => ${setterFor(target)}(event.target.value)}`);
+      continue;
+    }
+    if (name === "v-show") {
+      styles.push(`display: ${expr(value, report)} ? undefined : "none"`);
+      continue;
+    }
+    if (name === "v-html") {
+      report.note(`<${node.tag}> used v-html. It became dangerouslySetInnerHTML, which is the same trust decision under a louder name.`);
+      out.push(`dangerouslySetInnerHTML={{ __html: ${expr(value, report)} }}`);
+      continue;
+    }
 
     const banana = name.match(/^\[\((\w[\w.]*)\)\]$/);
     if (banana) {
@@ -230,7 +250,15 @@ function attributes(node, report) {
       continue;
     }
 
-    const bound = name.match(/^\[([^\]]+)\]$/);
+    const vueEvent = name.match(/^@([\w.:-]+)$/);
+    if (vueEvent) {
+      const handler = expr(value, report);
+      const base = camel(vueEvent[1].split(".")[0]);
+      out.push(`on${base.charAt(0).toUpperCase()}${base.slice(1)}={${/\bevent\b/.test(handler) ? `(event) => ${handler}` : `() => ${handler}`}}`);
+      continue;
+    }
+
+    const bound = name.match(/^\[([^\]]+)\]$/) ?? (name.startsWith(":") && name.length > 1 ? [name, name.slice(1)] : null);
     if (bound) {
       const target = bound[1];
       const code = expr(value, report);
@@ -311,9 +339,21 @@ function printNode(node, depth, report) {
   const structural = {};
   for (const { name, value } of node.attrs) {
     if (name.startsWith("*ng")) structural[name.slice(1)] = value;
+    else if (name === "v-if") structural.ngIf = value;
+    else if (name === "v-else-if") structural.ngIf = value;
+    else if (name === "v-for") structural.vFor = value;
   }
 
   let body = printElement(node, depth, report);
+
+  if (structural.vFor && !structural.ngFor) {
+    const vue = structural.vFor.match(/^\s*\(?\s*([\w$]+)\s*(?:,\s*([\w$]+)\s*)?\)?\s+(?:in|of)\s+(.+)$/);
+    if (vue) {
+      structural.ngFor = `let ${vue[1]} of ${vue[3]}` + (vue[2] ? `; index as ${vue[2]}` : "");
+    } else {
+      report.note(`Could not read the v-for on <${node.tag}>: \`${structural.vFor}\`. Ported as a plain element.`);
+    }
+  }
 
   if (structural.ngFor) {
     const loop = structural.ngFor;
@@ -338,7 +378,7 @@ function printNode(node, depth, report) {
         );
       }
       body = reindent(body, depth, (inner) =>
-        `${"  ".repeat(depth)}{${expr(item[2], report)}.map(${args} => (\n${withKey(inner, key, depth + 1)}\n${"  ".repeat(depth)}))}`
+        `${"  ".repeat(depth)}{${expr(item[2], report)}.map(${args} => (\n${withKey(inner, key)}\n${"  ".repeat(depth)}))}`
       );
     } else {
       report.note(`Could not read the *ngFor on <${node.tag}>: \`${loop}\`. Ported as a plain element.`);
@@ -374,10 +414,13 @@ function reindent(body, depth, wrap) {
   return wrap(inner);
 }
 
-function withKey(inner, key, depth) {
+function withKey(inner, key) {
   const lines = inner.split("\n");
   const i = lines.findIndex((line) => line.trim().startsWith("<"));
   if (i < 0) return inner;
+  // An author who wrote :key or [key] already said what identifies the row,
+  // and their answer is better than one derived from the loop.
+  if (/\skey=\{/.test(lines[i])) return inner;
   lines[i] = lines[i].replace(/^(\s*<[\w.]+)/, `$1 key={${key}}`);
   return lines.join("\n");
 }
@@ -386,14 +429,14 @@ function printElement(node, depth, report) {
   const pad = "  ".repeat(depth);
   const tag = node.tag.toLowerCase();
 
-  if (tag === "ng-content") return `${pad}{children}`;
+  if (tag === "ng-content" || tag === "slot") return `${pad}{children}`;
 
   const props = attributes(node, report);
   const children = node.children
     .map((child) => printNode(child, depth + 1, report))
     .filter(Boolean);
 
-  const name = tag === "ng-container" || tag === "ng-template" ? "" : node.tag;
+  const name = tag === "ng-container" || tag === "ng-template" || tag === "template" ? "" : node.tag;
   if (tag === "ng-template") {
     report.note("An <ng-template> was rendered inline. If it was an else branch or a named outlet, wire it by hand.");
   }

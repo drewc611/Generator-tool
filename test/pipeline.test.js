@@ -12,6 +12,7 @@ test("the example runs end to end and writes the port", async (t) => {
   assert.equal(error, null);
 
   assert.deepEqual(ctx.written.sort(), [
+    "A11Y.md",
     "PORT_NOTES.md",
     "src/api/client.js",
     "src/api/endpoints.js",

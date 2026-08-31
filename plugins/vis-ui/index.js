@@ -39,8 +39,14 @@ function matchScreenshot(screen, screenshots) {
   return scored.length ? scored[0].shot : null;
 }
 
-export function buildRun(ctx) {
+export function buildRun(ctx, self = null) {
   const byPlugin = new Map();
+  // The kernel records a hook's duration after it returns, so the plugin
+  // writing this report cannot yet see itself in the timings. Leaving it out
+  // would make the rack quietly one short of the plugins that ran.
+  if (self && !(ctx.timings ?? []).some((t) => t.name === self)) {
+    byPlugin.set(self, { name: self, class: "vis", ms: 0, stages: ["verify"], said: ["writing this report"] });
+  }
   for (const t of ctx.timings ?? []) {
     if (!byPlugin.has(t.name)) byPlugin.set(t.name, { name: t.name, class: t.class, ms: 0, stages: [] });
     const entry = byPlugin.get(t.name);
@@ -214,7 +220,7 @@ export default {
 
   setup({ on, log }) {
     on("verify", async (ctx) => {
-      const run = buildRun(ctx);
+      const run = buildRun(ctx, "vis-ui");
       const target = join(ctx.config.out, ".portamp", "run.json");
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, JSON.stringify(run, null, 2) + "\n", "utf8");

@@ -67,8 +67,10 @@ checks every file, runs the pipeline, and asserts the secret gate fires.
 
 Plugins that ship: `input-angular`, `input-shots`, `input-blackbox`,
 `input-record`, `input-explore`, `dsp-tokens`, `dsp-apimap`, `dsp-behavior`,
-`dsp-improve`, `output-react`, `vis-parity`, `vis-ui`, `general-policy`,
-`general-authorization`.
+`dsp-improve`, `dsp-a11y`, `input-vue`, `output-react`, `output-storybook`,
+`vis-parity`, `vis-ui`, `general-policy`, `general-authorization`,
+`general-license`. Eighteen in five classes, and the core has never learned
+the name of any of them.
 
 ## What is honestly incomplete
 
@@ -105,16 +107,17 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-1. **`vis-diff`.** Serve the recorded screenshot and the built component side by
-   side on a local port. The verify stage reports in markdown only.
-2. **Point `input-record` at something real.** The measuring path in
-   `dsp-tokens` is covered by a recorded fixture, but a real product has a
-   longer tail than a fixture does.
-3. **Component references in templates.** `output-react` renders an unknown tag
-   as an unknown element. Resolving it against the other components in the run
-   is the next real step in the translator.
-4. **`input-vue`, `output-storybook`, `dsp-a11y`.** The plugin classes are the
-   point. Each of these is a directory and an index.js.
+1. **A real preview in the compare pane.** `vis-ui` shows the emitted source
+   because rendering needs a build. An optional esbuild would make it a true
+   side by side, which is the last thing standing between this and `vis-diff`
+   being finished rather than merely landed.
+2. **Component references in templates.** `output-react` renders an unknown tag
+   as an unknown element. Resolve it against the other components in the run.
+3. **A parser for `input-vue`.** It is regular expressions, and the run says so.
+4. **Focus order in `dsp-a11y`.** It has contrast and target size. Focus order
+   needs a DOM, so it belongs on the exploration, not on the tokens.
+5. **`input-jsf` or `input-jquery`.** The reader that would prove the context
+   shape holds for something that is not a component framework at all.
 
 ## Conventions
 

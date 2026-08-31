@@ -27,7 +27,7 @@ writes React instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 10 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 112 tests, node --test, no framework
+npm test                     # 131 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -38,11 +38,13 @@ scan      5 file(s) under ./legacy
 extract   1 component(s), 3 call(s), 2 interceptor(s)
 plan      3 distinct endpoint(s)
           tokens ready (density compact, accent #004B87), 1 value(s) measured
-emit      1 component(s) emitted, 1 template(s) translated
-verify    parity report written, 5 item(s) unverified
+          no font or icon set needing a licence check
+emit      1 token pair(s) under AA, 0 of them badly
+          1 component(s) emitted, 1 template(s) translated
+verify    parity report written, 7 item(s) unverified
 
-done  5 file(s) written to ./out
-      5 item(s) could not be verified, see PORT_NOTES.md
+done  6 file(s) written to ./out
+      7 item(s) could not be verified, see PORT_NOTES.md
 ```
 
 Five unverified items on a four file example is the tool working, not failing.
@@ -57,10 +59,10 @@ honest: there is nowhere in 527 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **527 lines** across four files |
-| Every line of the tool | 3,625 lines of JavaScript |
-| Tests | 1,132 lines, 112 cases |
-| Source on disk | **150 KB** |
-| Published package | 184 KB |
+| Every line of the tool | 4,087 lines of JavaScript |
+| Tests | 1,309 lines, 131 cases |
+| Source on disk | **174 KB** |
+| Published package | 208 KB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
@@ -396,7 +398,7 @@ The constraints are the interesting part:
 - **Loopback only.** It binds `127.0.0.1`, never `0.0.0.0`, because it serves
   screenshots of a customer system. A test asserts the bound address, and both
   file routes refuse any path that climbs out of their directory.
-- **Under 800 lines**, including the HTML. It is 582, and a test fails the build
+- **Under 800 lines**, including the HTML. It is 659, and a test fails the build
   if that stops being true.
 
 The built component cannot be rendered without a build, so the right pane shows
@@ -480,10 +482,38 @@ Named here so nobody has to discover them as a surprise.
 
 ## Where this is going
 
-The plugin classes are the point. Obvious next ones: `input-vue`, `input-jsf`,
-`output-svelte`, `output-storybook`, `dsp-a11y` to gate on contrast and focus
-order, `vis-diff` to serve the old screenshot and the new build side by side,
-and `general-license` to check that fonts and icon sets in the old app are
-licensed for the new one.
+The plugin classes are the point. Everything below is a directory and an
+`index.js`, and none of it needed the core to change.
+
+**Shipped since the first cut**
+
+| | |
+| --- | --- |
+| `input-vue` | Single file components, into the same shape the Angular reader produces |
+| `input-explore` | Drives a running app and works out what it is |
+| `dsp-behavior` | Turns that into screens, fields, flow and endpoints |
+| `dsp-improve` | What the original got wrong, measured while it ran |
+| `dsp-a11y` | Contrast and target size over the palette the port will use |
+| `output-storybook` | A story per component, one per state |
+| `general-license` | Fonts and icon sets whose licence does not travel |
+| `vis-ui` | The comparison view, which is where `vis-diff` landed |
+
+**Still open, in the order they pay off**
+
+1. **A real preview in the compare pane.** The right side shows the emitted
+   source because rendering it needs a build. A tiny esbuild step behind an
+   optional dependency would make it a real side by side.
+2. **Component references in templates.** A template using `<app-row>` emits
+   `<app-row>` and leaves you to wire it. Resolving it against the other
+   components in the same run is the next real step in the translator.
+3. **`input-jsf`, `input-jquery`.** The readers that would prove the shape holds
+   for something that is not a component framework at all.
+4. **`output-svelte`, `output-vue`.** The emitters are the least framework blind
+   part of the tool, and a second one would say how much.
+5. **Focus order in `dsp-a11y`.** It measures contrast and target size. Focus
+   order needs the DOM, which means it belongs on the exploration rather than
+   on the tokens.
+6. **A parser for the Vue reader.** It is regular expressions, like the Angular
+   fallback, and it says so in the run.
 
 MIT. See [LICENSE](LICENSE).

@@ -3,7 +3,7 @@ import { join, relative, extname, dirname, resolve } from "node:path";
 import { loadTypeScript, readSourceFile } from "./ast.js";
 import { readWithRegex } from "./regex.js";
 
-const KEEP = new Set([".ts", ".js", ".html", ".scss", ".css"]);
+const KEEP = new Set([".ts", ".js", ".html", ".scss", ".css", ".vue"]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
 
