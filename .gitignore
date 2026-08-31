@@ -10,3 +10,5 @@ example/explored/
 example/out-blackbox/
 example/conf-demo/
 test-results/
+desktop/node_modules/
+desktop/dist/

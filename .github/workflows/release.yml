@@ -1,0 +1,62 @@
+name: release
+# Installers for the desktop app, built on the real platforms. Runs on a
+# version tag, and by hand from the Actions tab for a dry run.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest      # .dmg and .zip, arm64 and x64
+          - os: windows-latest    # NSIS installer and .zip
+          - os: ubuntu-latest     # AppImage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+
+      # The desktop app ships the repository inside it. The suite has to be
+      # green on this exact tree before an installer is built from it.
+      - name: the tool itself is green
+        run: npm test
+
+      - name: install the shell
+        working-directory: desktop
+        run: npm install
+
+      - name: build installers
+        working-directory: desktop
+        run: npm run dist
+        env:
+          # Unsigned on purpose until there are signing certificates. An
+          # unsigned build that says so beats a build signed with nothing.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portamp-desktop-${{ runner.os }}
+          path: |
+            desktop/dist/*.dmg
+            desktop/dist/*.zip
+            desktop/dist/*.exe
+            desktop/dist/*.AppImage
+          if-no-files-found: error
+
+      - name: attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            desktop/dist/*.dmg
+            desktop/dist/*.zip
+            desktop/dist/*.exe
+            desktop/dist/*.AppImage

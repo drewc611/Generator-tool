@@ -128,6 +128,19 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
     try {
       if (url.pathname === "/") return send(200, TYPES[".html"], shell);
 
+      // The console is installable. These are the app's own files, served from
+      // beside app.html; nothing here touches the run or the customer system.
+      if (url.pathname === "/manifest.webmanifest")
+        return send(200, "application/manifest+json", await readFile(join(here, "manifest.webmanifest")));
+      // TYPES[".js"] is text/plain on purpose, for /source. A worker script
+      // is the one .js this server must declare as executable.
+      if (url.pathname === "/sw.js")
+        return send(200, "text/javascript; charset=utf-8", await readFile(join(here, "sw.js")));
+      if (url.pathname === "/icon.svg")
+        return send(200, "image/svg+xml", await readFile(join(here, "icon.svg")));
+      if (/^\/icons\/icon-(180|192|512)\.png$/.test(url.pathname))
+        return send(200, "image/png", await readFile(join(here, "icons", url.pathname.slice(7))));
+
       // The one thing the UI may cause: running the tool again. It still does
       // not edit a file, and the pipeline remains the only thing that writes.
       if (url.pathname === "/rerun" && req.method === "POST") {

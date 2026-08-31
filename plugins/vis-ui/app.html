@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#101013" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/icons/icon-180.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
 <title>portamp</title>
 <style>
   /* Original artwork in the late 90s skinned player genre. Nothing here is
@@ -26,6 +32,20 @@
     display: grid; grid-template-columns: 276px 1fr;
     grid-template-rows: 42px 128px minmax(0, 1fr) minmax(0, 168px);
     grid-template-areas: "head head" "deck compare" "rack compare" "rack notes";
+  }
+
+  /* A phone gets the same console, stacked. The desktop grid clips to the
+     viewport because it is a deck; a phone scrolls because it is a page. */
+  @media (max-width: 760px) {
+    body {
+      height: auto; min-height: 100vh; overflow: auto;
+      grid-template-columns: 1fr;
+      grid-template-rows: 42px auto auto auto auto;
+      grid-template-areas: "head" "deck" "compare" "rack" "notes";
+    }
+    /* min-width breaks the grid blowout: a wide deck scrolls inside its own
+       unit instead of widening the page. */
+    .unit { min-height: 200px; min-width: 0; overflow-x: auto; }
   }
 
   /* the chassis: light on top and left, dark on bottom and right */
@@ -494,6 +514,11 @@ $("run").addEventListener("click", async () => {
     setWipe(false);
   }
 })();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
 </script>
 </body>
 </html>
