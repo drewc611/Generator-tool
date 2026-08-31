@@ -53,6 +53,8 @@ const DOES = {
   "dsp-diff": "two runs compared, so a port can see what moved underneath it",
   "output-react": "a component per screen, every state, and the translated body",
   "output-vue": "the third target on the IR",
+  "output-angular": "2013's dialect in, this year's out, through a middle that knows neither",
+  "output-lit": "the custom element with a rendering library, for teams that want one",
   "output-svelte": "the second target on the IR",
   "output-html": "a custom element, depending on nothing at all",
   "output-storybook": "a story per component, one per state",
