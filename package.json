@@ -23,7 +23,7 @@
   "scripts": {
     "demo": "node src/cli.js run --src example/legacy --shots example/screenshots --out example/out",
     "plugins": "node src/cli.js plugins",
-    "test": "node --test test/",
+    "test": "node --test test/*.test.js",
     "record": "node src/cli.js run --allow-live --only input-record"
   },
   "keywords": [
@@ -45,6 +45,7 @@
   },
   "homepage": "https://github.com/drewc611/portamp#readme",
   "optionalDependencies": {
-    "playwright": "^1.47.0"
+    "playwright": "^1.47.0",
+    "typescript": "^5.4.0"
   }
 }

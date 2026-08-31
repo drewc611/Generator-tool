@@ -27,22 +27,26 @@ writes React instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 10 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
+npm test                     # 70 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
 
 ```
-scan      4 file(s) under ./legacy
+scan      5 file(s) under ./legacy
           2 screenshot(s), states: default, empty
 extract   1 component(s), 3 call(s), 2 interceptor(s)
 plan      3 distinct endpoint(s)
-          tokens ready (density compact, accent #004B87)
-emit      1 component(s) emitted
-verify    parity report written, 3 item(s) unverified
+          tokens ready (density compact, accent #004B87), 1 value(s) measured
+emit      1 component(s) emitted, 1 template(s) translated
+verify    parity report written, 5 item(s) unverified
 
 done  5 file(s) written to ./out
-      3 item(s) could not be verified, see PORT_NOTES.md
+      5 item(s) could not be verified, see PORT_NOTES.md
 ```
+
+Five unverified items on a four file example is the tool working, not failing.
+Each one is a thing it declined to guess.
 
 ## The size of it
 
@@ -53,9 +57,10 @@ honest: there is nowhere in 448 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **448 lines** across four files |
-| Every line of the tool | 1,313 lines of JavaScript |
-| Source on disk | **43 KB** |
-| Published package | 72 KB |
+| Every line of the tool | 2,257 lines of JavaScript |
+| Tests | 721 lines, 70 cases |
+| Source on disk | **80 KB** |
+| Published package | 110 KB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
@@ -63,6 +68,11 @@ honest: there is nowhere in 448 lines to hide a special case for Angular.
 cat src/core/*.js src/cli.js | wc -l    # 448
 du -sh src plugins                      # the whole tool
 ```
+
+The core has not grown a line since the first commit while the plugins learned
+to translate templates and read a syntax tree. That is the whole argument for
+the shape: capability arrives in `plugins/`, and `src/` stays something one
+person can hold in their head.
 
 The artwork in this README lives in `media/`, which is deliberately outside the
 `files` list in `package.json`. Pictures are for the repository. They have no
@@ -101,6 +111,40 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 ## The ten it ships with
 
 ![The plugin rack: ten plugins listed by class, with what each one does](media/plugin-rack.svg)
+
+## What a translation looks like
+
+The example's template, and what portamp emits for it:
+
+```html
+<div *ngIf="loading">Loading</div>
+<table><tr *ngFor="let o of orders"><td>{{o.id}}</td></tr></table>
+<input [(ngModel)]="query" />
+```
+
+```jsx
+{loading && (
+  <div>
+    Loading
+  </div>
+)}
+<table>
+  {orders.map((o) => (
+    <tr key={o.id ?? o}>
+      <td>
+        {o.id}
+      </td>
+    </tr>
+  ))}
+</table>
+<input value={query} onChange={(event) => setQuery(event.target.value)} />
+```
+
+The component around it declares `useState` for `query` because the two way
+binding needed it, takes `orders` and `loading` as props because the template
+reads them, and keys the loop. What it could not do faithfully it says out loud:
+a `| currency` pipe becomes an unformatted value and a line in `PORT_NOTES.md`,
+never a formatter somebody guessed at.
 
 ## What it actually does
 
@@ -252,6 +296,7 @@ plugins/*/index.js     everything that knows a framework
 skills/                agent playbooks: legacy-to-react, adhd-brief
 docs/PLUGIN-API.md     write your own
 example/               a small Angular app to run against
+test/                  node --test, no framework
 media/                 the artwork in this README, out of the package
 ```
 
@@ -272,13 +317,19 @@ media/                 the artwork in this README, out of the package
 
 Named here so nobody has to discover them as a surprise.
 
-- `npm test` is declared and `test/` does not exist yet, so it fails. The kernel,
-  the policy engine and one end to end run are the three things worth covering.
-- `input-angular` reads with regular expressions. It handles the example and it
-  will miss anything unusual. A TypeScript compiler API pass is the upgrade, and
-  the plugin boundary is already in the right place for it.
-- `output-react` emits a skeleton with every state present and leaves the
-  template body to you.
+- The template translator handles `*ngIf`, `*ngFor`, interpolation, property and
+  event binding, two way binding, `ngClass`, `ngStyle`, `ng-container` and
+  `ng-content`. It does not resolve references to other components, so a
+  template using `<app-row>` emits `<app-row>` and leaves you to wire it. Pipes,
+  `else` branches and unusual `ngClass` shapes are reported, not invented.
+- `input-angular` uses the TypeScript compiler API when `typescript` is
+  installed and regular expressions when it is not. Neither uses a type checker,
+  so a URL assembled from anything but a literal in the same file keeps its
+  `${...}` shape rather than being resolved to a guess.
+- Spacing is still a default. Nothing measured so far says what the spacing
+  scale was meant to be, only what it happened to render as.
+- `vis-parity` reports in markdown and compares nothing visually. `vis-diff` is
+  the next plugin.
 
 ## Where this is going
 

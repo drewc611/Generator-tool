@@ -16,6 +16,7 @@ Target repo: github.com/drewc611/portamp
 ```bash
 node src/cli.js plugins      # list what loads
 npm run demo                 # full pipeline against example/legacy
+npm test                     # node --test, no framework
 node src/cli.js run -v       # timings per plugin
 ```
 
@@ -38,6 +39,7 @@ plugins/*/index.js     everything that knows a framework
 skills/                agent playbooks, also usable standalone
 docs/PLUGIN-API.md     the plugin contract
 example/               a small Angular app to run against
+test/                  node --test, kernel, policy, translator, end to end
 ```
 
 ## Invariants, in priority order
@@ -71,37 +73,36 @@ Plugins that ship: `input-angular`, `input-shots`, `input-blackbox`,
 
 Named plainly so nobody rediscovers it as a surprise.
 
-- `input-angular` parses with regular expressions. It finds components, inputs,
-  outputs, directives, RxJS operators, and `HttpClient` calls, and it will miss
-  anything unusual. A real AST pass using the TypeScript compiler API is the
-  obvious upgrade and the plugin boundary is already correct for it.
-- `dsp-tokens` returns sensible defaults and records what it could not recover.
-  It does not yet measure `ctx.sources.observedStyles`, which `input-record`
-  already populates. That is the highest value next task.
-- `output-react` emits a skeleton with a TODO for the template body. It does not
-  translate the Angular template. That is the largest remaining piece.
-- `test/` does not exist. `npm test` is declared and will fail.
+- `output-react` translates the four constructs that make up most of a template
+  and reports the rest rather than guessing: a pipe becomes an unformatted value
+  with a note, an `else` branch is named and left for a person, `ng-template`
+  renders inline. It does not resolve component references, so a template that
+  uses another component renders that tag as an unknown element.
+- `input-angular` reads the syntax tree when `typescript` is installed and falls
+  back to regular expressions when it is not. The fallback is narrower and says
+  so in the run. Neither pass uses a type checker, so a URL built from anything
+  but a literal in the same file keeps its `${...}` shape rather than resolving.
+- `dsp-tokens` measures a recording when there is one and reads declared
+  variables when there is not. Spacing is still a default: nothing measured so
+  far tells you what the spacing scale was meant to be, only what it rendered as.
+- `vis-parity` reports in markdown and compares nothing visually. It says so in
+  the notes rather than claiming a pass.
 - The design extraction, framework mapping, and API extraction judgment lives in
   `skills/`, not in code. Some of it should migrate into plugins over time; not
   all of it can.
 
 ## Next tasks, in the order they pay off
 
-1. **Tests.** `node --test`, no framework. Cover the kernel (discovery, dedupe,
-   stage ordering), the policy engine (each pattern, each assert), and one
-   end to end run asserting the five emitted files.
-2. **`dsp-tokens` measures observed styles.** Cluster `fontSize` values from
-   `ctx.sources.observedStyles`, fit a ratio, round to a clean scale. Derive
-   density from median table row height. Extract color roles by frequency, not
-   by collecting every hex. Record every value that still had to be defaulted.
-3. **`output-react` template translation.** Start with the mapping table in
-   `skills/references/angular-to-react-map.md`. `*ngIf`, `*ngFor`, interpolation,
-   and property binding cover most real templates. Two way binding becomes a
-   controlled input, and say so in `PORT_NOTES.md`.
-4. **`input-angular` AST pass.** Replace the regular expressions. Keep the same
-   context shape so nothing downstream changes.
-5. **`vis-diff`.** Serve the recorded screenshot and the built component side by
-   side on a local port. The verify stage currently reports in markdown only.
+1. **`vis-diff`.** Serve the recorded screenshot and the built component side by
+   side on a local port. The verify stage reports in markdown only.
+2. **Point `input-record` at something real.** The measuring path in
+   `dsp-tokens` is covered by a recorded fixture, but a real product has a
+   longer tail than a fixture does.
+3. **Component references in templates.** `output-react` renders an unknown tag
+   as an unknown element. Resolving it against the other components in the run
+   is the next real step in the translator.
+4. **`input-vue`, `output-storybook`, `dsp-a11y`.** The plugin classes are the
+   point. Each of these is a directory and an index.js.
 
 ## Conventions
 

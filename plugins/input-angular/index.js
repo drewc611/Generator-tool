@@ -1,13 +1,16 @@
 import { readdir, readFile, stat } from "node:fs/promises";
-import { join, relative, extname } from "node:path";
+import { join, relative, extname, dirname, resolve } from "node:path";
+import { loadTypeScript, readSourceFile } from "./ast.js";
+import { readWithRegex } from "./regex.js";
 
 const KEEP = new Set([".ts", ".js", ".html", ".scss", ".css"]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
+const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
 
 async function walk(dir, root, out = []) {
   let entries = [];
   try { entries = await readdir(dir); } catch { return out; }
-  for (const e of entries) {
+  for (const e of entries.sort()) {
     if (SKIP.has(e)) continue;
     const p = join(dir, e);
     const s = await stat(p).catch(() => null);
@@ -18,10 +21,35 @@ async function walk(dir, root, out = []) {
   return out;
 }
 
+/**
+ * A component's markup is either in the decorator or in a file beside it.
+ * Either way the emitter needs the text, so resolve it here and let everything
+ * downstream see one field.
+ */
+async function attachTemplate(screen, file, files) {
+  if (screen.template != null) {
+    screen.templateOrigin = "inline";
+    return screen;
+  }
+  if (!screen.templateUrl) {
+    screen.templateOrigin = null;
+    return screen;
+  }
+  const wanted = resolve(dirname(file.path), screen.templateUrl);
+  const match = files.find((f) => resolve(f.path) === wanted);
+  if (!match) {
+    screen.templateOrigin = null;
+    return screen;
+  }
+  screen.template = await readFile(match.path, "utf8").catch(() => null);
+  screen.templateOrigin = match.rel;
+  return screen;
+}
+
 /** Reads an Angular tree and identifies components, services, and HTTP calls. */
 export default {
   name: "input-angular",
-  version: "0.1.0",
+  version: "0.2.0",
   class: "input",
   setup({ on, log }) {
     on("scan", async (ctx) => {
@@ -32,35 +60,63 @@ export default {
     });
 
     on("extract", async (ctx) => {
+      const ts = await loadTypeScript();
+      if (!ts) {
+        const present = loadTypeScript.unusable;
+        ctx.unverified(
+          present
+            ? `typescript ${present} is installed but does not expose the compiler API this pass needs, so the ` +
+              "source was read with regular expressions. Install typescript 5 for the exact read."
+            : "typescript is not installed, so the source was read with regular expressions. " +
+              "Anything unusually formatted may have been missed. Run `npm i -D typescript@5` for the exact read."
+        );
+      }
+
       for (const f of ctx.sources.files) {
         const text = await readFile(f.path, "utf8").catch(() => "");
-        const cmp = text.match(/@Component\(\s*\{[\s\S]*?selector:\s*['"]([^'"]+)['"]/);
-        if (cmp) {
+        if (!text) continue;
+
+        const isCode = /\.(ts|js)$/.test(f.rel);
+        let found = { screens: [], calls: [], interceptors: [] };
+        if (isCode) {
+          found = ts ? readSourceFile(ts, text, f.rel) : readWithRegex(text, f.rel);
+        }
+
+        for (const screen of found.screens) {
+          if (!screen.selector) continue;
+          await attachTemplate(screen, f, ctx.sources.files);
+          const markup = screen.template ?? "";
           ctx.screens.push({
-            selector: cmp[1],
+            selector: screen.selector,
+            className: screen.className ?? null,
             file: f.rel,
-            inputs: [...text.matchAll(/@Input\(\)\s+(\w+)/g)].map((m) => m[1]),
-            outputs: [...text.matchAll(/@Output\(\)\s+(\w+)/g)].map((m) => m[1]),
-            usesNgIf: /\*ngIf/.test(text),
-            usesNgFor: /\*ngFor/.test(text),
-            usesTwoWay: /\[\(ngModel\)\]/.test(text),
-            rxjs: [...new Set([...text.matchAll(/\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime)\b/g)].map((m) => m[1]))],
+            inputs: screen.inputs,
+            outputs: screen.outputs,
+            template: screen.template ?? null,
+            templateOrigin: screen.templateOrigin ?? null,
+            usesNgIf: /\*ngIf/.test(markup) || /\*ngIf/.test(text),
+            usesNgFor: /\*ngFor/.test(markup) || /\*ngFor/.test(text),
+            usesTwoWay: /\[\(ngModel\)\]/.test(markup) || /\[\(ngModel\)\]/.test(text),
+            rxjs: [...new Set([...text.matchAll(RXJS)].map((m) => m[1]))],
+            readBy: ts ? "ast" : "regex",
           });
         }
-        if (/@Injectable\(/.test(text) && /HttpClient/.test(text)) {
-          for (const m of text.matchAll(/\.(get|post|put|patch|delete)(?:<[^>]*>)?\(\s*([`'"])([^`'"]+)\2/g)) {
-            ctx.api.calls.push({
-              method: m[1].toUpperCase(),
-              path: m[3],
-              file: f.rel,
-              headers: null,
-              body: ["get", "delete"].includes(m[1]) ? null : "unknown",
-            });
-          }
-        }
-        if (/HttpInterceptor/.test(text)) ctx.api.interceptors.push({ file: f.rel });
+        ctx.api.calls.push(...found.calls);
+        ctx.api.interceptors.push(...found.interceptors);
       }
-      log.info(`${ctx.screens.length} component(s), ${ctx.api.calls.length} call(s), ${ctx.api.interceptors.length} interceptor(s)`);
+
+      for (const screen of ctx.screens) {
+        if (!screen.template) {
+          ctx.unverified(
+            `No template was found for <${screen.selector}>. Its body cannot be translated, only its states.`
+          );
+        }
+      }
+
+      log.info(
+        `${ctx.screens.length} component(s), ${ctx.api.calls.length} call(s), ` +
+          `${ctx.api.interceptors.length} interceptor(s)` + (ts ? "" : ", read with regular expressions")
+      );
       if (ctx.api.interceptors.length)
         ctx.unverified("Interceptors add headers at no call site. Confirm each is reproduced in the client.");
     });

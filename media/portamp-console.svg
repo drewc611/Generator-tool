@@ -31,7 +31,7 @@
 <rect x="19" y="59" width="678" height="258" rx="2" fill="none" stroke="#0d3a24"/>
 <text x="30" y="82" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#7df3b0" text-anchor="start">scan</text>
 <text x="110" y="82" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#237a52" text-anchor="start">5 plugin(s)</text>
-<text x="122" y="98" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[input-angular]  4 file(s) under ./legacy</text>
+<text x="122" y="98" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[input-angular]  5 file(s) under ./legacy</text>
 <text x="122" y="114" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[input-shots]    2 screenshot(s), states: default, empty</text>
 <text x="30" y="130" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#7df3b0" text-anchor="start">extract</text>
 <text x="110" y="130" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#237a52" text-anchor="start">2 plugin(s)</text>
@@ -39,16 +39,16 @@
 <text x="30" y="162" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#7df3b0" text-anchor="start">plan</text>
 <text x="110" y="162" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#237a52" text-anchor="start">2 plugin(s)</text>
 <text x="122" y="178" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[dsp-apimap]     3 distinct endpoint(s)</text>
-<text x="122" y="194" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[dsp-tokens]     tokens ready (density compact, accent #004B87)</text>
+<text x="122" y="194" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[dsp-tokens]     tokens ready (compact, #004B87), 1 measured</text>
 <text x="30" y="210" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#7df3b0" text-anchor="start">emit</text>
 <text x="110" y="210" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#237a52" text-anchor="start">3 plugin(s)</text>
-<text x="122" y="226" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[output-react]   1 component(s) emitted</text>
+<text x="122" y="226" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[output-react]   1 component(s), 1 template(s) translated</text>
 <text x="30" y="242" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#7df3b0" text-anchor="start">verify</text>
 <text x="110" y="242" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#237a52" text-anchor="start">1 plugin(s)</text>
-<text x="122" y="258" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[vis-parity]     parity report written, 3 item(s) unverified</text>
+<text x="122" y="258" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#3fbf7f" text-anchor="start">[vis-parity]     parity report written, 5 item(s) unverified</text>
 <text x="30" y="282" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="bold" fill="#f0a830" text-anchor="start">done</text>
 <text x="110" y="282" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#c98f2e" text-anchor="start">5 file(s) written to ./out</text>
-<text x="122" y="298" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#c98f2e" text-anchor="start">3 item(s) could not be verified, see PORT_NOTES.md</text>
+<text x="122" y="298" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" font-weight="normal" fill="#c98f2e" text-anchor="start">5 item(s) could not be verified, see PORT_NOTES.md</text>
 <rect x="19" y="59" width="678" height="258" rx="2" fill="url(#scan)"/>
 <rect x="714" y="58" width="308" height="80" rx="3" fill="#0b0b0e" stroke="#0e0e11"/>
 <path d="M715 137 L715 59 L1021 59" fill="none" stroke="#5a5a66" opacity="0.3"/>
@@ -117,5 +117,6 @@
 <path d="M19 531 L19 497 L1021 497" fill="none" stroke="#5a5a66" opacity="0.3"/>
 <text x="32" y="519" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#7df3b0" text-anchor="start" letter-spacing="1">READY</text>
 <text x="96" y="519" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="normal" fill="#8b8b96" text-anchor="start">the kernel never calls a plugin directly and has no idea what any of them do</text>
+<text x="964" y="519" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="bold" fill="#7df3b0" text-anchor="end">70 TESTS</text>
 <text x="1008" y="519" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" font-weight="normal" fill="#8b8b96" text-anchor="end">MIT</text>
 </svg>
