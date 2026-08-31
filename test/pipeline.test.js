@@ -152,10 +152,15 @@ test("the run is deterministic", async (t) => {
 
   assert.deepEqual(first.ctx.written.sort(), second.ctx.written.sort());
   for (const file of first.ctx.written) {
-    assert.equal(
-      await readFile(join(first.out, file), "utf8"),
-      await readFile(join(second.out, file), "utf8"),
-      `${file} differs between runs`
-    );
+    const a = await readFile(join(first.out, file), "utf8");
+    const b = await readFile(join(second.out, file), "utf8");
+    // HISTORY.md exists to record when each run happened, so two runs at
+    // different moments must differ there, in the timestamp and nowhere else.
+    if (file === "HISTORY.md") {
+      const stripTime = (text) => text.replace(/^\| [\d:TZ-]+ \|/gm, "| when |");
+      assert.equal(stripTime(a), stripTime(b), "HISTORY.md differs beyond its timestamps");
+      continue;
+    }
+    assert.equal(a, b, `${file} differs between runs`);
   }
 });
