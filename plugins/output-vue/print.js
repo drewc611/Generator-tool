@@ -1,4 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
+import { jsString, singleQuoted } from "../dsp-ir/emit.js";
 
 /**
  * The Vue printer, and the third target.
@@ -27,8 +28,7 @@ const attrValue = (code) =>
  * A key in an object literal that is not a plain identifier has to be quoted,
  * and it has to be quoted with single quotes for the same reason.
  */
-const key = (name) =>
-  /^[A-Za-z_$][\w$]*$/.test(name) ? name : `'${String(name).replace(/'/g, "\\'")}'`;
+const key = (name) => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : singleQuoted(name));
 
 const bind = (name, code) => `:${name}="${attrValue(code)}"`;
 
@@ -61,7 +61,7 @@ function styleAttribute(styles, out) {
 
   const entries = declarations.map((s) => {
     const value = s.literal !== undefined
-      ? `'${s.literal.replace(/'/g, "\\'")}'`
+      ? singleQuoted(s.literal)
       : s.unit
         ? `\`\${${s.expression}}${s.unit}\``
         : s.expression;

@@ -1,4 +1,5 @@
 import { toVue } from "./print.js";
+import { jsString } from "../dsp-ir/emit.js";
 
 const pascal = (sel) =>
   String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
@@ -56,7 +57,7 @@ ${models.length ? 'import { ref } from "vue";\n' : ""}// Ported from ${screen.fi
 defineProps({
 ${props.map((p) => `  ${p}: { type: null, default: undefined },`).join("\n")}
 });
-defineEmits([${emits.map((e) => JSON.stringify(e)).join(", ")}]);
+defineEmits([${emits.map(jsString).join(", ")}]);
 ${state}
 </script>
 

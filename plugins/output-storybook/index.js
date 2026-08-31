@@ -1,3 +1,5 @@
+import { jsString } from "../dsp-ir/emit.js";
+
 const pascal = (sel) =>
   String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
@@ -26,7 +28,7 @@ export default {
         // A row shaped like the columns the original showed, so the default
         // story is not an empty table pretending to be a full one.
         const row = columns.length
-          ? "{ " + columns.map((c, i) => `${JSON.stringify(camel(c))}: ${JSON.stringify("Example " + (i + 1))}`).join(", ") + " }"
+          ? "{ " + columns.map((c, i) => `${jsString(camel(c))}: ${jsString("Example " + (i + 1))}`).join(", ") + " }"
           : '{ id: "1", name: "Example" }';
 
         await ctx.write(`src/features/${name}/${name}.stories.jsx`, STORY({ name, row, screen }));
@@ -74,5 +76,5 @@ function extra(screen) {
   const fields = screen.observed?.fields ?? [];
   const inputs = screen.inputs ?? [];
   const names = [...new Set([...fields.map((f) => f.name), ...inputs])].filter(Boolean);
-  return names.length ? ", " + names.map((n) => `${n}: ${JSON.stringify("example")}`).join(", ") : "";
+  return names.length ? ", " + names.map((n) => `${n}: ${jsString("example")}`).join(", ") : "";
 }

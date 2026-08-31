@@ -10,7 +10,9 @@ export const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", 
 export function parse(html) {
   const root = { type: "root", children: [] };
   const stack = [root];
-  const re = /<!--([\s\S]*?)-->|<\/([a-zA-Z][\w:-]*)\s*>|<([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|[^>"'])*?)(\/?)>/g;
+  // `--!>` ends a comment too. Treating it as text lets whatever follows a
+  // malformed comment be parsed as markup.
+  const re = /<!--([\s\S]*?)--!?>|<\/([a-zA-Z][\w:-]*)\s*>|<([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|[^>"'])*?)(\/?)>/g;
   let last = 0;
   let match;
 

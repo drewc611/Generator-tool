@@ -1,4 +1,5 @@
 import { toHtml } from "./print.js";
+import { identifier, jsString } from "../dsp-ir/emit.js";
 
 const pascal = (sel) =>
   String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
@@ -164,7 +165,7 @@ const ELEMENT = ({ name, tag, props, result, collection, screen }) => {
  * set as a property: element.${props[0] ?? "data"} = value.
  */
 export class ${name} extends HTMLElement {
-  static observedAttributes = [${props.map((p) => JSON.stringify(kebab(p))).join(", ")}];
+  static observedAttributes = [${props.map((p) => jsString(kebab(p))).join(", ")}];
 
   state = {
 ${unique([...props, ...models.map(leafOf)]).map((p) => `    ${p}: undefined,`).join("\n")}
@@ -176,7 +177,7 @@ ${handlers.join("\n") || "    // no handlers in this template"}
 
   connectedCallback() {
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
-    delegate(this, this.shadowRoot, ${JSON.stringify(events)}, (index, event, node) => {${rowLookup}
+    delegate(this, this.shadowRoot, [${events.map(jsString).join(", ")}], (index, event, node) => {${rowLookup}
       this.#handlers[index]?.call(this, event, row);
       this.render();
     });
@@ -215,6 +216,6 @@ ${result ? result.markup : "        <!-- No template was found for this componen
   }
 }
 
-customElements.define(${JSON.stringify(tag)}, ${name});
+customElements.define(${jsString(tag)}, ${name});
 `;
 };

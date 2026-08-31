@@ -249,7 +249,10 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+// The quotes matter as much as the angle brackets: most of these values land
+// inside a double quoted attribute, where a quote ends the attribute early.
+const ENTITIES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ENTITIES[c]);
 const CLASSES = ["input", "dsp", "output", "vis", "general"];
 const STAGES = ["scan", "extract", "plan", "emit", "verify"];
 let run = null;
@@ -377,7 +380,7 @@ function renderEndpoints() {
     ? run.endpoints.map((e) =>
         '<tr><td class="verb ' + esc(e.method) + '">' + esc(e.method) + "</td>" +
         '<td class="path">' + esc(e.path) + "</td>" +
-        '<td class="src ' + e.origin + '">' + e.origin + "</td></tr>"
+        '<td class="src ' + esc(e.origin) + '">' + esc(e.origin) + "</td></tr>"
       ).join("")
     : '<tr><td class="hint">no endpoints found</td></tr>';
 }

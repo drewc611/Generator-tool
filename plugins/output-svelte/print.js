@@ -1,4 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
+import { jsString } from "../dsp-ir/emit.js";
 
 /**
  * The Svelte printer. It is the argument for the IR: this file is under two
@@ -19,7 +20,7 @@ function classAttribute(classes, out) {
 
   if (literal && !expressions.length) out.push(`class="${literal}"`);
   else if (literal || expressions.length) {
-    const parts = [...(literal ? [JSON.stringify(literal)] : []), ...expressions.map((e) => e.expression)];
+    const parts = [...(literal ? [jsString(literal)] : []), ...expressions.map((e) => e.expression)];
     out.push(`class={[${parts.join(", ")}].filter(Boolean).join(" ")}`);
   }
   // Svelte has a directive for exactly this, which is better than joining a
@@ -40,7 +41,7 @@ function styleAttribute(styles, out) {
   }
   const parts = [
     ...spreads.map((s) => `...${s.expression}`),
-    ...declarations.map((s) => `${camel(s.property)}: ${s.literal !== undefined ? JSON.stringify(s.literal) : s.expression}`),
+    ...declarations.map((s) => `${camel(s.property)}: ${s.literal !== undefined ? jsString(s.literal) : s.expression}`),
   ];
   out.push(`style={Object.entries({ ${parts.join(", ")} }).map(([k, v]) => \`\${k}:\${v}\`).join(";")}`);
 }
@@ -52,7 +53,7 @@ function attributes(node) {
   for (const attr of node.attrs) {
     if (attr.name === "key") continue;
     if (attr.kind === "flag") out.push(attr.name);
-    else if (attr.kind === "static") out.push(`${attr.name}=${JSON.stringify(attr.value)}`);
+    else if (attr.kind === "static") out.push(`${attr.name}=${jsString(attr.value)}`);
     else if (attr.kind === "bound") out.push(`${attr.name}={${attr.expression}}`);
     else if (attr.kind === "template") {
       out.push(`${attr.name}="${attr.parts.map((p) => (p.expression !== undefined ? `{${p.expression}}` : p.literal)).join("")}"`);

@@ -1,4 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
+import { jsString } from "../dsp-ir/emit.js";
 
 /**
  * The printer with no framework underneath it.
@@ -26,8 +27,8 @@ const literal = (text) => text.replace(/\\/g, "\\\\").replace(/`/g, "\\`").repla
 
 const classExpression = (classes) => {
   const parts = classes.map((c) => {
-    if (c.kind === "literal") return JSON.stringify(c.value);
-    if (c.kind === "conditional") return `(${c.when} ? ${JSON.stringify(c.name)} : "")`;
+    if (c.kind === "literal") return jsString(c.value);
+    if (c.kind === "conditional") return `(${c.when} ? ${jsString(c.name)} : "")`;
     return `(${c.expression})`;
   });
   return parts.length === 1 && classes[0].kind === "literal" ? parts[0] : `[${parts.join(", ")}].filter(Boolean).join(" ")`;
@@ -38,9 +39,9 @@ const styleExpression = (styles) => {
   const declarations = styles.filter((s) => s.kind !== "spread");
   const entries = declarations.map((s) => {
     const value = s.literal !== undefined
-      ? JSON.stringify(s.literal)
+      ? jsString(s.literal)
       : s.unit ? `\`\${${s.expression}}${s.unit}\`` : `(${s.expression})`;
-    return `[${JSON.stringify(kebab(s.property))}, ${value}]`;
+    return `[${jsString(kebab(s.property))}, ${value}]`;
   });
   const sources = [
     ...spreads.map((s) => `Object.entries(${s.expression} ?? {}).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()), v])`),
@@ -61,7 +62,7 @@ function attributes(node, ctx) {
     else if (attr.kind === "bound") {
       // A false or absent bound attribute should not appear at all, which is
       // the behaviour every framework here gives for free and this does not.
-      out.push(`\${attr(${JSON.stringify(attr.name)}, ${attr.expression})}`);
+      out.push(`\${attr(${jsString(attr.name)}, ${attr.expression})}`);
     } else if (attr.kind === "template") {
       const body = attr.parts.map((p) => (p.expression !== undefined ? `\${esc(${p.expression})}` : literal(p.literal))).join("");
       out.push(` ${attr.name}="${body}"`);

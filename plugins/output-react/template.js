@@ -1,4 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
+import { jsString } from "../dsp-ir/emit.js";
 import { parse } from "../dsp-ir/parse.js";
 
 /**
@@ -36,15 +37,15 @@ function classAttribute(classes) {
   if (!classes.length) return null;
   const literal = classes.filter((c) => c.kind === "literal").map((c) => c.value).join(" ").trim();
   const rest = classes.filter((c) => c.kind !== "literal");
-  if (!rest.length) return `className=${JSON.stringify(literal)}`;
+  if (!rest.length) return `className=${jsString(literal)}`;
   if (!literal && rest.length === 1 && rest[0].kind === "expression") {
     return `className={${rest[0].expression}}`;
   }
   // A conditional that falls through has to drop out of the string rather than
   // land in it as `false`.
   const parts = [
-    ...(literal ? [JSON.stringify(literal)] : []),
-    ...rest.map((c) => (c.kind === "conditional" ? `${c.when} && ${JSON.stringify(c.name)}` : c.expression)),
+    ...(literal ? [jsString(literal)] : []),
+    ...rest.map((c) => (c.kind === "conditional" ? `${c.when} && ${jsString(c.name)}` : c.expression)),
   ];
   return `className={[${parts.join(", ")}].filter(Boolean).join(" ")}`;
 }
@@ -53,7 +54,7 @@ function styleAttribute(styles) {
   if (!styles.length) return null;
   const parts = styles.map((s) => {
     if (s.kind === "spread") return `...${s.expression}`;
-    if (s.literal !== undefined) return `${camel(s.property)}: ${JSON.stringify(s.literal)}`;
+    if (s.literal !== undefined) return `${camel(s.property)}: ${jsString(s.literal)}`;
     return `${camel(s.property)}: ${s.unit ? `\`\${${s.expression}}${s.unit}\`` : s.expression}`;
   });
   return `style={{ ${parts.join(", ")} }}`;
@@ -66,7 +67,7 @@ function attributes(node) {
 
   for (const attr of node.attrs) {
     if (attr.kind === "flag") out.push(propName(attr.name));
-    else if (attr.kind === "static") out.push(`${propName(attr.name)}=${JSON.stringify(attr.value)}`);
+    else if (attr.kind === "static") out.push(`${propName(attr.name)}=${jsString(attr.value)}`);
     else if (attr.kind === "bound") out.push(`${propName(attr.name)}={${attr.expression}}`);
     else if (attr.kind === "template") {
       const body = attr.parts.map((p) => (p.expression !== undefined ? `\${${p.expression}}` : p.literal)).join("");

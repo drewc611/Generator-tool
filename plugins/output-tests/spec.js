@@ -1,3 +1,5 @@
+import { jsString } from "../dsp-ir/emit.js";
+
 /**
  * A conformance suite written from what the legacy app actually did.
  *
@@ -12,7 +14,9 @@
  * header says how much of the app the exploration actually reached.
  */
 
-const quote = (text) => JSON.stringify(String(text ?? ""));
+// The suite is source code, so a value going into it needs the rules for
+// source code, not the rules for JSON. See ../dsp-ir/emit.js.
+const quote = (text) => jsString(String(text ?? ""));
 
 /** A selector from the old DOM is not a promise about the new one. */
 function locatorFor(action, screens) {
@@ -151,7 +155,12 @@ function pathMatcher(path, model) {
     (e) => e.path === path || (e.params.length && sameShape(e.path, path))
   );
   if (endpoint?.params.length) {
-    const pattern = endpoint.path.replace(/:[\w]+/g, "[^/]+").replace(/\//g, "\\/");
+    // Escaping only the slash leaves every other metacharacter live, so a
+    // path containing a dot or a bracket would match more than itself.
+    const pattern = endpoint.path
+      .split("/")
+      .map((segment) => (segment.startsWith(":") ? "[^/]+" : segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")))
+      .join("\\/");
     return `new RegExp(${quote(pattern)}).test(new URL(candidate.url()).pathname)`;
   }
   return `new URL(candidate.url()).pathname === ${quote(path)}`;
