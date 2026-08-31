@@ -78,6 +78,47 @@ export const DIALECTS = {
     },
   },
 
+  knockout: {
+    name: "knockout",
+    // foreach repeats what is inside the element, not the element. ng-repeat
+    // and v-for repeat the element itself. Getting this wrong multiplies the
+    // container instead of the rows.
+    loopWrapsChildren: true,
+    when: (n) => (n === "ko-if" ? "test" : null),
+    each: (n) => (n === "ko-foreach" ? "loop" : null),
+    model: (n) => n === "ko-model",
+    bound: (n) => {
+      const attr = /^ko-attr-(.+)$/.exec(n);
+      if (attr) return attr[1];
+      if (n === "ko-css") return "ngClass";
+      if (n === "ko-styles") return "ngStyle";
+      return null;
+    },
+    event: (n) => /^ko-on-(.+)$/.exec(n)?.[1] ?? null,
+    // knockout binds a function and calls it with the row and the event; the
+    // other dialects bind a call. A bare name becomes a bare call, and the
+    // note below says what was lost rather than inventing an argument.
+    handler: (value, note) => {
+      if (/^[\w$.]+$/.test(value.trim())) {
+        note(
+          "knockout called a bound handler with the row and the event. The port calls it with the event " +
+          "alone; where a handler needs its row, wire it through by hand: (o) => pick(o)."
+        );
+        return `${value.trim()}(event)`;
+      }
+      return value;
+    },
+    html: (n) => n === "ko-html",
+    show: (n) => (n === "ko-visible" ? "show" : false),
+    slot: () => false,
+    transparent: () => false,
+    structural: (n) => /^ko-unmapped-/.test(n),
+    loop: (value) => {
+      const m = /^\s*([\w$]+)\s+in\s+([\s\S]+)$/.exec(value);
+      return m ? { item: m[1], list: m[2].trim(), index: null, trackBy: null, key: null } : null;
+    },
+  },
+
   angular: {
     name: "angular",
     when: (n) => (n === "*ngIf" ? "test" : null),
@@ -126,6 +167,8 @@ export function detectDialect(html) {
   const angular = (text.match(/\*ngIf|\*ngFor|\[\(ngModel\)\]|\(click\)|\[[\w.]+\]=/g) ?? []).length;
   const vue = (text.match(/v-if|v-for|v-model|v-show|v-html|v-bind|v-on|@[\w-]+=|:[\w-]+=/g) ?? []).length;
   const angularjs = (text.match(/\bng-(if|repeat|model|click|show|hide|controller|class|src|href|change|submit)=/g) ?? []).length;
+  const knockout = (text.match(/\bko-(if|foreach|model|visible|on-\w+|html|css|attr-\w+)=/g) ?? []).length;
+  if (knockout > angular && knockout > vue && knockout > angularjs) return DIALECTS.knockout;
   if (angularjs > angular && angularjs > vue) return DIALECTS.angularjs;
   return vue > angular ? DIALECTS.vue : DIALECTS.angular;
 }
@@ -217,6 +260,20 @@ function convert(node, d, ctx) {
     const loop = d.loop(structural.each);
     if (!loop) {
       ctx.note(`Could not read the loop on <${node.tag}>: \`${structural.each}\`. Kept as a plain element.`);
+    } else if (d.loopWrapsChildren && element.kind === "element") {
+      ctx.locals.add(loop.item);
+      if (loop.index) ctx.locals.add(loop.index);
+      const list = ctx.expr(loop.list);
+      ctx.lists.add(list);
+      element.children = [{
+        kind: "each",
+        list,
+        item: loop.item,
+        index: loop.index,
+        key: loop.key ? ctx.expr(loop.key) : loop.index ?? `${loop.item}.id ?? ${loop.item}`,
+        children: element.children,
+      }];
+      out = element;
     } else {
       ctx.locals.add(loop.item);
       if (loop.index) ctx.locals.add(loop.index);
@@ -298,7 +355,8 @@ function buildElement(node, d, ctx) {
 
     const event = d.event(name);
     if (event) {
-      events.push({ name: event, handler: ctx.expr(value) });
+      const raw = d.handler ? d.handler(String(value ?? ""), ctx.note) : value;
+      events.push({ name: event, handler: ctx.expr(raw) });
       continue;
     }
 

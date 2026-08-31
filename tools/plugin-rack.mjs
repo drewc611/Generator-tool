@@ -21,6 +21,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DOES = {
   "input-angular": "components, bindings, RxJS operators, HttpClient calls, interceptors",
   "input-angularjs": "the 1.x apps that never went anywhere: controllers, components, $http",
+  "input-knockout": "data-bind expanded into a dialect; the viewmodel is the component",
+  "input-backbone": "views are boundaries somebody drew, and they are read as such",
+  "input-openapi": "a spec as a source, cross checked against what the app actually calls",
   "input-vue": "single file components, into the shape the Angular reader produces",
   "input-jquery": "a front end that declared no components. Inventories, never invents",
   "input-explore": "drives a running app and works out what it is, without the source",

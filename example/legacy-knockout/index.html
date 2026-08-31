@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>Order Desk</title></head>
+<body>
+  <input data-bind="value: q" placeholder="Filter orders">
+  <p data-bind="visible: loading">Loading</p>
+  <table>
+    <tbody data-bind="foreach: { data: orders, as: 'o' }">
+      <tr data-bind="click: pick, css: { selected: o.chosen }">
+        <td data-bind="text: o.id"></td>
+        <td data-bind="text: o.total"></td>
+      </tr>
+    </tbody>
+  </table>
+  <p data-bind="hidden: orders().length">No orders yet</p>
+  <script src="js/knockout-3.4.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
