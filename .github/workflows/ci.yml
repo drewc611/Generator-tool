@@ -85,6 +85,9 @@ jobs:
         run: |
           node src/cli.js run --src example/legacy --shots example/screenshots --out /tmp/elem --html true
           test -s /tmp/elem/src/elements/AppOrders.js
+          # The port is ESM and is meant to land in a module project. Without
+          # this Node 18 reads a bare .js as CommonJS and rejects the imports.
+          echo '{"type":"module"}' > /tmp/elem/package.json
           for f in /tmp/elem/src/elements/*.js; do node --check "$f"; done
           # The delegated listener has to sit on the shadow root. On the host it
           # sees a retargeted event and can never find the node that was clicked.
@@ -115,6 +118,7 @@ jobs:
         run: |
           node src/cli.js run --src example/nosource --shots test/fixtures/explored --out /tmp/mock --msw true
           test -s /tmp/mock/src/mocks/handlers.js
+          echo '{"type":"module"}' > /tmp/mock/package.json
           node --check /tmp/mock/src/mocks/handlers.js
           if grep -rEn "Northwind|Contoso|Fabrikam" /tmp/mock/src/mocks/; then
             echo "a captured value reached the mocks"; exit 1

@@ -23,16 +23,23 @@ const AJAX = [
   /\bfetch\(\s*(['"`])([^'"`]+)\1(?:\s*,\s*\{[\s\S]{0,200}?method\s*:\s*['"](\w+)['"])?/g,
 ];
 
-const HANDLERS = [
-  // $("#a").on("click", ...)  and  $("#a").on("click", ".row", ...)
-  /\$\(\s*(['"`])([^'"`]+)\1\s*\)\s*(?:\.[\w$]+\([^)]*\)\s*)*?\.on\s*\(\s*(['"`])([^'"`]+)\3/g,
-  // $("#a").click(...) and the rest of the shorthand family
-  /\$\(\s*(['"`])([^'"`]+)\1\s*\)\s*\.(click|change|submit|blur|focus|keyup|keydown|input|hover)\s*\(/g,
-];
+/**
+ * A selector, and the chain that follows it.
+ *
+ * The obvious pattern for a chain is `(?:\.\w+\([^)]*\)\s*)*?` before the call
+ * that matters, and it is a nested quantifier: on a long chain that never
+ * reaches the terminator the engine backtracks through every split of the
+ * text. Capturing a bounded window after the selector and reading the chain
+ * out of it is linear, and it is easier to follow.
+ */
+const SELECTOR = /\$\(\s*(['"`])([^'"`]+)\1\s*\)([^;\n]{0,240})/g;
+
+const HANDLER_IN_CHAIN = /^\s*(?:\.[\w$]+\([^)]{0,120}\))??\s*\.on\s*\(\s*(['"`])([^'"`]+)\1/;
+const SHORTHAND_IN_CHAIN = /^\s*\.(click|change|submit|blur|focus|keyup|keydown|input|hover)\s*\(/;
 
 // A write says which part of the page this code owns, which is the closest
 // thing a jQuery app has to a component boundary.
-const WRITES = /\$\(\s*(['"`])([^'"`]+)\1\s*\)\s*(?:\.[\w$]+\([^)]*\)\s*)*?\.(html|text|val|append|prepend|attr|addClass|removeClass|toggleClass|show|hide|empty|remove)\s*\(/g;
+const WRITE_IN_CHAIN = /^\s*(?:\.[\w$]+\([^)]{0,120}\))??\s*\.(html|text|val|append|prepend|attr|addClass|removeClass|toggleClass|show|hide|empty|remove)\s*\(/;
 
 const DOM_WRITES = /document\.(?:getElementById|querySelector)\(\s*(['"`])([^'"`]+)\1\s*\)\s*\.\s*(innerHTML|textContent|value)\s*=/g;
 
@@ -63,22 +70,31 @@ export function readScript(text, rel) {
     calls.push({ method: verb, path: m[2], file: rel, headers: null, body: verb === "GET" ? null : "unknown" });
   }
 
-  for (const m of text.matchAll(HANDLERS[0])) {
-    if (looksLikeUrl(m[2])) continue;
-    for (const event of m[4].split(/\s+/).filter(Boolean)) {
-      const w = widget(m[2]);
-      if (!w.events.includes(event)) w.events.push(event);
-    }
-  }
-  for (const m of text.matchAll(HANDLERS[1])) {
-    const w = widget(m[2]);
-    if (!w.events.includes(m[3])) w.events.push(m[3]);
-  }
+  for (const m of text.matchAll(SELECTOR)) {
+    const selector = m[2];
+    const chain = m[3];
+    if (looksLikeUrl(selector)) continue;
 
-  for (const m of text.matchAll(WRITES)) {
-    if (looksLikeUrl(m[2])) continue;
-    const w = widget(m[2]);
-    if (!w.writes.includes(m[3])) w.writes.push(m[3]);
+    const on = HANDLER_IN_CHAIN.exec(chain);
+    if (on) {
+      // `.on("focus blur", ...)` binds two events, not one named oddly.
+      for (const event of on[2].split(/\s+/).filter(Boolean)) {
+        const w = widget(selector);
+        if (!w.events.includes(event)) w.events.push(event);
+      }
+    }
+
+    const shorthand = SHORTHAND_IN_CHAIN.exec(chain);
+    if (shorthand) {
+      const w = widget(selector);
+      if (!w.events.includes(shorthand[1])) w.events.push(shorthand[1]);
+    }
+
+    const write = WRITE_IN_CHAIN.exec(chain);
+    if (write) {
+      const w = widget(selector);
+      if (!w.writes.includes(write[1])) w.writes.push(write[1]);
+    }
   }
   for (const m of text.matchAll(DOM_WRITES)) {
     const w = widget(m[2]);

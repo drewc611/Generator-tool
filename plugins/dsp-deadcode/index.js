@@ -16,6 +16,10 @@ import { buildIr } from "../dsp-ir/ir.js";
  */
 
 const CLASS_RULE = /\.(-?[_a-zA-Z][\w-]*)(?=[^{}]*\{)/g;
+
+// A name read out of a stylesheet or a source file is data, and a pattern built
+// by pasting data into it is a pattern whose meaning the data decides.
+const literal = (text) => String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const STYLESHEET = /\.(css|scss|sass|less)$/;
 
 /** Class names the templates ask for, by any route the IR can see. */
@@ -45,7 +49,7 @@ export function findDeadClasses(declared, used, extraText) {
   return [...declared]
     .filter((name) => !used.has(name))
     // A name that appears anywhere in the source at all is being built by hand.
-    .filter((name) => !new RegExp(`["'\`\\s.]${name}(?=["'\`\\s.]|$)`).test(extraText))
+    .filter((name) => !new RegExp(`["'\`\\s.]${literal(name)}(?=["'\`\\s.]|$)`).test(extraText))
     .sort();
 }
 
@@ -70,7 +74,7 @@ export default {
         for (const input of screen.inputs) {
           if (readInTemplate.has(input)) continue;
           // The declaration itself always matches, so one occurrence is none.
-          const uses = (source.match(new RegExp(`\\b${input}\\b`, "g")) ?? []).length;
+          const uses = (source.match(new RegExp(`\\b${literal(input)}\\b`, "g")) ?? []).length;
           if (uses > 1) continue;
           findings.inputs.push({ screen: screen.selector, name: input, file: screen.file });
         }

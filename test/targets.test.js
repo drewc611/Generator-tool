@@ -237,6 +237,27 @@ test("a selector is inventoried by what is done to it", () => {
   assert.deepEqual(by["status"].writes, ["text"]);
 });
 
+test("a handler survives one link of chaining, and two events bind as two", () => {
+  const { widgets } = readScript(`
+    $("#a").find(".row").on("click", go);
+    $("#b").on("focus blur", mark);
+    $("#c").first().html(x);
+  `, "app.js");
+  const by = Object.fromEntries(widgets.map((w) => [w.selector, w]));
+  assert.deepEqual(by["#a"].events, ["click"]);
+  assert.deepEqual(by["#b"].events, ["focus", "blur"]);
+  assert.deepEqual(by["#c"].writes, ["html"]);
+});
+
+// The bug this guards: `(?:\.\w+\([^)]*\)\s*)*?` before the call that matters
+// is a nested quantifier, and a long chain that never reaches the terminator
+// makes the engine backtrack through every split of the text.
+test("a long chain does not make the reader backtrack", () => {
+  const started = Date.now();
+  readScript(`$("#a")` + ".foo(bar)".repeat(4000), "app.js");
+  assert.ok(Date.now() - started < 1000, "the reader is linear in the length of a chain");
+});
+
 // The rule this guards: jQuery declares no components, so portamp must not
 // invent any.
 test("no component is invented from a jQuery source", () => {
