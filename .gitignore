@@ -8,3 +8,5 @@ portamp.authorization.json
 portamp.config.js
 example/explored/
 example/out-blackbox/
+example/conf-demo/
+test-results/

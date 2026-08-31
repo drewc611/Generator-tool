@@ -40,7 +40,8 @@ export default {
           props = unique([...props, ...result.reads]);
           translated += 1;
           notes.push(` * Template translated from ${s.templateOrigin ?? "the decorator"}.`);
-          for (const note of result.notes) ctx.unverified(`<${s.selector}>: ${note}`);
+          // dsp-ir already reported what the template could not carry across.
+          // Reporting it again here would list every caveat twice.
         } else {
           notes.push(" * No template was found, so the body below is a placeholder.");
         }

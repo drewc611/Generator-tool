@@ -27,7 +27,7 @@ writes React instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 10 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 131 tests, node --test, no framework
+npm test                     # 149 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -59,10 +59,10 @@ honest: there is nowhere in 527 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **527 lines** across four files |
-| Every line of the tool | 4,087 lines of JavaScript |
-| Tests | 1,309 lines, 131 cases |
-| Source on disk | **174 KB** |
-| Published package | 208 KB |
+| Every line of the tool | 4,667 lines of JavaScript |
+| Tests | 1,473 lines, 149 cases |
+| Source on disk | **199 KB** |
+| Published package | 234 KB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
@@ -147,6 +147,83 @@ binding needed it, takes `orders` and `loading` as props because the template
 reads them, and keys the loop. What it could not do faithfully it says out loud:
 a `| currency` pipe becomes an unformatted value and a line in `PORT_NOTES.md`,
 never a formatter somebody guessed at.
+
+## Anything in, anything out
+
+The tool was built to port Angular to React. It is not shaped that way any more.
+
+Every reader turns its own dialect into one intermediate representation, and
+every emitter turns that back into its own target. Without the middle, porting
+N frameworks to M frameworks is N times M translators and the second target
+costs as much as the first. With it, a reader is a dialect table and an emitter
+is a printer.
+
+```
+  input-angular ─┐                             ┌─ output-react
+  input-vue     ─┼──▶  dsp-ir  ──▶  the IR ──▶ ┼─ output-svelte
+  input-explore ─┘                             ├─ output-storybook
+  (used, not read)                             └─ output-tests
+```
+
+The IR says what markup means, not how anybody spells it: `when`, `each`,
+`element`, `text`, `slot`, `html`. `*ngIf` and `v-if` are the same node by the
+time anything downstream sees them, and so are `[class.x]` and `:class`.
+
+The proof is not a diagram. This screen, written twice:
+
+```html
+<div *ngIf="loading">L</div>
+<li *ngFor="let o of orders" [class.hot]="o.hot" (click)="pick(o)">{{o.n}}</li>
+
+<div v-if="loading">L</div>
+<li v-for="o in orders" :class="{hot: o.hot}" @click="pick(o)">{{o.n}}</li>
+```
+
+produces byte identical React, and byte identical Svelte, from both. CI asserts
+it. The Svelte printer is 150 lines and nothing else changed to add it, which is
+the only honest way to claim the middle is framework blind.
+
+Svelte gets `class:hot={o.hot}` rather than a joined string, because a printer
+per target beats one shared printer that speaks nobody's language well.
+
+## Conformance: the part nobody else does
+
+Every codemod hands you code. None of them tells you whether what you now have
+still behaves like what you replaced.
+
+portamp already walked the old app and wrote down what each action did: which
+screen it opened, which request it fired, what the app said when it refused.
+That is a test suite. `output-tests` writes it, against the port.
+
+```js
+test("clicking Create order does what it did in the original", async ({ page }) => {
+  await page.goto(base);
+  await page.getByRole("button", { name: "New order" })...click();
+
+  await page.getByRole("button", { name: "Create order" })...click();
+
+  // The original refused, in these words. A port that accepts this
+  // input has lost a rule nobody wrote down anywhere else.
+  await expect(page.getByText("Customer is required", { exact: false })).toBeVisible();
+});
+```
+
+Nothing in that was written by hand. The rule is there because submitting the
+empty form made the old app say so, and the step replays the click that opened
+the screen because the exploration recorded how it got there.
+
+Run it against the original and it passes, nine for nine. Run it against a port
+that quietly dropped the validation and renamed a heading, and it fails on
+exactly those two and nothing else:
+
+```
+  7 passed
+  2 failed
+    clicking Create order does what it did in the original
+    clicking New order does what it did in the original
+```
+
+That is the whole point. A port is not finished because it compiles.
 
 ## What it actually does
 

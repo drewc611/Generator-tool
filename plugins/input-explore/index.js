@@ -224,6 +224,9 @@ export default {
 
           steps.push({
             from: beforeId,
+            // How this step was reached. Without it a replay starts at the
+            // home screen and clicks a control that is three screens away.
+            path: item.path.map((a) => ({ kind: a.kind, selector: a.selector, label: a.label, value: a.value })),
             action,
             to: afterId,
             changed: beforeId !== afterId,

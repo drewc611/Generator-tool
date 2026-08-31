@@ -19,6 +19,7 @@ export async function runPipeline({
   only = null,
   allowLive = false,
   storybook = false,
+  svelte = false,
 } = {}) {
   const out = await mkdtemp(join(tmpdir(), "portamp-"));
   const log = createLogger({ quiet: true });
@@ -33,7 +34,7 @@ export async function runPipeline({
   }
 
   const ctx = createContext({
-    config: { src, shots, out, artifacts, tokens, record: null, only, storybook },
+    config: { src, shots, out, artifacts, tokens, record: null, only, storybook, svelte },
     log,
     policy,
   });
