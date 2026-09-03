@@ -92,7 +92,11 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
           note(`The macro \`${name}\` was called without \`${p}\` and it has no default. The name is left as written and nothing defines it.`);
           return;
         }
-        body = body.replace(new RegExp(`\\b${p.replace(/\$/g, "\\$")}\\b`, "g"), value);
+        // The name is escaped whole and the value goes in through a function,
+        // so neither a metacharacter in a parameter nor a $& in an argument
+        // can change what the substitution means.
+        const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        body = body.replace(new RegExp(`\\b${escaped}\\b`, "g"), () => value);
       });
       note(`The macro \`${name}(...)\` was expanded at its call site with its arguments substituted textually. Check any body text that shares a parameter's name.`);
       return body;
