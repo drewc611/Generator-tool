@@ -43,8 +43,12 @@ export const DIALECTS = {
       if (n === "ng-style") return "ngStyle";
       if (n === "ng-value") return "value";
       if (n === "ng-disabled") return "disabled";
+      // The remaining boolean directives each drive one HTML flag.
+      const flag = /^(?:data-)?ng-(checked|selected|readonly|required|open|multiple)$/.exec(n);
+      if (flag) return flag[1] === "readonly" ? "readOnly" : flag[1];
       return null;
     },
+    text: (n) => (/^(?:data-)?ng-bind$/.test(n) ? "expr" : /^(?:data-)?ng-bind-template$/.test(n) ? "template" : null),
     event: (n) => /^(?:data-)?ng-(click|change|submit|blur|focus|keyup|keydown|mouseover|mouseout|dblclick)$/.exec(n)?.[1] ?? null,
     html: (n) => n === "ng-bind-html",
     // ng-show and ng-hide are the same directive with the test inverted.
@@ -57,7 +61,8 @@ export const DIALECTS = {
     switchOn: (n) => (n === "ng-switch" || n === "data-ng-switch" ? "expr" : null),
     switchCase: (n) => (n === "ng-switch-when" || n === "data-ng-switch-when" ? "literal" : null),
     switchDefault: (n) => n === "ng-switch-default" || n === "data-ng-switch-default",
-    structural: (n) => /^(?:data-)?ng-(controller|app|init|cloak|repeat-start|repeat-end|bind|switch|switch-when|switch-default)$/.test(n),
+    options: (n) => n === "ng-options" || n === "data-ng-options",
+    structural: (n) => /^(?:data-)?ng-(controller|app|init|cloak|repeat-start|repeat-end|switch|switch-when|switch-default)$/.test(n),
     loop: (value) => {
       // `item in items | filter:q track by item.id`, and the (key, value)
       // form over an object. The filter narrows the list at runtime, which a
@@ -78,6 +83,9 @@ export const DIALECTS = {
         item, list, note,
         index: track === "$index" ? "$index" : index,
         trackBy: null,
+        // The (key, value) form iterates an object's entries, not an array,
+        // and a printer that maps over it produces nothing.
+        object: Boolean(m[1] && m[2]),
         // ng's track by is an expression, not a function, so it already is
         // the key.
         key: track && track !== "$index" ? track : track === "$index" ? "$index" : null,
@@ -161,14 +169,27 @@ export const DIALECTS = {
     model: (n) => n === "v-model" || n.startsWith("v-model:") || n.startsWith("v-model."),
     bound: (n) => (n.startsWith(":") && n.length > 1 ? n.slice(1) : /^v-bind:(.+)$/.exec(n)?.[1] ?? null),
     event: (n) => (n.startsWith("@") ? n.slice(1).split(".")[0] : /^v-on:(.+)$/.exec(n)?.[1]?.split(".")[0] ?? null),
+    // The dots after the event name each change when or how the handler runs.
+    eventMods: (n) => (n.startsWith("@") ? n.slice(1).split(".").slice(1) : /^v-on:(.+)$/.exec(n)?.[1]?.split(".").slice(1) ?? []),
     html: (n) => n === "v-html",
     show: (n) => n === "v-show",
     slot: (t) => t === "slot",
     transparent: (t) => t === "template",
+    text: (n) => (n === "v-text" ? "expr" : null),
+    pre: (n) => n === "v-pre",
+    once: (n) => n === "v-once",
+    dynamic: (t) => t === "component",
     structural: (n) => /^(v-if|v-else-if|v-else|v-for|v-cloak|v-pre|v-once|v-show|v-html|key)$/.test(n) || n === "ref",
     loop: (value) => {
       const m = /^\s*\(?\s*([\w$]+)\s*(?:,\s*([\w$]+)\s*)?\)?\s+(?:in|of)\s+(.+)$/.exec(value);
-      return m ? { item: m[1], list: m[3].trim(), index: m[2] ?? null, trackBy: null } : null;
+      if (!m) return null;
+      const list = m[3].trim();
+      // `v-for="n in 5"` counts from one; the port spells the range out so
+      // the number stays visible instead of becoming a magic array.
+      if (/^\d+$/.test(list)) {
+        return { item: m[1], list, index: m[2] ?? null, trackBy: null, range: true, key: m[1] };
+      }
+      return { item: m[1], list, index: m[2] ?? null, trackBy: null };
     },
   },
 };
@@ -268,7 +289,11 @@ export function buildIr(html, { dialect } = {}) {
   // Angular's block syntax cannot be parsed as markup, so it is lowered onto
   // the attribute dialect first. Any other dialect passes through untouched.
   const lowered = lowerBlocks(html ?? "", note);
-  const clean = convertList(parse(lowered), d, { expr, note, models, locals, lists }, null);
+  const tree = parse(lowered);
+  // A named <ng-template #ref> is content waiting for a reference. Harvested
+  // before conversion so an else branch can resolve to it wherever it sits.
+  const templates = harvestTemplates(tree);
+  const clean = convertList(tree, d, { expr, note, models, locals, lists, templates }, null);
   const root = clean.length === 1 ? clean[0] : { kind: "fragment", children: clean };
 
   const modelRoots = new Set([...models].map((m) => m.split(".")[0]));
@@ -280,6 +305,26 @@ export function buildIr(html, { dialect } = {}) {
     reads: [...reads].filter((n) => !locals.has(n) && !modelRoots.has(n)).sort(),
     collections: [...lists],
   };
+}
+
+/** Pull named ng-template blocks out of the tree, keyed by their #ref. */
+function harvestTemplates(nodes) {
+  const found = new Map();
+  const walk = (list) => {
+    for (let i = list.length - 1; i >= 0; i -= 1) {
+      const node = list[i];
+      if (node.type !== "element") continue;
+      const ref = node.tag?.toLowerCase() === "ng-template" ? node.attrs.find((a) => a.name.startsWith("#")) : null;
+      if (ref) {
+        found.set(ref.name.slice(1), node.children);
+        list.splice(i, 1);
+        continue;
+      }
+      if (node.children?.length) walk(node.children);
+    }
+  };
+  walk(nodes);
+  return found;
 }
 
 /**
@@ -353,7 +398,25 @@ function convert(node, d, ctx) {
   }
 
   const tag = node.tag.toLowerCase();
-  if (SLOT.has(tag)) return { kind: "slot" };
+  if (SLOT.has(tag)) {
+    // A named slot is a second insertion point and its children are the
+    // fallback, shown when the caller passes nothing for it.
+    const named = node.attrs.find((a) => a.name === "name")?.value
+      ?? node.attrs.find((a) => a.name === "select")?.value?.replace(/^\[/, "").replace(/\]$/, "")
+      ?? null;
+    const name = named && /^[\w$-]+$/.test(named) ? named : null;
+    if (named && !name) ctx.note(`A slot selects on \`${named}\`, which is not a simple name. It is kept as the default slot; split it by hand.`);
+    if (name) ctx.expr(name.replace(/-([a-z])/g, (_, c) => c.toUpperCase()));
+    return { kind: "slot", name, children: convertList(node.children ?? [], d, ctx, null) };
+  }
+
+  // v-pre asks for no compilation at all: the subtree is carried as written,
+  // mustaches included, because the author said these braces are text.
+  if (d.pre && node.attrs.some((a) => d.pre(a.name))) return literalElement(node, d);
+
+  if (d.once && node.attrs.some((a) => d.once(a.name))) {
+    ctx.note(`<${node.tag}> rendered once and froze. The port re-renders it with state; memoize it by hand if the freeze mattered.`);
+  }
 
   const structural = {};
   for (const { name, value } of node.attrs) {
@@ -396,13 +459,13 @@ function convert(node, d, ctx) {
     } else if (d.loopWrapsChildren && element.kind === "element") {
       ctx.locals.add(loop.item);
       if (loop.index) ctx.locals.add(loop.index);
-      const list = ctx.expr(loop.list);
-      ctx.lists.add(list);
+      const list = loopList(loop, ctx);
       element.children = [{
         kind: "each",
         list,
         item: loop.item,
         index: loop.index,
+        object: Boolean(loop.object),
         key: loop.key ? ctx.expr(loop.key) : loop.index ?? `${loop.item}.id ?? ${loop.item}`,
         children: element.children,
       }];
@@ -410,8 +473,7 @@ function convert(node, d, ctx) {
     } else {
       ctx.locals.add(loop.item);
       if (loop.index) ctx.locals.add(loop.index);
-      const list = ctx.expr(loop.list);
-      ctx.lists.add(list);
+      const list = loopList(loop, ctx);
       if (loop.trackBy) ctx.expr(loop.trackBy.split(".")[0]);
       if (loop.note) ctx.note(loop.note);
       const authored = element.kind === "element" ? element.attrs.find((a) => a.name === "key") : null;
@@ -433,6 +495,7 @@ function convert(node, d, ctx) {
         list,
         item: loop.item,
         index: loop.index,
+        object: Boolean(loop.object),
         // An author who named the key already answered this better than a
         // derived one can.
         key: authored ? authored.expression
@@ -444,17 +507,79 @@ function convert(node, d, ctx) {
     }
   }
 
+  // In AngularJS the repeat runs before the if, so `ng-if="o.active"` on a
+  // repeated row tests each row. The condition moves inside the loop, where
+  // its row exists; outside it would reference a name nothing defines.
+  if (structural.when !== undefined && structural.each !== undefined && d.name === "angularjs" && out.kind === "each") {
+    out.children = [{ kind: "when", test: ctx.expr(String(structural.when)), children: out.children }];
+    return out;
+  }
+
   if (structural.when !== undefined) {
     const raw = String(structural.when);
     const alias = /^(.*?)\s+as\s+[\w$]+$/.exec(raw);
     if (alias) ctx.note(`\`${raw}\` bound an alias. The condition alone was kept.`);
+    const thenRef = /;\s*then\s+([\w$]+)/.exec(raw);
     const elseRef = /;\s*else\s+([\w$]+)/.exec(raw);
-    if (elseRef) ctx.note(`<${node.tag}> had an \`else ${elseRef[1]}\` branch. Wire the fallback in by hand.`);
-    out = { kind: "when", test: ctx.expr((alias ? alias[1] : raw).replace(/;\s*else\s+[\w$]+/, "")), children: [out] };
+    const test = ctx.expr(
+      (alias ? alias[1] : raw).replace(/;\s*then\s+[\w$]+/, "").replace(/;\s*else\s+[\w$]+/, "")
+    );
+
+    // then and else name templates harvested earlier; a reference the markup
+    // actually holds is resolved, one it does not stays a note, never a guess.
+    const resolve = (name) => {
+      const body = ctx.templates?.get(name);
+      return body ? convertList(body, d, ctx, null) : null;
+    };
+    const thenBody = thenRef ? resolve(thenRef[1]) : null;
+    if (thenRef && !thenBody) {
+      ctx.note(`<${node.tag}> renders \`then ${thenRef[1]}\`, and no <ng-template #${thenRef[1]}> is in this markup. The element's own content is used.`);
+    }
+    out = { kind: "when", test, children: thenBody ?? [out] };
+
+    if (elseRef) {
+      const elseBody = resolve(elseRef[1]);
+      if (elseBody) {
+        out = { kind: "fragment", children: [out, { kind: "when", test: `!(${test})`, children: elseBody }] };
+      } else {
+        ctx.note(`<${node.tag}> had an \`else ${elseRef[1]}\` branch and no <ng-template #${elseRef[1]}> is in this markup. Wire the fallback in by hand.`);
+      }
+    }
   }
 
   return out;
 }
+
+/** The list expression a loop maps over; a numeric range is spelled out. */
+function loopList(loop, ctx) {
+  if (loop.range) return `Array.from({ length: ${loop.list} }, (_, i) => i + 1)`;
+  const list = ctx.expr(loop.list);
+  ctx.lists.add(list);
+  return list;
+}
+
+/** A subtree the author marked uncompiled: everything stays as written. */
+function literalElement(node, d) {
+  if (node.type === "text") return { kind: "text", parts: [{ literal: node.text }] };
+  if (node.type === "comment") return { kind: "comment", text: node.text };
+  const tag = node.tag.toLowerCase();
+  return {
+    kind: "element",
+    tag: node.tag,
+    void: VOID.has(tag),
+    attrs: node.attrs
+      .filter((a) => !d.pre?.(a.name))
+      .map((a) => (a.value === null ? { name: a.name, kind: "flag" } : { name: a.name, kind: "static", value: a.value })),
+    classes: [], styles: [], events: [], model: null, modelKind: null, modelModifiers: [],
+    children: (node.children ?? []).map((c) => literalElement(c, d)),
+  };
+}
+
+/** What each Vue key modifier means in event.key terms. */
+const KEY_MODS = {
+  enter: "Enter", esc: "Escape", escape: "Escape", tab: "Tab", space: " ",
+  delete: "Delete", up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight",
+};
 
 function buildElement(node, d, ctx, sw = null) {
   const attrs = [];
@@ -464,8 +589,17 @@ function buildElement(node, d, ctx, sw = null) {
   const modelModifiers = [];
   let model = null;
   let staticClass = null;
+  let optionsLoop = null;
+  let textParts = null;
 
   for (const { name, value } of node.attrs) {
+    // A text directive replaces the element's content, exactly as it does at
+    // runtime; whatever markup sat inside was the pre-binding placeholder.
+    const textKind = d.text?.(name);
+    if (textKind) {
+      textParts = textKind === "template" ? interpolate(value ?? "", ctx.expr) : [{ expression: ctx.expr(value) }];
+      continue;
+    }
     const showKind = d.show?.(name);
     if (showKind) {
       // Hiding is not the same as not rendering, and dropping it puts
@@ -489,10 +623,41 @@ function buildElement(node, d, ctx, sw = null) {
       continue;
     }
 
+    // ng-options is a comprehension that generates the option elements. The
+    // common forms carry across; one that cannot be read stays a note, and
+    // the select keeps whatever children it had.
+    if (d.options?.(name)) {
+      const m = /^\s*(?:([\s\S]+?)\s+as\s+)?([\s\S]+?)\s+for\s+([\w$]+)\s+in\s+([\s\S]+?)(?:\s+track\s+by\s+[\s\S]+)?\s*$/.exec(value ?? "");
+      if (!m) {
+        ctx.note(`The ng-options comprehension \`${value}\` could not be read. The select keeps its markup children only.`);
+        continue;
+      }
+      ctx.locals.add(m[3]);
+      const list = ctx.expr(m[4]);
+      ctx.lists.add(list);
+      optionsLoop = {
+        kind: "each",
+        list,
+        item: m[3],
+        index: null,
+        object: false,
+        key: `${m[3]}.id ?? ${m[3]}`,
+        children: [{
+          kind: "element",
+          tag: "option",
+          void: false,
+          attrs: [{ name: "value", kind: "bound", expression: ctx.expr(m[1] ?? m[3]) }],
+          classes: [], styles: [], events: [], model: null, modelKind: null, modelModifiers: [],
+          children: [{ kind: "text", parts: [{ expression: ctx.expr(m[2]) }] }],
+        }],
+      };
+      continue;
+    }
+
     const event = d.event(name);
     if (event) {
       const raw = d.handler ? d.handler(String(value ?? ""), ctx.note) : value;
-      events.push({ name: event, handler: ctx.expr(raw) });
+      events.push({ name: event, handler: ctx.expr(raw), modifiers: d.eventMods?.(name) ?? [] });
       continue;
     }
 
@@ -549,13 +714,26 @@ function buildElement(node, d, ctx, sw = null) {
     : model && tag === "select" && attrs.some((a) => a.name.toLowerCase() === "multiple")
       ? "select-multiple"
       : null;
+  // <component :is="widget"> renders whichever component the expression
+  // names. The expression travels on its own field; a printer that cannot
+  // render a dynamic tag keeps the element visible instead of guessing.
+  // The bound attribute stays in the list, so a printer with no dynamic tag
+  // still shows `<component is={...}>` instead of losing the expression.
+  let tagExpression = null;
+  if (d.dynamic?.(tag)) {
+    tagExpression = attrs.find((a) => a.name === "is" && a.kind === "bound")?.expression ?? null;
+  }
+
   return {
     kind: "element",
     tag: TRANSPARENT.has(tag) ? null : node.tag,
+    tagExpression,
     void: VOID.has(tag),
     attrs, classes, styles, events, model, modelKind,
     modelModifiers,
-    children: convertList(node.children, d, ctx, sw),
+    children: textParts ? [{ kind: "text", parts: textParts }]
+      : optionsLoop ? [optionsLoop]
+      : convertList(node.children, d, ctx, sw),
   };
 }
 

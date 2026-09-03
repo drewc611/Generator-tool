@@ -1,5 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
-import { jsString } from "../dsp-ir/emit.js";
+import { jsString, guardHandler } from "../dsp-ir/emit.js";
 
 /**
  * The printer with no framework underneath it.
@@ -83,7 +83,9 @@ function attributes(node, ctx) {
       out.push(` data-on-input="${ctx.handler("input", `${setterFor(node.model)} = event.target.value`)}"`);
     }
   }
-  for (const event of node.events) out.push(` data-on-${event.name}="${ctx.handler(event.name, event.handler)}"`);
+  for (const event of node.events) {
+    out.push(` data-on-${event.name}="${ctx.handler(event.name, guardHandler(event.name, event.handler, event.modifiers))}"`);
+  }
   // A delegated listener fires long after the row that owns it was printed, so
   // the row has to carry its own index or the handler has no item to act on.
   if (ctx.scope() && (node.events.length || node.model)) out.push(` data-i="\${${ctx.scope().index}}"`);
@@ -109,8 +111,14 @@ function print(node, depth, ctx) {
       return body.trim() ? indent + body.trim() : "";
     }
 
-    case "slot":
-      return `${indent}<slot></slot>`;
+    case "slot": {
+      // The one target where slots are the platform's own: the fallback
+      // children are native behaviour, not an emulation.
+      const name = node.name ? ` name="${node.name.replace(/"/g, "&quot;")}"` : "";
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 1, ctx)).filter(Boolean);
+      if (!fallback.length) return `${indent}<slot${name}></slot>`;
+      return [`${indent}<slot${name}>`, ...fallback, `${indent}</slot>`].join("\n");
+    }
 
     // Already named as a trust decision by the IR. It is the one place the
     // escaping is skipped, and it is skipped on purpose.
@@ -131,6 +139,9 @@ function print(node, depth, ctx) {
       const index = node.index ?? "__i";
       const inner = ctx.within({ item: node.item, list: node.list, index }, () =>
         node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n"));
+      if (node.object) {
+        return `${indent}\${Object.entries(${node.list} ?? {}).map(([${node.index}, ${node.item}]) => \`\n${inner}\n${indent}\`).join("")}`;
+      }
       return `${indent}\${(${node.list} ?? []).map((${node.item}, ${index}) => \`\n${inner}\n${indent}\`).join("")}`;
     }
 

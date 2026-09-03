@@ -1,5 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
-import { jsString } from "../dsp-ir/emit.js";
+import { jsString, guardHandler } from "../dsp-ir/emit.js";
 
 /**
  * The Svelte printer. It is the argument for the IR: this file is under two
@@ -68,7 +68,10 @@ function attributes(node) {
     else if (node.modelKind === "radio") out.push(`bind:group={${target}}`);
     else out.push(`bind:value={${target}}`);
   }
-  for (const event of node.events) out.push(`on:${event.name}={${/\bevent\b/.test(event.handler) ? `(event) => ${event.handler}` : `() => ${event.handler}`}}`);
+  for (const event of node.events) {
+    const handler = guardHandler(event.name, event.handler, event.modifiers);
+    out.push(`on:${event.name}={${/\bevent\b/.test(handler) ? `(event) => ${handler}` : `() => ${handler}`}}`);
+  }
   styleAttribute(node.styles, out);
   return out;
 }
@@ -89,8 +92,12 @@ function print(node, depth) {
       return body ? indent + body : "";
     }
 
-    case "slot":
-      return `${indent}<slot />`;
+    case "slot": {
+      const name = node.name ? ` name="${node.name}"` : "";
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 1)).filter(Boolean);
+      if (!fallback.length) return `${indent}<slot${name} />`;
+      return [`${indent}<slot${name}>`, ...fallback, `${indent}</slot>`].join("\n");
+    }
 
     case "html":
       return `${indent}{@html ${node.expression}}`;
@@ -106,11 +113,23 @@ function print(node, depth) {
     case "each": {
       const head = node.index ? `${node.item}, ${node.index}` : node.item;
       const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
+      if (node.object) {
+        return `${indent}{#each Object.entries(${node.list}) as [${node.index}, ${node.item}] (${node.index})}\n${inner}\n${indent}{/each}`;
+      }
       return `${indent}{#each ${node.list} as ${head} (${node.key})}\n${inner}\n${indent}{/each}`;
     }
 
     case "element": {
       if (!node.tag) return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
+      // Svelte renders a dynamic component through svelte:component.
+      if (node.tagExpression) {
+        const shed = { ...node, attrs: node.attrs.filter((a) => a.name !== "is") };
+        const props = attributes(shed);
+        const open = `<svelte:component this={${node.tagExpression}}${props.length ? " " + props.join(" ") : ""}`;
+        const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+        if (!children.length) return `${indent}${open} />`;
+        return [`${indent}${open}>`, ...children, `${indent}</svelte:component>`].join("\n");
+      }
       const props = attributes(node);
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
       const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);

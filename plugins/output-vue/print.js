@@ -89,8 +89,10 @@ function attributes(node) {
   if (node.model) out.push(`v-model="${attrValue(node.model)}"`);
   for (const event of node.events) {
     // `$event` is the name Vue gives the argument, and the IR normalised it to
-    // `event` on the way in, so it is spelled back on the way out.
-    out.push(`@${event.name}="${attrValue(event.handler.replace(/\bevent\b/g, "$event"))}"`);
+    // `event` on the way in, so it is spelled back on the way out. Modifiers
+    // ride the event name natively; Vue is the one target that keeps them all.
+    const mods = event.modifiers?.length ? `.${event.modifiers.join(".")}` : "";
+    out.push(`@${event.name}${mods}="${attrValue(event.handler.replace(/\bevent\b/g, "$event"))}"`);
   }
   styleAttribute(node.styles, out);
   return out;
@@ -112,8 +114,12 @@ function print(node, depth) {
       return body ? indent + body : "";
     }
 
-    case "slot":
-      return `${indent}<slot />`;
+    case "slot": {
+      const name = node.name ? ` name="${attrValue(node.name)}"` : "";
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 1)).filter(Boolean);
+      if (!fallback.length) return `${indent}<slot${name} />`;
+      return [`${indent}<slot${name}>`, ...fallback, `${indent}</slot>`].join("\n");
+    }
 
     case "html":
       return `${indent}<div v-html="${attrValue(node.expression)}"></div>`;
@@ -128,7 +134,9 @@ function print(node, depth) {
 
     case "each": {
       const head = node.index ? `(${node.item}, ${node.index})` : node.item;
-      const directive = `v-for="${attrValue(`${head} in ${node.list}`)}" ${bind("key", node.key)}`;
+      // Vue iterates an object natively; the pair form keeps the key name.
+      const source = node.object ? `(${node.item}, ${node.index}) in ${node.list}` : `${head} in ${node.list}`;
+      const directive = `v-for="${attrValue(source)}" ${bind("key", node.object ? node.index : node.key)}`;
       return node.children.map((c) => print(withDirective(c, directive), depth)).filter(Boolean).join("\n");
     }
 

@@ -44,7 +44,16 @@ function attributes(node) {
   }
   if (node.model) out.push(`[(ngModel)]="${attrSafe(node.model)}"`);
   for (const event of node.events) {
-    out.push(`(${event.name})="${attrSafe(event.handler.replace(/\bevent\b/g, "$event"))}"`);
+    // Angular spells key filters on the event name and has statements but no
+    // blocks, so prevent and stop become leading statements on $event.
+    const mods = event.modifiers ?? [];
+    const key = mods.find((m) => /^(enter|esc|escape|tab|space|delete|arrowup|arrowdown|arrowleft|arrowright|up|down|left|right)$/.test(m) && /^key/.test(event.name));
+    const name = key ? `${event.name}.${key.replace(/^(up|down|left|right)$/, "arrow$1")}` : event.name;
+    const lead = [
+      ...(mods.includes("prevent") ? ["$event.preventDefault(); "] : []),
+      ...(mods.includes("stop") ? ["$event.stopPropagation(); "] : []),
+    ].join("");
+    out.push(`(${name})="${attrSafe(lead + event.handler.replace(/\bevent\b/g, "$event"))}"`);
   }
   styleAttribute(node.styles, out);
   return out;
@@ -61,7 +70,13 @@ function print(node, depth) {
       const body = node.parts.map((p) => (p.expression !== undefined ? `{{ ${p.expression} }}` : p.literal.replace(/\s+/g, " "))).join("").trim();
       return body ? indent + body : "";
     }
-    case "slot": return `${indent}<ng-content />`;
+    case "slot": {
+      // Fallback content inside ng-content is native from Angular 18.
+      const select = node.name ? ` select="[${node.name}]"` : "";
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 1)).filter(Boolean);
+      if (!fallback.length) return `${indent}<ng-content${select} />`;
+      return [`${indent}<ng-content${select}>`, ...fallback, `${indent}</ng-content>`].join("\n");
+    }
     case "html": return `${indent}<div [innerHTML]="${attrSafe(node.expression)}"></div>`;
     case "fragment": return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
     case "when": {
@@ -70,6 +85,11 @@ function print(node, depth) {
     }
     case "each": {
       const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
+      // Angular iterates entries through the keyvalue pipe; the pair comes
+      // back as {key, value}, so the original names are rebound to it.
+      if (node.object) {
+        return `${indent}@for (entry of ${node.list} | keyvalue; track entry.key) {\n${indent}  @let ${node.index} = entry.key;\n${indent}  @let ${node.item} = entry.value;\n${inner}\n${indent}}`;
+      }
       return `${indent}@for (${node.item} of ${node.list}; track ${node.key}) {\n${inner}\n${indent}}`;
     }
     case "element": {

@@ -48,6 +48,41 @@ export function singleQuoted(value) {
     .replace(/\u2029/g, "\\u2029")}'`;
 }
 
+/** What each key modifier accepts. Vue's .delete takes both deleting keys. */
+const GUARD_KEYS = {
+  enter: ["Enter"], esc: ["Escape"], escape: ["Escape"], tab: ["Tab"], space: [" "],
+  delete: ["Delete", "Backspace"], up: ["ArrowUp"], down: ["ArrowDown"], left: ["ArrowLeft"], right: ["ArrowRight"],
+};
+const GUARD_BUTTONS = { left: 0, middle: 1, right: 2 };
+
+/**
+ * Event modifiers, for the targets whose handlers are plain functions. Each
+ * modifier becomes the statement it stands for, guards first, so `.prevent`
+ * and `.enter` survive the trip into a framework that has no dot syntax.
+ * A modifier with no equivalent runs the handler unguarded and says so.
+ */
+export function guardHandler(name, handler, modifiers, note = () => {}) {
+  const mods = modifiers ?? [];
+  if (!mods.length) return handler;
+  const guards = [];
+  const effects = [];
+  const keyish = /^key/.test(name);
+  for (const mod of mods) {
+    if (mod === "prevent") effects.push("event.preventDefault();");
+    else if (mod === "stop") effects.push("event.stopPropagation();");
+    else if (mod === "self") guards.push("if (event.target !== event.currentTarget) return;");
+    else if (keyish && GUARD_KEYS[mod]) {
+      guards.push(`if (${GUARD_KEYS[mod].map((k) => `event.key !== ${jsString(k)}`).join(" && ")}) return;`);
+    } else if (!keyish && GUARD_BUTTONS[mod] !== undefined) {
+      guards.push(`if (event.button !== ${GUARD_BUTTONS[mod]}) return;`);
+    } else {
+      note(`The \`.${mod}\` modifier on \`${name}\` has no equivalent in this target. The handler runs without it; re-apply the constraint by hand.`);
+    }
+  }
+  if (!guards.length && !effects.length) return handler;
+  return `{ ${[...guards, ...effects].join(" ")} ${handler}; }`;
+}
+
 /**
  * Text destined for the inside of a generated template literal. The backslash
  * goes first, or the escapes the later passes add are themselves escaped.

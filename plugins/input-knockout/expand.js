@@ -39,8 +39,39 @@ export function bindings(value) {
 
 const esc = (v) => String(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
+/**
+ * Containerless bindings live in comments: <!-- ko if: x --> ... <!-- /ko -->.
+ * They become ng-container elements carrying the same ko-* attributes, which
+ * then dissolve in the IR, exactly as knockout dissolves the comments. A
+ * containerless foreach names its row `item` and `$data` is rewritten to it;
+ * bare property names stay as written and the gap is named.
+ */
+export function expandContainerless(html, note = () => {}) {
+  let text = String(html ?? "");
+  if (!/<!--\s*ko\s/.test(text)) return text;
+
+  text = text.replace(/<!--\s*ko\s+(if|ifnot|foreach|with)\s*:\s*([\s\S]*?)-->/g, (whole, kind, raw) => {
+    const value = raw.trim();
+    if (kind === "if" || kind === "ifnot") {
+      return `<ng-container ko-if="${esc(kind === "ifnot" ? `!(${value})` : value)}">`;
+    }
+    if (kind === "foreach") {
+      note(
+        "A containerless foreach names no row, so inside it every bare name means a property of the row. " +
+        "The port calls the row `item` and rewrites `$data` to it; prefix bare row fields with `item.` by hand."
+      );
+      return `<ng-container ko-foreach="${esc(`item in ${value}`)}">`;
+    }
+    note(`A containerless \`${kind}: ${value}\` rescopes its children. The children are kept and the rescope dropped; prefix their references with \`${value}.\` by hand.`);
+    return `<ng-container>`;
+  });
+  text = text.replace(/<!--\s*\/ko\s*-->/g, "</ng-container>");
+  // knockout's name for the current row, spelled as the name the loop got.
+  return text.replace(/\$data\b/g, "item");
+}
+
 export function expand(html, note = () => {}) {
-  const text = String(html ?? "");
+  const text = expandContainerless(String(html ?? ""), note);
   if (!/data-bind\s*=/.test(text)) return text;
 
   return text.replace(/<([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|[^>"'])*?)(\/?)>/g, (whole, tag, attrs, selfClose) => {

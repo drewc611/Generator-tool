@@ -1,5 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
-import { identifier, jsString } from "../dsp-ir/emit.js";
+import { identifier, jsString, guardHandler } from "../dsp-ir/emit.js";
 
 /**
  * The Lit target: the custom element with a rendering library, for teams that
@@ -46,7 +46,8 @@ function attributes(node) {
     }
   }
   for (const event of node.events) {
-    out.push(`@${event.name}=\${(event) => ${event.handler.startsWith("this.") ? event.handler : `this.${event.handler}`}}`);
+    const body = event.handler.startsWith("this.") ? event.handler : `this.${event.handler}`;
+    out.push(`@${event.name}=\${(event) => ${guardHandler(event.name, body, event.modifiers)}}`);
   }
   for (const s of node.styles) {
     if (s.kind === "declaration") out.push(`style=\${\`${s.property}: \${${s.literal !== undefined ? jsString(s.literal) : s.expression}}${s.unit ?? ""}\`}`);
@@ -63,7 +64,12 @@ function print(node, depth) {
       const body = node.parts.map((p) => (p.expression !== undefined ? `\${${p.expression}}` : p.literal.replace(/\s+/g, " "))).join("").trim();
       return body ? indent + body : "";
     }
-    case "slot": return `${indent}<slot></slot>`;
+    case "slot": {
+      const name = node.name ? ` name="${node.name.replace(/"/g, "&quot;")}"` : "";
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 1)).filter(Boolean);
+      if (!fallback.length) return `${indent}<slot${name}></slot>`;
+      return [`${indent}<slot${name}>`, ...fallback, `${indent}</slot>`].join("\n");
+    }
     case "html": return `${indent}\${unsafeHTML(${node.expression})}`;
     case "fragment": return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
     case "when": {

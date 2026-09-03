@@ -1,5 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
-import { jsString } from "../dsp-ir/emit.js";
+import { jsString, guardHandler } from "../dsp-ir/emit.js";
 
 /**
  * The Solid target. Solid is the one target where spelling matters for
@@ -74,7 +74,7 @@ function attributes(node, ctx) {
 
   for (const event of node.events) {
     const name = `on${event.name.charAt(0).toUpperCase()}${camel(event.name).slice(1)}`;
-    const handler = q(event.handler);
+    const handler = guardHandler(event.name, q(event.handler), event.modifiers);
     out.push(`${name}={${/\bevent\b/.test(handler) ? `(event) => ${handler}` : `() => ${handler}`}}`);
   }
 
@@ -104,8 +104,12 @@ function print(node, depth, ctx) {
         .trim();
       return body ? indent + body : "";
     }
-    case "slot":
-      return `${indent}{props.children}`;
+    case "slot": {
+      const name = node.name ? node.name.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) : "children";
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 2, ctx)).filter(Boolean);
+      if (!fallback.length) return `${indent}{props.${name}}`;
+      return [`${indent}{props.${name} ?? (`, `${pad(depth + 1)}<>`, ...fallback, `${pad(depth + 1)}</>`, `${indent})}`].join("\n");
+    }
     case "html":
       return `${indent}<div innerHTML={${q(node.expression)}} />`;
     case "when": {
@@ -115,11 +119,19 @@ function print(node, depth, ctx) {
     case "each": {
       ctx.locals.add(node.item);
       if (node.index) ctx.locals.add(node.index);
-      const args = node.index ? `(${node.item}, ${node.index})` : `(${node.item})`;
-      const inner = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n");
+      const args = node.object
+        ? `([${node.index}, ${node.item}])`
+        : node.index ? `(${node.item}, ${node.index})` : `(${node.item})`;
+      // A condition that is the whole row body cannot keep its JSX braces
+      // here: the callback returns an expression, not JSX children.
+      const sole = node.children.length === 1 && node.children[0].kind === "when" ? node.children[0] : null;
+      const inner = (sole ? sole.children : node.children).map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n");
+      const test = sole ? q(sole.test) : null;
       ctx.locals.delete(node.item);
       if (node.index) ctx.locals.delete(node.index);
-      return `${indent}<For each={${q(node.list)}}>{${args} => (\n${inner}\n${indent})}</For>`;
+      const source = node.object ? `Object.entries(${q(node.list)})` : q(node.list);
+      if (sole) return `${indent}<For each={${source}}>{${args} => ${/\|\||\?/.test(test) ? `(${test})` : test} && (\n${inner}\n${indent})}</For>`;
+      return `${indent}<For each={${source}}>{${args} => (\n${inner}\n${indent})}</For>`;
     }
     case "fragment": {
       const children = node.children.map((c) => print(c, depth, ctx)).filter(Boolean);

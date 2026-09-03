@@ -1,5 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
-import { jsString } from "../dsp-ir/emit.js";
+import { jsString, guardHandler } from "../dsp-ir/emit.js";
 import { parse } from "../dsp-ir/parse.js";
 
 /**
@@ -127,7 +127,8 @@ function attributes(node, ctx) {
     if (changeLike.includes(event)) continue;
     const base = camel(event.name);
     const on = `on${base.charAt(0).toUpperCase()}${base.slice(1)}`;
-    out.push(`${on}={${/\bevent\b/.test(event.handler) ? `(event) => ${event.handler}` : `() => ${event.handler}`}}`);
+    const handler = guardHandler(event.name, event.handler, event.modifiers, ctx?.note);
+    out.push(`${on}={${/\bevent\b/.test(handler) ? `(event) => ${handler}` : `() => ${handler}`}}`);
   }
 
   const style = styleAttribute(node.styles);
@@ -151,8 +152,14 @@ function print(node, depth, ctx) {
       return body ? indent + body : "";
     }
 
-    case "slot":
-      return `${indent}{children}`;
+    case "slot": {
+      // A named slot arrives as a prop; the children inside the tag are the
+      // fallback, rendered only when the caller passed nothing for it.
+      const name = node.name ? camel(node.name) : "children";
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 2, ctx)).filter(Boolean);
+      if (!fallback.length) return `${indent}{${name}}`;
+      return [`${indent}{${name} ?? (`, `${pad(depth + 1)}<>`, ...fallback, `${pad(depth + 1)}</>`, `${indent})}`].join("\n");
+    }
 
     case "html":
       return `${indent}<div dangerouslySetInnerHTML={{ __html: ${node.expression} }} />`;
@@ -173,9 +180,23 @@ function print(node, depth, ctx) {
     }
 
     case "each": {
-      const args = node.index ? `(${node.item}, ${node.index})` : `(${node.item})`;
+      // An object's entries are not an array: (key, value) iteration maps
+      // over Object.entries with the pair destructured back to its names.
+      const args = node.object
+        ? `([${node.index}, ${node.item}])`
+        : node.index ? `(${node.item}, ${node.index})` : `(${node.item})`;
+      const list = node.object ? `Object.entries(${node.list})` : node.list;
+      const key = node.object ? node.index : node.key;
+      // A condition that is the whole row body cannot keep its JSX braces
+      // here: the map callback returns an expression, not JSX children.
+      const sole = node.children.length === 1 && node.children[0].kind === "when" ? node.children[0] : null;
+      if (sole) {
+        const body = sole.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n");
+        const test = /\|\||\?/.test(sole.test) ? `(${sole.test})` : sole.test;
+        return `${indent}{${list}.map(${args} => ${test} && (\n${withKey(body, key)}\n${indent}))}`;
+      }
       const inner = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n");
-      return `${indent}{${node.list}.map(${args} => (\n${withKey(inner, node.key)}\n${indent}))}`;
+      return `${indent}{${list}.map(${args} => (\n${withKey(inner, key)}\n${indent}))}`;
     }
 
     case "element": {
@@ -184,6 +205,13 @@ function print(node, depth, ctx) {
         const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
         if (!children.length) return `${indent}<></>`;
         return [`${indent}<>`, ...children, `${indent}</>`].join("\n");
+      }
+
+      // A dynamic tag needs a capitalized name before JSX will treat it as a
+      // component, so the expression is bound to one for the row.
+      if (node.tagExpression) {
+        const shed = { ...node, tagExpression: null, tag: "Dyn", attrs: node.attrs.filter((a) => a.name !== "is") };
+        return `${indent}{(() => { const Dyn = ${node.tagExpression}; return (\n${print(shed, depth + 1, ctx)}\n${indent}); })()}`;
       }
 
       // A tag that names another screen in the run is that screen, ported. The

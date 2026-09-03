@@ -37,7 +37,11 @@ function attributes(node) {
     }
   }
   if (node.model) out.push(`x-model="${esc(node.model)}"`);
-  for (const event of node.events) out.push(`@${event.name}="${esc(event.handler)}"`);
+  // Alpine kept Vue's modifier spelling, so they ride the name unchanged.
+  for (const event of node.events) {
+    const mods = event.modifiers?.length ? `.${event.modifiers.join(".")}` : "";
+    out.push(`@${event.name}${mods}="${esc(event.handler)}"`);
+  }
   for (const s of node.styles) {
     if (s.kind === "declaration" && s.literal !== undefined) out.push(`style="${esc(`${s.property}: ${s.literal}`)}"`);
     else if (s.kind === "declaration") out.push(`:style="${esc(`{ ${jsString(s.property)}: ${s.expression}${s.unit ? ` + ${jsString(s.unit)}` : ""} }`)}"`);
