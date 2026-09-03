@@ -11,8 +11,15 @@
  */
 const token = ($type, $value, $description) => ({ $type, $value, ...($description ? { $description } : {}) });
 
-export function buildDocument(tokens, description) {
-  const doc = { $description: description };
+export function buildDocument(tokens, description, evidence = []) {
+  // $extensions is the format's sanctioned pocket for tool facts, so the
+  // measurement trail rides inside the document instead of beside it: a
+  // design tool importing this keeps the evidence for where each scale came
+  // from, which is the difference between a measurement and a taste.
+  const doc = {
+    $description: description,
+    ...(evidence.length ? { $extensions: { "dev.portamp.evidence": evidence } } : {}),
+  };
 
   if (tokens.color) {
     doc.color = Object.fromEntries(Object.entries(tokens.color).map(([k, v]) => [k, token("color", v)]));
@@ -49,7 +56,7 @@ export default {
 
       const { provenance, ...measured } = ctx.tokens;
       await ctx.write("design/tokens.json", JSON.stringify(
-        buildDocument(measured, "Measured from the legacy app by portamp. These are what it rendered, not a recommendation."), null, 2) + "\n");
+        buildDocument(measured, "Measured from the legacy app by portamp. These are what it rendered, not a recommendation.", provenance ?? []), null, 2) + "\n");
       if (ctx.uplift?.tokens) {
         await ctx.write("design/tokens.modern.json", JSON.stringify(
           buildDocument(ctx.uplift.tokens, "Proposed by portamp's uplift. Hues kept, contrast fixed; see DESIGN_UPLIFT.md before adopting."), null, 2) + "\n");

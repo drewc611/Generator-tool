@@ -23,6 +23,14 @@ const templated = (path) =>
 
 const paramsIn = (path) => [...templated(path).matchAll(/\{([\w$]+)\}/g)].map((m) => m[1]);
 
+// A query string written into the call site is as much of the contract as
+// the path is; only a key whose name is itself an expression stays out.
+const queryIn = (path) => {
+  const query = String(path).split("?")[1];
+  if (!query) return [];
+  return [...new Set(query.split("&").map((pair) => pair.split("=")[0]).filter((k) => k && !/[{$]/.test(k)))];
+};
+
 const summarise = (method, path) => {
   const segments = templated(path).split("/").filter(Boolean);
   const noun = segments.filter((s) => !s.startsWith("{")).pop() ?? "resource";
@@ -75,6 +83,10 @@ export function buildDocument(ctx) {
         ...(seen?.query ?? []).map((name) => ({
           name, in: "query", required: false, schema: { type: "string" },
           description: "Observed in a real request.",
+        })),
+        ...queryIn(call.path).filter((name) => !(seen?.query ?? []).includes(name)).map((name) => ({
+          name, in: "query", required: false, schema: { type: "string" },
+          description: "Read from the call site in the source; never observed live.",
         })),
       ],
       responses: {},

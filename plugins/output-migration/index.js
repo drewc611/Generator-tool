@@ -52,6 +52,13 @@ export default {
 
       const hasConformance = ctx.written.some((f) => /conformance\.spec\.js$/.test(f));
       const steps = planSteps(ctx.routes.table, ctx.screens, { hasConformance });
+      // The step's risk has a number already: how many unverified notes name
+      // its screen. Zero is not proof of nothing, only of nothing named.
+      for (const step of steps) {
+        step.openItems = step.screen
+          ? ctx.report.unverified.filter((n) => String(n).includes(`<${step.screen}>`) || String(n).includes(` ${step.screen} `)).length
+          : null;
+      }
       await ctx.write("MIGRATION.md", render(steps, hasConformance));
       await ctx.write("MIGRATION_MAP.mmd", mermaid(steps, ctx));
       log.info(`${steps.length} cutover step(s) planned, ${steps.filter((s) => s.rank === 0).length} provable`);
@@ -63,7 +70,8 @@ function render(steps, hasConformance) {
   const rows = steps.map((s, i) => {
     const target = s.screen ? `\`<${s.screen}>\`` : s.lazy ? "a lazy module the run has not read" : "**not ported yet**";
     const proof = s.proof ?? "cannot cut over until it exists in the port";
-    return `| ${i + 1} | \`${s.route}\` | ${target} | ${proof} |`;
+    const open = s.openItems === null ? "—" : s.openItems === 0 ? "none named" : `${s.openItems} in PORT_NOTES.md`;
+    return `| ${i + 1} | \`${s.route}\` | ${target} | ${proof} | ${open} |`;
   });
 
   return `# The cutover, one route at a time
@@ -76,9 +84,13 @@ does not yet, and each step is small enough to reverse.
 The order is by evidence, not preference: routes the run has ported and can
 prove go first.
 
-| step | route | serves | proven by |
-| --- | --- | --- | --- |
+| step | route | serves | proven by | open items |
+| --- | --- | --- | --- | --- |
 ${rows.join("\n")}
+
+"Open items" counts the unverified notes that name the step's screen: the
+work a person still owes that step before its cutover. "None named" is not
+proof of nothing, only of nothing the run could name.
 
 ## The rules that make this safe
 

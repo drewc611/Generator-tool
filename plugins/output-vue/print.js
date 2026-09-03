@@ -86,7 +86,12 @@ function attributes(node) {
     }
   }
 
-  if (node.model) out.push(`v-model="${attrValue(node.model)}"`);
+  // The modifiers ride back out: .trim and .number are behaviour, and this
+  // is the one target that can keep their exact spelling.
+  if (node.model) {
+    const mods = (node.modelModifiers ?? []).map((m) => `.${m}`).join("");
+    out.push(`v-model${mods}="${attrValue(node.model)}"`);
+  }
   for (const event of node.events) {
     // `$event` is the name Vue gives the argument, and the IR normalised it to
     // `event` on the way in, so it is spelled back on the way out. Modifiers

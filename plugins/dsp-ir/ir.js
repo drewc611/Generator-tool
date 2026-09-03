@@ -281,7 +281,21 @@ export function buildIr(html, { dialect } = {}) {
       value = rewritten;
       pipes = step.pipes;
     }
-    const code = value.replace(/\$event/g, "event");
+    let code = value.replace(/\$event/g, "event");
+    // $emit("pick", row) in Vue and pick.emit(row) in Angular both mean
+    // "call this component's output". The callback prop is that meaning in
+    // every target, so the IR spells it that way; a printer for the source
+    // framework simply prints the prop it would have received anyway.
+    const callback = (name) => {
+      const clean = String(name).replace(/[:.]/g, "-").replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+      return `on${clean.charAt(0).toUpperCase()}${clean.slice(1)}`;
+    };
+    if (d.name === "vue") {
+      code = code.replace(/\$emit\(\s*['"]([\w$:.-]+)['"]\s*(?:,\s*)?/g, (m, name) => `${callback(name)}(`);
+    }
+    if (d.name === "angular") {
+      code = code.replace(/\b([\w$]+)\.emit\(/g, (m, name) => `${callback(name)}(`);
+    }
     for (const id of rootIdentifiers(code)) reads.add(id);
     return code;
   };

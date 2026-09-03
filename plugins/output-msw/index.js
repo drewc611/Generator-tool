@@ -104,7 +104,7 @@ ${body}
  * one. Use them one at a time; a suite that runs against all three has
  * exercised every state the emitted components render.
  */
-export function renderScenarios(handlers) {
+export function renderScenarios(handlers, complaints = []) {
   const routes = handlers.map((h) => `  ["${h.method.toLowerCase()}", ${JSON.stringify(h.path)}],`).join("\n");
   return `import { http, HttpResponse, delay } from "msw";
 import { handlers } from "./handlers.js";
@@ -137,6 +137,16 @@ export const empty = () =>
   ROUTES.map(([method, path]) => http[method](path, () => HttpResponse.json(
     method === "get" ? [] : {}, { status: 200 }
   )));
+
+/**
+ * Every write refused as a validation failure${complaints.length ? ", in the messages the\n * original app was actually seen making" : ""}. The form's error rendering,
+ * exercised without a server.
+ */
+export const rejecting = (status = 422) =>
+  ROUTES.filter(([method]) => method !== "get").map(([method, path]) =>
+    http[method](path, () => HttpResponse.json(
+      { errors: ${JSON.stringify(complaints.length ? complaints.slice(0, 10) : ["The input was not accepted."])} }, { status }
+    )));
 `;
 }
 
@@ -166,7 +176,12 @@ export default {
       if (!handlers.length) return log.info("no endpoints to mock");
 
       await ctx.write("src/mocks/handlers.js", renderHandlers(handlers));
-      await ctx.write("src/mocks/scenarios.js", renderScenarios(handlers));
+      const complaints = [...new Set(
+        (ctx.forms ?? []).flatMap((form) => form.fields.map((field) =>
+          typeof field.observed === "string" ? field.observed : field.observed?.message
+        )).filter((m) => typeof m === "string" && m.trim())
+      )];
+      await ctx.write("src/mocks/scenarios.js", renderScenarios(handlers, complaints));
       await ctx.write("src/mocks/browser.js", BROWSER);
       await ctx.write("src/mocks/server.js", NODE);
       for (const note of unverified) ctx.unverified(note);

@@ -7,6 +7,23 @@
 export const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input",
   "link", "meta", "param", "source", "track", "wbr"]);
 
+/**
+ * The five named entities and the numeric forms, decoded where markup stores
+ * text. `&amp;` last, or `&amp;quot;` would decode twice and invent a quote
+ * the author escaped on purpose.
+ */
+export function decodeEntities(value) {
+  return String(value)
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&");
+}
+
 export function parse(html) {
   const root = { type: "root", children: [] };
   const stack = [root];
@@ -18,7 +35,7 @@ export function parse(html) {
 
   const push = (node) => stack[stack.length - 1].children.push(node);
   const text = (value) => {
-    if (value) push({ type: "text", text: value });
+    if (value) push({ type: "text", text: decodeEntities(value) });
   };
 
   while ((match = re.exec(html))) {
@@ -52,7 +69,8 @@ function parseAttrs(source) {
   let match;
   while ((match = re.exec(source))) {
     if (!match[1].trim()) continue;
-    attrs.push({ name: match[1], value: match[3] ?? match[4] ?? match[5] ?? null });
+    const raw = match[3] ?? match[4] ?? match[5] ?? null;
+    attrs.push({ name: match[1], value: raw === null ? null : decodeEntities(raw) });
   }
   return attrs;
 }

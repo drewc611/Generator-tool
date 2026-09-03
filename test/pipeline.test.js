@@ -39,6 +39,7 @@ test("the example runs end to end and writes the port", async (t) => {
     "src/tokens.js",
     "src/tokens.modern.css",
     "src/tokens.modern.js",
+    "tests/states.test.js",
   ]);
   for (const file of ctx.written) {
     const text = await readFile(join(out, file), "utf8");
