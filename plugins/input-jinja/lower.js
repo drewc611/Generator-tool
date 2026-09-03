@@ -29,8 +29,75 @@ export function pythonToJs(code) {
     .join("");
 }
 
+const BLOCK_RE = /\{%-?\s*block\s+([\w$]+)\s*-?%\}([\s\S]*?)\{%-?\s*endblock(?:\s+[\w$]+)?\s*-?%\}/g;
+
+/** Comma split that leaves quoted commas alone; for macro call arguments. */
+function splitArgs(text) {
+  const parts = [];
+  let start = 0;
+  let quote = null;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote) { if (c === quote && text[i - 1] !== "\\") quote = null; }
+    else if (c === "'" || c === '"') quote = c;
+    else if (c === ",") { parts.push(text.slice(start, i)); start = i + 1; }
+  }
+  parts.push(text.slice(start));
+  return parts.map((p) => p.trim()).filter(Boolean);
+}
+
 export function lowerJinja(source, note = () => {}, resolveInclude = null, depth = 0) {
   let text = String(source ?? "").replace(/\{#[\s\S]*?#\}/g, "");
+
+  // {% extends %} composes exactly like the server did: the child's blocks
+  // replace the parent's, a block the child leaves alone keeps its default,
+  // and {{ super() }} splices the default back in. Only a parent the run
+  // does not hold falls through to the note below.
+  const extend = /\{%-?\s*extends\s+['"]([^'"]+)['"]\s*-?%\}/.exec(text);
+  if (extend && resolveInclude && depth < 6) {
+    const parent = resolveInclude(extend[1]);
+    if (parent != null) {
+      const overrides = new Map();
+      for (const b of text.matchAll(BLOCK_RE)) overrides.set(b[1], b[2]);
+      const merged = String(parent).replace(BLOCK_RE, (whole, name, fallback) => {
+        const own = overrides.get(name);
+        if (own === undefined) return fallback;
+        return own.replace(/\{\{-?\s*super\(\)\s*-?\}\}/g, fallback);
+      });
+      return lowerJinja(merged, note, resolveInclude, depth + 1);
+    }
+  }
+
+  // A macro defined in this file expands at its call sites, arguments
+  // substituted textually; the note says so because a parameter name that
+  // also appears as plain text inside the body would be replaced with it.
+  const macros = new Map();
+  text = text.replace(/\{%-?\s*macro\s+([\w$]+)\s*\(([^)]*)\)\s*-?%\}([\s\S]*?)\{%-?\s*endmacro\s*-?%\}/g, (whole, name, params, body) => {
+    macros.set(name, {
+      params: params.split(",").map((p) => p.split("=")[0].trim()).filter(Boolean),
+      defaults: new Map(params.split(",").map((p) => p.split("=").map((s) => s.trim())).filter((p) => p.length === 2)),
+      body,
+    });
+    return "";
+  });
+  if (macros.size) {
+    text = text.replace(/\{\{-?\s*([\w$]+)\s*\(([^)]*)\)\s*-?\}\}/g, (whole, name, args) => {
+      const mac = macros.get(name);
+      if (!mac) return whole;
+      const values = splitArgs(args);
+      let body = mac.body;
+      mac.params.forEach((p, i) => {
+        const value = values[i] ?? mac.defaults.get(p);
+        if (value === undefined) {
+          note(`The macro \`${name}\` was called without \`${p}\` and it has no default. The name is left as written and nothing defines it.`);
+          return;
+        }
+        body = body.replace(new RegExp(`\\b${p.replace(/\$/g, "\\$")}\\b`, "g"), value);
+      });
+      note(`The macro \`${name}(...)\` was expanded at its call site with its arguments substituted textually. Check any body text that shares a parameter's name.`);
+      return body;
+    });
+  }
 
   // An include whose file is in the run can simply be inlined, which is what
   // the server did. Only a file the run does not hold becomes a note. The

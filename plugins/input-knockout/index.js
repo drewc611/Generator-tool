@@ -36,6 +36,31 @@ export function readViewModel(text, rel) {
   return { observables, handlers, calls };
 }
 
+/**
+ * ko.components.register("order-line", { template: "...", viewModel: ... })
+ * declared a real component boundary, unlike applyBindings which bound a
+ * page. The template is either inline or an element id resolved against the
+ * pages in the run; params become inputs the same way bindings do elsewhere.
+ */
+export function readComponents(text, rel) {
+  const components = [];
+  for (const m of text.matchAll(/ko\.components\.register\s*\(\s*['"`]([\w-]+)['"`]\s*,\s*\{/g)) {
+    const body = balanced(text, m.index + m[0].length - 1);
+    if (!body) continue;
+    const inline = /template\s*:\s*(['"`])([\s\S]*?)\1\s*[,}]/.exec(body);
+    const byId = /template\s*:\s*\{\s*element\s*:\s*['"`]([\w-]+)['"`]/.exec(body);
+    const params = [...body.matchAll(/params\.([\w$]+)/g)].map((p) => p[1]);
+    components.push({
+      name: m[1],
+      template: inline ? inline[2] : null,
+      elementId: byId ? byId[1] : null,
+      inputs: [...new Set(params)],
+      file: rel,
+    });
+  }
+  return components;
+}
+
 export default {
   name: "input-knockout",
   version: "0.1.0",
@@ -47,18 +72,58 @@ export default {
 
       let vm = null;
       const calls = [];
+      const components = [];
       for (const file of scripts) {
         const text = await readFile(file.path, "utf8").catch(() => "");
-        if (!text || !/ko\.(observable|applyBindings|computed)/.test(text)) continue;
+        if (!text || !/ko\.(observable|applyBindings|computed|components)/.test(text)) continue;
         const found = readViewModel(text, file.rel);
         calls.push(...found.calls);
+        components.push(...readComponents(text, file.rel));
         vm = vm
           ? { ...vm, observables: [...vm.observables, ...found.observables], handlers: [...vm.handlers, ...found.handlers] }
           : { file: file.rel, ...found };
       }
-      if (!vm) return log.debug("no knockout here");
+      if (!vm && !components.length) return log.debug("no knockout here");
 
       let screens = 0;
+
+      // Registered components are boundaries somebody drew; each one is a
+      // screen of its own, ahead of the bound pages.
+      for (const component of components) {
+        let template = component.template;
+        if (!template && component.elementId) {
+          for (const page of pages) {
+            const html = await readFile(page.path, "utf8").catch(() => "");
+            const el = new RegExp(`<(template|script)\\b[^>]*\\bid\\s*=\\s*["']${component.elementId}["'][^>]*>([\\s\\S]*?)</\\1>`, "i").exec(html);
+            if (el) { template = el[2]; break; }
+          }
+          if (!template) ctx.unverified(`ko component ${component.name}: its template element #${component.elementId} is not in the pages this run read, so only its params can be ported.`);
+        }
+        const notes = [];
+        const expanded = template ? expand(template, (n) => notes.push(n)) : null;
+        ctx.screens.push({
+          selector: component.name,
+          className: null,
+          file: component.file,
+          inputs: component.inputs,
+          outputs: [],
+          template: expanded,
+          templateOrigin: component.template ? "the ko.components registration" : `the #${component.elementId} template element`,
+          usesNgIf: /ko-if/.test(expanded ?? ""),
+          usesNgFor: /ko-foreach/.test(expanded ?? ""),
+          usesTwoWay: /ko-model/.test(expanded ?? ""),
+          rxjs: [],
+          readBy: "knockout",
+          dialect: "knockout",
+        });
+        for (const n of new Set(notes)) ctx.unverified(`${component.name}: ${n}`);
+        screens += 1;
+      }
+      if (!vm) {
+        ctx.api.calls.push(...calls);
+        log.info(`${screens} registered component(s), no page viewmodel`);
+        return;
+      }
       for (const page of pages) {
         const html = await readFile(page.path, "utf8").catch(() => "");
         if (!html || !/data-bind\s*=/.test(html)) continue;

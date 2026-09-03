@@ -73,6 +73,34 @@ export function readScript(text, rel) {
     });
   }
 
+  // .directive("orderList", function () { return { template, scope } }) is
+  // the pre-1.5 spelling of a component. Only element or class directives
+  // with their own template are screens; a purely behavioral directive is a
+  // decoration this reader has nothing to say about.
+  for (const m of text.matchAll(/\.directive\s*\(\s*['"`]([\w$]+)['"`]\s*,/g)) {
+    const ret = /return\s*\{/.exec(text.slice(m.index));
+    if (!ret) continue;
+    const body = balanced(text, m.index + ret.index + ret[0].length - 1);
+    if (!body || !/template(?:Url)?\s*:/.test(body)) continue;
+    const template = /template\s*:\s*(['"`])([\s\S]*?)\1\s*[,}]/.exec(body);
+    const templateUrl = /templateUrl\s*:\s*['"`]([^'"`]+)['"`]/.exec(body);
+    const scope = /scope\s*:\s*\{([\s\S]*?)\}/.exec(body);
+    const inputs = [];
+    const outputs = [];
+    if (scope) {
+      for (const b of scope[1].matchAll(/([\w$]+)\s*:\s*['"`]\s*([<@=&])/g)) {
+        (b[2] === "&" ? outputs : inputs).push(b[1]);
+      }
+    }
+    components.push({
+      name: m[1],
+      template: template ? template[2] : null,
+      templateUrl: templateUrl ? templateUrl[1] : null,
+      inputs, outputs, file: rel,
+      registeredAs: "directive",
+    });
+  }
+
   // .controller("OrdersCtrl", function ($scope, $http) { ... })
   for (const m of text.matchAll(/\.controller\s*\(\s*['"`]([\w$]+)['"`]\s*,/g)) {
     const open = text.indexOf("{", m.index + m[0].length);

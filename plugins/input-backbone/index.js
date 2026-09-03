@@ -32,10 +32,18 @@ export function readViews(text, rel) {
       }
     }
 
+    // template: _.template($("#order-row").html()) names the underscore
+    // template this view renders. The id is the join key to the screen the
+    // underscore reader makes from the same block.
+    const templateId =
+      /template\s*:\s*_\.template\(\s*(?:\$|jQuery)\(\s*['"`]#([\w-]+)['"`]/.exec(body)?.[1] ??
+      /template\s*:\s*['"`]#([\w-]+)['"`]/.exec(body)?.[1] ?? null;
+
     views.push({
       name: m[1],
       selector: el ?? (cls ? `.${cls.split(" ")[0]}` : tag ? `<${tag}>` : `(${m[1]})`),
       events,
+      templateId,
       rendersWithTemplate: /_\.template|\.template\s*\(/.test(body),
       file: rel,
     });
@@ -95,12 +103,41 @@ export default {
         ctx.unverified(`${call.method} ${call.path} is a ${call.assumed}, assumed rather than seen. Confirm the app actually saves.`);
       }
 
+      ctx.backboneViews = views;
       log.info(`${views.length} view(s), ${calls.length} call(s)`);
-      if (views.some((v) => v.rendersWithTemplate)) {
+    });
+
+    // The underscore reader runs later in the same stage, so the join waits
+    // for plan: a view that names its template by id claims the screen the
+    // underscore reader made from that block, and its events hash rides along.
+    on("plan", (ctx) => {
+      const views = ctx.backboneViews ?? [];
+      if (!views.length) return;
+      const normalize = (id) => String(id).toLowerCase().replace(/[^\w-]/g, "-").replace(/-?template-?/g, "") || String(id).toLowerCase();
+      let joined = 0;
+      for (const view of views.filter((v) => v.templateId)) {
+        const screen = ctx.screens.find((s) => s.readBy === "underscore" && s.selector === normalize(view.templateId));
+        if (!screen) {
+          ctx.unverified(`The Backbone view ${view.name} renders #${view.templateId}, and no template block by that id is in this run. The view's events are in WIDGETS.md; the markup is elsewhere.`);
+          continue;
+        }
+        screen.className = screen.className ?? view.name;
+        screen.boundBy = view.name;
+        screen.viewEvents = view.events;
+        if (view.events.length) {
+          ctx.unverified(
+            `${view.name}'s events hash listens for ${view.events.map((e) => `\`${e.event}\`${e.selector ? ` on \`${e.selector}\`` : ""} → ${e.handler}`).join(", ")} ` +
+            `over the ${screen.selector} screen. The template carries no handler attributes, so wire these ${view.events.length} handler(s) in the port by the selectors given.`
+          );
+        }
+        joined += 1;
+      }
+      if (joined) log.info(`${joined} view(s) joined to their underscore template screen(s)`);
+      const unjoined = views.filter((v) => v.rendersWithTemplate && !v.templateId);
+      if (unjoined.length) {
         ctx.unverified(
-          "Backbone views render underscore templates, which this reader inventories and does not translate. " +
-          "The views and their events are in WIDGETS.md and BOUNDARIES.md; the markup inside <%= %> is a " +
-          "dialect portamp does not yet read."
+          `${unjoined.length} Backbone view(s) render a template this reader could not name from the source ` +
+          `(${unjoined.map((v) => v.name).join(", ")}). Their events are in WIDGETS.md; join them to their markup by hand.`
         );
       }
     });

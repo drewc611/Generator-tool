@@ -29,6 +29,7 @@ export function readSpec(document) {
         // What the document claims comes back. A claim, not an observation:
         // consumers must label it as the spec's word, never as portamp's.
         declaredShape: declaredShape(document, op),
+        parameters: readParameters(document, item, op),
       });
     }
   }
@@ -76,6 +77,20 @@ export function declaredShape(document, op) {
   return describe(schema, 0);
 }
 
+/** The operation's declared inputs: path, query and header parameters, with
+ * the path item's shared list folded in, the way the spec means them. */
+export function readParameters(document, item, op) {
+  const all = [...(item?.parameters ?? []), ...(op?.parameters ?? [])]
+    .map((p) => deref(document, p))
+    .filter((p) => p && ["path", "query", "header"].includes(p.in));
+  return all.map((p) => ({
+    name: p.name,
+    in: p.in,
+    required: Boolean(p.required),
+    type: p.schema?.type ?? p.type ?? "string",
+  }));
+}
+
 /** `/orders/{id}` and `/orders/:id` and `/orders/${id}` are one shape. */
 const shape = (path) =>
   String(path).split("?")[0]
@@ -86,10 +101,25 @@ export function crossCheck(operations, calls) {
   const called = new Map(calls.map((c) => [`${c.method} ${shape(c.path)}`, c]));
   const specced = new Map(operations.map((o) => [`${o.method} ${shape(o.path)}`, o]));
 
+  // A required query parameter the app's own call never passes is a quiet
+  // disagreement between the contract and the traffic, so it is surfaced
+  // beside the louder ones.
+  const missingParams = [];
+  for (const op of operations) {
+    const call = called.get(`${op.method} ${shape(op.path)}`);
+    if (!call) continue;
+    for (const p of (op.parameters ?? []).filter((p) => p.required && p.in === "query")) {
+      if (!new RegExp(`[?&]${p.name}=`).test(call.path)) {
+        missingParams.push({ ...op, parameter: p.name, call });
+      }
+    }
+  }
+
   return {
     uncalled: operations.filter((o) => !called.has(`${o.method} ${shape(o.path)}`)),
     undocumented: calls.filter((c) => !specced.has(`${c.method} ${shape(c.path)}`)),
     deprecatedInUse: operations.filter((o) => o.deprecated && called.has(`${o.method} ${shape(o.path)}`)),
+    missingParams,
   };
 }
 
@@ -129,6 +159,9 @@ export default {
       }
       for (const op of report.deprecatedInUse) {
         ctx.unverified(`${op.method} ${op.path} is deprecated in ${from} and the app still calls it. The port would build on something already scheduled to go.`);
+      }
+      for (const miss of report.missingParams) {
+        ctx.unverified(`${miss.method} ${miss.path} requires the query parameter \`${miss.parameter}\` in ${from}, and the call in ${miss.call.file} never passes it. One of the two is wrong.`);
       }
       if (report.uncalled.length) {
         ctx.unverified(`${report.uncalled.length} operation(s) in ${from} are never called by anything this run read. Dead surface, or screens the run has not seen; SPEC_COVERAGE.md lists them.`);

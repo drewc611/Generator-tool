@@ -31,7 +31,6 @@ export function lowerHandlebars(source, note = () => {}, resolvePartial = null, 
 
   const out = [];
   const stack = [];
-  const itemName = () => (stack.filter((f) => f.kind === "each").length ? `item${stack.filter((f) => f.kind === "each").length > 1 ? stack.filter((f) => f.kind === "each").length : ""}` : null);
 
   let last = 0;
   const re = /\{\{\{?\s*([\s\S]*?)\s*\}?\}\}/g;
@@ -59,8 +58,20 @@ export function lowerHandlebars(source, note = () => {}, resolvePartial = null, 
       const list = code.slice(6).trim();
       const depth = stack.filter((f) => f.kind === "each").length + 1;
       const item = `item${depth > 1 ? depth : ""}`;
+      // The opening tag's position is kept so @index or @key inside the block
+      // can reshape the loop it already opened.
       out.push(`<ng-container ng-repeat="${item} in ${attrSafe(list)}">`);
-      stack.push({ kind: "each", item, list });
+      stack.push({ kind: "each", item, list, openAt: out.length - 1 });
+      continue;
+    }
+    if (code.startsWith("#with ")) {
+      const target = code.slice(6).trim();
+      note(
+        `Inside \`{{#with ${target}}}\`, bare names were prefixed with \`${target}.\`, which is what the block ` +
+        `meant for its own fields. A name that meant the outer scope needs its prefix removed by hand.`
+      );
+      out.push("<ng-container>");
+      stack.push({ kind: "with", target });
       continue;
     }
     if (code === "else" || code.startsWith("else if ")) {
@@ -80,7 +91,7 @@ export function lowerHandlebars(source, note = () => {}, resolvePartial = null, 
       }
       continue;
     }
-    if (/^\/(if|unless|each)$/.test(code)) {
+    if (/^\/(if|unless|each|with)$/.test(code)) {
       if (stack.length) { stack.pop(); out.push("</ng-container>"); }
       continue;
     }
@@ -89,13 +100,34 @@ export function lowerHandlebars(source, note = () => {}, resolvePartial = null, 
       continue;
     }
     if (code.startsWith("@")) {
+      const frame = [...stack].reverse().find((f) => f.kind === "each");
+      if (code === "@index" && frame) {
+        // The index is real loop data, so the loop is reshaped to name it.
+        out[frame.openAt] = `<ng-container ng-repeat="${frame.item} in ${attrSafe(frame.list)} track by $index">`;
+        out.push("{{ $index }}");
+        continue;
+      }
+      if (code === "@key" && frame) {
+        // @key only exists over an object, so the loop becomes an entries
+        // loop, which the (key, value) repeat form already carries.
+        out[frame.openAt] = `<ng-container ng-repeat="(${frame.item}Key, ${frame.item}) in ${attrSafe(frame.list)}">`;
+        out.push(`{{ ${frame.item}Key }}`);
+        continue;
+      }
       note(`\`{{${code}}}\` is loop metadata the dialect does not carry. Rewire it from the loop index in the port.`);
       continue;
     }
 
     let expr = code;
-    const item = itemName();
-    if (item) {
+    const scope = [...stack].reverse().find((f) => f.kind === "each" || f.kind === "with");
+    if (scope?.kind === "with") {
+      // #with exists to shorten paths to its target, so that is how bare
+      // names are read; the note on the block names the risk.
+      if (expr === "this" || expr === ".") expr = scope.target;
+      else if (expr.startsWith("this.") || expr.startsWith("./")) expr = `${scope.target}.${expr.replace(/^this\.|^\.\//, "")}`;
+      else if (/^[\w$]+(\.[\w$]+)*$/.test(expr)) expr = `${scope.target}.${expr}`;
+    } else if (scope?.kind === "each") {
+      const item = scope.item;
       if (expr === "this" || expr === ".") expr = item;
       else if (expr.startsWith("this.") || expr.startsWith("./")) expr = `${item}.${expr.replace(/^this\.|^\.\//, "")}`;
       else if (/^[\w$]+(\.[\w$]+)*$/.test(expr)) {

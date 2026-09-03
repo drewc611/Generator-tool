@@ -134,6 +134,31 @@ export default {
         ctx.routes = { table: flatten(table), hashRouting: false };
       }
 
+      // A form that posts somewhere is the one API call a static page can
+      // declare. The action and the field names are in the markup; where they
+      // go afterwards is the server's business, and the note says which.
+      let forms = 0;
+      for (const page of pages) {
+        for (const m of page.screen.template.matchAll(/<form\b([^>]*)>([\s\S]*?)<\/form>/gi)) {
+          const action = /action\s*=\s*["']([^"']+)["']/i.exec(m[1])?.[1];
+          const method = (/method\s*=\s*["'](\w+)["']/i.exec(m[1])?.[1] ?? "GET").toUpperCase();
+          if (!action || /^(mailto:|javascript:|#)/i.test(action)) continue;
+          const fields = [...new Set([...m[2].matchAll(/<(?:input|select|textarea)\b[^>]*\bname\s*=\s*["']([\w[\]./-]+)["']/gi)].map((f) => f[1]))];
+          ctx.api.calls.push({
+            method,
+            path: action,
+            file: page.rel,
+            headers: null,
+            body: method === "GET" ? null : fields.length ? `form fields: ${fields.join(", ")}` : "unknown",
+          });
+          forms += 1;
+          if (method === "GET" && fields.length) {
+            ctx.unverified(`${page.rel}: the form posting to ${action} uses GET, so its fields (${fields.join(", ")}) travel as a query string. The port should keep that spelling.`);
+          }
+        }
+      }
+      if (forms) log.info(`${forms} form submission(s) read as API calls`);
+
       // The same nav on every page is a layout component nobody declared.
       // Proposed, not performed: the pages keep their chrome, and the note
       // names the consolidation.
