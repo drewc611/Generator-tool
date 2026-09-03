@@ -28,7 +28,7 @@ writes components instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 83 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 414 tests, node --test, no framework
+npm test                     # 427 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -722,8 +722,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): two hundred and twenty seven features in twenty
-one phases, forty four shipped, one hundred and eighty two new in the current
+The whole picture is [ROADMAP.md](ROADMAP.md): two hundred and forty nine features in twenty
+two phases, forty four shipped, two hundred and four new in the current
 branch, one planned, every status honest. The one still open is npm publish,
 which is a command that belongs to a person.
 

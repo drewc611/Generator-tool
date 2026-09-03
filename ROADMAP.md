@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Two hundred and twenty seven features across twenty one phases. The statuses are
+Two hundred and forty nine features across twenty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-414 tests, on Node 18, 20 and 22, and on Windows in CI.
+427 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -819,14 +819,85 @@ proving no path in the pipeline reaches for a network when told not to.
 the example runs under --max-unverified, so the demo's honesty debt is bounded by a gate rather than described by a paragraph.
 
 
+## Phase 22 · The console earns its knobs
+
+*Twenty two enhancements to the workbench UI, each held by a test the suite runs.*
+
+**228. The pure half, split out** 🔨
+the console's logic moved into lib.js, one module the page imports and the suite imports too, so every knob below is enforced by node --test instead of trusted to a browser.
+
+**229. Reports, listed** 🔨
+/reports.json names the run's own root level markdown, the written list as the whitelist.
+
+**230. Reports, rendered** 🔨
+/report serves any report the run wrote as a themed page, everything escaped before the handful of shapes the reports use renders; a name outside the written list is refused.
+
+**231. A reports face on the notes deck** 🔨
+the run's reports, one click from the run they describe, each opening in its own tab.
+
+**232. The notes deck, tabbed** 🔨
+signals, files and reports share the deck as faces of one unit instead of overflowing the grid.
+
+**233. A health line** 🔨
+/healthz answers with whether the server is up and which run it holds — counts and a timestamp, nothing from the run's content.
+
+**234. The poll pays for change only** 🔨
+run.json carries an ETag and honors If-None-Match, so the five second poll costs a 304 while nothing moved, and the page sends the version it holds.
+
+**235. The rows state** 🔨
+the live preview gains rows beside empty, loading and error, from rows invented in the page and labeled as invented, so the body state renders without a byte of customer data.
+
+**236. A favicon that is not a 404** 🔨
+/favicon.ico serves the console's own icon instead of noise in the log.
+
+**237. The selection lives in the hash** 🔨
+the chosen screen and the lit stage write themselves into the URL and come back whole on reload, paste and hashchange alike.
+
+**238. The day chassis** 🔨
+the same hardware in pale plastic, a toggle and the t key, remembered per browser when storage allows and working when it does not; the LCD stays backlit so every readout keeps its contrast.
+
+**239. A filter on every list** 🔨
+screens, rack, endpoints and files each get the same case blind filter the unverified panel already had, from one function in lib.js.
+
+**240. Verb facets on the endpoints** 🔨
+one chip per method, composing with the text filter.
+
+**241. The rack, by cost** 🔨
+a second order for the rack putting the expensive plugin first, as a copy — the run's own order is nobody's to reorder.
+
+**242. Any written text file, in the pane** 🔨
+a text file's name in the files face is a button; the pane shows what was actually written, highlighted where it is code.
+
+**243. Copy, where source shows** 🔨
+every source view carries the one action source deserves, with a spoken fallback when the clipboard is closed.
+
+**244. The keymap as one decision** 🔨
+j/k, 1–5 and 0 for stages, [ and ] for the wipe, r to rerun, t for the chassis, ? for help — decided in lib.js where the suite reads it, and keys inside an input still belong to the input.
+
+**245. The shortcuts card** 🔨
+a dialog listing every key, on ? and the help key, closed by Esc.
+
+**246. The trend as a line** 🔨
+the unverified counts of the recorded runs as a sparkline beside the gauges, scaled in lib.js where the scaling is tested.
+
+**247. The offline line** 🔨
+when the wire drops, the console says it is showing the last run this browser saw — the cached run is still the truth, just not fresher than the wire — and the service worker shell carries lib.js under a new cache name.
+
+**248. Reachable first** 🔨
+a skip link for the keyboard, a live region on the readout so a finished run announces itself, and a noscript explanation instead of a blank deck.
+
+**249. Printed, it is a report** 🔨
+a print stylesheet flattens the chassis into the run report it always was; the transport, the wipe and the lamps stay on screen where they belong.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 182 |
+| new in this branch | 204 |
 | planned | 1 |
-| total | 227 |
+| total | 249 |
 
 The one still open is open for a stated reason, not for lack of time: npm
 publish is one command that belongs to a person, with docs/PUBLISHING.md

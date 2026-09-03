@@ -199,16 +199,87 @@
   .hint { color: var(--p-dim); padding: 8px; }
   .k { color: #c4b5fd; } .s { color: var(--p-mid); } .c { color: var(--p-dim); font-style: italic; }
   .n { color: var(--amber); } .t { color: var(--dsp); }
+
+  /* the day chassis: the same hardware in pale plastic. The LCD stays a
+     backlit panel, just a paler one, so every readout keeps its contrast. */
+  :root[data-theme="day"] {
+    --chassis-hi: #d9d9d2; --chassis-lo: #b4b4ab; --face: #c8c8c0;
+    --edge-hi: #f2f2ec; --edge-lo: #7c7c74;
+    --lcd: #eef4e6; --lcd-edge: #b7c6a8;
+    --p-hi: #1d5c38; --p-mid: #2f7a4f; --p-dim: #6c8a77;
+    --amber: #8a5a00; --amber-dim: #a97f2a;
+    --sel: #c3d4ee; --ink: #26262b; --muted: #4c4c52; --faint: #6d6d74;
+    --input: #1f7a4a; --dsp: #135f8a; --output: #8a5a00; --vis: #5b4a9e; --general: #a13a4c;
+  }
+  :root[data-theme="day"] body { background: #e6e6df; }
+  :root[data-theme="day"] .item[aria-current="true"] { color: #101013; }
+  :root[data-theme="day"] .row:nth-child(odd), :root[data-theme="day"] .item:nth-child(odd),
+  :root[data-theme="day"] tr:nth-child(odd) td { background: #e2ead8; }
+  :root[data-theme="day"] .wordmark { text-shadow: 0 1px 0 #fff8; }
+
+  /* keyboard first means reachable first */
+  .skip { position: absolute; left: -9999px; top: 4px; z-index: 10; padding: 4px 10px;
+          background: var(--amber); color: #101013; font-weight: 700; }
+  .skip:focus { left: 8px; }
+  .noscript { padding: 14px; background: var(--lcd); color: var(--p-hi); border: 1px solid var(--lcd-edge); margin: 6px; }
+
+  .theme-key { flex: 0 0 auto; align-self: center; padding: 4px 8px; }
+  .sort-key { flex: 0 0 auto; padding: 2px 6px; font-size: 8px; margin-right: 6px; }
+  .offline { color: var(--amber); }
+  .spark-box { width: 70px; }
+  #spark polyline { fill: none; stroke: var(--amber); stroke-width: 1.5; }
+
+  /* the notes deck is tabbed: signals, files, reports */
+  .tabs { gap: 3px; justify-content: flex-start; }
+  .tab { flex: 0 0 auto; padding: 3px 9px; }
+  .pane { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .pane[hidden] { display: none; }
+  .verbs { display: inline-flex; gap: 2px; margin-right: 6px; }
+  .verbs .key { flex: 0 0 auto; padding: 1px 5px; font-size: 8px; }
+  .reports { margin: 0; padding: 6px 8px; list-style: none; }
+  .reports li { padding: 2px 0; }
+  .reports a { color: var(--p-hi); text-decoration: none; }
+  .reports a:hover { color: var(--amber); }
+  .path-btn { background: none; border: 0; padding: 0; font: inherit; color: var(--p-hi); cursor: pointer; text-align: left; }
+  .path-btn:hover { color: var(--amber); }
+
+  dialog#help { background: linear-gradient(180deg, var(--chassis-hi), var(--chassis-lo));
+    color: var(--ink); border: 1px solid var(--edge-hi); border-bottom-color: var(--edge-lo);
+    border-right-color: var(--edge-lo); padding: 10px 14px; font: inherit; min-width: 260px; }
+  dialog#help::backdrop { background: #000a; }
+  dialog#help td { padding: 3px 8px; }
+  dialog#help code { color: var(--amber); }
+
+  /* printed, the console flattens into the report it always was */
+  @media print {
+    body { height: auto; overflow: visible; display: block; background: #fff; color: #111; }
+    .unit { border: 1px solid #bbb; background: #fff; margin-bottom: 8px; break-inside: avoid; }
+    .sunk { background: #fff; border-color: #ccc; }
+    .compare, .deck, .skip, .theme-key, .lamps, .transport, .slider, dialog { display: none; }
+    .cap, .grp, .num, .ms, .said, .hint { color: #555; }
+    .nm, .path, .item, .unver li, .reports a { color: #111; }
+  }
 </style>
 </head>
 <body>
+
+<a class="skip" href="#screens">skip to the screens</a>
+<noscript>
+  <div class="noscript">The console renders a run with script. Nothing loads without it;
+  the same facts are in the written reports: PORT_NOTES.md and its neighbours in the out directory.</div>
+</noscript>
 
 <section class="unit head">
   <div class="wordmark">portamp</div>
   <div class="grille"><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="sunk readout">
-    <div class="now" id="now">no run loaded</div>
+    <div class="now" id="now" role="status" aria-live="polite">no run loaded</div>
     <div class="sub" id="now-sub"></div>
+    <div class="sub offline" id="offline" role="status"></div>
+  </div>
+  <div class="sunk gauge spark-box" title="unverified per run, oldest first">
+    <svg id="spark" width="54" height="16" viewBox="0 0 54 16" aria-label="unverified count per run, oldest first"><polyline id="spark-line" points="" /></svg>
+    <span>trend</span>
   </div>
   <div class="gauges">
     <div class="sunk gauge"><b id="g-files">0</b><span>files</span></div>
@@ -220,6 +291,8 @@
     <div class="swatches" id="swatches"></div>
     <span>tokens</span>
   </div>
+  <button class="key theme-key" id="theme" title="Switch between the night and day chassis" aria-pressed="false">day</button>
+  <button class="key theme-key" id="help-key" title="Keyboard shortcuts" aria-haspopup="dialog">?</button>
   <div class="lamps"><i class="lamp on" title="run loaded"></i><i class="lamp" id="lamp-unver" title="unverified items"></i></div>
 </section>
 
@@ -234,9 +307,9 @@
 </section>
 
 <section class="unit rack">
-  <div class="cap"><span>plugin rack</span><b id="rack-total"></b></div>
+  <div class="cap"><span>plugin rack</span><input id="rk-q" type="search" placeholder="filter" aria-label="filter plugins by name or class"><button class="key sort-key" id="rk-sort" aria-pressed="false" title="Order the rack by cost instead of class">by cost</button><b id="rack-total"></b></div>
   <div class="sunk"><div class="scroll" id="rack"></div></div>
-  <div class="cap" style="padding-top:6px"><span>screens</span><b id="screen-total"></b></div>
+  <div class="cap" style="padding-top:6px"><span>screens</span><input id="sc-q" type="search" placeholder="filter" aria-label="filter screens by name"><b id="screen-total"></b></div>
   <div class="sunk screens"><div class="scroll" id="screens"></div></div>
 </section>
 
@@ -257,24 +330,52 @@
 </section>
 
 <section class="unit notes">
-  <div class="split">
-    <div style="display:flex;flex-direction:column;min-height:0">
-      <div class="cap"><span>endpoints</span><b id="ep-total"></b></div>
-      <div class="sunk"><div class="scroll"><table id="endpoints"></table></div></div>
+  <div class="cap tabs" role="tablist" aria-label="run panels">
+    <button class="key tab" id="tab-signals" role="tab" aria-selected="true" data-tab="signals">endpoints · unverified</button>
+    <button class="key tab" id="tab-files" role="tab" aria-selected="false" data-tab="files">files</button>
+    <button class="key tab" id="tab-reports" role="tab" aria-selected="false" data-tab="reports">reports</button>
+  </div>
+  <div class="pane" id="pane-signals" role="tabpanel" aria-labelledby="tab-signals">
+    <div class="split">
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div class="cap"><span>endpoints</span><input id="ep-q" type="search" placeholder="filter" aria-label="filter endpoints by path"><span id="ep-verbs" class="verbs"></span><b id="ep-total"></b></div>
+        <div class="sunk"><div class="scroll"><table id="endpoints"></table></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div class="cap"><span>unverified</span><input id="un-q" type="search" placeholder="/ to filter" aria-label="filter unverified items"><b id="un-total"></b></div>
+        <div class="sunk unver"><div class="scroll"><ul id="unver"></ul></div></div>
+      </div>
     </div>
-    <div style="display:flex;flex-direction:column;min-height:0">
-      <div class="cap"><span>unverified</span><input id="un-q" type="search" placeholder="/ to filter" aria-label="filter unverified items"><b id="un-total"></b></div>
-      <div class="sunk unver"><div class="scroll"><ul id="unver"></ul></div></div>
-    </div>
+  </div>
+  <div class="pane" id="pane-files" role="tabpanel" aria-labelledby="tab-files" hidden>
+    <div class="cap"><span>written files, and who wrote them — a text file opens in the pane</span><input id="fi-q" type="search" placeholder="filter" aria-label="filter written files"><b id="files-total"></b></div>
+    <div class="sunk" style="flex:1;min-height:0"><div class="scroll"><table id="files-list"></table></div></div>
+  </div>
+  <div class="pane" id="pane-reports" role="tabpanel" aria-labelledby="tab-reports" hidden>
+    <div class="cap"><span>the run's reports, rendered</span><b id="reports-total"></b></div>
+    <div class="sunk" style="flex:1;min-height:0"><div class="scroll"><ul id="reports-list" class="reports"></ul></div></div>
   </div>
 </section>
 
-<section class="unit">
-  <div class="cap"><span>written files, and who wrote them</span><b id="files-total"></b></div>
-  <div class="sunk"><div class="scroll"><table id="files-list"></table></div></div>
-</section>
+<dialog id="help" aria-label="keyboard shortcuts">
+  <div class="cap"><span>keyboard</span></div>
+  <table>
+    <tr><td><code>j</code> / <code>k</code></td><td>next and previous screen</td></tr>
+    <tr><td><code>1</code>–<code>5</code>, <code>0</code></td><td>select a stage, and all of them</td></tr>
+    <tr><td><code>[</code> / <code>]</code></td><td>nudge the wipe</td></tr>
+    <tr><td><code>/</code></td><td>filter the unverified items</td></tr>
+    <tr><td><code>r</code></td><td>run the pipeline again</td></tr>
+    <tr><td><code>t</code></td><td>day and night chassis</td></tr>
+    <tr><td><code>?</code> / <code>Esc</code></td><td>this card, open and closed</td></tr>
+  </table>
+</dialog>
 
-<script>
+<script type="module">
+import {
+  encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
+  sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn,
+} from "/lib.js";
+
 const $ = (id) => document.getElementById(id);
 // The quotes matter as much as the angle brackets: most of these values land
 // inside a double quoted attribute, where a quote ends the attribute early.
@@ -354,6 +455,7 @@ function renderDeck() {
 }
 
 let stageFilter = null;
+let rackSort = "class";
 
 /** A transport key selects a stage. The rack shows what ran in it. */
 function selectStage(stage) {
@@ -366,49 +468,81 @@ function selectStage(stage) {
   $("now").textContent = stageFilter
     ? stageFilter + " — " + shown.length + " plugin(s)"
     : run.screens.length ? run.screens[0].name : "run loaded";
+  writeHash();
   renderRack();
 }
 
 function renderRack() {
-  const visible = run.plugins.filter((p) => !stageFilter || p.stages.includes(stageFilter));
-  $("rack-total").textContent = stageFilter ? visible.length + "/" + run.plugins.length : run.plugins.length;
+  const staged = run.plugins.filter((p) => !stageFilter || p.stages.includes(stageFilter));
+  const visible = filterByQuery(staged, $("rk-q").value, ["name", "class"]);
+  $("rack-total").textContent = (stageFilter || $("rk-q").value.trim())
+    ? visible.length + "/" + run.plugins.length : run.plugins.length;
+
+  // Two orders for one rack: the class order the roster was given, or cost
+  // first so a slow run names its suspect without anybody squinting at ms.
+  if (rackSort === "cost") {
+    let n = 0;
+    $("rack").innerHTML = sortPlugins(visible, "cost").map((p) => {
+      n += 1;
+      return rackRow(p, n);
+    }).join("") || '<p class="hint">nothing matches</p>';
+    return;
+  }
   let n = 0;
   $("rack").innerHTML = CLASSES.map((cls) => {
     const group = visible.filter((p) => p.class === cls);
     if (!group.length) return "";
-    return '<div class="grp">' + cls + "</div>" + group.map((p) => {
-      n += 1;
-      return '<div class="c-' + cls + '">' +
-        '<div class="row"><span class="num">' + n + ".</span>" +
-        '<span class="nm">' + esc(p.name) + '</span><span class="ms">' + p.ms + "ms</span></div>" +
-        '<div class="said">' + esc(p.contributed) + "</div></div>";
-    }).join("");
-  }).join("");
+    return '<div class="grp">' + cls + "</div>" + group.map((p) => { n += 1; return rackRow(p, n); }).join("");
+  }).join("") || '<p class="hint">nothing matches</p>';
+}
+
+function rackRow(p, n) {
+  return '<div class="c-' + p.class + '">' +
+    '<div class="row"><span class="num">' + n + ".</span>" +
+    '<span class="nm">' + esc(p.name) + '</span><span class="ms">' + p.ms + "ms</span></div>" +
+    '<div class="said">' + esc(p.contributed) + "</div></div>";
 }
 
 function renderScreens() {
-  $("screen-total").textContent = run.screens.length;
+  const visible = filterByQuery(run.screens.map((s, i) => ({ ...s, i })), $("sc-q").value, ["name"]);
+  $("screen-total").textContent = $("sc-q").value.trim()
+    ? visible.length + "/" + run.screens.length : run.screens.length;
   if (!run.screens.length) {
     $("screens").innerHTML = '<p class="hint">no components emitted</p>';
     return;
   }
-  $("screens").innerHTML = run.screens.map((s, i) =>
-    '<button class="item" data-i="' + i + '" aria-current="false">' +
-      '<span class="num">' + (i + 1) + ".</span><span>" + esc(s.name) + "</span>" +
+  $("screens").innerHTML = visible.map((s) =>
+    '<button class="item" data-i="' + s.i + '" aria-current="' + String(s.i === currentIndex) + '">' +
+      '<span class="num">' + (s.i + 1) + ".</span><span>" + esc(s.name) + "</span>" +
       '<span class="st">' + (s.origin === "observed" ? "observed" : s.matched ? esc(s.state || "shot") : "no shot") + "</span>" +
     "</button>"
-  ).join("");
-  for (const b of $("screens").children) b.addEventListener("click", () => select(Number(b.dataset.i)));
+  ).join("") || '<p class="hint">nothing matches</p>';
+  for (const b of $("screens").children) {
+    if (b.dataset.i !== undefined) b.addEventListener("click", () => select(Number(b.dataset.i)));
+  }
 }
 
+let epVerb = null;
+
 function renderEndpoints() {
-  $("ep-total").textContent = run.endpoints.length;
+  const verbs = [...new Set(run.endpoints.map((e) => e.method))];
+  $("ep-verbs").innerHTML = verbs.map((v) =>
+    '<button class="key" data-verb="' + esc(v) + '" aria-pressed="' + String(v === epVerb) + '">' + esc(v) + "</button>"
+  ).join("");
+  for (const chip of $("ep-verbs").children) {
+    chip.addEventListener("click", () => { epVerb = epVerb === chip.dataset.verb ? null : chip.dataset.verb; renderEndpoints(); });
+  }
+  const shown = filterEndpoints(run.endpoints, $("ep-q").value, epVerb);
+  $("ep-total").textContent = shown.length === run.endpoints.length
+    ? run.endpoints.length : shown.length + "/" + run.endpoints.length;
   $("endpoints").innerHTML = run.endpoints.length
-    ? run.endpoints.map((e) =>
-        '<tr><td class="verb ' + esc(e.method) + '">' + esc(e.method) + "</td>" +
-        '<td class="path">' + esc(e.path) + "</td>" +
-        '<td class="src ' + esc(e.origin) + '">' + esc(e.origin) + "</td></tr>"
-      ).join("")
+    ? (shown.length
+        ? shown.map((e) =>
+            '<tr><td class="verb ' + esc(e.method) + '">' + esc(e.method) + "</td>" +
+            '<td class="path">' + esc(e.path) + "</td>" +
+            '<td class="src ' + esc(e.origin) + '">' + esc(e.origin) + "</td></tr>"
+          ).join("")
+        : '<tr><td class="hint">nothing matches</td></tr>')
     : '<tr><td class="hint">no endpoints found</td></tr>';
 }
 
@@ -422,30 +556,54 @@ function renderUnverified() {
         : '<li style="color:var(--p-dim)">nothing matches the filter.</li>')
     : '<li style="color:var(--p-dim)">nothing. every value came from the source or from the app itself.</li>';
 }
-$("un-q") && $("un-q").addEventListener("input", () => run && renderUnverified());
 
 // Provenance came with the run: every file is attributed to the plugin whose
-// turn it was when it landed, which is the kernel's memory, not a guess.
+// turn it was when it landed, which is the kernel's memory, not a guess. A
+// text file's name is a button; the pane shows what was actually written.
 function renderFiles() {
-  const files = run.files ?? [];
-  $("files-total").textContent = files.length;
+  const files = filterByQuery((run.files ?? []).map((f) => ({ f })), $("fi-q").value, ["f"]).map((x) => x.f);
+  $("files-total").textContent = files.length === (run.files ?? []).length
+    ? (run.files ?? []).length : files.length + "/" + (run.files ?? []).length;
   $("files-list").innerHTML = files.length
     ? files.map((f) => {
         const who = (run.provenance ?? {})[f];
-        return "<tr><td class=\"path\">" + esc(f) + "</td><td class=\"src\">" +
+        const name = isTextFile(f)
+          ? '<button class="path-btn" data-file="' + esc(f) + '">' + esc(f) + "</button>"
+          : esc(f);
+        return '<tr><td class="path">' + name + '</td><td class="src">' +
           (who ? esc(who.plugin) + " at " + esc(who.stage) : "unattributed") + "</td></tr>";
       }).join("")
     : '<tr><td class="hint">nothing written yet</td></tr>';
+  for (const button of $("files-list").querySelectorAll("button[data-file]")) {
+    button.addEventListener("click", () => showSource(button.dataset.file, button.dataset.file));
+  }
 }
+
+// The run's reports, rendered by the server under /report. Each opens in its
+// own tab so the console keeps its place.
+async function renderReports() {
+  const reports = reportsIn(run.files);
+  $("reports-total").textContent = reports.length;
+  $("reports-list").innerHTML = reports.length
+    ? reports.map((name) =>
+        '<li><a href="/report?name=' + encodeURIComponent(name) + '" target="_blank" rel="noopener">' + esc(name) + "</a></li>"
+      ).join("")
+    : '<li class="hint">this run wrote no reports</li>';
+}
+
+/* --------------------------------------------------------- the compare pane */
 
 let currentIndex = 0;
 async function select(index) {
   const screen = run.screens[index];
   currentIndex = index;
-  for (const b of $("screens").children) b.setAttribute("aria-current", String(Number(b.dataset.i) === index));
+  for (const b of $("screens").children) {
+    if (b.dataset.i !== undefined) b.setAttribute("aria-current", String(Number(b.dataset.i) === index));
+  }
   $("now").textContent = screen.name;
   $("cmp-name").textContent = screen.name;
   $("cmp-file").textContent = screen.component ?? "no component";
+  writeHash();
 
   if (screen.screenshot) {
     const img = new Image();
@@ -483,18 +641,38 @@ async function select(index) {
   );
   try {
     if (element) return showPreview(screen, element, "empty");
-    const source = await fetch("/source?path=" + encodeURIComponent(screen.component)).then((r) => r.text());
-    $("layer-built").innerHTML = '<p class="why">This run emitted no custom element for the screen (--html true adds one), ' +
-      "so this is the emitted source rather than pixels.</p><pre>" + highlight(source) + "</pre>";
+    await showSource(
+      "This run emitted no custom element for the screen (--html true adds one), so this is the emitted source rather than pixels.",
+      screen.component
+    );
   } catch {
     $("layer-built").innerHTML = '<div class="empty"><strong>Could not read the emitted file.</strong></div>';
   }
 }
 
+/** Any written text file in the pane, with the one action source deserves. */
+async function showSource(why, path) {
+  const source = await fetch("/source?path=" + encodeURIComponent(path)).then((r) => r.text());
+  const highlighted = /\.(jsx?|tsx?|vue|svelte|json|css|html?)$/i.test(path) ? highlight(source) : esc(source);
+  $("layer-built").innerHTML = '<p class="why">' + esc(why) +
+    ' <button class="key" id="copy-src" title="Copy the file to the clipboard">copy</button></p>' +
+    "<pre>" + highlighted + "</pre>";
+  $("cmp-file").textContent = path;
+  $("copy-src").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(source);
+      $("copy-src").textContent = "copied";
+    } catch {
+      $("copy-src").textContent = "select and copy by hand";
+    }
+    setTimeout(() => { $("copy-src").textContent = "copy"; }, 1500);
+  });
+}
+
 async function showPreview(screen, element, state) {
   const bar =
     '<div class="why" id="pv-bar">live element · state: ' +
-    ["empty", "loading", "error"].map((s) =>
+    ["empty", "rows", "loading", "error"].map((s) =>
       '<button class="key" data-state="' + s + '" aria-pressed="' + String(s === state) + '">' + s + "</button>").join(" ") +
     ' <button class="key" id="pv-src">view source</button></div>';
   $("layer-built").innerHTML = bar +
@@ -504,10 +682,12 @@ async function showPreview(screen, element, state) {
     button.addEventListener("click", () => showPreview(screen, element, button.dataset.state));
   }
   $("pv-src").addEventListener("click", async () => {
-    const source = await fetch("/source?path=" + encodeURIComponent(screen.component ?? element)).then((r) => r.text());
-    $("layer-built").innerHTML = '<p class="why">emitted source. <button class="key" id="pv-back">back to preview</button></p>' +
-      "<pre>" + highlight(source) + "</pre>";
-    $("pv-back").addEventListener("click", () => showPreview(screen, element, state));
+    await showSource("emitted source.", screen.component ?? element);
+    const back = document.createElement("button");
+    back.className = "key";
+    back.textContent = "back to preview";
+    back.addEventListener("click", () => showPreview(screen, element, state));
+    $("layer-built").querySelector(".why").append(" ", back);
   });
 }
 
@@ -526,11 +706,72 @@ function applyWipe() {
   $("wipe").setAttribute("aria-valuetext", value + "% recorded");
 }
 
+/* -------------------------------------------------- selection in the URL */
+
+// The hash holds the selection, so a reload keeps the seat and a pasted
+// link opens on the same screen with the same stage lit.
+let restoringHash = false;
+function writeHash() {
+  if (restoringHash || !run) return;
+  const screen = run.screens[currentIndex]?.name ?? null;
+  history.replaceState(null, "", location.pathname + encodeHash({ screen, stage: stageFilter }));
+}
+function readHash() {
+  const wanted = decodeHash(location.hash);
+  restoringHash = true;
+  if (wanted.stage && STAGES.includes(wanted.stage) && stageFilter !== wanted.stage) selectStage(wanted.stage);
+  const index = wanted.screen ? run.screens.findIndex((s) => s.name === wanted.screen) : -1;
+  restoringHash = false;
+  if (index >= 0) select(index);
+  else if (run.screens.length) select(Math.min(currentIndex, run.screens.length - 1));
+}
+window.addEventListener("hashchange", () => run && readHash());
+
+/* ------------------------------------------------------------ the chrome */
+
+// The day chassis: same hardware, pale plastic. The choice is this
+// browser's own and storage can be unavailable; the toggle works either way.
+function applyTheme(day) {
+  document.documentElement.setAttribute("data-theme", day ? "day" : "");
+  if (!day) document.documentElement.removeAttribute("data-theme");
+  $("theme").setAttribute("aria-pressed", String(day));
+  $("theme").textContent = day ? "night" : "day";
+  try { localStorage.setItem("portamp-theme", day ? "day" : "night"); } catch { /* per browser convenience only */ }
+}
+$("theme").addEventListener("click", () => applyTheme(!document.documentElement.hasAttribute("data-theme")));
+try { if (localStorage.getItem("portamp-theme") === "day") applyTheme(true); } catch { /* default chassis */ }
+
+$("help-key").addEventListener("click", () => $("help").open ? $("help").close() : $("help").showModal());
+
+function setConnectivity() {
+  $("offline").textContent = offlineNotice(navigator.onLine);
+}
+window.addEventListener("online", setConnectivity);
+window.addEventListener("offline", setConnectivity);
+setConnectivity();
+
+// The notes deck's three faces: signals, files, reports.
+for (const tab of document.querySelectorAll(".tab")) {
+  tab.addEventListener("click", () => {
+    for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", String(t === tab));
+    for (const pane of document.querySelectorAll(".pane")) pane.hidden = pane.id !== "pane-" + tab.dataset.tab;
+  });
+}
+
+for (const [id, render] of [["un-q", renderUnverified], ["sc-q", renderScreens], ["rk-q", renderRack], ["ep-q", renderEndpoints], ["fi-q", renderFiles]]) {
+  $(id) && $(id).addEventListener("input", () => run && render());
+}
+$("rk-sort").addEventListener("click", () => {
+  rackSort = rackSort === "cost" ? "class" : "cost";
+  $("rk-sort").setAttribute("aria-pressed", String(rackSort === "cost"));
+  renderRack();
+});
+
 $("wipe").addEventListener("input", applyWipe);
 $("all").addEventListener("click", () => selectStage(null));
 
 // Running the tool again is the one thing this window is allowed to cause.
-$("run").addEventListener("click", async () => {
+async function rerun() {
   const button = $("run");
   if (button.classList.contains("busy")) return;
   button.classList.add("busy");
@@ -543,10 +784,7 @@ $("run").addEventListener("click", async () => {
       $("lamp-unver").classList.add("warn");
       return;
     }
-    run = await fetch("/run.json").then((r) => r.json());
-    stageFilter = null;
-    renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified(); renderFiles();
-    if (run.screens.length) select(0);
+    await refresh();
     $("now").textContent = "done in " + result.ms + "ms";
   } catch (err) {
     $("now").textContent = "could not run: " + err.message;
@@ -554,41 +792,73 @@ $("run").addEventListener("click", async () => {
     button.classList.remove("busy");
     button.textContent = "▶ run";
   }
-});
+}
+$("run").addEventListener("click", rerun);
 
-// The console is keyboard first: j/k or the arrows walk the screens, / jumps
-// to the unverified filter. Keys inside an input belong to the input.
+function renderAll() {
+  renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens();
+  renderEndpoints(); renderUnverified(); renderFiles(); renderReports(); renderTrend();
+}
+
+// One keymap, decided in lib.js where the suite can read it. Keys inside an
+// input belong to the input.
 document.addEventListener("keydown", (event) => {
-  if (!run || event.target.matches("input, textarea, select")) {
-    if (event.key === "Escape" && event.target.id === "un-q") { event.target.value = ""; renderUnverified(); event.target.blur(); }
+  const inInput = event.target.matches("input, textarea, select");
+  if (inInput && event.key === "Escape" && event.target.id === "un-q") {
+    event.target.value = ""; run && renderUnverified(); event.target.blur();
     return;
   }
-  if (event.key === "/") { event.preventDefault(); $("un-q").focus(); return; }
-  if (!run.screens.length) return;
-  if (event.key === "j" || event.key === "ArrowDown") { event.preventDefault(); select(Math.min(currentIndex + 1, run.screens.length - 1)); }
-  if (event.key === "k" || event.key === "ArrowUp") { event.preventDefault(); select(Math.max(currentIndex - 1, 0)); }
+  const action = keyAction(event.key, { inInput });
+  if (!action || !run) return;
+  event.preventDefault();
+  if (action.kind === "next-screen" && run.screens.length) select(Math.min(currentIndex + 1, run.screens.length - 1));
+  if (action.kind === "prev-screen" && run.screens.length) select(Math.max(currentIndex - 1, 0));
+  if (action.kind === "focus-filter") $("un-q").focus();
+  if (action.kind === "toggle-help") $("help").open ? $("help").close() : $("help").showModal();
+  if (action.kind === "rerun") rerun();
+  if (action.kind === "toggle-theme") applyTheme(!document.documentElement.hasAttribute("data-theme"));
+  if (action.kind === "stage") selectStage(action.stage);
+  if (action.kind === "wipe") {
+    $("wipe").value = Math.max(0, Math.min(100, Number($("wipe").value) + action.by));
+    applyWipe();
+  }
 });
 
-// A watch task rewrites run.json behind this window. Polling is enough: the
-// console re-renders only when the run's timestamp actually moved, and the
-// selection survives the refresh.
+/* ------------------------------------------------------- staying current */
+
+let runEtag = null;
+async function fetchRun() {
+  const res = await fetch("/run.json", { headers: runEtag ? { "If-None-Match": runEtag } : {} });
+  if (res.status === 304) return null;
+  runEtag = res.headers.get("ETag");
+  return res.json();
+}
+
+async function refresh() {
+  const fresh = await fetchRun();
+  if (!fresh) return false;
+  run = fresh;
+  stageFilter = null;
+  renderAll();
+  if (run.screens.length) select(Math.min(currentIndex, run.screens.length - 1));
+  return true;
+}
+
+// A watch task rewrites run.json behind this window. Polling is enough, and
+// the ETag makes an unchanged run cost a 304 instead of the document.
 setInterval(async () => {
   if (!run) return;
   try {
-    const fresh = await fetch("/run.json").then((r) => r.json());
-    if (fresh.ranAt === run.ranAt) return;
-    run = fresh;
-    renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified(); renderFiles();
-    if (run.screens.length) select(Math.min(currentIndex, run.screens.length - 1));
-    $("now-sub").textContent = "refreshed from a newer run";
+    if (await refresh()) $("now-sub").textContent = "refreshed from a newer run";
   } catch { /* the server may be restarting; the next tick asks again */ }
 }, 5000);
 
-// One line of trend under the readout: the unverified count against the run
-// before, from the history general-history keeps.
+// The trend under the readout: the unverified counts of the recorded runs,
+// as a line, with the latest delta in words.
 async function renderTrend() {
   try {
     const entries = await fetch("/history.json").then((r) => r.json());
+    $("spark-line").setAttribute("points", sparklinePoints(entries.map((e) => e.unverified), 54, 16));
     if (entries.length < 2) return;
     const delta = entries.at(-1).unverified - entries.at(-2).unverified;
     $("now-sub").textContent = delta === 0 ? "unverified: level with the previous run"
@@ -599,15 +869,13 @@ async function renderTrend() {
 
 (async function start() {
   try {
-    run = await fetch("/run.json").then((r) => r.json());
+    run = await fetchRun();
   } catch {
     $("now").textContent = "no run.json — run portamp first";
     return;
   }
-  renderTrend();
-  renderTokens();
-  renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified(); renderFiles();
-  if (run.screens.length) select(0);
+  renderAll();
+  if (run.screens.length) readHash();
   else {
     $("layer-shot").innerHTML = '<div class="empty"><strong>Nothing to compare.</strong><span>This run emitted no components.</span></div>';
     setWipe(false);

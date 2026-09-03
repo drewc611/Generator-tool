@@ -4,8 +4,8 @@
  * served stale on purpose: run.json and everything under /shots and /source is
  * network first, cache as the fallback, because a report that silently shows
  * yesterday's run is worse than one that says it cannot reach the server. */
-const SHELL = "portamp-shell-v1";
-const SHELL_PATHS = ["/", "/icon.svg", "/manifest.webmanifest"];
+const SHELL = "portamp-shell-v2";
+const SHELL_PATHS = ["/", "/lib.js", "/icon.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(SHELL).then((cache) => cache.addAll(SHELL_PATHS)).then(() => self.skipWaiting()));
