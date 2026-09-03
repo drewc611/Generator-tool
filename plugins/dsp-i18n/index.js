@@ -129,6 +129,23 @@ export default {
       }
 
       ctx.i18n = [...catalogue.values()].sort((a, b) => a.key.localeCompare(b.key));
+
+      // A count with a noun beside it pluralizes, and "(s)" is the English
+      // shortcut that no other language has. Both need a plural rule, not a
+      // string, and finding them now is the cheap moment.
+      for (const s of ctx.i18n) {
+        const text = s.pattern ?? s.value;
+        if (/\(s\)/.test(text) || (s.interpolated && /\{[^}]*\}\s+[a-z]+s\b/i.test(s.pattern ?? "")) || (s.interpolated && /^\s*\{[^}]*(count|total|length|num)[^}]*\}/i.test(s.pattern ?? ""))) {
+          s.pluralSensitive = true;
+        }
+      }
+      const plurals = ctx.i18n.filter((s) => s.pluralSensitive);
+      if (plurals.length) {
+        ctx.unverified(
+          `${plurals.length} string(s) pluralize around a count (${plurals.slice(0, 3).map((s) => `\`${s.pattern ?? s.value}\``).join(", ")}${plurals.length > 3 ? ", …" : ""}). ` +
+          `English "(s)" and "{n} items" have no one-string equivalent in most languages; these need a plural rule per locale, and they are marked in src/i18n/en.json.`
+        );
+      }
       const split = ctx.i18n.filter((s) => s.interpolated);
       log.info(`${ctx.i18n.length} hard coded string(s) across ${screens.length} template(s)`);
 
@@ -157,8 +174,9 @@ export default {
 };
 
 const README = (strings) => {
-  const rows = strings.map((s) => `| \`${s.key}\` | ${JSON.stringify(s.value)} | ${s.where} | ${s.interpolated ? "yes" : "no"} |`);
+  const rows = strings.map((s) => `| \`${s.key}\` | ${JSON.stringify(s.value)} | ${s.where} | ${s.interpolated ? "yes" : "no"} | ${s.pluralSensitive ? "yes" : ""} |`);
   const split = strings.filter((s) => s.interpolated).length;
+  const plural = strings.filter((s) => s.pluralSensitive).length;
 
   return `# Copy found in the markup
 
@@ -175,8 +193,14 @@ A sentence assembled from fragments only reads correctly in the word order it
 was written in. Each one marked below needs a single interpolated message, not
 two pieces glued together.
 ` : ""}
-| key | copy | where | split around a value |
-| --- | --- | --- | --- |
+${plural ? `## ${plural} of these pluralize around a count
+
+"1 item" and "3 items" are one message with a plural rule, not two strings,
+and most languages have more forms than English's two. Each one marked below
+needs a plural aware message format.
+` : ""}
+| key | copy | where | split around a value | plural sensitive |
+| --- | --- | --- | --- | --- |
 ${rows.join("\n")}
 `;
 };

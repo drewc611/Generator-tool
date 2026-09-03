@@ -80,6 +80,30 @@ export default {
         }
       }
 
+      /* ---------------------------- scope members no template mentions */
+
+      // A $scope assignment or a viewmodel observable exists to be bound.
+      // One that no template of the same run mentions, and that its own file
+      // uses only at the assignment, is a member the port can leave behind.
+      findings.scope = [];
+      for (const screen of ctx.screens) {
+        const members = [
+          ...(screen.scoped ?? []),
+          ...(screen.observables ?? []).map((o) => o.name ?? o),
+          ...(screen.handlers ?? []),
+        ];
+        if (!members.length) continue;
+        const template = screen.template ?? "";
+        const file = ctx.sources.files.find((f) => f.rel === screen.file);
+        const source = file ? await readFile(file.path, "utf8").catch(() => "") : "";
+        for (const member of new Set(members)) {
+          if (new RegExp(`\\b${literal(member)}\\b`).test(template)) continue;
+          const uses = (source.match(new RegExp(`\\b${literal(member)}\\b`, "g")) ?? []).length;
+          if (uses > 1) continue;
+          findings.scope.push({ screen: screen.selector, name: member, file: screen.file });
+        }
+      }
+
       /* ----------------------------------------- rules nothing asks for */
 
       const sheets = ctx.sources.files.filter((f) => STYLESHEET.test(f.rel));
@@ -107,11 +131,11 @@ export default {
         }
       }
 
-      const total = findings.inputs.length + findings.classes.length;
+      const total = findings.inputs.length + findings.classes.length + findings.scope.length;
       if (!total) return log.debug("nothing declared and unused");
 
       ctx.deadcode = findings;
-      log.info(`${findings.inputs.length} unused input(s), ${findings.classes.length} unused rule(s)`);
+      log.info(`${findings.inputs.length} unused input(s), ${findings.classes.length} unused rule(s), ${findings.scope.length} unbound scope member(s)`);
       ctx.unverified(
         `${total} declaration(s) appear to be unused and are listed in DEAD_CODE.md. They are candidates, ` +
         `not conclusions: portamp searched the templates and the source it was given, and nothing else. ` +
@@ -126,7 +150,7 @@ export default {
   },
 };
 
-function render({ inputs, classes, dynamic }) {
+function render({ inputs, classes, dynamic, scope = [] }) {
   const section = (title, rows, head) =>
     rows.length ? `\n## ${title}\n\n| ${head.join(" | ")} |\n| ${head.map(() => "---").join(" | ")} |\n${rows.join("\n")}\n` : "";
 
@@ -145,6 +169,10 @@ ${section(
     "Style rules nothing asks for",
     classes.map((c) => `| \`.${c.name}\` | ${c.file} |`),
     ["rule", "stylesheet"]
+  )}${section(
+    "Scope members no template binds",
+    scope.map((s) => `| \`${s.name}\` | \`<${s.screen}>\` | ${s.file} |`),
+    ["member", "screen", "declared in"]
   )}${dynamic.length ? `
 ## Why this list may be short
 

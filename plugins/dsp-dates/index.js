@@ -18,6 +18,20 @@ const PATTERNS = [
     severity: "high",
   },
   {
+    kind: "ambiguous-format",
+    // Angular spells day and year in lowercase, so the uppercase pattern
+    // above never sees its templates.
+    re: /['"`](?:dd|MM)[\/\-.](?:dd|MM)[\/\-.](?:yyyy|yy)['"`]/g,
+    why: "the same ocean straddling digit order, in Angular's lowercase spelling. The template renders it on every row.",
+    severity: "high",
+  },
+  {
+    kind: "epoch-seconds",
+    re: /new Date\(\s*[\w$.()\[\]]+\s*\*\s*1000\s*\)/g,
+    why: "the API speaks unix seconds and the client multiplies. Drop the ×1000 in the port and every date lands in January 1970.",
+    severity: "high",
+  },
+  {
     kind: "hand-assembled",
     re: /getMonth\(\)\s*\+\s*1|getDate\(\)\s*\+\s*['"`\/\-]|getFullYear\(\)\s*\+\s*['"`]/g,
     why: "a date assembled by string concatenation carries every assumption of whoever wrote it: padding, order, and timezone.",

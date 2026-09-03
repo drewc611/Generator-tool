@@ -45,12 +45,23 @@ export function readStyle(calls) {
     }
   }
 
+  // A verb in the path is RPC wearing REST's clothes: POST /orders/delete,
+  // GET /getCustomer. The port must keep the spelling, and a mixed API is
+  // worth knowing about before anybody "cleans it up" in the rewrite.
+  const rpc = [];
+  for (const call of calls) {
+    const segments = String(call.path).split("?")[0].split("/").filter(Boolean);
+    const verbSegment = segments.find((s) => /^(get|create|update|delete|remove|add|set|fetch|save|search|query|list|do)[A-Z_-]?/i.test(s) && !/^(delete[ds]|settings?|sets)$/i.test(s));
+    if (verbSegment) rpc.push({ method: call.method, path: call.path, segment: verbSegment });
+  }
+
   const plural = resources.filter((r) => /s$/.test(r)).length;
   return {
     cases: [...cases.entries()].sort((a, b) => b[1] - a[1]),
     versions: [...versions],
     pagination: [...pagination.entries()],
     plurality: resources.length ? { plural, total: resources.length } : null,
+    rpc,
   };
 }
 
@@ -95,6 +106,13 @@ export default {
           : "No pagination parameter was observed. Either the lists are unpaged or paging happens in a call this run never saw; the port should find out before shipping an unbounded table.",
         ""
       );
+      if (s.rpc?.length) {
+        lines.push("## Verbs in paths", "");
+        lines.push("RPC spelled as REST. Each stays exactly as written — the server answers to");
+        lines.push("this spelling and no other — and none should be \"cleaned up\" in the port.", "");
+        for (const r of s.rpc) lines.push(`- \`${r.method} ${r.path}\` (the verb is \`${r.segment}\`)`);
+        lines.push("");
+      }
       await ctx.write("API_STYLE.md", lines.join("\n"));
     });
   },

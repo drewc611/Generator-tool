@@ -35,7 +35,40 @@ export function auditCss(text, rel) {
   }
   const repeated = [...declarations.entries()].filter(([, n]) => n >= 4).sort((a, b) => b[1] - a[1]);
 
-  return { file: rel, important, selectors: selectors.length, ids, deep, repeated };
+  return { file: rel, important, selectors: selectors.length, selectorList: selectors, ids, deep, repeated };
+}
+
+/**
+ * Selectors whose classes and ids appear in no template this run read.
+ * Candidates and never verdicts, exactly as dsp-deadcode treats code: a class
+ * assembled at runtime, or used by markup outside the run, looks unmatched
+ * and is not. The report says what was searched.
+ */
+export function unmatchedSelectors(audits, templates) {
+  const classes = new Set();
+  const ids = new Set();
+  for (const template of templates) {
+    for (const m of template.matchAll(/class\s*=\s*["']([^"']*)["']/gi)) {
+      for (const c of m[1].split(/\s+/)) if (c && !/[{$]/.test(c)) classes.add(c);
+    }
+    // Conditional classes live as keys of an object literal in a binding.
+    for (const m of template.matchAll(/(?:ng-class|ko-css|:class)\s*=\s*["']\{([^"']*)\}["']/gi)) {
+      for (const k of m[1].matchAll(/['"]?([\w-]+)['"]?\s*:/g)) classes.add(k[1]);
+    }
+    for (const m of template.matchAll(/\bid\s*=\s*["']([\w-]+)["']/gi)) ids.add(m[1]);
+  }
+  const out = [];
+  for (const audit of audits) {
+    for (const selector of audit.selectorList ?? []) {
+      const cls = [...selector.matchAll(/\.([A-Za-z_][\w-]*)/g)].map((m) => m[1]);
+      const idTokens = [...selector.matchAll(/#([A-Za-z_][\w-]*)/g)].map((m) => m[1]);
+      if (!cls.length && !idTokens.length) continue;
+      if (cls.every((c) => !classes.has(c)) && idTokens.every((i) => !ids.has(i))) {
+        out.push({ file: audit.file, selector });
+      }
+    }
+  }
+  return out;
 }
 
 export default {
@@ -55,6 +88,18 @@ export default {
       ctx.cssStats = audits;
       const importantCount = audits.reduce((n, a) => n + a.important.length, 0);
       log.info(`${sheets.length} sheet(s), ${importantCount} !important`);
+
+      const templates = ctx.screens.map((s) => s.template).filter(Boolean);
+      if (templates.length) {
+        ctx.cssUnmatched = unmatchedSelectors(audits, templates);
+        if (ctx.cssUnmatched.length) {
+          ctx.unverified(
+            `${ctx.cssUnmatched.length} selector(s) match no class or id in any template this run read. ` +
+            `Candidates, not verdicts: a class assembled at runtime, or markup outside the run, would look ` +
+            `exactly like this. CSS_STATS.md lists them with what was searched.`
+          );
+        }
+      }
     });
 
     on("emit", async (ctx) => {
@@ -78,6 +123,15 @@ export default {
           lines.push(`- Declarations repeated four times or more, which is what a token exists for:`);
           for (const [decl, n] of a.repeated.slice(0, 10)) lines.push(`  - \`${decl}\` × ${n}`);
         }
+        lines.push("");
+      }
+      if (ctx.cssUnmatched?.length) {
+        lines.push("## Selectors matching nothing this run read", "");
+        lines.push("Candidates, never verdicts. The search covered the class and id attributes");
+        lines.push("and the conditional class bindings of every template in the run; a class");
+        lines.push("assembled at runtime, or markup outside the run, is invisible to it.", "");
+        for (const u of ctx.cssUnmatched.slice(0, 40)) lines.push(`- \`${u.selector}\` (${u.file})`);
+        if (ctx.cssUnmatched.length > 40) lines.push(`- … and ${ctx.cssUnmatched.length - 40} more.`);
         lines.push("");
       }
       await ctx.write("CSS_STATS.md", lines.join("\n"));

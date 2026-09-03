@@ -78,6 +78,23 @@ export default {
         }
       }
 
+      // A parameter in the path is an input the screen receives from the
+      // address bar. Naming them makes the port's data flow visible; one the
+      // target's template never mentions is only a candidate for dead weight,
+      // because a controller can read it where this pass cannot see.
+      for (const route of ctx.routes.table) {
+        route.params = [...String(route.fullPath ?? "").matchAll(/:([\w$]+)/g)].map((m) => m[1]);
+        if (!route.params.length || !route.screen) continue;
+        const screen = ctx.screens.find((s) => s.selector === route.screen);
+        const unread = route.params.filter((p) => !new RegExp(`\\b${p}\\b`).test(screen?.template ?? ""));
+        if (unread.length) {
+          ctx.unverified(
+            `Route ${route.fullPath} carries ${unread.map((p) => `\`:${p}\``).join(", ")} and the <${route.screen}> template never mentions ${unread.length === 1 ? "it" : "them"}. ` +
+            `Read in a controller this pass cannot see, or dead weight in the path; wire it explicitly in the port either way.`
+          );
+        }
+      }
+
       const routed = new Set(ctx.routes.table.map((r) => r.screen).filter(Boolean));
       const unrouted = ctx.screens.filter((s) => !routed.has(s.selector));
       if (routed.size && unrouted.length) {
@@ -107,7 +124,7 @@ function render({ table, hashRouting }, screenCount) {
           : r.component
             ? `\`${r.component}\` — **not in this run**`
             : "nothing portamp could read";
-    return `| \`${r.fullPath}\` | ${target} | ${r.file} |`;
+    return `| \`${r.fullPath}\` | ${target} | ${r.params?.length ? r.params.map((p) => `\`:${p}\``).join(", ") : "—"} | ${r.file} |`;
   });
 
   return `# The route table
@@ -117,8 +134,8 @@ somebody may have saved, a link in an email somewhere, a tab pinned since 2019.
 A port that renders the same screens under different addresses has broken all
 of them silently.
 
-${table.length ? `| path | renders | declared in |
-| --- | --- | --- |
+${table.length ? `| path | renders | parameters | declared in |
+| --- | --- | --- | --- |
 ${rows.join("\n")}` : "No declared route table was found."}
 ${hashRouting ? `
 ## Hand rolled hash routing

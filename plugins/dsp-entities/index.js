@@ -48,6 +48,32 @@ export function inferEntities(shapes) {
   return entities;
 }
 
+/**
+ * The edges between entities, read from their property names: `customerId`
+ * on an order points at whatever entity answers to `customer`. A name match
+ * is a reading, and each edge carries the property that argues for it.
+ */
+export function inferRelations(entities) {
+  const byName = new Map(entities.map((e) => [e.name.toLowerCase(), e]));
+  const relations = [];
+  for (const entity of entities) {
+    for (const property of Object.keys(entity.properties)) {
+      const m = /^([a-z][\w]*?)_?[iI]ds?$/.exec(property);
+      if (!m) continue;
+      const target = byName.get(m[1].toLowerCase()) ?? byName.get(m[1].toLowerCase().replace(/s$/, ""));
+      if (target && target !== entity) {
+        relations.push({
+          from: entity.name,
+          to: target.name,
+          property,
+          many: /s$/.test(property),
+        });
+      }
+    }
+  }
+  return relations;
+}
+
 export default {
   name: "dsp-entities",
   version: "0.1.0",
@@ -69,7 +95,8 @@ export default {
 
       const entities = inferEntities(shapes);
       ctx.entities = entities;
-      log.info(`${entities.length} entit(ies) from ${shapes.length} observed shape(s)`);
+      ctx.entityRelations = inferRelations(entities);
+      log.info(`${entities.length} entit(ies), ${ctx.entityRelations.length} relation(s) from ${shapes.length} observed shape(s)`);
       for (const e of entities.filter((e) => e.conflicts.length)) {
         ctx.unverified(`The shape of \`${e.name}\` disagrees with itself: ${e.conflicts[0]}. Two endpoints, two types, one name; the service owner knows which is true.`);
       }
@@ -91,6 +118,17 @@ ${Object.entries(e.properties).map(([k, t]) => `| \`${k}\` | ${t} |`).join("\n")
 
 Seen at: ${e.seenAt.map((s) => `\`${s}\``).join(", ")}${e.conflicts.length ? `\n\n**Disagrees with itself:** ${e.conflicts.join("; ")}` : ""}`).join("\n\n")}
 
+${ctx.entityRelations?.length ? `
+## How they point at each other
+
+Read from property names alone: \`customerId\` on an order points at whatever
+answers to \`customer\`. A name match is a reading, and each row carries the
+property that argues for it.
+
+| from | to | argued by | cardinality read |
+| --- | --- | --- | --- |
+${ctx.entityRelations.map((r) => `| ${r.from} | ${r.to} | \`${r.property}\` | ${r.many ? "many" : "one"} |`).join("\n")}
+` : ""}
 ---
 
 An entity here is a reading of traffic, not a schema. A property no observed
