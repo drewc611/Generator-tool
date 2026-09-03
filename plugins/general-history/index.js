@@ -28,6 +28,15 @@ export function renderHistory(entries) {
   const last = entries.at(-1);
   const prev = entries.at(-2);
   if (last && prev) {
+    // The movement, spelled out, because reading a trend off two long rows
+    // is exactly the arithmetic a table exists to do for the reader.
+    const step = (k) => {
+      const d = last[k] - prev[k];
+      return d > 0 ? `+${d}` : String(d);
+    };
+    lines.splice(lines.length - 1, 0, `| Δ since previous | ${step("screens")} | ${step("endpoints")} | ${step("unverified")} | ${step("files")} |`);
+  }
+  if (last && prev) {
     const delta = last.unverified - prev.unverified;
     lines.push(
       delta > 0
@@ -63,8 +72,12 @@ export default {
         previous = [];
       }
       const entries = [...previous, entry].slice(-200);
-      await mkdir(dirname(path), { recursive: true });
-      await writeFile(path, entries.map((e) => JSON.stringify(e)).join("\n") + "\n", "utf8");
+      // A dry run is not part of the history: recording one would say a run
+      // happened that wrote nothing, which is two kinds of confusing later.
+      if (!ctx.config.dryRun) {
+        await mkdir(dirname(path), { recursive: true });
+        await writeFile(path, entries.map((e) => JSON.stringify(e)).join("\n") + "\n", "utf8");
+      }
       await ctx.write("HISTORY.md", renderHistory(entries));
       log.info(`run ${entries.length} recorded`);
     });

@@ -269,6 +269,11 @@
   </div>
 </section>
 
+<section class="unit">
+  <div class="cap"><span>written files, and who wrote them</span><b id="files-total"></b></div>
+  <div class="sunk"><div class="scroll"><table id="files-list"></table></div></div>
+</section>
+
 <script>
 const $ = (id) => document.getElementById(id);
 // The quotes matter as much as the angle brackets: most of these values land
@@ -419,6 +424,20 @@ function renderUnverified() {
 }
 $("un-q") && $("un-q").addEventListener("input", () => run && renderUnverified());
 
+// Provenance came with the run: every file is attributed to the plugin whose
+// turn it was when it landed, which is the kernel's memory, not a guess.
+function renderFiles() {
+  const files = run.files ?? [];
+  $("files-total").textContent = files.length;
+  $("files-list").innerHTML = files.length
+    ? files.map((f) => {
+        const who = (run.provenance ?? {})[f];
+        return "<tr><td class=\"path\">" + esc(f) + "</td><td class=\"src\">" +
+          (who ? esc(who.plugin) + " at " + esc(who.stage) : "unattributed") + "</td></tr>";
+      }).join("")
+    : '<tr><td class="hint">nothing written yet</td></tr>';
+}
+
 let currentIndex = 0;
 async function select(index) {
   const screen = run.screens[index];
@@ -526,7 +545,7 @@ $("run").addEventListener("click", async () => {
     }
     run = await fetch("/run.json").then((r) => r.json());
     stageFilter = null;
-    renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified();
+    renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified(); renderFiles();
     if (run.screens.length) select(0);
     $("now").textContent = "done in " + result.ms + "ms";
   } catch (err) {
@@ -559,7 +578,7 @@ setInterval(async () => {
     const fresh = await fetch("/run.json").then((r) => r.json());
     if (fresh.ranAt === run.ranAt) return;
     run = fresh;
-    renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified();
+    renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified(); renderFiles();
     if (run.screens.length) select(Math.min(currentIndex, run.screens.length - 1));
     $("now-sub").textContent = "refreshed from a newer run";
   } catch { /* the server may be restarting; the next tick asks again */ }
@@ -587,7 +606,7 @@ async function renderTrend() {
   }
   renderTrend();
   renderTokens();
-  renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified();
+  renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified(); renderFiles();
   if (run.screens.length) select(0);
   else {
     $("layer-shot").innerHTML = '<div class="empty"><strong>Nothing to compare.</strong><span>This run emitted no components.</span></div>';

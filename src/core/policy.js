@@ -29,9 +29,13 @@ export class PolicyViolation extends Error {
 }
 
 export class Policy {
-  constructor({ allowLive = false, allowBillable = false, allowedDomains = null, log } = {}) {
+  constructor({ allowLive = false, allowBillable = false, allowedDomains = null, offline = false, log } = {}) {
     this.allowLive = allowLive;
     this.allowBillable = allowBillable;
+    // offline outranks everything, including an attestation and --allow-live.
+    // It exists for CI: a run that must not reach the network says so once,
+    // and no flag combination argues it back open.
+    this.offline = Boolean(offline);
     // Domains the attestation names. null means the attestation named none
     // and --allow-live alone governs; a list narrows the gate further and
     // nothing widens it back.
@@ -87,6 +91,13 @@ export class Policy {
    * permission to drive whatever the tool finds a link to.
    */
   assertLiveAllowed(target) {
+    if (this.offline) {
+      throw new PolicyViolation(
+        `Refusing to call ${target}. This run is offline: --offline outranks ` +
+          `--allow-live and the attestation both, which is the point of it.`,
+        { rule: "offline" }
+      );
+    }
     if (!this.allowLive) {
       throw new PolicyViolation(
         `Refusing to call ${target}. Live calls are off by default. ` +

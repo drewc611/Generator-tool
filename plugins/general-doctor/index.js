@@ -17,14 +17,41 @@ export default {
   commands: {
     doctor: {
       describe: "what is installed, and what each gap turns off",
-      async run({ log }) {
+      async run({ config, log }) {
         const [major] = process.versions.node.split(".").map(Number);
         log.info(`\nnode ${process.versions.node} ${major >= 18 ? "(supported)" : "(portamp needs 18 or newer)"}\n`);
         for (const dep of OPTIONAL) {
           let state = "absent";
-          try { await import(dep.name); state = "installed"; } catch { /* stays absent */ }
+          // The version says which one answers, because "installed" hides
+          // exactly the mismatch a doctor exists to catch.
+          try {
+            await import(dep.name);
+            state = "installed";
+            const { readFile } = await import("node:fs/promises");
+            const { createRequire } = await import("node:module");
+            try {
+              const pkg = createRequire(import.meta.url).resolve(`${dep.name}/package.json`);
+              state = `installed ${JSON.parse(await readFile(pkg, "utf8")).version}`;
+            } catch { /* importable but its package.json is not; installed stands */ }
+          } catch { /* stays absent */ }
           log.info(`  ${dep.name.padEnd(18)} ${state}`);
-          log.info(`    ${state === "installed" ? `enables ${dep.turnsOn}` : `without it, ${dep.without}`}`);
+          log.info(`    ${state.startsWith("installed") ? `enables ${dep.turnsOn}` : `without it, ${dep.without}`}`);
+        }
+
+        // The out directory has to accept writes before a run is worth
+        // starting; discovering that at emit costs the whole pipeline first.
+        if (config?.out) {
+          const { mkdir, writeFile, rm } = await import("node:fs/promises");
+          const { join } = await import("node:path");
+          const probe = join(config.out, ".portamp-doctor-probe");
+          try {
+            await mkdir(config.out, { recursive: true });
+            await writeFile(probe, "probe", "utf8");
+            await rm(probe);
+            log.info(`  out directory       writable (${config.out})`);
+          } catch (err) {
+            log.info(`  out directory       NOT WRITABLE (${config.out}): ${err.code ?? err.message}`);
+          }
         }
         // playwright without a browser binary fails at run time, not install
         // time, which is exactly when nobody wants to learn it.

@@ -69,6 +69,23 @@ export default {
           );
       }
 
+      // An attestation can carry its own shelf life. Past it, the file is a
+      // record of what was once true, and the gate treats it as absent; a
+      // contractor's engagement ending is exactly the case this exists for.
+      if (att.expires) {
+        const expiry = Date.parse(att.expires);
+        if (Number.isNaN(expiry))
+          throw new Error(`expires is "${att.expires}", which does not parse as a date. Use ISO: 2026-12-31.`);
+        if (expiry < Date.now())
+          throw new Error(
+            `portamp.authorization.json expired on ${att.expires}. Whoever attested it should confirm the ` +
+              `authorization still stands and re-date it; a run on a stale attestation is a run without one.`
+          );
+        if (expiry - Date.now() < 7 * 24 * 60 * 60 * 1000) {
+          ctx.unverified(`The attestation expires on ${att.expires}, under a week from now. Renew it before it lapses mid engagement.`);
+        }
+      }
+
       if (att.relationship === "contractor" && !att.engagement)
         throw new Error(
           `relationship is "contractor" but no engagement is named. Add the statement of ` +

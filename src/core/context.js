@@ -69,6 +69,13 @@ export function createContext({ config, log, policy }) {
 
     async write(relPath, contents) {
       const full = join(config.out, relPath);
+      // A dry run records every write and performs none. The pipeline, the
+      // gates and the summary all behave as if the files landed, which is
+      // the point: the answer to "what would this run do" with nothing done.
+      if (config.dryRun) {
+        this.written.push(relPath);
+        return full;
+      }
       await mkdir(dirname(full), { recursive: true });
       await writeFile(full, contents, "utf8");
       this.written.push(relPath);

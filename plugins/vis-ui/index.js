@@ -310,6 +310,8 @@ export default {
     on("verify", async (ctx) => {
       const run = buildRun(ctx, "vis-ui");
       const target = join(ctx.config.out, ".portamp", "run.json");
+      // A dry run leaves no trace on disk, this sidecar included.
+      if (ctx.config.dryRun) return log.debug("dry run; run.json not written");
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, JSON.stringify(run, null, 2) + "\n", "utf8");
       log.info(

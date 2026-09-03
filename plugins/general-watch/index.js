@@ -37,9 +37,17 @@ export default {
         await runOnce("first run");
         log.info(`watching ${config.src}  (ctrl-c to stop)`);
 
-        watch(config.src, { recursive: true }, () => {
+        // The debounce window collects what changed, so the one line names
+        // the files instead of an anonymous "changed".
+        let changed = new Set();
+        watch(config.src, { recursive: true }, (_event, filename) => {
+          if (filename) changed.add(String(filename));
           clearTimeout(timer);
-          timer = setTimeout(() => runOnce("changed"), 200);
+          timer = setTimeout(() => {
+            const what = [...changed].slice(0, 3).join(", ") + (changed.size > 3 ? ` +${changed.size - 3}` : "");
+            changed = new Set();
+            runOnce(what || "changed");
+          }, 200);
         });
 
         // Keep the process alive until the person says otherwise.
