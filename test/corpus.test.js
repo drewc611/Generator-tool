@@ -18,7 +18,7 @@ const DIR = join(process.cwd(), "test", "fixtures", "corpus");
 
 test("every corpus entry classifies as its label", async () => {
   const files = (await readdir(DIR)).filter((f) => f.endsWith(".json")).sort();
-  assert.ok(files.length >= 8, "the corpus holds at least the v0 eight");
+  assert.ok(files.length >= 11, "the corpus holds at least the eleven labelled miniatures");
 
   const misses = [];
   for (const file of files) {
@@ -27,6 +27,8 @@ test("every corpus entry classifies as its label", async () => {
       shape: shapeOf(buildIr(entry.html)),
       calls: entry.calls ?? [],
       model: entry.model ?? null,
+      widgets: entry.widgets ?? [],
+      components: entry.components ?? 1,
     });
     if (best.id !== entry.label) {
       misses.push(`${file}: labelled ${entry.label}, read as ${best.id} (${ranked.slice(0, 2).map((r) => `${r.id}:${r.score}`).join(" vs ")})`);

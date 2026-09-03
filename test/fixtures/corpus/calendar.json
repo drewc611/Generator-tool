@@ -1,0 +1,24 @@
+{
+  "label": "calendar",
+  "html": "<button>Previous week</button><button>Next week</button><table><tr><th>Monday</th><th>Tuesday</th><th>Wednesday</th></tr><tr><td *ngFor=\"let day of week\">{{day.total}}</td></tr></table>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/events?from=2024-01-01&to=2024-01-07"
+    }
+  ],
+  "model": {
+    "screens": [
+      {
+        "kind": "grid"
+      }
+    ],
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/api/events",
+        "query": ["from", "to"]
+      }
+    ]
+  }
+}

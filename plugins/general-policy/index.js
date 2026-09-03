@@ -28,12 +28,29 @@ export default {
 
     on("verify", async (ctx) => {
       const paths = [...new Set(ctx.api.calls.map((c) => c.path).filter(Boolean))];
-      const components = ctx.written.filter((f) => /\.(jsx|tsx)$/.test(f));
+      // Every emitted component, whichever target wrote it. src/api is the
+      // one place endpoints belong, so it is exactly the tree not checked.
+      const components = ctx.written.filter(
+        (f) => (f.startsWith("src/features/") || f.startsWith("src/elements/")) && /\.(jsx|tsx|vue|svelte|js)$/.test(f)
+      );
       for (const rel of components) {
         const text = await readFile(join(ctx.config.out, rel), "utf8").catch(() => "");
         policy.assertNoEndpointLiteral(text, rel, paths);
       }
       log.info(`no endpoint in ${components.length} component(s), ${paths.length} path(s) checked`);
+
+      // The second net for secrets: the source gate stops the run before
+      // anything is written; this one catches a value a plugin copied out of
+      // an artifact into the port. Like the endpoint gate it can only fail
+      // the run once the file exists on disk to look at.
+      if (!ctx.config.dryRun) {
+        for (const rel of ctx.written.filter((f) => /\.(jsx?|tsx?|vue|svelte|json|md|css|html|yml)$/i.test(f))) {
+          const text = await readFile(join(ctx.config.out, rel), "utf8").catch(() => "");
+          policy.scanForSecrets(text, `${rel} (emitted)`);
+        }
+        policy.assertNoSecrets();
+        log.debug("nothing secret shaped in the emitted files");
+      }
 
       // An opt in ceiling for CI: --max-unverified N fails the run when the
       // gaps exceed it. It only ever adds a gate; there is no flag that

@@ -58,6 +58,15 @@ jobs:
       - name: pipeline runs end to end, without the optional dependencies
         run: npm run demo
 
+      # Two belts the flags exist for: --offline proves nothing in the demo
+      # path reaches for a network, and the ceiling proves the example's
+      # honesty debt is counted and bounded, not merely listed.
+      - name: the demo holds offline and under the unverified ceiling
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots \
+            --out /tmp/gated-demo --offline --max-unverified 14
+          test -s /tmp/gated-demo/PORT_NOTES.md
+
       - name: install the optional reader
         run: npm install --no-save typescript@^5.4.0
 

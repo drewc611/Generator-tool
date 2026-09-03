@@ -15,6 +15,15 @@ const SECRET_PATTERNS = [
   [/\bBearer\s+[A-Za-z0-9\-._~+/]{24,}=*/, "hardcoded bearer token"],
   [/\bpassword\s*[:=]\s*['"][^'"]{6,}['"]/i, "password"],
   [/\bxox[baprs]-[A-Za-z0-9-]{10,}/, "slack token"],
+  [/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/, "github token"],
+  [/\bgithub_pat_[A-Za-z0-9_]{20,}\b/, "github fine grained token"],
+  [/\bglpat-[A-Za-z0-9_-]{20,}\b/, "gitlab token"],
+  [/\bsk_live_[A-Za-z0-9]{16,}\b/, "stripe live key"],
+  [/\bnpm_[A-Za-z0-9]{30,}\b/, "npm token"],
+  [/\bAIza[0-9A-Za-z_-]{30,}\b/, "google api key"],
+  // Three base64url segments joined by dots is a signed token whatever
+  // service minted it; the header segment always starts with eyJ.
+  [/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}/, "signed jwt"],
 ];
 
 export class PolicyViolation extends Error {
