@@ -18,6 +18,7 @@ node src/cli.js plugins      # list what loads
 npm run demo                 # full pipeline against example/legacy
 npm test                     # node --test, no framework
 node src/cli.js run -v       # timings per plugin
+node src/cli.js ui --watch   # the console, rerunning as the source changes
 ```
 
 No install step. No build step. Node 18 or newer, zero runtime dependencies.

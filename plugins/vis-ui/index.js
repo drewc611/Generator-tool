@@ -105,6 +105,11 @@ export function buildRun(ctx, self = null) {
     files: ctx.written ?? [],
     provenance: ctx.provenance ?? {},
     tokens: ctx.tokens ?? null,
+    // What the other vis plugins measured, riding the same sidecar: coverage
+    // from vis-coverage and the equivalence verdicts, both of which run
+    // earlier in this stage. The console shows them instead of re-deriving.
+    coverage: ctx.coverage ?? null,
+    parity: ctx.report?.parity ?? [],
   };
 }
 
@@ -394,7 +399,7 @@ export default {
 
   commands: {
     ui: {
-      describe: "serve the last run on 127.0.0.1",
+      describe: "serve the last run on 127.0.0.1; --watch reruns on change",
       async run({ config, log, args, runPipeline }) {
         const runPath = join(config.out, ".portamp", "run.json");
         const already = await readFile(runPath, "utf8").then(() => true).catch(() => false);
@@ -413,6 +418,40 @@ export default {
           rerun: runPipeline,
         });
         if (!openBrowser(address)) log.info("could not open a browser, open that address yourself");
+
+        // --watch closes the loop the console's poll already listens for:
+        // a source edit reruns the pipeline, the run's timestamp moves, and
+        // every open console refreshes itself. The same debounce and the
+        // same one-at-a-time rule as the watch command.
+        if (args.watch) {
+          const { watch } = await import("node:fs");
+          let running = false;
+          let queued = false;
+          let timer = null;
+          const runOnce = async (what) => {
+            if (running) { queued = true; return; }
+            running = true;
+            try {
+              const ctx = await runPipeline();
+              log.info(`${new Date().toLocaleTimeString()}  ${what}: ${ctx.written.length} file(s), ${ctx.report.unverified.length} unverified`);
+            } catch (err) {
+              log.error(`${what}: ${err.message}`);
+            }
+            running = false;
+            if (queued) { queued = false; runOnce("queued change"); }
+          };
+          let changed = new Set();
+          watch(config.src, { recursive: true }, (_event, filename) => {
+            if (filename) changed.add(String(filename));
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+              const what = [...changed].slice(0, 3).join(", ") + (changed.size > 3 ? ` +${changed.size - 3}` : "");
+              changed = new Set();
+              runOnce(what || "changed");
+            }, 200);
+          });
+          log.info(`watching ${config.src}; the console refreshes itself after each rerun`);
+        }
 
         // Ctrl c closes the socket and leaves nothing behind; the browser was
         // spawned detached and unreferenced.

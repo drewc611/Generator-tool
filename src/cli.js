@@ -33,6 +33,7 @@ options
   --json               with the plugins command, print the roster as JSON
       --port <n>       port for the ui command      (default 4321)
       --fresh          make ui run the pipeline again
+      --watch          with ui, rerun on source changes; consoles refresh
   -v, --verbose        show plugin timings
   -q, --quiet          errors only
   -h, --help
@@ -63,6 +64,7 @@ function parseArgs(argv) {
     else if (t === "--allow-live") a.allowLive = true;
     else if (t === "--allow-billable") a.allowBillable = true;
     else if (t === "--fresh") a.fresh = true;
+    else if (t === "--watch") a.watch = true;
     else if (t === "--json") a.json = true;
     else if (t === "--dry-run") a.dryRun = true;
     else if (t === "--offline") a.offline = true;

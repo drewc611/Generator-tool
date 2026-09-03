@@ -322,3 +322,33 @@ test("the service worker shell carries the lib and moved its version", async () 
   assert.match(sw, /"\/lib\.js"/);
   assert.doesNotMatch(sw, /portamp-shell-v1/, "a changed shell is a new cache");
 });
+
+/* ------------------------------------------------- integrated, not beside */
+
+test("coverage and the equivalence verdicts ride the run into the console", async (t) => {
+  const { ctx, cleanup } = await ctxFor();
+  t.after(cleanup);
+  const run = buildRun(ctx);
+  assert.equal(typeof run.coverage.ported, "number", "vis-coverage's number, not a re-derivation");
+  assert.equal(typeof run.coverage.routed, "number");
+  assert.ok(Array.isArray(run.parity), "the equivalence verdicts have a seat even when empty");
+});
+
+test("the emitted index points back at the console that renders it", async (t) => {
+  const { out, cleanup } = await ctxFor();
+  t.after(cleanup);
+  const index = await readFile(join(out, "PORT_README.md"), "utf8");
+  assert.match(index, /portamp ui/, "the run's own docs name the workbench");
+});
+
+test("the console shows the coverage gauge and the ui command watches", async () => {
+  const page = await readFile(join(ROOT, "plugins", "vis-ui", "app.html"), "utf8");
+  assert.match(page, /id="g-cover"/, "the ported gauge");
+  assert.match(page, /run\.coverage/, "fed from the run, not re-derived");
+  assert.match(page, /diverged/, "the equivalence verdicts reach the readout");
+  const cli = await readFile(join(ROOT, "src", "cli.js"), "utf8");
+  assert.match(cli, /--watch/, "the flag is a first class boolean");
+  assert.equal(plugin.commands.ui.describe.includes("--watch"), true, "the command says so");
+  const source = await readFile(join(ROOT, "plugins", "vis-ui", "index.js"), "utf8");
+  assert.match(source, /args\.watch/, "and the command honors it");
+});

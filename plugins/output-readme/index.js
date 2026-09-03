@@ -73,7 +73,8 @@ export default {
         "or a history, are written moments after this index and may not be in the",
         "counts above.",
         "",
-        "Read PORT_NOTES.md before trusting anything else here.",
+        "Read PORT_NOTES.md before trusting anything else here. `portamp ui`",
+        "serves this run as a console on 127.0.0.1, the reports above rendered.",
         "",
       ];
       await ctx.write("PORT_README.md", lines.join("\n"));

@@ -67,6 +67,30 @@ jobs:
             --out /tmp/gated-demo --offline --max-unverified 14
           test -s /tmp/gated-demo/PORT_NOTES.md
 
+      # The console is part of the run, not beside it: boot it against the
+      # demo the previous step wrote and ask it for everything the page asks
+      # for. A fixture can drift; the demo cannot.
+      - name: the console serves the demo run
+        run: |
+          node --input-type=module -e "
+            const { serve } = await import('./plugins/vis-ui/index.js');
+            const quiet = { info() {}, debug() {} };
+            const { server, address } = await serve({ outDir: '/tmp/gated-demo', shotsDir: 'example/screenshots', port: 0, log: quiet });
+            const health = await fetch(address + '/healthz').then((r) => r.json());
+            if (!health.ok || health.files < 1) throw new Error('healthz is not healthy: ' + JSON.stringify(health));
+            const reports = await fetch(address + '/reports.json').then((r) => r.json());
+            if (!reports.includes('PORT_NOTES.md')) throw new Error('the reports list misses PORT_NOTES.md');
+            if ((await fetch(address + '/report?name=PORT_NOTES.md')).status !== 200) throw new Error('the report did not render');
+            const first = await fetch(address + '/run.json');
+            const again = await fetch(address + '/run.json', { headers: { 'If-None-Match': first.headers.get('etag') } });
+            if (again.status !== 304) throw new Error('the poll paid full price twice');
+            if ((await fetch(address + '/lib.js')).status !== 200) throw new Error('lib.js did not serve');
+            const run = await first.json();
+            if (!run.coverage || typeof run.coverage.ported !== 'number') throw new Error('coverage did not reach the console');
+            server.close();
+            console.log('console: healthz, reports, a rendered report, the 304, lib.js and coverage all answered');
+          "
+
       - name: install the optional reader
         run: npm install --no-save typescript@^5.4.0
 

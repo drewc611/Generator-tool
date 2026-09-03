@@ -286,6 +286,7 @@
     <div class="sunk gauge"><b id="g-plugins">0</b><span>plugins</span></div>
     <div class="sunk gauge"><b id="g-ms">0</b><span>ms</span></div>
     <div class="sunk gauge"><b id="g-unver">0</b><span>unver</span></div>
+    <div class="sunk gauge"><b id="g-cover">—</b><span>ported</span></div>
   </div>
   <div class="sunk gauge" style="width:auto;padding:3px 6px">
     <div class="swatches" id="swatches"></div>
@@ -427,8 +428,17 @@ function renderHead() {
   $("g-plugins").textContent = run.plugins.length;
   $("g-ms").textContent = ms;
   $("g-unver").textContent = run.unverified.length;
-  $("now-sub").textContent = new Date(run.ranAt).toLocaleString();
-  if (run.unverified.length) $("lamp-unver").classList.add("warn");
+  // Coverage is vis-coverage's number and the verdicts are vis-equivalence's;
+  // the console shows what the run measured instead of re-deriving either.
+  $("g-cover").textContent = run.coverage ? run.coverage.ported + "%" : "—";
+  $("g-cover").title = run.coverage
+    ? "ported " + run.coverage.ported + "% · routed " + run.coverage.routed + "% · proven " + run.coverage.proven + "%"
+    : "no census of the old app in this run";
+  const diverged = (run.parity ?? []).filter((p) => p.status === "diverged");
+  $("now-sub").textContent = diverged.length
+    ? diverged.length + " equivalence verdict(s) diverged — see PORT_NOTES.md"
+    : new Date(run.ranAt).toLocaleString();
+  if (run.unverified.length || diverged.length) $("lamp-unver").classList.add("warn");
 }
 
 /** The bars are the plugin count for each stage. Nothing here is decorative. */

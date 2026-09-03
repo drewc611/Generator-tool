@@ -28,7 +28,7 @@ writes components instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 83 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 427 tests, node --test, no framework
+npm test                     # 430 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
