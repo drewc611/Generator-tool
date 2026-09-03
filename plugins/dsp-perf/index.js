@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { buildIr } from "../dsp-ir/ir.js";
 
 /**
  * What the old app ships that the port should not.
@@ -83,7 +84,6 @@ export default {
       const weights = [];
       for (const screen of ctx.screens.filter((s) => s.template)) {
         try {
-          const { buildIr } = await import("../dsp-ir/ir.js");
           weights.push(templateWeight(screen.ir ?? buildIr(screen.template), screen.selector));
         } catch { /* a template another pass already reported as unreadable */ }
       }

@@ -12,7 +12,6 @@
 import { parse as parseMarkup } from "../dsp-ir/parse.js";
 
 const AA_NORMAL = 4.5;
-const AA_LARGE = 3;
 
 /**
  * The structure of each screen's markup, checked where structure is checkable

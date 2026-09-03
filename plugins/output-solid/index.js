@@ -126,12 +126,12 @@ function print(node, depth, ctx) {
       // here: the callback returns an expression, not JSX children.
       const sole = node.children.length === 1 && node.children[0].kind === "when" ? node.children[0] : null;
       const inner = (sole ? sole.children : node.children).map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n");
-      const test = sole ? q(sole.test) : null;
       ctx.locals.delete(node.item);
       if (node.index) ctx.locals.delete(node.index);
       const source = node.object ? `Object.entries(${q(node.list)})` : q(node.list);
-      if (sole) return `${indent}<For each={${source}}>{${args} => ${/\|\||\?/.test(test) ? `(${test})` : test} && (\n${inner}\n${indent})}</For>`;
-      return `${indent}<For each={${source}}>{${args} => (\n${inner}\n${indent})}</For>`;
+      const test = sole ? q(sole.test) : null;
+      const guard = sole ? `${/\|\||\?/.test(test) ? `(${test})` : test} && ` : "";
+      return `${indent}<For each={${source}}>{${args} => ${guard}(\n${inner}\n${indent})}</For>`;
     }
     case "fragment": {
       const children = node.children.map((c) => print(c, depth, ctx)).filter(Boolean);

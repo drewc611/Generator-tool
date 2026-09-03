@@ -1,5 +1,5 @@
 import { readdir, readFile } from "node:fs/promises";
-import { join, extname, basename } from "node:path";
+import { join, extname } from "node:path";
 
 /**
  * Reads a legacy system from whatever artifacts exist when the source does not.

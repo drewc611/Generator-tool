@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { translate, parse } from "../plugins/output-react/template.js";
+import { translate } from "../plugins/output-react/template.js";
+import { parse } from "../plugins/dsp-ir/parse.js";
 
 const jsx = (html) => translate(html, { indent: 0 }).jsx;
 const flat = (html) => jsx(html).replace(/\s+/g, " ").trim();

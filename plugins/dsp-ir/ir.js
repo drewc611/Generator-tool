@@ -589,12 +589,6 @@ function literalElement(node, d) {
   };
 }
 
-/** What each Vue key modifier means in event.key terms. */
-const KEY_MODS = {
-  enter: "Enter", esc: "Escape", escape: "Escape", tab: "Tab", space: " ",
-  delete: "Delete", up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight",
-};
-
 function buildElement(node, d, ctx, sw = null) {
   const attrs = [];
   const classes = [];

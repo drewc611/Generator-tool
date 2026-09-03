@@ -1,5 +1,3 @@
-import { balanced, topLevelBlocks } from "../dsp-ir/scan.js";
-
 /**
  * Knockout packs every binding into one data-bind attribute. The dialect
  * table wants one attribute per meaning, so this pass expands

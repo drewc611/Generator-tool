@@ -1,15 +1,11 @@
 import { buildIr } from "../dsp-ir/ir.js";
 import { jsString, guardHandler } from "../dsp-ir/emit.js";
-import { parse } from "../dsp-ir/parse.js";
 
 /**
  * The React printer. It takes the IR and knows nothing about where the markup
  * came from: an Angular template and a Vue single file component reach this
  * function as the same tree, which is the whole reason the IR exists.
  */
-
-const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input",
-  "link", "meta", "param", "source", "track", "wbr"]);
 
 const PROP = {
   class: "className", for: "htmlFor", tabindex: "tabIndex", readonly: "readOnly",
@@ -244,8 +240,6 @@ function withKey(inner, key) {
   lines[i] = lines[i].replace(/^(\s*<[\w.]+)/, `$1 key={${key}}`);
   return lines.join("\n");
 }
-
-export { buildIr, parse, VOID };
 
 export function translate(html, { indent = 3, dialect, components = null } = {}) {
   const ir = buildIr(html, { dialect });

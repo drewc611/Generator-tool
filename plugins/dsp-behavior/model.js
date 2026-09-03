@@ -146,7 +146,6 @@ export function inferFields(screen, steps) {
   });
 }
 
-const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
  * A control labelled with the record it sits on is one control, not one per

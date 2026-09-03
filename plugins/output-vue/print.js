@@ -1,5 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
-import { jsString, singleQuoted } from "../dsp-ir/emit.js";
+import { singleQuoted } from "../dsp-ir/emit.js";
 
 /**
  * The Vue printer, and the third target.

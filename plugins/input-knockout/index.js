@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import { balanced, stripScripts } from "../dsp-ir/scan.js";
-import { buildIr, DIALECTS } from "../dsp-ir/ir.js";
 import { expand } from "./expand.js";
 
 /**

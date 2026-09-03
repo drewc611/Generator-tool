@@ -2,7 +2,6 @@ import { toAngular } from "./print.js";
 import { identifier, templateText } from "../dsp-ir/emit.js";
 
 const pascal = (sel) => identifier(String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join(""), "Screen");
-const camel = (s) => { const p = pascal(s); return p[0].toLowerCase() + p.slice(1); };
 
 /**
  * Modern Angular as a target, which closes a loop: an AngularJS controller

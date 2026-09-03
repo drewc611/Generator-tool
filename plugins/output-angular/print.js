@@ -1,4 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
+import { VOID } from "../dsp-ir/parse.js";
 import { singleQuoted } from "../dsp-ir/emit.js";
 
 /**
@@ -58,8 +59,6 @@ function attributes(node) {
   styleAttribute(node.styles, out);
   return out;
 }
-
-const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
 
 function print(node, depth) {
   if (!node) return "";
