@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-One hundred and fifty eight features across fifteen phases. The statuses are
+Two hundred and twenty seven features across twenty one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-357 tests, on Node 18, 20 and 22, and on Windows in CI.
+414 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -587,14 +587,246 @@ a declared response shape reaches fixtures through its local ref, typed, and the
 PORT_README names the plugin behind every artifact, the same record portamp explain reads.
 
 
+## Phase 16 · The translator learns what it used to note
+
+*Thirteen behaviors that were caveats in PORT_NOTES and are now translations.*
+
+**159. then and else, resolved** 🔨
+an else or then naming an ng-template resolves to that template's harvested body; a reference the markup does not hold stays a note, never a guess.
+
+**160. Object loops** 🔨
+the (key, value) repeat maps Object.entries in react, solid and the element, destructures the pair in svelte, keeps Vue's native pair form, and rides the keyvalue pipe in the angular target.
+
+**161. ng-options, expanded** 🔨
+the select comprehension becomes the option loop it always was, value and label read from the expression; a form it cannot read stays a note and the select keeps its markup children.
+
+**162. The repeat carries its if inside** 🔨
+AngularJS runs the repeat before the if, so a condition on a repeated row now tests each row inside the loop, where the row exists.
+
+**163. Containerless knockout** 🔨
+<!-- ko if / ifnot / foreach / with --> comments become the containers they implied; foreach names its row, $data is rewritten to it, and the rescoping gap is named.
+
+**164. Ranges spelled out** 🔨
+v-for over a number counts from one through Array.from, so the range stays visible instead of becoming a magic array.
+
+**165. Event modifiers** 🔨
+.prevent, .stop, .self, the key filters and the mouse buttons become the statements they stand for in the function targets, ride the name unchanged in Vue and Alpine, and a modifier with no equivalent runs unguarded and says so.
+
+**166. Text directives** 🔨
+ng-bind, ng-bind-template and v-text replace the element's content, exactly as they did at runtime.
+
+**167. Named slots** 🔨
+a slot with a name is a second insertion point: a prop in react and solid, a named slot in vue, svelte, lit and the element, a select in the angular target.
+
+**168. Slot fallbacks** 🔨
+the children inside a slot tag are the fallback and survive into every target, native where the platform has them, ?? where it does not.
+
+**169. v-pre kept, v-once named** 🔨
+a v-pre subtree is carried as written, mustaches included, because the author said those braces are text; v-once keeps rendering and the freeze is noted.
+
+**170. The boolean directives** 🔨
+ng-checked, ng-selected, ng-readonly, ng-required, ng-open and ng-multiple each drive their flag.
+
+**171. Dynamic components** 🔨
+<component :is> renders its expression: a bound name in react, svelte:component in svelte, the same spelling back in vue; a target with no dynamic tag keeps the element visible instead of losing the expression.
+
+## Phase 17 · Readers that carry what they inventoried
+
+*Ten places a reader said "a person must" and now does.*
+
+**172. The backbone join** 🔨
+a view naming its underscore template by id claims the screen made from that block; the events hash rides along and the old "does not translate" note fires only when the template truly is not in the run.
+
+**173. Jinja inheritance** 🔨
+{% extends %} composes the way the server did: child blocks over the parent's, super() splicing the default back, untouched blocks keeping theirs.
+
+**174. Jinja macros** 🔨
+a macro defined in the file expands at its call sites with arguments substituted textually, defaults included, and the note names the one risk of a textual substitution.
+
+**175. Handlebars #with** 🔨
+bare names inside the block are prefixed with its target, which is what the block meant, and the note names the outer scope case.
+
+**176. @index and @key** 🔨
+loop metadata reshapes the loop that carries it: @index makes the repeat track by index, @key turns it into the entries loop only an object can have.
+
+**177. Spec parameters** 🔨
+path, query and header parameters are read from the document, the path item's shared list folded in, and a required query parameter the traffic never passes is surfaced as the disagreement it is.
+
+**178. Registered knockout components** 🔨
+ko.components.register declares a boundary somebody drew: the template, inline or by element id, becomes a screen and params become inputs.
+
+**179. WebForms rows** 🔨
+a Repeater, ListView or DataList ItemTemplate becomes a screen: Eval and Bind are field reads, the four controls with exact HTML meanings map across, the EmptyDataTemplate survives as the empty state, and the server side data source is named as the gap it is.
+
+**180. Pre-1.5 directives** 🔨
+.directive() with a template and an isolate scope reads as the component it was; a purely behavioral directive stays out of the screens.
+
+**181. Static forms** 🔨
+a form's action, method and field names become the API call the page always declared, and a GET form's query string spelling is kept and noted.
+
+## Phase 18 · Analysis that reads what it already had
+
+*Twelve readings the reports did not yet make.*
+
+**182. Structure per screen** 🔨
+heading ladders that skip a rung and aria references whose id is nowhere in the same screen, reported as candidates with the split risk named.
+
+**183. Plural sensitive copy** 🔨
+"(s)" and counts beside nouns are marked in the catalogue: one message with a plural rule, not two strings, and most languages have more forms than English.
+
+**184. Route parameters** 🔨
+each :param is named in ROUTES.md, and one the target screen's template never mentions is surfaced as either controller-read or dead weight.
+
+**185. The fields the screens read** 🔨
+each GET joins to the collection its templates iterate and API_FIELDS.md lists exactly which response fields put pixels on screen, framed as a reading, not a contract.
+
+**186. Selectors matching nothing** 🔨
+a rule whose classes and ids appear in no template is a dead style candidate, with the deadcode caveats stated: runtime assembly and outside markup are invisible to the search.
+
+**187. Templates, weighed** 🔨
+nodes printed and loop nesting per screen; a loop in a loop with handlers on the inner rows is named, and the number is a place to look, not a verdict.
+
+**188. Stale flag candidates** 🔨
+a flag no template mentions gates logic, not pixels, which is how a shipped flag looks years later; one only templates mention is set somewhere the run cannot see. Both readings are marked.
+
+**189. Two more date bugs** 🔨
+Angular's lowercase digit order joins the uppercase pattern, and new Date(x * 1000) is named as the epoch seconds contract it is.
+
+**190. Entity relations** 🔨
+customerId on an order points at the customer entity; each edge carries the property that argues for it and the cardinality the name implies.
+
+**191. The reload contract** 🔨
+every localStorage and sessionStorage key the scripts touch is listed by name, because renaming one silently drops whatever the user's browser held.
+
+**192. Unbound scope members** 🔨
+a $scope assignment or observable no template binds and its own file barely uses joins the dead code report as the candidate it is.
+
+**193. Verbs in paths** 🔨
+POST /orders/deleteOrder is RPC wearing REST's clothes; each one is listed so nobody cleans it up into a path the server does not answer.
+
+## Phase 19 · Outputs that carry more of the truth
+
+*Thirteen emitter behaviors, from a parser fix to a self asserting story.*
+
+**194. Entities decoded** 🔨
+&quot; and its four siblings and the numeric forms decode where markup stores text, once and only once.
+
+**195. Outputs become callbacks** 🔨
+$emit in Vue and EventEmitter.emit in Angular both mean "call this component's output", and every target now receives that call as the prop it already had.
+
+**196. The story that asserts itself** 🔨
+the Empty story carries a play function that fails the moment the empty state renders nothing, in all three story shapes.
+
+**197. The states suite** 🔨
+tests/states.test.js reads the emitted components back and fails when one loses loading, error or the empty state; it needs no exploration and no server.
+
+**198. The suite in the port's CI** 🔨
+the emitted workflow runs the states suite, so the four states rule outlives portamp's involvement.
+
+**199. The rejecting scenario** 🔨
+msw gains rejecting(): every write refused as a validation failure, in the messages the original app was actually seen making.
+
+**200. Cross screen references, everywhere** 🔨
+a tag naming another screen in the run resolves in Vue by one import and in Svelte by a respelled tag, as it already did in react; an unmatched tag stays as written.
+
+**201. Open items per cutover step** 🔨
+each migration step counts the unverified notes that name its screen, so a step's remaining work has a number before its cutover.
+
+**202. The contested reading as an ADR** 🔨
+when the archetype is contested, the first decision record is the contest itself, because every record after it leans on the answer.
+
+**203. Evidence in the W3C tokens** 🔨
+the design tokens document carries the measurement trail in $extensions, the format's sanctioned pocket, so a design tool importing it keeps the provenance.
+
+**204. Evidence in the tailwind config** 🔨
+the config header says where each scale came from, so a value with no line there reads as the default it is, never as a measurement.
+
+**205. Observed query strings, documented** 🔨
+a query string written into a call site becomes a documented parameter, labeled as read from source and never observed live.
+
+**206. Model modifiers round trip** 🔨
+v-model.trim.number survives the trip back into Vue, the one target that can keep the exact spelling.
+
+## Phase 20 · A bench with more controls
+
+*Thirteen workbench and core affordances, none of which teach the core a name.*
+
+**207. --skip** 🔨
+the complement of --only: leave one plugin out without naming the other eighty.
+
+**208. --dry-run** 🔨
+every stage, every gate, every count, no files; the history and the console sidecar skip recording it, so no trace claims a run that wrote nothing.
+
+**209. --offline** 🔨
+outranks --allow-live and the attestation both; a CI run that must not reach the network says so once.
+
+**210. --trace** 🔨
+the run as a chrome trace, loadable in Perfetto, from the timings the kernel already kept.
+
+**211. plugins --json** 🔨
+the roster as data for tooling, and nothing else the core knows.
+
+**212. A version command** 🔨
+portamp version, from the package file, without loading a config to answer.
+
+**213. init that will not clobber** 🔨
+an existing config is somebody's edits; init refuses and says to move it aside.
+
+**214. The history spells its movement** 🔨
+a delta row per column, and dry runs are not recorded.
+
+**215. Doctor reads versions and probes the disk** 🔨
+each optional dependency's version, and a write probe against the out directory before a run spends a pipeline discovering it.
+
+**216. Provenance in the console** 🔨
+every written file listed with the plugin and stage that wrote it, from the record the kernel already kept.
+
+**217. The source's own licence** 🔨
+LICENSE files and SPDX headers are read and classified, because the port is a derivative of exactly that source; found or absent, the note says what follows.
+
+**218. Watch names its trigger** 🔨
+the debounce window collects the changed files and the rerun line names them.
+
+**219. Attestations expire** 🔨
+an expires date past due makes the attestation absent, with a week's warning before; a contractor's engagement ending is exactly the case.
+
+## Phase 21 · Gates that hold and a corpus that grows
+
+*Eight enforcements, each turning a described rule into a checked one.*
+
+**220. Eight more credential shapes** 🔨
+github, gitlab, stripe, npm and google tokens and any three segment signed JWT stop the run like the old shapes did.
+
+**221. The emitted sweep** 🔨
+every written file is read back for secret shapes before the run may pass; the second net for a value a plugin copied out of an artifact.
+
+**222. The endpoint gate, widened** 🔨
+Vue, Svelte and element outputs are checked like JSX; src/api stays the one tree where endpoints belong.
+
+**223. Knockout joins the byte gate** 🔨
+the same screen written in knockout emits the same bytes as its Angular and Vue spellings, through react, vue, svelte and the element.
+
+**224. The newer targets join it too** 🔨
+solid, alpine, the angular target and lit must not care which dialect wrote the input, asserted beside the founding four.
+
+**225. Three more miniatures** 🔨
+calendar, editor and selector-soup join the calibration corpus, so all eleven archetypes have a labelled example the classifier must agree with.
+
+**226. The demo runs offline in CI** 🔨
+proving no path in the pipeline reaches for a network when told not to.
+
+**227. The ceiling holds in CI** 🔨
+the example runs under --max-unverified, so the demo's honesty debt is bounded by a gate rather than described by a paragraph.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 113 |
+| new in this branch | 182 |
 | planned | 1 |
-| total | 158 |
+| total | 227 |
 
 The one still open is open for a stated reason, not for lack of time: npm
 publish is one command that belongs to a person, with docs/PUBLISHING.md

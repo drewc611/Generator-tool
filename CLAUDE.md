@@ -105,13 +105,14 @@ for it, or that any plugin did.
 
 Named plainly so nobody rediscovers it as a surprise.
 
-- `output-react` now translates conditions with their else chains, loops,
-  switches, models including checkbox, radio and multiple select, and the
-  filters with an exact JS spelling; what remains is reported rather than
-  guessed: a locale filter becomes an unformatted value with a note, and
-  `ng-template` renders inline. A tag naming another screen in the run resolves
-  to that ported component; one the run has not seen stays an unknown element,
-  and says so.
+- `output-react` now translates conditions with their else chains and their
+  `then`/`else` template references, loops including the (key, value) form,
+  switches, models including checkbox, radio and multiple select, event
+  modifiers, named slots with their fallbacks, and the filters with an exact
+  JS spelling; what remains is reported rather than guessed: a locale filter
+  becomes an unformatted value with a note. A tag naming another screen in the
+  run resolves to that ported component in react, vue and svelte alike; one
+  the run has not seen stays an unknown element, and says so.
 - `input-angular` reads the syntax tree when `typescript` is installed and falls
   back to regular expressions when it is not. The fallback is narrower and says
   so in the run. Neither pass uses a type checker, so a URL built from anything
@@ -165,13 +166,13 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: one hundred and fifty eight features in fifteen
-phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: two hundred and twenty seven features in twenty
+one phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.
-2. **Growing the calibration corpus.** v0 is eight labelled miniatures; real
-   labelled apps would make the archetype confidence numbers mean more.
+2. **Growing the calibration corpus.** Eleven labelled miniatures now, one per
+   archetype; real labelled apps would make the confidence numbers mean more.
 3. **A grammar for the template dialects.** The readers are structural
    scanners now, not regexes, but a real grammar with positions would make
    every note able to say the line it came from.
