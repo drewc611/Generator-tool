@@ -1,8 +1,7 @@
 import { toVue } from "./print.js";
-import { jsString, pascal } from "../dsp-ir/emit.js";
+import { jsString, pascal, unique } from "../dsp-ir/emit.js";
 
 
-const unique = (list) => [...new Set(list.filter(Boolean))];
 
 /**
  * The third target, and the one that closes the argument.

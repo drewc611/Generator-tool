@@ -11,7 +11,9 @@ import { identifier, jsString } from "../dsp-ir/emit.js";
  *   forms: true
  */
 
-const pascal = (name) => identifier(String(name).split(/[^a-zA-Z0-9]+/).map((p) => p ? p[0].toUpperCase() + p.slice(1) : "").join(""), "Form");
+// Form names split on every non alphanumeric, not just dashes, on purpose:
+// a field called user.email becomes UserEmail, which pascal would not do.
+const formName = (name) => identifier(String(name).split(/[^a-zA-Z0-9]+/).map((p) => p ? p[0].toUpperCase() + p.slice(1) : "").join(""), "Form");
 
 export function renderSchema(form) {
   const fields = form.fields.map((field) => {
@@ -109,7 +111,7 @@ export default {
       if (!ctx.forms?.length) return log.info("no recovered forms to emit");
 
       for (const form of ctx.forms) {
-        await ctx.write(`src/forms/${pascal(form.screen)}.schema.js`, renderSchema(form));
+        await ctx.write(`src/forms/${formName(form.screen)}.schema.js`, renderSchema(form));
       }
       log.info(`${ctx.forms.length} schema(s) with validators`);
     });

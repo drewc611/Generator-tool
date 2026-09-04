@@ -1,9 +1,8 @@
 import { toHtml } from "./print.js";
-import { jsString, pascal } from "../dsp-ir/emit.js";
+import { jsString, pascal, unique } from "../dsp-ir/emit.js";
 
 
 const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-const unique = (list) => [...new Set(list.filter(Boolean))];
 
 /**
  * A custom element, depending on nothing.

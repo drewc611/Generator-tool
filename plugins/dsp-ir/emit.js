@@ -103,3 +103,7 @@ export const pascal = (sel) => {
   const out = String(sel ?? "").split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
   return /^\d/.test(out) ? `P${out}` : out;
 };
+
+/** Deduplicate and drop the holes, in first seen order. Four emitters each
+ * carried this line; the shared spelling keeps them agreeing about it. */
+export const unique = (list) => [...new Set(list.filter(Boolean))];

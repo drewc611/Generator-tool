@@ -1,7 +1,7 @@
 import { toAngular } from "./print.js";
-import { identifier, templateText } from "../dsp-ir/emit.js";
+import { identifier, templateText, pascal } from "../dsp-ir/emit.js";
 
-const pascal = (sel) => identifier(String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join(""), "Screen");
+const componentName = (sel) => identifier(pascal(sel), "Screen");
 
 /**
  * Modern Angular as a target, which closes a loop: an AngularJS controller
@@ -23,7 +23,7 @@ export default {
 
       let emitted = 0;
       for (const screen of ctx.screens) {
-        const name = pascal(screen.selector);
+        const name = componentName(screen.selector);
         const result = screen.template ? toAngular(screen.template) : null;
         const collection = result?.collections[0] ?? "data";
         const inputs = [...new Set([...screen.inputs, ...(result?.reads ?? []), "loading", "error"])];

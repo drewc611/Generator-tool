@@ -1,8 +1,7 @@
 import { translate } from "./template.js";
-import { pascal } from "../dsp-ir/emit.js";
+import { pascal, unique } from "../dsp-ir/emit.js";
 
 
-const unique = (list) => [...new Set(list.filter(Boolean))];
 
 /**
  * Emits one React component per Angular component. The template is translated

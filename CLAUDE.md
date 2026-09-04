@@ -4,7 +4,7 @@ Read this before changing anything. It is the contract, not a description.
 
 ## What this is
 
-A tiny plugin host that ports legacy front ends. The core is 595 lines across
+A tiny plugin host that ports legacy front ends. The core is 718 lines across
 four files and knows nothing about Angular, React, screenshots, or HTTP.
 Everything that knows a framework is a plugin. Keeping that true is the single
 most important constraint in the repo.
@@ -34,10 +34,10 @@ to stages and mutates one shared context object. The kernel never calls a plugin
 directly and has no idea what any of them do.
 
 ```
-src/core/kernel.js     registry, discovery, pipeline        (~110 lines)
-src/core/policy.js     the rules, enforced                  (~130 lines)
-src/core/context.js    shared context and logger            (~100 lines)
-src/cli.js             argument parsing and wiring          (~110 lines)
+src/core/kernel.js     registry, discovery, pipeline        (~130 lines)
+src/core/policy.js     the rules, enforced, and what clears them  (~220 lines)
+src/core/context.js    shared context and logger            (~90 lines)
+src/cli.js             argument parsing and wiring          (~280 lines)
 plugins/*/index.js     everything that knows a framework
 skills/                agent playbooks, also usable standalone
 docs/PLUGIN-API.md     the plugin contract
@@ -211,6 +211,10 @@ twenty nine phases, statuses honest. What remains open, and why:
 - Prose in docs and comments avoids hyphens; identifiers and paths keep theirs.
 - Comments explain why, not what. If a comment restates the line below it,
   delete it.
+- Every sprint ends with a sanitation pass, and the claims that can rot are
+  held by test/hygiene.test.js: the size table is counted, deferral markers
+  fail the suite, and a shared helper defined twice fails it too. A sprint
+  that changes the numbers ends by updating the words.
 
 ## Do not
 

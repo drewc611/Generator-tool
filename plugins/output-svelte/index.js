@@ -1,8 +1,7 @@
 import { toSvelte } from "./print.js";
-import { pascal } from "../dsp-ir/emit.js";
+import { pascal, unique } from "../dsp-ir/emit.js";
 
 
-const unique = (list) => [...new Set(list.filter(Boolean))];
 
 /**
  * A second target, to keep the first one honest.

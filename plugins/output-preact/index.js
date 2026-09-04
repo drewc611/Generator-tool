@@ -1,5 +1,5 @@
 import { translate } from "../output-react/template.js";
-import { pascal } from "../dsp-ir/emit.js";
+import { pascal, unique } from "../dsp-ir/emit.js";
 
 /**
  * The Preact target. The JSX is the same JSX the React printer proves against
@@ -9,7 +9,6 @@ import { pascal } from "../dsp-ir/emit.js";
  */
 
 
-const unique = (list) => [...new Set(list)];
 
 export default {
   name: "output-preact",

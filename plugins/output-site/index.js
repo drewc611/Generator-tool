@@ -99,7 +99,7 @@ export default {
           for (const m of bytes.toString("utf8").matchAll(/url\(\s*["']?([^"')]+?)["']?\s*\)/g)) {
             const u = m[1].split(/[#?]/)[0];
             if (!u || /^(data:|https?:|\/\/)/i.test(u)) continue;
-            await copyOne(u.startsWith("/") ? resolveLink("x", u) : resolveLink(rel, u), rel);
+            await copyOne(resolveLink(u.startsWith("/") ? "" : rel, u), rel);
           }
         }
       };

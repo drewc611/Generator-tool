@@ -150,6 +150,149 @@ export function sharedChrome(pages) {
   return [...seen.values()].filter((c) => c.on.length >= 2);
 }
 
+
+/**
+ * Site mode, in one place: the chrome leaves the pages, links become routes,
+ * every old address gets its redirect, the families and the gaps are named,
+ * and ctx.site carries the model output-site builds the shell from. Pulled
+ * out of the extract handler so the handler reads as the pipeline it is.
+ */
+async function assembleSite(ctx, { kept, framesets, redirects, chrome, relOf, routeOf, note }) {
+  // Performed here, proposed below: the shared chrome leaves the pages
+  // and becomes the layout the site shell wraps every route in.
+  for (const piece of chrome) {
+    for (const page of kept) {
+      if (page.screen.template.includes(piece.html)) {
+        page.screen.template = page.screen.template.replace(piece.html, "").trim();
+      }
+    }
+  }
+  // Internal links become the routes they always meant. The route is
+  // what the anchor navigates to; the router intercepts the click.
+  // A link to a frameset is a link to the place the frameset stood;
+  // its route redirects on to the content frame, so the anchor can
+  // point at the frameset's own route and still land right.
+  const framesetRels = new Set(framesets.map((f) => f.rel.replace(/^\.\//, "")));
+  const rewrite = (html, fromRel, base) =>
+    html
+      .replace(/(<(?:a|area)\b[^>]*\bhref\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, href, after) => {
+        const [pathPart, tail = ""] = [href.split(/([#?].*)$/)[0], /([#?].*)$/.exec(href)?.[1]];
+        if (/^[a-z][\w+.-]*:|^\/\//i.test(pathPart) || !PAGE_EXT.test(pathPart)) return whole;
+        const target = resolveLink(fromRel, pathPart, base);
+        if (!relOf.has(target) && !framesetRels.has(target)) return whole;
+        return `${before}${routeOf(target)}${tail}${after}`;
+      })
+      // An asset spelled relative to the page breaks the moment the page
+      // is served at a route, so every local reference becomes the root
+      // absolute path the copied file answers at.
+      .replace(/(<(?:img|source|video|audio|embed)\b[^>]*\bsrc\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, src, after) => {
+        const pathPart = src.split(/[#?]/)[0];
+        if (/^[a-z][\w+.-]*:|^\/\/|^data:/i.test(pathPart)) return whole;
+        return `${before}/${resolveLink(fromRel, pathPart, base)}${after}`;
+      });
+  for (const page of kept) {
+    page.screen.template = rewrite(page.screen.template, page.rel, page.head?.base);
+  }
+  chrome = chrome.map((c) => ({ ...c, html: rewrite(c.html, kept[0]?.rel ?? "", null) }));
+
+  // Old addresses keep working: every page's .html path redirects to
+  // its route, because the address bar is half of the contract.
+  for (const page of kept) {
+    const old = "/" + page.rel.replace(/^\.\//, "");
+    if (old !== routeOf(page.rel)) redirects.push({ from: old, to: routeOf(page.rel), kind: "extension dropped" });
+  }
+
+  // The server's own .htaccess spoke redirects first; what it declared
+  // in plain lines joins the map with its origin named.
+  for (const f of ctx.sources.files.filter((f) => /(^|\/)\.htaccess$/.test(f.rel))) {
+    const text = await readFile(f.path, "utf8").catch(() => "");
+    for (const r of readHtaccess(text, note)) redirects.push(r);
+  }
+
+  // A frameset's address was really its content frame's address. When
+  // the frame's page is in the run, the frameset's route redirects to
+  // it; when it is not, the gap stays named in the frames report.
+  for (const fs of framesets) {
+    if (!fs.main) continue;
+    const target = resolveLink(fs.rel, fs.main);
+    if (relOf.has(target)) {
+      redirects.push({ from: routeOf(fs.rel), to: routeOf(target), kind: "frameset content" });
+    }
+  }
+
+  // Page families like news-1, news-2 are one screen and a parameter
+  // in everything but the filenames. Proposed, because merging them
+  // means deciding which copy is the template.
+  const families = new Map();
+  for (const page of kept) {
+    const m = /^(.*?)[-_]?(\d+)$/.exec(page.screen.selector);
+    if (m && m[1]) families.set(m[1], [...(families.get(m[1]) ?? []), page.screen.selector]);
+  }
+  const pagination = [...families.entries()].filter(([, list]) => list.length >= 2)
+    .map(([stem, list]) => ({ stem, pages: list }));
+  for (const family of pagination) {
+    note(`${family.pages.length} page(s) (${family.pages.join(", ")}) look like one screen paged by filename. A parameterized route (/${family.stem}/:page) is the port's shape; merging them means choosing the template, which is a person's call.`);
+  }
+
+  // page.php?id=3 is the query string era's parameterized route. Links
+  // to the same page under different values of one parameter are read
+  // as a family the way filename pagination is: proposed, never merged.
+  const routeSet = new Set(kept.map((p) => routeOf(p.rel)));
+  const queryFamilies = new Map();
+  for (const page of kept) {
+    for (const m of page.screen.template.matchAll(/<a\b[^>]*\bhref\s*=\s*["']([^"'?#]+)\?([\w]+)=([^"'&#]+)["']/gi)) {
+      if (/^[a-z][\w+.-]*:|^\/\//i.test(m[1])) continue;
+      // The scan runs after link rewriting, so an internal href is
+      // already the route it navigates to; a stray relative one still
+      // resolves through the page it sat on.
+      const route = m[1].startsWith("/") ? m[1] : routeOf(resolveLink(page.rel, m[1], page.head?.base));
+      if (!routeSet.has(route)) continue;
+      const key = `${route}?${m[2]}`;
+      queryFamilies.set(key, (queryFamilies.get(key) ?? new Set()).add(m[3]));
+    }
+  }
+  const queryRoutes = [...queryFamilies.entries()].filter(([, values]) => values.size >= 2)
+    .map(([key, values]) => {
+      const [route, param] = key.split("?");
+      return { route, param, values: [...values] };
+    });
+  for (const q of queryRoutes) {
+    note(`${q.route} is linked with ${q.values.length} value(s) of ?${q.param}=. A parameterized route (${q.route}/:${q.param}) is the port's shape; the page still renders one template until a person splits it.`);
+  }
+
+  ctx.site = {
+    pages: kept.map((p) => ({
+      rel: p.rel,
+      route: routeOf(p.rel),
+      selector: p.screen.selector,
+      className: p.screen.className,
+      title: p.screen.title,
+      description: p.head?.description ?? null,
+      og: p.head?.og ?? {},
+      canonical: p.head?.canonical ?? null,
+      assets: p.assets ?? [],
+      cssLinks: p.head?.cssLinks ?? [],
+      printLinks: p.head?.printLinks ?? [],
+      icons: p.head?.icons ?? [],
+    })),
+    queryRoutes,
+    graph: {
+      nodes: kept.map((p) => routeOf(p.rel)),
+      edges: kept.flatMap((p) => p.links
+        .map((l) => resolveLink(p.rel, l, p.head?.base))
+        .filter((t) => relOf.has(t))
+        .map((t) => [routeOf(p.rel), routeOf(t)])),
+    },
+    chrome,
+    redirects,
+    pagination,
+    frames: framesets,
+    deadLinks: kept.flatMap((p) => p.links
+      .map((l) => ({ from: p.rel, target: resolveLink(p.rel, l, p.head?.base) }))
+      .filter((x) => !relOf.has(x.target))),
+  };
+}
+
 export default {
   name: "input-static",
   version: "0.1.0",
@@ -235,141 +378,9 @@ export default {
       const routeOf = (rel) => routeFor(rel);
 
       /* ------------------------------------------------ the site, assembled */
-      let chrome = sharedChrome(kept);
+      const chrome = sharedChrome(kept);
       if (ctx.config.site) {
-        // Performed here, proposed below: the shared chrome leaves the pages
-        // and becomes the layout the site shell wraps every route in.
-        for (const piece of chrome) {
-          for (const page of kept) {
-            if (page.screen.template.includes(piece.html)) {
-              page.screen.template = page.screen.template.replace(piece.html, "").trim();
-            }
-          }
-        }
-        // Internal links become the routes they always meant. The route is
-        // what the anchor navigates to; the router intercepts the click.
-        // A link to a frameset is a link to the place the frameset stood;
-        // its route redirects on to the content frame, so the anchor can
-        // point at the frameset's own route and still land right.
-        const framesetRels = new Set(framesets.map((f) => f.rel.replace(/^\.\//, "")));
-        const rewrite = (html, fromRel, base) =>
-          html
-            .replace(/(<(?:a|area)\b[^>]*\bhref\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, href, after) => {
-              const [pathPart, tail = ""] = [href.split(/([#?].*)$/)[0], /([#?].*)$/.exec(href)?.[1]];
-              if (/^[a-z][\w+.-]*:|^\/\//i.test(pathPart) || !PAGE_EXT.test(pathPart)) return whole;
-              const target = resolveLink(fromRel, pathPart, base);
-              if (!relOf.has(target) && !framesetRels.has(target)) return whole;
-              return `${before}${routeOf(target)}${tail}${after}`;
-            })
-            // An asset spelled relative to the page breaks the moment the page
-            // is served at a route, so every local reference becomes the root
-            // absolute path the copied file answers at.
-            .replace(/(<(?:img|source|video|audio|embed)\b[^>]*\bsrc\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, src, after) => {
-              const pathPart = src.split(/[#?]/)[0];
-              if (/^[a-z][\w+.-]*:|^\/\/|^data:/i.test(pathPart)) return whole;
-              return `${before}/${resolveLink(fromRel, pathPart, base)}${after}`;
-            });
-        for (const page of kept) {
-          page.screen.template = rewrite(page.screen.template, page.rel, page.head?.base);
-        }
-        chrome = chrome.map((c) => ({ ...c, html: rewrite(c.html, kept[0]?.rel ?? "", null) }));
-
-        // Old addresses keep working: every page's .html path redirects to
-        // its route, because the address bar is half of the contract.
-        for (const page of kept) {
-          const old = "/" + page.rel.replace(/^\.\//, "");
-          if (old !== routeOf(page.rel)) redirects.push({ from: old, to: routeOf(page.rel), kind: "extension dropped" });
-        }
-
-        // The server's own .htaccess spoke redirects first; what it declared
-        // in plain lines joins the map with its origin named.
-        for (const f of ctx.sources.files.filter((f) => /(^|\/)\.htaccess$/.test(f.rel))) {
-          const text = await readFile(f.path, "utf8").catch(() => "");
-          for (const r of readHtaccess(text, note)) redirects.push(r);
-        }
-
-        // A frameset's address was really its content frame's address. When
-        // the frame's page is in the run, the frameset's route redirects to
-        // it; when it is not, the gap stays named in the frames report.
-        for (const fs of framesets) {
-          if (!fs.main) continue;
-          const target = resolveLink(fs.rel, fs.main);
-          if (relOf.has(target)) {
-            redirects.push({ from: routeOf(fs.rel), to: routeOf(target), kind: "frameset content" });
-          }
-        }
-
-        // Page families like news-1, news-2 are one screen and a parameter
-        // in everything but the filenames. Proposed, because merging them
-        // means deciding which copy is the template.
-        const families = new Map();
-        for (const page of kept) {
-          const m = /^(.*?)[-_]?(\d+)$/.exec(page.screen.selector);
-          if (m && m[1]) families.set(m[1], [...(families.get(m[1]) ?? []), page.screen.selector]);
-        }
-        const pagination = [...families.entries()].filter(([, list]) => list.length >= 2)
-          .map(([stem, list]) => ({ stem, pages: list }));
-        for (const family of pagination) {
-          note(`${family.pages.length} page(s) (${family.pages.join(", ")}) look like one screen paged by filename. A parameterized route (/${family.stem}/:page) is the port's shape; merging them means choosing the template, which is a person's call.`);
-        }
-
-        // page.php?id=3 is the query string era's parameterized route. Links
-        // to the same page under different values of one parameter are read
-        // as a family the way filename pagination is: proposed, never merged.
-        const routeSet = new Set(kept.map((p) => routeOf(p.rel)));
-        const queryFamilies = new Map();
-        for (const page of kept) {
-          for (const m of page.screen.template.matchAll(/<a\b[^>]*\bhref\s*=\s*["']([^"'?#]+)\?([\w]+)=([^"'&#]+)["']/gi)) {
-            if (/^[a-z][\w+.-]*:|^\/\//i.test(m[1])) continue;
-            // The scan runs after link rewriting, so an internal href is
-            // already the route it navigates to; a stray relative one still
-            // resolves through the page it sat on.
-            const route = m[1].startsWith("/") ? m[1] : routeOf(resolveLink(page.rel, m[1], page.head?.base));
-            if (!routeSet.has(route)) continue;
-            const key = `${route}?${m[2]}`;
-            queryFamilies.set(key, (queryFamilies.get(key) ?? new Set()).add(m[3]));
-          }
-        }
-        const queryRoutes = [...queryFamilies.entries()].filter(([, values]) => values.size >= 2)
-          .map(([key, values]) => {
-            const [route, param] = key.split("?");
-            return { route, param, values: [...values] };
-          });
-        for (const q of queryRoutes) {
-          note(`${q.route} is linked with ${q.values.length} value(s) of ?${q.param}=. A parameterized route (${q.route}/:${q.param}) is the port's shape; the page still renders one template until a person splits it.`);
-        }
-
-        ctx.site = {
-          pages: kept.map((p) => ({
-            rel: p.rel,
-            route: routeOf(p.rel),
-            selector: p.screen.selector,
-            className: p.screen.className,
-            title: p.screen.title,
-            description: p.head?.description ?? null,
-            og: p.head?.og ?? {},
-            canonical: p.head?.canonical ?? null,
-            assets: p.assets ?? [],
-            cssLinks: p.head?.cssLinks ?? [],
-            printLinks: p.head?.printLinks ?? [],
-            icons: p.head?.icons ?? [],
-          })),
-          queryRoutes,
-          graph: {
-            nodes: kept.map((p) => routeOf(p.rel)),
-            edges: kept.flatMap((p) => p.links
-              .map((l) => resolveLink(p.rel, l, p.head?.base))
-              .filter((t) => relOf.has(t))
-              .map((t) => [routeOf(p.rel), routeOf(t)])),
-          },
-          chrome,
-          redirects,
-          pagination,
-          frames: framesets,
-          deadLinks: kept.flatMap((p) => p.links
-            .map((l) => ({ from: p.rel, target: resolveLink(p.rel, l, p.head?.base) }))
-            .filter((x) => !relOf.has(x.target))),
-        };
+        await assembleSite(ctx, { kept, framesets, redirects, chrome, relOf, routeOf, note });
       }
 
       for (const page of kept) ctx.screens.push(page.screen);

@@ -7,7 +7,7 @@ is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-462 tests, on Node 18, 20 and 22, and on Windows in CI.
+465 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way

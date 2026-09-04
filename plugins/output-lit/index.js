@@ -1,5 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
-import { identifier, jsString, guardHandler } from "../dsp-ir/emit.js";
+import { identifier, jsString, guardHandler, pascal } from "../dsp-ir/emit.js";
 
 /**
  * The Lit target: the custom element with a rendering library, for teams that
@@ -11,7 +11,7 @@ import { identifier, jsString, guardHandler } from "../dsp-ir/emit.js";
  */
 
 const pad = (d) => "  ".repeat(d);
-const pascal = (sel) => identifier(String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join(""), "Screen");
+const componentName = (sel) => identifier(pascal(sel), "Screen");
 
 function attributes(node) {
   const out = [];
@@ -130,7 +130,7 @@ export default {
 
       let emitted = 0;
       for (const screen of ctx.screens) {
-        const name = pascal(screen.selector);
+        const name = componentName(screen.selector);
         const tag = screen.selector.includes("-") ? screen.selector : `x-${screen.selector}`;
         const result = screen.template ? toLit(screen.template) : null;
         const collection = result?.collections[0] ?? "data";

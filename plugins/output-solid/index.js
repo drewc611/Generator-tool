@@ -1,5 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
-import { jsString, guardHandler, pascal } from "../dsp-ir/emit.js";
+import { jsString, guardHandler, pascal, unique } from "../dsp-ir/emit.js";
 
 /**
  * The Solid target. Solid is the one target where spelling matters for
@@ -10,7 +10,6 @@ import { jsString, guardHandler, pascal } from "../dsp-ir/emit.js";
  */
 
 
-const unique = (list) => [...new Set(list)];
 const pad = (depth) => "  ".repeat(depth);
 const camel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 

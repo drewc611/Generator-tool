@@ -12,9 +12,9 @@
  * can honestly contribute is the evidence, grouped.
  */
 
-const pascal = (sel) =>
-  String(sel).replace(/^[#.]/, "").split(/[-_\s]/).filter(Boolean)
-    .map((p) => p[0].toUpperCase() + p.slice(1)).join("") || "Widget";
+import { pascal } from "../dsp-ir/emit.js";
+
+const pascalSelector = (sel) => pascal(String(sel).replace(/^[#.]/, "")) || "Widget";
 
 /** Union find, because a cluster is exactly what handlers connect. */
 function clustersOf(widgets, edges) {
@@ -63,7 +63,7 @@ export function propose(widgets, edges) {
         w.writes.reduce((total, kind) => total + ({ html: 3, append: 3, prepend: 3, text: 2, val: 0 }[kind] ?? 1), 0);
       const namesake = [...written].sort((a, b) => weight(b) - weight(a))[0] ?? triggers[0] ?? members[0];
       return {
-        name: pascal(namesake.selector),
+        name: pascalSelector(namesake.selector),
         members: members.map((w) => w.selector).sort(),
         triggers: triggers.map((w) => `${w.selector} (${w.events.join(", ")})`),
         written: written.map((w) => `${w.selector} (${w.writes.join(", ")})`),
