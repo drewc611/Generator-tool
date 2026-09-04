@@ -60,5 +60,6 @@
   },
   "publishConfig": {
     "access": "public"
+    "typescript": "^7.0.2"
   }
 }
