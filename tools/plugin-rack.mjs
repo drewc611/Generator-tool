@@ -70,6 +70,8 @@ const DOES = {
   "dsp-supplychain": "the third party code the page loads, and whether it carries an integrity hash",
   "dsp-console": "the debug output left in the scripts, the console calls a port should strip",
   "dsp-globals": "what the app puts on the global object, which a module port has to contain",
+  "dsp-landmarks": "the ARIA landmark structure of each page, the regions a screen reader jumps between",
+  "dsp-labels": "form controls a page left with no accessible name, which a placeholder does not give",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
   "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",

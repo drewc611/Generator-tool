@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Four hundred and eighty four features across forty seven phases. The statuses are
+Four hundred and eighty eight features across forty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1775,14 +1775,35 @@ the de-duplicated set of paths the app calls is a string literal `ApiPath` union
 one end to end spec visits every route of the ported site and asserts the page mounted, another visits each retired address and asserts the browser lands on the new path, run against the port's own serve.js with a baseUrl that matches; the routes and redirects come from the site model and none is invented.
 
 
+## Phase 48 · 7.3 · The accessible port
+
+*dsp-a11y already measures contrast and target size over the palette the port
+will use. 7.3 reads the structure a screen reader navigates: the landmarks a
+user jumps between and the form controls a page left with no name. Both
+report, because adding a landmark or naming a control is a change to the
+markup a person should make on purpose.*
+
+**485. dsp-landmarks reads the region structure** 🔨
+per page, the main, nav, header, footer, aside, search and form landmarks present by element or role, and the gaps a screen reader user feels: no main to skip into, more than one main, no navigation landmark, no skip link to jump the chrome.
+
+**486. A page with no main is one you cannot skip into** 🔨
+LANDMARKS.md names the landmarks each page has and the ones it lacks, because a user navigating by landmark treats a page with none as a single undifferentiated blob, and a port that rebuilds the markup is the moment to give it the regions it never had.
+
+**487. dsp-labels finds the controls with no name** 🔨
+each input, select and textarea that has no `<label for>`, no aria-label or aria-labelledby, no title and no wrapping label, because a control a screen reader announces only as edit text is one nobody relying on it can fill; a placeholder disappears on focus and is not a label.
+
+**488. The unlabelled controls are named, not renamed** 🔨
+LABELS.md lists each control by file and line so a person can add the label, the aria-label or the wrapping element, because which name a control should carry is copy a screen wrote for sighted users and a tool cannot invent it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 437 |
+| new in this branch | 441 |
 | planned | 3 |
-| total | 484 |
+| total | 488 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

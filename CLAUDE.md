@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and fifteen in five classes, and the core has never learned
+Plugins that ship, a hundred and seventeen in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -88,7 +88,7 @@ dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
-         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts  dsp-security  dsp-supplychain  dsp-console  dsp-globals
+         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts  dsp-security  dsp-supplychain  dsp-console  dsp-globals  dsp-landmarks  dsp-labels
 output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-html  output-storybook  output-tests  output-openapi
          output-msw  output-tailwind  output-design-tokens  output-forms
@@ -352,6 +352,17 @@ ported site: one spec visits every route and asserts the page mounted, another
 visits each retired address and asserts the browser lands on the new path, run
 against the port's own serve.js with a matching baseUrl. test/typed.test.js
 holds both.
+
+7.3 reads the structure a screen reader navigates, where dsp-a11y already
+measures contrast and target size. dsp-landmarks audits the region structure
+of each page, the main, nav, header, footer, aside, search and form landmarks
+present, and names the gaps a user feels: no main to skip into, more than one
+main, no navigation landmark, no skip link. dsp-labels finds each input, select
+and textarea with no accessible name, no `<label for>`, aria-label, title or
+wrapping label, because a control announced only as edit text is one nobody
+relying on it can fill, and a placeholder disappears on focus and is not a
+label. Both report by file and line rather than rename, because a landmark and
+a label are copy a person adds on purpose. test/accessible.test.js holds both.
 
 ## What is honestly incomplete
 
