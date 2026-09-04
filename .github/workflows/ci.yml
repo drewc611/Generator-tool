@@ -569,6 +569,14 @@ jobs:
           grep -q "PENDING_REVIEW" shape-out/MAGIC.md || { echo "a magic status string was missed"; exit 1; }
           rm -rf shape-out
 
+      - name: the module graph and its cycles, and the async to straighten, are named
+        run: |
+          node src/cli.js run --src test/fixtures/wiring-site --out wiring-out
+          grep -qiE "cycle" wiring-out/IMPORTS.md || { echo "the import cycle section is missing"; exit 1; }
+          grep -q "billing.js" wiring-out/IMPORTS.md || { echo "an internal edge was missed"; exit 1; }
+          grep -qiE "callback|promise|await" wiring-out/ASYNC.md || { echo "the async findings are missing"; exit 1; }
+          rm -rf wiring-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -580,6 +588,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "496" ]; then
-            echo "ROADMAP.md holds $count entries and claims 496"; exit 1
+          if [ "$count" != "500" ]; then
+            echo "ROADMAP.md holds $count entries and claims 500"; exit 1
           fi

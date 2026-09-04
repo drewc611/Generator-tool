@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Four hundred and ninety six features across fifty phases. The statuses are
+Five hundred features across fifty one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1830,15 +1830,29 @@ a threshold like `4999`, a rate like `0.075`, a status like `PENDING_REVIEW` bur
 **496. dsp-magic stays out of the secret gate's territory** 🔨
 it skips trivial numbers, array indexes and already named const assignments, and never captures a credential shaped string, because the magic it reports is a maintainability finding and the secret gate owns the other kind.
 
+## Phase 51: the port's connections read
+
+**497. dsp-imports reads the module dependency graph** 🔨
+each `import`, `require` and re-export is read from the source and the relative specifiers are resolved to the files they name, so IMPORTS.md draws what depends on what across the port before a line of it moves.
+
+**498. dsp-imports names the import cycles a port should break** 🔨
+two or more modules that import each other are found by a depth first walk of the graph and named as a cycle, because a cycle is a maintainability hazard that outlives a framework and the port is the moment to break it.
+
+**499. dsp-async finds the callback pyramids buried in the logic** 🔨
+a function passed as an argument three or more callbacks deep is the pyramid of doom a legacy app wrote before async/await was common, and ASYNC.md names where each one deepens so the port can straighten it.
+
+**500. dsp-async finds the long promise chains too, and straightens nothing** 🔨
+a run of three or more `.then` links reads more clearly as a sequence of awaits, and the report names the chains and the pyramids alike as an approximation from the source text, rewriting no control flow, because how an app sequences its work is the port owner's call.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 449 |
+| new in this branch | 453 |
 | planned | 3 |
-| total | 496 |
+| total | 500 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
