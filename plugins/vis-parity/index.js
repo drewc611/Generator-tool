@@ -46,7 +46,7 @@ export function diffStructure(recordedElements, ir) {
     if (was !== is) tagDrift.push({ tag, recorded: was, ported: is });
   }
   const missingControls = recordedControls.filter((r) => !portedControls.some((p) => p.tag === r.tag && p.name.toLowerCase().includes(r.name.toLowerCase())));
-  return { tagDrift, missingControls, recordedControls: recordedControls.length, portedControls: portedControls.length };
+  return { tagDrift, missingControls, recordedControls: recordedControls.length };
 }
 
 

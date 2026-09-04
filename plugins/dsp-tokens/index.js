@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import {
-  flattenSamples, measureColors, measureDensity, measureRadius, measureSpacing, mergeSpacing, measureTypeScale,
+  flattenSamples, measureColors, measureDensity, measureRadius, mergeSpacing, measureTypeScale,
   readStyleVariables, rolesFromVariables,
 } from "./measure.js";
 

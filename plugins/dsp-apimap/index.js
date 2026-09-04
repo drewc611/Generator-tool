@@ -51,7 +51,7 @@ const nameFor = (call) => {
   const parts = call.path.split(/[/?]/).filter((p) => p && !p.startsWith("$") && !p.startsWith(":"));
   const tail = parts.slice(-2).map((p) => p.replace(/[^a-z0-9]/gi, "")).filter(Boolean);
   const verb = { GET: "get", POST: "create", PUT: "update", PATCH: "update", DELETE: "remove" }[call.method] || "call";
-  return verb + tail.map((t) => t[0].toUpperCase() + t.slice(1)).join("") || "call";
+  return verb + tail.map((t) => t[0].toUpperCase() + t.slice(1)).join("");
 };
 
 export default {

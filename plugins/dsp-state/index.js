@@ -81,14 +81,10 @@ export function readStores(text, rel) {
     const mutations = blockAfter(body, "mutations");
     found.push({ kind: "vuex", name: null, stateKeys: state ? keysOf(state) : [], actions: mutations ? keysOf(mutations) : [], file: rel });
   }
-  for (const m of text.matchAll(/defineStore\s*\(\s*['"`]([\w-]+)['"`]\s*,\s*\{/g)) {
-    const open = text.indexOf("{", m.index + m[0].length - 1);
-    const block = balanced(text, open);
-    if (!block) continue;
-    const body = block.slice(1, -1);
+  for (const { body, name } of storeBody(/defineStore\s*\(\s*['"`]([\w-]+)['"`]\s*,\s*\{/g)) {
     const state = blockAfter(body, "state");
     const actions = blockAfter(body, "actions");
-    found.push({ kind: "pinia", name: m[1], stateKeys: state ? keysOf(state) : [], actions: actions ? keysOf(actions) : [], file: rel });
+    found.push({ kind: "pinia", name, stateKeys: state ? keysOf(state) : [], actions: actions ? keysOf(actions) : [], file: rel });
   }
   for (const m of text.matchAll(/createAction\s*\(\s*['"`]\[([^\]]+)\]\s*([^'"`]+)['"`]/g)) {
     const scope = m[1].trim();

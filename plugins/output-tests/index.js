@@ -23,7 +23,6 @@ export function replaySteps(exploration) {
       selector: action.selector,
       label: action.label ?? null,
       value: action.kind === "fill" ? "" : action.value ?? null,
-      expect: { screen: step.to ?? null, changed: Boolean(step.changed) },
     });
   }
   return { steps, skipped };
