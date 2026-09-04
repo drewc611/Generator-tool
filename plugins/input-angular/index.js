@@ -8,7 +8,7 @@ import { readWithRegex } from "./regex.js";
 // a page renders, which the site engine copies through as the bytes they are.
 const KEEP = new Set([
   ".ts", ".js", ".html", ".scss", ".css", ".vue",
-  ".htm", ".shtml", ".php", ".asp", ".jsp", ".inc", ".txt", ".xml",
+  ".htm", ".shtml", ".php", ".asp", ".jsp", ".inc", ".txt", ".xml", ".pdf",
   ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp",
   ".woff", ".woff2", ".ttf", ".otf", ".eot",
 ]);

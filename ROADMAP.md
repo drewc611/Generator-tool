@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Three hundred and ninety eight features across thirty phases. The statuses are
+Four hundred and six features across thirty one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-477 tests, on Node 18, 20 and 22, and on Windows in CI.
+483 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1380,14 +1380,45 @@ SIGINT closes the server instead of dropping its connections.
 export.test.js ships inside the port and proves the prerendered pages answer at their routes.
 
 
+## Phase 31 · Documents
+
+*A data sheet shipped as PDF is legacy front end too. Read with no
+dependencies, carried without invention, and turned into a routed React page
+with the original kept as the document of record.*
+
+**399. A PDF reader with no dependencies** 🔨
+input-pdf, the eighty sixth plugin: objects by linear scan so broken files still read, Flate through node:zlib, and a later copy of an object wins the way incremental updates always meant.
+
+**400. Text with its positions, honestly decoded** 🔨
+ToUnicode CMaps and WinAnsi where they exist; a glyph with no text mapping is counted and dropped, never replaced with a lookalike.
+
+**401. Headings from the sizes the document used** 🔨
+body text is the size most characters are set in; anything measurably larger becomes h1, h2, h3 in order, with an anchor and a table of contents.
+
+**402. Links carried from annotations** 🔨
+URI annotations become a referenced addresses list on the page, spelled exactly as the document spelled them.
+
+**403. The outline as the document's own claim** 🔨
+bookmarks are read and reported beside the measured headings, because what a document says about its structure is evidence too.
+
+**404. A sealed document refused by name** 🔨
+an encrypted PDF yields nothing but the fact; guessing at a password is not a thing this tool does.
+
+**405. Documents join the site** 🔨
+with --site each PDF gets a route beside the pages, the old .pdf address answers with its 301, the search engine finds the document by its own words, and a route collision steps aside with a note.
+
+**406. The original outranks the reading** 🔨
+the PDF is copied into the port byte for byte and linked from its page; DOCS.md says what was read, what was declared, and what was skipped, filter by filter.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 319 |
+| new in this branch | 327 |
 | planned | 35 |
-| total | 398 |
+| total | 406 |
 
 The thirty five open are open for stated reasons, not for lack of time: phases
 27 and 28 name what each one waits on, and npm publish stays the one command

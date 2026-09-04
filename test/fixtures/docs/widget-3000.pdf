@@ -1,0 +1,70 @@
+%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Outlines 9 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Annots [8 0 R] >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<<  /Length 413 >>
+stream
+BT /F1 24 Tf 72 720 Td (Widget 3000 Data Sheet) Tj ET
+BT /F1 10 Tf 72 690 Td (The Widget 3000 is a reference widget for portamp.) Tj ET
+BT /F1 10 Tf 72 676 Td (It exists so a tech document can be read honestly.) Tj ET
+BT /F1 16 Tf 72 646 Td (Electrical characteristics) Tj ET
+BT /F1 10 Tf 72 626 Td (Supply voltage 5 V nominal, 4.5 V minimum.) Tj ET
+BT /F1 10 Tf 72 612 Td (Operating current 20 mA at idle.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Filter /FlateDecode /Length 103 >>
+stream
+xœ5Ì½
+ƒ0€Ñİ§øF»hv¡…‡û!¹bŠFĞŠ¯ï İ§òWAÑ mI[Ä“~Ô6g§òå)IwKó—æ’2*İ´lûª„Ê0ÏÁ+6zŞ}]±ÚŸúì®NãÈÍ
+endstream
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Link /Rect [72 686 320 700] /A << /S /URI /URI (https://example.com/widget-3000) >> >>
+endobj
+9 0 obj
+<< /Type /Outlines /First 10 0 R /Last 11 0 R /Count 2 >>
+endobj
+10 0 obj
+<< /Title (Electrical characteristics) /Parent 9 0 R /Next 11 0 R /Dest [3 0 R /XYZ 0 646 null] >>
+endobj
+11 0 obj
+<< /Title (Mechanical) /Parent 9 0 R /Prev 10 0 R /Dest [4 0 R /XYZ 0 720 null] >>
+endobj
+12 0 obj
+<< /Title (Widget 3000 Data Sheet) /Author (Acme) /Producer (portamp fixture writer) >>
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000000015 00000 n 
+0000000080 00000 n 
+0000000182 00000 n 
+0000000285 00000 n 
+0000000372 00000 n 
+0000000469 00000 n 
+0000000934 00000 n 
+0000001109 00000 n 
+0000001237 00000 n 
+0000001310 00000 n 
+0000001425 00000 n 
+0000001524 00000 n 
+trailer
+<< /Size 13 /Root 1 0 R /Info 12 0 R >>
+startxref
+1628
+%%EOF

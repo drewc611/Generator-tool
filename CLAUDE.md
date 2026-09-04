@@ -74,14 +74,15 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, eighty five in five classes, and the core has never learned
+Plugins that ship, eighty six in five classes, and the core has never learned
 the name of any of them:
 
 ```
 input    input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
-         input-openapi  input-explore  input-record  input-shots  input-blackbox
+         input-openapi  input-pdf  input-explore  input-record  input-shots
+         input-blackbox
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
@@ -138,6 +139,14 @@ dsp-era dating the markup by seventeen signals, a dead links ceiling, an
 `audit` command that checks a port against its ledger, and a server that
 speaks etags, 304s, cache rules, gzip and /healthz. test/thirtyseven.test.js
 reads one run and holds all of it.
+
+2.2 reads documents: input-pdf takes a PDF apart with no dependencies (Flate
+is node:zlib), keeps text with its measured positions and sizes, turns the
+sizes into headings and the annotations into links, refuses an encrypted
+file by name, counts glyphs it cannot map rather than faking them, and with
+--site gives each document a route beside the pages with the original PDF
+copied in as the document of record. DOCS.md says what was read; a tech data
+sheet lands as a routed React page the port's own search engine can find.
 
 ## What is honestly incomplete
 
@@ -204,8 +213,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: three hundred and ninety eight features in
-thirty phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: four hundred and six features in
+thirty one phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.

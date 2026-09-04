@@ -7,7 +7,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 85 plugins, and the literal output of
+lines of core, no runtime dependencies, 86 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 85 plugin(s)
+node src/cli.js plugins      # 86 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 477 tests, node --test, no framework
+npm test                     # 483 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -60,8 +60,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 18,956 lines of JavaScript |
-| Tests | 5,454 lines, 477 cases |
+| Every line of the tool | 19,575 lines of JavaScript |
+| Tests | 5,561 lines, 483 cases |
 | Source on disk | src 44 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 85 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 86 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -253,6 +253,26 @@ server test suites, which run inside the port with `npm test`. The engine was
 proven against `example/legacy-portal`, a fictional postal service portal with
 the shapes of the real ones, and smoke tested against a real government
 developer portal's public pages.
+
+## A data sheet becomes a page
+
+Technical documentation shipped as PDF is legacy front end too, and
+`input-pdf` reads it with no dependencies: PDF's one compression that
+matters is Flate, and Node ships it. The reader takes the file apart by
+linear scan so hand-edited and broken files still read, keeps every text
+run with its measured position and size, sizes the headings the way the
+document actually set them (body text is the size most characters wear;
+anything larger becomes h1, h2, h3 with anchors and a table of contents),
+lists the link annotations exactly as spelled, and reports the document's
+own outline beside the measured one.
+
+Drop a PDF next to the pages and `--site true` gives it a route, redirects
+the old `.pdf` address to it, and copies the original in byte for byte —
+the PDF stays the document of record, linked from its page. The port's own
+search engine finds the document by its words. What cannot be decoded is
+counted, never faked: an encrypted file is refused by name, an exotic
+stream filter is skipped and said, and a glyph with no text mapping is a
+number in `DOCS.md`, not a lookalike character.
 
 ## On your desk and in your pocket
 
@@ -764,8 +784,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): three hundred and ninety eight features in
-thirty phases, forty four shipped, three hundred and nineteen new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): four hundred and six features in
+thirty one phases, forty four shipped, three hundred and twenty seven new in the
 current branch, thirty five planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
