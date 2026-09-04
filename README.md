@@ -7,7 +7,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 89 plugins, and the literal output of
+lines of core, no runtime dependencies, 90 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 89 plugin(s)
+node src/cli.js plugins      # 90 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 521 tests, node --test, no framework
+npm test                     # 526 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -60,8 +60,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 21,152 lines of JavaScript |
-| Tests | 6,300 lines, 521 cases |
+| Every line of the tool | 21,209 lines of JavaScript |
+| Tests | 6,372 lines, 526 cases |
 | Source on disk | src 44 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 89 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 90 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -301,6 +301,16 @@ for a person, exactly like every other proposal the tool declines to
 perform. Nested repeats collapse to the largest, two runs write byte-
 identical components, and the catalog is written flag or no flag, because
 knowing the repeats exist is worth as much as removing them.
+
+The commoner repeat is not byte identical, though: two cards or two rows
+with the same structure and different words. `dsp-props` finds those. It
+reduces each block to its skeleton — the markup with every text and
+attribute value blanked to a marker — groups the blocks that share a
+skeleton across screens, and where the blanked slots disagree names each
+disagreeing slot as a prop with the values it observed. A shape whose every
+slot agrees is an exact repeat and left to `dsp-components`; the rest land
+in `PROPS.md` as parameterized proposals, named and never lifted, because
+which slots are allowed to vary is a decision about the product.
 
 ## On your desk and in your pocket
 

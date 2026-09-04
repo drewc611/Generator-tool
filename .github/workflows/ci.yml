@@ -415,6 +415,14 @@ jobs:
           node --check comp-out/serve.js
           rm -rf comp-out
 
+      - name: blocks that share a shape but differ in words are proposed as one with props
+        run: |
+          node src/cli.js run --src test/fixtures/variant-cards --out props-out --site true
+          test -f props-out/PROPS.md || { echo "PROPS.md was not written"; exit 1; }
+          grep -q "href` attribute" props-out/PROPS.md || { echo "the varying href was not proposed as a prop"; exit 1; }
+          if ls props-out/src/features 2>/dev/null | grep -qE "PortShape|PortThe"; then echo "a parameterized proposal was lifted, but it must not be"; exit 1; fi
+          rm -rf props-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -426,6 +434,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "426" ]; then
-            echo "ROADMAP.md holds $count entries and claims 426"; exit 1
+          if [ "$count" != "430" ]; then
+            echo "ROADMAP.md holds $count entries and claims 430"; exit 1
           fi

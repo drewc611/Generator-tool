@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and twenty six features across thirty four phases. The statuses are
+Four hundred and thirty features across thirty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-521 tests, on Node 18, 20 and 22, and on Windows in CI.
+526 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1492,14 +1492,35 @@ candidates are ranked largest first then by the fragment itself and named from t
 written whether or not the flag is set, because knowing the repeats exist is worth as much as removing them: every extractable block with the screens that share it, and every proposed one with why it could not be lifted.
 
 
+## Phase 35 · 5.1 · The shared component learns what varies
+
+*dsp-components lifts a block that recurs byte for byte. The commoner repeat
+is not byte identical: two cards, two rows, the same shape with different
+words. dsp-props finds those and proposes one component with a prop for each
+slot that changed, and never lifts, because deciding what may vary is the
+product's call.*
+
+**427. dsp-props finds the structural twins** 🔨
+a block reduced to its skeleton, the markup with every text and attribute value blanked to a marker, so two fragments with the same tags and attribute names read as the same shape however their content differs.
+
+**428. The varying slots become the props** 🔨
+across the copies of one shape, a slot whose value is the same everywhere is constant and a slot that changes is a prop, named from the attribute it fills or a word from the copy, with the values actually observed carried beside it.
+
+**429. A byte identical shape is left to dsp-components** 🔨
+a shape whose every slot agrees on every screen is an exact repeat, not a parameterized one, so it is dropped here rather than proposed twice, and nested shapes collapse to the largest the same way the exact repeats do.
+
+**430. PROPS.md proposes, never performs** 🔨
+the parameterized components are named in PROPS.md with their props and evidence and nothing is emitted from them: which slots are allowed to vary is a decision about the product, so the tool measures the shape and leaves the call to a person.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 379 |
+| new in this branch | 383 |
 | planned | 3 |
-| total | 426 |
+| total | 430 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
