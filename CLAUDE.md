@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and thirteen in five classes, and the core has never learned
+Plugins that ship, a hundred and fifteen in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -95,7 +95,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-i18n  output-adr  output-migration  output-preact  output-solid
          output-alpine  output-cem  output-postman  output-curl
          output-fixtures  output-readme  output-ci  output-site
-         output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit  output-dockerfile  output-nginx
+         output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit  output-dockerfile  output-nginx  output-types  output-cypress
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph
 general  general-policy  general-authorization  general-license  general-size
          general-doctor  general-scaffold  general-watch  general-history
@@ -339,6 +339,19 @@ port isolates away and must contain, or the port silently loses something other
 code read. Both report rather than delete, because which log is load bearing
 and which global is still read is a person's call. test/cleaned.test.js holds
 both.
+
+7.2 gives the port a type surface and an end to end suite. output-types writes
+one TypeScript interface per screen, each input a prop typed `unknown` because
+the reader knows the name and not the type (unknown forces a check at the
+boundary, where any would wave it away), each output a handler, plus the
+loading, error and retry every component takes; the endpoint paths the app
+calls become a string literal `ApiPath` union and the methods an `ApiMethod`
+union, so a call to an address the port never saw is a type error. The
+components stay .jsx; only a types folder is added. output-cypress walks the
+ported site: one spec visits every route and asserts the page mounted, another
+visits each retired address and asserts the browser lands on the new path, run
+against the port's own serve.js with a matching baseUrl. test/typed.test.js
+holds both.
 
 ## What is honestly incomplete
 

@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Four hundred and eighty features across forty six phases. The statuses are
+Four hundred and eighty four features across forty seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1756,14 +1756,33 @@ CONSOLE.md lists the calls per file so a person can strip them or gate them behi
 GLOBALS.md names each so the port can turn a window assignment into an export or a small namespace, keep the jQuery a plugin needs or drop it on purpose, and move a script scope global into a module, rather than silently losing a hook other code depended on.
 
 
+## Phase 47 · 7.2 · The typed and tested port
+
+*The port emits JSX and a running site; 7.2 gives it a type surface and an end
+to end suite, both built from what the run already knows and neither claiming
+more than it can prove.*
+
+**481. output-types writes a prop surface** 🔨
+one TypeScript interface per screen, each input a prop typed `unknown` because the reader knows the name and not the type, each output a handler, and the loading, error and retry every component takes, written to a types folder beside the components they describe without changing the emitted JSX.
+
+**482. unknown is honest, not any** 🔨
+a prop the reader could not prove a type for is `unknown`, which forces a check at the boundary, rather than `any`, which waves the check away; the file says so, so nobody reads the gap as a guarantee.
+
+**483. The endpoint paths become a union** 🔨
+the de-duplicated set of paths the app calls is a string literal `ApiPath` union and the methods an `ApiMethod` union, so a call to an address the port never saw is a type error rather than a runtime surprise.
+
+**484. output-cypress walks the routes** 🔨
+one end to end spec visits every route of the ported site and asserts the page mounted, another visits each retired address and asserts the browser lands on the new path, run against the port's own serve.js with a baseUrl that matches; the routes and redirects come from the site model and none is invented.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 433 |
+| new in this branch | 437 |
 | planned | 3 |
-| total | 480 |
+| total | 484 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

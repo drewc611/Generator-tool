@@ -94,12 +94,12 @@ test("discovery loads every plugin that ships", async () => {
     "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",
     "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-knockout",
     "input-openapi", "input-pdf", "input-polymer", "input-react", "input-record", "input-riot", "input-shots", "input-static", "input-underscore", "input-vue",
-    "output-adr", "output-alpine", "output-angular", "output-astro", "output-cem", "output-ci", "output-curl",
+    "output-adr", "output-alpine", "output-angular", "output-astro", "output-cem", "output-ci", "output-curl", "output-cypress",
     "output-design-tokens", "output-dockerfile", "output-fixtures", "output-forms", "output-html", "output-i18n", "output-lit",
     "output-migration", "output-msw", "output-next", "output-nginx", "output-nuxt",
     "output-openapi", "output-postman", "output-preact", "output-qwik", "output-react", "output-readme", "output-remix", "output-site", "output-solid",
     "output-storybook", "output-svelte", "output-sveltekit", "output-tailwind",
-    "output-tests", "output-vue", "vis-coverage", "vis-equivalence", "vis-graph", "vis-parity", "vis-roundtrip", "vis-timeline", "vis-ui",
+    "output-tests", "output-types", "output-vue", "vis-coverage", "vis-equivalence", "vis-graph", "vis-parity", "vis-roundtrip", "vis-timeline", "vis-ui",
   ]);
   for (const p of k.plugins) assert.ok(CLASSES.includes(p.class), `${p.name} has a real class`);
 });
