@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Four hundred and six features across thirty one phases. The statuses are
+Four hundred and eleven features across thirty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1079,17 +1079,17 @@ RewriteRule and Redirect lines join the redirect map with their evidence.
 **304. sitemap.xml and robots.txt** 🔨
 written from the route table; disallowed paths carried from the original when one exists.
 
-**305. Asset hashing** ▢
-content hashed filenames with the references rewritten, behind a flag because URLs are a contract.
+**305. Asset hashing** 🔨
+content hashed filenames with every written reference rewritten, behind --hash-assets because URLs are a contract, and the note says which contract the flag knowingly changes.
 
-**306. Layout tables performed** ▢
-the proposed grid conversion executed behind a flag, with the table kept beside it for the diff.
+**306. Layout tables performed** 🔨
+the proposed grid conversion executed behind --perform-tables, the original markup kept beside each component for the diff, and a table with a header cell never touched.
 
 **307. jQuery behavior hydrated** ▢
 the inventory input-jquery already writes, matched to the site's pages so a handler lands on the route that owned its selector.
 
-**308. i18n routes** ▢
-/en/ and /de/ trees recognised as one site in two languages, the route table parameterized by locale.
+**308. i18n routes** 🔨
+/en/ and /de/ trees recognised as one site in two languages: the /:locale patterns and every page's siblings emitted as data, hreflang applied per navigation, and merging the trees left to a person.
 
 **309. Breadcrumbs from the hierarchy** 🔨
 the nav model's nesting as a breadcrumb component, data only.
@@ -1097,14 +1097,14 @@ the nav model's nesting as a breadcrumb component, data only.
 **310. Scroll restoration** 🔨
 back means where you were; a new route means the top; the hash still wins.
 
-**311. Prefetch on intent** ▢
-hovering a link warms its route module, measured before it is claimed.
+**311. Prefetch on intent** 🔨
+under --split, pointing at an internal link starts its route module; the loaders are data so the router and the prefetch share one spelling.
 
 **312. Canonical URLs carried** 🔨
 rel=canonical read per page and reapplied per route.
 
-**313. RSS and Atom feeds read** ▢
-a feed in the tree names the pages that are entries, which is pagination evidence too.
+**313. RSS and Atom feeds read** 🔨
+a feed in the tree names the pages that are entries, matched to routes and carried as the site's own word about its families.
 
 **314. Print stylesheets carried** 🔨
 media=print links survive into the shell instead of being dropped.
@@ -1118,8 +1118,8 @@ chains flattened, cycles failed, and a redirect into a dead link named for what 
 **317. Query string routes** 🔨
 page.php?id=3 families read as parameterized routes the way filename pagination already is.
 
-**318. Per route code splitting** ▢
-lazy imports in App.jsx behind a flag, because eight pages do not need it and eight hundred do.
+**318. Per route code splitting** 🔨
+lazy imports in App.jsx behind --split, because eight pages do not need it and eight hundred do; the loading state is a real state, not a blank.
 
 **319. A service worker for the port** 🔨
 offline for the ported site itself, opt in, with the same honesty the console's worker has: it caches exactly what the run wrote.
@@ -1127,17 +1127,17 @@ offline for the ported site itself, opt in, with the same honesty the console's 
 **320. Anchor text audit** 🔨
 "click here" counted and named with its route, because link text is navigation for a screen reader.
 
-**321. The 404 report** ▢
-server logs, when attested, matched against the redirect map so the map covers what people actually ask for.
+**321. The 404 report** 🔨
+--logs matches the old server's refusals against the port: redirected, a live route, a served asset, or uncovered with its demand counted, so the map grows from evidence.
 
-**322. Float layouts proposed to flex** ▢
-the css reader names float scaffolding the way tables are named now; performing it stays a person's call.
+**322. Float layouts proposed to flex** 🔨
+the css reader names every rule that floats and sizes at once; performing the flex rewrite stays a person's call and CSS_STATS.md lists the evidence.
 
-**323. Frames as split view** ▢
-a frameset whose frames scrolled together proposed as a split layout, evidence from the frame names.
+**323. Frames as split view** 🔨
+a frameset that laid its panes side by side proposed as a split layout, the author's own cols= geometry carried as the evidence.
 
-**324. The old web corpus** ▢
-labelled miniatures for php, ssi, frames and font era pages join the calibration corpus so the readers' confidence is measured.
+**324. The old web corpus** 🔨
+labelled miniatures for php, ssi, frames, the font era and the modern web hold dsp-era to its dates the way the archetype corpus holds the classifier.
 
 
 ## Phase 28 · Deeper honesty, wider reach
@@ -1186,8 +1186,8 @@ input-record's sessions replayed against the port, drift reported per step.
 **338. The parity pane diffs the DOM** ▢
 structure diff beside the pixel wipe, because a moved div explains a changed pixel.
 
-**339. Accessibility gates, opt in** ▢
---max-a11y N fails a run whose measured findings exceed the line, same shape as --max-unverified.
+**339. Accessibility gates, opt in** 🔨
+--max-a11y N fails a run whose measured findings exceed the line, same shape as --max-unverified: a gate that only ever adds.
 
 **340. The console compares runs** ▢
 two run.json files side by side: what changed, what got worse, which notes closed.
@@ -1411,21 +1411,44 @@ with --site each PDF gets a route beside the pages, the old .pdf address answers
 the PDF is copied into the port byte for byte and linked from its page; DOCS.md says what was read, what was declared, and what was skipped, filter by filter.
 
 
+## Phase 32 · The playbooks
+
+*The plugins measure; the skills carry the judgment the measurements leave
+to a person, written down so it survives handoff.*
+
+**407. adhd-brief, four layers deep** 🔨
+reading the reader's state before answering, the answer shape, the work behind the reply, writing people must act on, and the rewrite recipe for every dsp-cognitive finding.
+
+**408. plain-language** 🔨
+the repairs for the words that ship inside a product: one verb per action, links that say where they go, walls broken at the topic turn, error messages that lead with the fix.
+
+**409. site-port** 🔨
+the folder of old pages playbook: the flags in the order they pay off, the redirect spelling each host reads, the deploy checklist, and the calls the engine leaves open.
+
+**410. doc-port** 🔨
+PDF documents carried honestly: what the reader proves versus skips, the scanned and encrypted cases, and when the original outranks the reading.
+
+**411. port-audit** 🔨
+whether a port ships, from the evidence it wrote about itself: the files in order, the audit command, the three checks only a person can do, severity without averaging.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 327 |
-| planned | 35 |
-| total | 406 |
+| new in this branch | 343 |
+| planned | 24 |
+| total | 411 |
 
-The thirty five open are open for stated reasons, not for lack of time: phases
-27 and 28 name what each one waits on, and npm publish stays the one command
-that belongs to a person, with docs/PUBLISHING.md waiting beside it. Six that
-were open closed in this branch: focus order once the probe recorded
-positions, the calibration corpus at v0 with eight labelled miniatures, the
-compare pane preview the moment it was noticed that the dependency free
-element target never needed a build step, the Vue reader once structural
-scanning produced byte identical output to the regexes it retired, and scroll
-restoration and the port's service worker with phase 30.
+The twenty four open are open for stated reasons, not for lack of time:
+phases 27 and 28 name what each one waits on, and npm publish stays the one
+command that belongs to a person, with docs/PUBLISHING.md waiting beside it.
+Seventeen that were open closed in this branch: focus order once the probe
+recorded positions, the calibration corpus at v0, the compare pane preview,
+the Vue reader once structural scanning matched the regexes it retired byte
+for byte, scroll restoration and the port's service worker with phase 30,
+and eleven of the site engine's planned entries in one growth batch: asset
+hashing, performed tables, locale routes, prefetch, feeds read, code
+splitting, the 404 report, floats named, frames proposed, the era corpus,
+and the accessibility ceiling.

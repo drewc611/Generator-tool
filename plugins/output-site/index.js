@@ -74,7 +74,8 @@ export default {
       await ctx.write("src/app/Layout.jsx", layoutFile(site.chrome, ctx));
       await ctx.write("src/app/ErrorBoundary.jsx", ERROR_BOUNDARY);
       await ctx.write("src/app/NotFound.jsx", NOT_FOUND);
-      await ctx.write("src/app/App.jsx", APP({ imports, routes }));
+      await ctx.write("src/app/App.jsx", ctx.config.split ? APP_SPLIT(pages) : APP({ imports, routes }));
+      if (ctx.config.split) log.info("--split: one module per route, loaded when the route is and warmed on hover");
       await ctx.write("src/main.jsx", MAIN);
 
       // The old addresses, in every spelling a host understands. The JSON is
@@ -102,6 +103,9 @@ export default {
         }
       }
       const byRel = new Map(ctx.sources.files.map((f) => [f.rel.replace(/^\.\//, ""), f]));
+      // Under --hash-assets the reader renamed every asset by its bytes;
+      // everything this plugin writes spells the renamed file the same way.
+      const hashName = (rel) => site.assetNames?.[rel] ?? rel;
       const css = new Set();
       const done = new Set();
       const copiedBytes = new Map();
@@ -114,21 +118,31 @@ export default {
           ctx.unverified(`${from} uses ${rel}, which is not in this run. The port references /${rel}; place the file under public/ by hand.`);
           return;
         }
-        const bytes = await readFile(file.path);
-        await ctx.write(`public/${rel}`, bytes);
-        copiedBytes.set(rel, bytes);
-        copied += 1;
+        let bytes = await readFile(file.path);
         // A stylesheet drags its own dependencies: the fonts and images its
         // url() references name, resolved the way the browser will resolve
-        // them against the copied sheet's address.
+        // them against the copied sheet's address. Under hashing, the
+        // references follow the renamed files.
         if (/\.css$/i.test(rel)) {
-          css.add(rel);
+          css.add(hashName(rel));
+          const targets = [];
           for (const m of bytes.toString("utf8").matchAll(/url\(\s*["']?([^"')]+?)["']?\s*\)/g)) {
             const u = m[1].split(/[#?]/)[0];
             if (!u || /^(data:|https?:|\/\/)/i.test(u)) continue;
-            await copyOne(resolveLink(u.startsWith("/") ? "" : rel, u), rel);
+            targets.push({ raw: m[1], resolved: resolveLink(u.startsWith("/") ? "" : rel, u) });
+          }
+          for (const t of targets) await copyOne(t.resolved, rel);
+          if (Object.keys(site.assetNames ?? {}).length) {
+            let text = bytes.toString("utf8");
+            for (const t of targets) {
+              if (site.assetNames[t.resolved]) text = text.split(t.raw).join(`/${site.assetNames[t.resolved]}`);
+            }
+            bytes = Buffer.from(text, "utf8");
           }
         }
+        await ctx.write(`public/${hashName(rel)}`, bytes);
+        copiedBytes.set(rel, bytes);
+        copied += 1;
       };
       for (const [rel, from] of wanted) await copyOne(rel, from);
 
@@ -179,6 +193,23 @@ export default {
         await ctx.write(`public/${rel}`, PRINT_SYNTH(site.chrome));
         printCss.push(rel);
       }
+      const hashedPrint = printCss.map(hashName);
+      const hashedIcons = icons.map((i) => ({ ...i, href: "/" + hashName(String(i.href).replace(/^\//, "")) }));
+
+      // Performed tables need their grid, and every original is kept beside
+      // its component: the diff --perform-tables promised.
+      const performed = pages.filter((p) => p.tableOriginals?.length);
+      if (performed.length) {
+        css.add("port-grid.css");
+        await ctx.write("public/port-grid.css", PORT_GRID_CSS);
+        for (const p of performed) {
+          for (const [i, table] of p.tableOriginals.entries()) {
+            const suffix = p.tableOriginals.length > 1 ? `-${i + 1}` : "";
+            await ctx.write(`src/features/${p.className}/${p.className}.original-table${suffix}.html`, table + "\n");
+          }
+        }
+        log.info(`${performed.length} screen(s) had layout tables performed; the originals sit beside the components`);
+      }
 
       // What the pages actually reach for outside this site, and the content
       // security policy those facts support. Every allowance names its
@@ -213,16 +244,17 @@ export default {
           display: "standalone",
           background_color: "#ffffff",
           theme_color: accent,
-          icons: icons.filter((i) => i.rel === "icon").map((i) => ({ src: i.href, sizes: "any" })),
+          icons: hashedIcons.filter((i) => i.rel === "icon").map((i) => ({ src: i.href, sizes: "any" })),
         }, null, 2) + "\n");
-        await ctx.write("public/sw.js", SW_JS(pages.map((p) => p.route), [...done].map((d) => "/" + d)));
+        await ctx.write("public/sw.js", SW_JS(pages.map((p) => p.route), [...done].map((d) => "/" + hashName(d))));
         log.info("pwa: manifest and service worker written; registering them is index.html's one comment away");
       }
 
       // The head data and the entry page land only now, after the social
       // cards and the synthesized print stylesheet had their say.
-      await ctx.write("src/app/head.js", HEAD_JS(pages));
-      await ctx.write("index.html", INDEX_HTML([...css].filter((c) => !printCss.includes(c)), printCss, icons, ctx.config.pwa));
+      await ctx.write("src/app/head.js", HEAD_JS(pages, site.locales?.alternates ?? {}));
+      if (site.locales?.routes?.length) await ctx.write("src/app/locales.js", LOCALES_JS(site.locales));
+      await ctx.write("index.html", INDEX_HTML([...css].filter((c) => !hashedPrint.includes(c)), hashedPrint, hashedIcons, ctx.config.pwa));
       if (!ctx.written.includes("package.json")) {
         await ctx.write("package.json", JSON.stringify({
           name: "ported-site",
@@ -282,14 +314,14 @@ export default {
         for (const p of pages) {
           const file = p.route === "/" ? "export/index.html" : `export${p.route}/index.html`;
           const template = ctx.screens.find((s) => s.selector === p.selector)?.template ?? "";
-          await ctx.write(file, EXPORT_PAGE({ page: p, template, chrome: site.chrome, css: [...css], printCss, icons }));
+          await ctx.write(file, EXPORT_PAGE({ page: p, template, chrome: site.chrome, css: [...css], printCss: hashedPrint, icons: hashedIcons }));
           exported += 1;
         }
         for (const r of site.redirects.filter((x) => x.to.startsWith("/"))) {
           const file = /\.[a-z0-9]+$/i.test(r.from) ? `export${r.from}` : `export${r.from}/index.html`;
           if (!ctx.written.includes(file)) await ctx.write(file, REDIRECT_STUB(r.to));
         }
-        for (const [rel, bytes] of copiedBytes) await ctx.write(`export/${rel}`, bytes);
+        for (const [rel, bytes] of copiedBytes) await ctx.write(`export/${hashName(rel)}`, bytes);
         for (const p of pages) {
           const card = p.og?.["og:image"];
           if (card?.startsWith("/social/")) {
@@ -301,6 +333,59 @@ export default {
         await ctx.write("export/llms.txt", LLMS_TXT(pages, textByRoute));
         await ctx.write("tests/export.test.js", EXPORT_TEST(pages[0]?.route ?? "/"));
         log.info(`static export: ${exported} page(s) prerendered, hostable with no build`);
+      }
+
+      // Server logs, matched against the port: every 404 the old server saw
+      // is either answered by the redirect map now, already a live route, a
+      // served asset, or named as uncovered with its demand, so the map can
+      // grow from evidence instead of guesswork.
+      if (ctx.config.logs) {
+        const text = await readFile(ctx.config.logs, "utf8").catch(() => null);
+        if (text === null) {
+          ctx.unverified(`--logs ${ctx.config.logs} could not be read, so the 404 report was not written.`);
+        } else {
+          const counts = new Map();
+          for (const line of text.split("\n")) {
+            const m = /"(?:GET|HEAD|POST) ([^ "]+)[^"]*" (\d{3})/.exec(line);
+            if (m && m[2] === "404") {
+              const path = m[1].split(/[#?]/)[0];
+              counts.set(path, (counts.get(path) ?? 0) + 1);
+            }
+          }
+          const routeSet = new Set(pages.map((p) => p.route));
+          const redirected = new Set(site.redirects.map((r) => r.from));
+          const rows = [...counts.entries()]
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+            .map(([path, hits]) => ({
+              path,
+              hits,
+              state: redirected.has(path) ? "redirected"
+                : routeSet.has(path) ? "a live route"
+                : done.has(path.replace(/^\//, "")) ? "a served asset"
+                : "uncovered",
+            }));
+          const uncovered = rows.filter((r) => r.state === "uncovered");
+          await ctx.write("LOGS_404.md", [
+            "# What people actually asked for and did not get",
+            "",
+            `Read from the attested log at ${ctx.config.logs}: ${rows.length} distinct path(s) the old server answered 404.`,
+            "The redirected ones are answered by this port now; the uncovered ones are",
+            "evidence for redirects nobody has written yet, listed with their demand.",
+            "",
+            "| path | hits | in the port |",
+            "| --- | --- | --- |",
+            ...rows.map((r) => `| \`${r.path}\` | ${r.hits} | ${r.state} |`),
+            "",
+            uncovered.length
+              ? `${uncovered.length} path(s) stay uncovered. Adding a redirect is a person's call; the counts say which matter.`
+              : "Every 404 the log holds is answered by this port.",
+            "",
+          ].join("\n"));
+          if (uncovered.length) {
+            ctx.unverified(`${uncovered.length} path(s) people actually asked for are answered by nothing in this port. LOGS_404.md lists them by demand; each is a redirect a person could add.`);
+          }
+          log.info(`LOGS_404.md: ${rows.length} distinct 404(s) read, ${uncovered.length} uncovered`);
+        }
       }
 
       log.info(`app shell: ${pages.length} route(s), ${site.redirects.length} redirect(s), ${copied} asset(s) copied`);
@@ -693,7 +778,7 @@ export { matchPath, resolveRedirect, nearestRoutes, stripBase, decideScroll } fr
  */
 // A <base href> in the page is the base the whole app wears: matching
 // happens without it, addresses are written with it.
-const BASE = typeof document === "undefined" ? "" : new URL(document.baseURI).pathname.replace(/\\/$/, "");
+export const BASE = typeof document === "undefined" ? "" : new URL(document.baseURI).pathname.replace(/\\/$/, "");
 const route = () => stripBase(location.pathname, BASE || "/");
 const scrollKey = (p) => "portamp:scroll:" + p;
 
@@ -760,13 +845,13 @@ ${redirects.filter((r) => r.to.startsWith("/")).map((r) => `  ${jsString(r.from)
 };
 `;
 
-const HEAD_JS = (pages) => `/**
+const HEAD_JS = (pages, alternates = {}) => `/**
  * What each page's head said, applied per route. The old site put its
  * titles and descriptions in markup; a single page app has to say them
  * again on every navigation or lose them.
  */
 export const HEAD = {
-${pages.map((p) => `  ${jsString(p.route)}: { title: ${jsString(p.title ?? "")}, description: ${jsString(p.description ?? "")}, canonical: ${p.canonical ? jsString(p.canonical) : "null"}, readingMinutes: ${p.readingMinutes ?? 0}, og: ${JSON.stringify(p.og ?? {})} },`).join("\n")}
+${pages.map((p) => `  ${jsString(p.route)}: { title: ${jsString(p.title ?? "")}, description: ${jsString(p.description ?? "")}, canonical: ${p.canonical ? jsString(p.canonical) : "null"}, readingMinutes: ${p.readingMinutes ?? 0}, og: ${JSON.stringify(p.og ?? {})}, alternates: ${JSON.stringify(alternates[p.route] ?? {})} },`).join("\n")}
 };
 
 const setMeta = (attr, key, value) => {
@@ -798,7 +883,37 @@ export function applyHead(route) {
   } else if (canon) {
     canon.remove();
   }
+  // A page with siblings in other languages says so, per navigation, the
+  // way the twin trees always meant.
+  for (const el of document.head.querySelectorAll('link[rel="alternate"][hreflang][data-portamp]')) el.remove();
+  for (const [lang, href] of Object.entries(head.alternates ?? {})) {
+    const link = document.createElement("link");
+    link.setAttribute("rel", "alternate");
+    link.setAttribute("hreflang", lang);
+    link.setAttribute("href", href);
+    link.setAttribute("data-portamp", "");
+    document.head.appendChild(link);
+  }
 }
+`;
+
+const LOCALES_JS = (locales) => `/**
+ * One site in ${locales.dirs.length} languages, read from twin top level
+ * trees holding the same paths. LOCALE_ROUTES is the route table
+ * parameterized by locale; ALTERNATES gives every concrete route its
+ * siblings, which is exactly what hreflang needs. The trees stay separate:
+ * choosing a primary language is a person's call.
+ */
+export const LOCALES = ${JSON.stringify(locales.dirs)};
+export const LOCALE_ROUTES = ${JSON.stringify(locales.routes, null, 2)};
+export const ALTERNATES = ${JSON.stringify(locales.alternates, null, 2)};
+`;
+
+const PORT_GRID_CSS = `/* Generated by portamp for --perform-tables: the grid the layout tables
+ * meant. Each converted table carries its own column count as a variable;
+ * the original markup sits beside the component for the diff. */
+.port-grid { display: grid; grid-template-columns: repeat(var(--port-grid-cols, 2), minmax(0, 1fr)); gap: 0.5rem; }
+.port-grid-row { display: contents; }
 `;
 
 const NAV_JS = (items) => `/**
@@ -982,6 +1097,60 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Layout>{Page ? <Page /> : <NotFound path={path} />}</Layout>
+    </ErrorBoundary>
+  );
+}
+`;
+
+const APP_SPLIT = (pages) => `import { lazy, Suspense, useEffect } from "react";
+import { useRoute, matchPath, resolveRedirect, stripBase, BASE } from "./router.js";
+import { REDIRECTS } from "./redirects.js";
+import { applyHead } from "./head.js";
+import Layout from "./Layout.jsx";
+import ErrorBoundary from "./ErrorBoundary.jsx";
+import NotFound from "./NotFound.jsx";
+
+/**
+ * Split on purpose: each route's module loads when the route does, and
+ * pointing at a link warms its module early. The loaders are data so the
+ * router and the prefetch share one spelling, and a repeat import costs
+ * nothing because the browser caches the promise.
+ */
+export const LOADERS = {
+${pages.map((p) => `  ${jsString(p.route)}: () => import(${jsString(`../features/${p.className}/${p.className}.jsx`)}),`).join("\n")}
+};
+const PAGES = Object.fromEntries(Object.entries(LOADERS).map(([route, load]) => [route, lazy(load)]));
+export const ROUTES = Object.keys(LOADERS).map((path) => ({ path, component: PAGES[path] }));
+
+export default function App() {
+  const raw = useRoute();
+  const path = resolveRedirect(REDIRECTS, raw.replace(/\\/$/, "") || "/");
+  const route = ROUTES.find((r) => matchPath(r.path, path));
+  useEffect(() => {
+    if (route) applyHead(route.path);
+  }, [route]);
+  useEffect(() => {
+    const warm = (event) => {
+      const anchor = event.target.closest?.("a[href]");
+      if (!anchor || anchor.origin !== location.origin) return;
+      const to = resolveRedirect(REDIRECTS, stripBase(anchor.pathname, BASE || "/").replace(/\\/$/, "") || "/");
+      LOADERS[to]?.();
+    };
+    document.addEventListener("pointerover", warm);
+    document.addEventListener("focusin", warm);
+    return () => {
+      document.removeEventListener("pointerover", warm);
+      document.removeEventListener("focusin", warm);
+    };
+  }, []);
+  const Page = route?.component;
+  return (
+    <ErrorBoundary>
+      <Layout>
+        <Suspense fallback={<p role="status">Loading…</p>}>
+          {Page ? <Page /> : <NotFound path={path} />}
+        </Suspense>
+      </Layout>
     </ErrorBoundary>
   );
 }

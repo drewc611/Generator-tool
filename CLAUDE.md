@@ -138,7 +138,13 @@ sha256 birth certificate per route in the ledger, an opt in service worker,
 dsp-era dating the markup by seventeen signals, a dead links ceiling, an
 `audit` command that checks a port against its ledger, and a server that
 speaks etags, 304s, cache rules, gzip and /healthz. test/thirtyseven.test.js
-reads one run and holds all of it.
+reads one run and holds all of it. The growth batch closes eleven of the
+site engine's planned entries behind flags that only ever add: --hash-assets,
+--perform-tables, --split with prefetch on intent, --logs for the 404 report,
+--max-a11y, locale routes with hreflang, feeds read as family evidence,
+floats and side by side frames named, and an era corpus holding dsp-era to
+its dates. skills/ grew to six playbooks; the plugins measure and the skills
+carry the judgment.
 
 2.2 reads documents: input-pdf takes a PDF apart with no dependencies (Flate
 is node:zlib), keeps text with its measured positions and sizes, turns the
@@ -213,8 +219,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: four hundred and six features in
-thirty one phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: four hundred and eleven features in
+thirty two phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.

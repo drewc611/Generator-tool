@@ -138,7 +138,12 @@ export function readFrameset(text) {
     src: m[1],
     name: /name\s*=\s*["']([^"']*)["']/i.exec(m[0])?.[1] ?? null,
   }));
-  return { frames, main: frames.find((f) => /main|content|body/i.test(f.name ?? ""))?.src ?? frames.at(-1)?.src ?? null };
+  // The geometry is evidence: cols is panes side by side, rows is banner
+  // and body. The proposal downstream reads which one the author wrote.
+  const tag = /<frameset\b[^>]*>/i.exec(text)?.[0] ?? "";
+  const cols = /\bcols\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1] ?? null;
+  const rows = /\brows\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1] ?? null;
+  return { frames, cols, rows, main: frames.find((f) => /main|content|body/i.test(f.name ?? ""))?.src ?? frames.at(-1)?.src ?? null };
 }
 
 /**
@@ -184,4 +189,29 @@ export function layoutTables(text) {
     if (!/<th\b/i.test(m[0]) && (m[0].match(/<td\b/gi) ?? []).length >= 4) count += 1;
   }
   return count;
+}
+
+/**
+ * The proposed grid conversion, performed only when asked. Exactly the
+ * tables layoutTables names — headerless scaffolding — become CSS grid,
+ * and every original is returned so it can be kept beside the component
+ * for the diff. A table with a header cell is data and is never touched;
+ * a nested table is left alone rather than half converted.
+ */
+export function performTables(html) {
+  const originals = [];
+  const out = String(html ?? "").replace(/<table\b[^>]*>[\s\S]*?<\/table\s*>/gi, (table) => {
+    if (/<th\b/i.test(table)) return table;
+    if (/<table\b/i.test(table.slice(6))) return table;
+    const rows = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr\s*>/gi)];
+    if ((table.match(/<td\b/gi) ?? []).length < 4 || !rows.length) return table;
+    const cols = Math.max(...rows.map((r) => (r[1].match(/<td\b/gi) ?? []).length));
+    if (cols < 2) return table;
+    originals.push(table);
+    const body = rows
+      .map((r) => `<div class="port-grid-row">${r[1].replace(/<td\b[^>]*>/gi, '<div class="port-grid-cell">').replace(/<\/td\s*>/gi, "</div>").trim()}</div>`)
+      .join("\n");
+    return `<div class="port-grid" style="--port-grid-cols: ${cols}">\n${body}\n</div>`;
+  });
+  return { html: out, originals };
 }

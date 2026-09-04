@@ -84,6 +84,18 @@ export default {
         log.info(`${dead} dead link(s), under the ceiling of ${max}`);
       }
 
+      // And once more for accessibility: the measured findings, capped.
+      const a11yCeiling = ctx.config.maxA11y ?? ctx.config["max-a11y"];
+      if (a11yCeiling !== undefined && a11yCeiling !== null && a11yCeiling !== false) {
+        const max = Number(a11yCeiling);
+        if (!Number.isFinite(max)) throw new Error(`--max-a11y needs a number, got "${a11yCeiling}".`);
+        const found = (ctx.a11y?.length ?? 0) + (ctx.a11yStructure?.length ?? 0);
+        if (found > max) {
+          throw new Error(`${found} accessibility finding(s) against a ceiling of ${max}. A11Y.md names each one; fix them or raise the ceiling knowingly.`);
+        }
+        log.info(`${found} accessibility finding(s), under the ceiling of ${max}`);
+      }
+
       const ceiling = ctx.config.maxUnverified ?? ctx.config["max-unverified"];
       if (ceiling !== undefined && ceiling !== null && ceiling !== false) {
         const max = Number(ceiling);

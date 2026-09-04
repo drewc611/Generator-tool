@@ -1,0 +1,8 @@
+{
+  "label": { "from": 2013, "to": 2026 },
+  "why": "the HTML5 doctype with semantic elements, a viewport and flexbox",
+  "files": [
+    { "rel": "index.html", "text": "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width\"></head><body><nav>menu</nav><article>hello</article></body></html>" },
+    { "rel": "style.css", "text": "main { display: flex; }" }
+  ]
+}

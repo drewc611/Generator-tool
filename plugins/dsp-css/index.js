@@ -35,7 +35,17 @@ export function auditCss(text, rel) {
   }
   const repeated = [...declarations.entries()].filter(([, n]) => n >= 4).sort((a, b) => b[1] - a[1]);
 
-  return { file: rel, important, selectors: selectors.length, selectorList: selectors, ids, deep, repeated };
+  // Float scaffolding: a rule that floats and also sizes is laying out a
+  // page, not wrapping text around an image. Named the way layout tables
+  // are; performing the flex conversion stays a person's call.
+  const floats = [];
+  for (const m of bare.matchAll(/(^|\})\s*([^{}@]+)\{([^{}]*)\}/g)) {
+    if (/float\s*:\s*(left|right)/.test(m[3]) && /(^|;)\s*width\s*:/.test(m[3])) {
+      floats.push(m[2].trim().replace(/\s+/g, " "));
+    }
+  }
+
+  return { file: rel, important, selectors: selectors.length, selectorList: selectors, ids, deep, repeated, floats };
 }
 
 /**
@@ -89,6 +99,15 @@ export default {
       const importantCount = audits.reduce((n, a) => n + a.important.length, 0);
       log.info(`${sheets.length} sheet(s), ${importantCount} !important`);
 
+      const floated = audits.flatMap((a) => a.floats.map((s) => ({ file: a.file, selector: s })));
+      if (floated.length) {
+        ctx.unverified(
+          `${floated.length} rule(s) float and size at once, which is layout done with float scaffolding ` +
+          `(${floated.slice(0, 4).map((f) => f.selector).join(", ")}${floated.length > 4 ? ", …" : ""}). ` +
+          `Flex is the port's shape; performing that rewrite is a person's call, and CSS_STATS.md lists every rule.`
+        );
+      }
+
       const templates = ctx.screens.map((s) => s.template).filter(Boolean);
       if (templates.length) {
         ctx.cssUnmatched = unmatchedSelectors(audits, templates);
@@ -122,6 +141,10 @@ export default {
         if (a.repeated.length) {
           lines.push(`- Declarations repeated four times or more, which is what a token exists for:`);
           for (const [decl, n] of a.repeated.slice(0, 10)) lines.push(`  - \`${decl}\` × ${n}`);
+        }
+        if (a.floats.length) {
+          lines.push(`- Float scaffolding, proposed for flex and left in place:`);
+          for (const s of a.floats.slice(0, 10)) lines.push(`  - \`${s}\` floats and sizes at once`);
         }
         lines.push("");
       }

@@ -1,10 +1,12 @@
 import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
 import { flatten } from "../dsp-routes/parse.js";
 import { pascal } from "../dsp-ir/emit.js";
 import {
   stripServerBlocks, resolveSsi, lowerLegacyHtml, readHead,
   localAssets, imagemapLinks, readFrameset, layoutTables, readHtaccess,
+  performTables,
 } from "./lower.js";
 
 /**
@@ -167,6 +169,22 @@ async function assembleSite(ctx, { kept, framesets, redirects, chrome, relOf, ro
       }
     }
   }
+  // Content hashed asset names, behind a flag because URLs are a contract:
+  // the bytes name the file and every reference the port writes follows.
+  // The note says plainly what the flag knowingly changes.
+  const assetNames = {};
+  if (ctx.config.hashAssets ?? ctx.config["hash-assets"]) {
+    for (const f of ctx.sources.files) {
+      if (!/\.(png|jpe?g|gif|ico|webp|svg|css|woff2?|ttf|otf|eot|pdf|mp[34]|webm|ogg)$/i.test(f.rel)) continue;
+      const bytes = await readFile(f.path).catch(() => null);
+      if (!bytes) continue;
+      const rel = f.rel.replace(/^\.\//, "");
+      const hash = createHash("sha256").update(bytes).digest("hex").slice(0, 8);
+      assetNames[rel] = rel.replace(/(\.[^./]+)$/, `.${hash}$1`);
+    }
+    note(`--hash-assets: ${Object.keys(assetNames).length} asset(s) renamed by their content hash, every reference the port writes rewritten to match. An asset URL somebody bookmarked is the contract this flag knowingly changes; the pages' own addresses are untouched.`);
+  }
+
   // Internal links become the routes they always meant. The route is
   // what the anchor navigates to; the router intercepts the click.
   // A link to a frameset is a link to the place the frameset stood;
@@ -188,7 +206,8 @@ async function assembleSite(ctx, { kept, framesets, redirects, chrome, relOf, ro
       .replace(/(<(?:img|source|video|audio|embed)\b[^>]*\bsrc\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, src, after) => {
         const pathPart = src.split(/[#?]/)[0];
         if (/^[a-z][\w+.-]*:|^\/\/|^data:/i.test(pathPart)) return whole;
-        return `${before}/${resolveLink(fromRel, pathPart, base)}${after}`;
+        const resolved = resolveLink(fromRel, pathPart, base);
+        return `${before}/${assetNames[resolved] ?? resolved}${after}`;
       });
   for (const page of kept) {
     page.screen.template = rewrite(page.screen.template, page.rel, page.head?.base);
@@ -217,6 +236,37 @@ async function assembleSite(ctx, { kept, framesets, redirects, chrome, relOf, ro
     const target = resolveLink(fs.rel, fs.main);
     if (relOf.has(target)) {
       redirects.push({ from: routeOf(fs.rel), to: routeOf(target), kind: "frameset content" });
+    }
+  }
+
+  // A frameset whose panes stood side by side is a split view in period
+  // costume. Proposed with the author's own geometry as evidence; making
+  // that cut is a person's call and the shell decides nothing.
+  for (const fs of framesets) {
+    if (fs.cols && fs.frames.length >= 2) {
+      fs.proposal = `a split layout: cols="${fs.cols}" put ${fs.frames.map((f) => f.name ?? f.src).join(" beside ")}`;
+      note(`${fs.rel} laid its frames side by side (cols="${fs.cols}"). A split view is the port's shape for it; the frames report carries the geometry, and performing the cut is a person's call.`);
+    }
+  }
+
+  // A feed in the tree is the site's own word about which pages are
+  // entries: read and matched to routes, never invented, and evidence the
+  // pagination proposals can stand on.
+  const feedEntries = [];
+  for (const f of ctx.sources.files.filter((f) => /\.(xml|rss|atom)$/i.test(f.rel) && !/sitemap/i.test(f.rel))) {
+    const text = await readFile(f.path, "utf8").catch(() => "");
+    if (!/<(rss|feed)[\s>]/i.test(text)) continue;
+    const hrefs = [
+      ...[...text.matchAll(/<item\b[\s\S]*?<link\s*>([^<]+)<\/link>/gi)].map((m) => m[1].trim()),
+      ...[...text.matchAll(/<entry\b[\s\S]*?<link\b[^>]*\bhref\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1].trim()),
+    ];
+    const entryRoutes = [...new Set(hrefs.map((h) => {
+      const rel = h.replace(/^[a-z][\w+.-]*:\/\/[^/]+/i, "").replace(/^\//, "").split(/[#?]/)[0];
+      return relOf.has(rel) ? routeOf(rel) : null;
+    }).filter(Boolean))];
+    if (entryRoutes.length) {
+      feedEntries.push({ source: f.rel, routes: entryRoutes });
+      note(`${f.rel} declares ${entryRoutes.length} page(s) as entries (${entryRoutes.join(", ")}), which is the site's own word that they are one family.`);
     }
   }
 
@@ -275,10 +325,23 @@ async function assembleSite(ctx, { kept, framesets, redirects, chrome, relOf, ro
   if (localeDirs.size >= 2) {
     const dirs = [...localeDirs.keys()].sort();
     const [first, ...rest] = dirs.map((d) => localeDirs.get(d));
-    const shared = [...first].filter((p) => rest.every((s) => s.has(p)));
+    const shared = [...first].filter((p) => rest.every((s) => s.has(p))).sort();
     if (shared.length) {
-      locales = { dirs, sharedPaths: shared.length };
-      note(`${dirs.join(", ")} hold ${shared.length} page(s) at the same paths and read as one site in ${dirs.length} language(s). A locale parameter (/:locale/...) is the port's shape; merging the trees means choosing a primary language, which is a person's call.`);
+      // The route table, parameterized by locale: every shared path as one
+      // pattern, and every concrete route knowing its siblings so the shell
+      // can say hreflang without merging anything. The trees stay separate;
+      // choosing a primary language is a person's call.
+      const tail = (p) => { const r = routeFor(p); return r === "/" ? "" : r; };
+      locales = {
+        dirs,
+        sharedPaths: shared.length,
+        routes: shared.map((p) => ({ pattern: `/:locale${tail(p)}`, locales: dirs })),
+        alternates: Object.fromEntries(shared.flatMap((p) => dirs.map((d) => [
+          routeFor(`${d}/${p}`),
+          Object.fromEntries(dirs.filter((o) => o !== d).map((o) => [o, routeFor(`${o}/${p}`)])),
+        ]))),
+      };
+      note(`${dirs.join(", ")} hold ${shared.length} page(s) at the same paths and read as one site in ${dirs.length} language(s). The route table carries the /:locale patterns and every page knows its siblings; merging the trees means choosing a primary language, which is a person's call.`);
     }
   }
 
@@ -296,9 +359,12 @@ async function assembleSite(ctx, { kept, framesets, redirects, chrome, relOf, ro
       cssLinks: p.head?.cssLinks ?? [],
       printLinks: p.head?.printLinks ?? [],
       icons: p.head?.icons ?? [],
+      tableOriginals: p.tableOriginals ?? [],
     })),
     queryRoutes,
     locales,
+    feedEntries,
+    assetNames,
     graph: {
       nodes: kept.map((p) => routeOf(p.rel)),
       edges: kept.flatMap((p) => p.links
@@ -377,6 +443,16 @@ export default {
           return local.has(resolved) || local.has(src.replace(/^\.\//, ""));
         });
         if (owned) { log.debug(`${file.rel}: its scripts are in the run`); continue; }
+        // The grid conversion layoutTables proposes, performed only under
+        // the flag, with every original kept beside the component.
+        if (ctx.config.performTables ?? ctx.config["perform-tables"]) {
+          const { html, originals } = performTables(page.screen.template);
+          if (originals.length) {
+            page.screen.template = html;
+            page.tableOriginals = originals;
+            note(`${file.rel}: ${originals.length} layout table(s) performed as CSS grid under --perform-tables. The original markup is kept beside the component for the diff; a table with a header cell was left as the data it is.`);
+          }
+        }
         pages.push({ ...page, rel: file.rel });
       }
       if (!pages.length && !redirects.length) return log.debug("no static pages");

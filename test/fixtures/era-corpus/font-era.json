@@ -1,0 +1,7 @@
+{
+  "label": { "from": 1995, "to": 2002 },
+  "why": "font tags, a spacer gif and latin1 place it before the CSS turn",
+  "files": [
+    { "rel": "index.html", "text": "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\"></head><body><font color=\"red\" size=\"4\">Welcome!</font><img src=\"spacer.gif\" width=\"1\" height=\"1\"></body></html>" }
+  ]
+}

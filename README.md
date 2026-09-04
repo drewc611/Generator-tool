@@ -28,7 +28,7 @@ writes components instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 86 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 483 tests, node --test, no framework
+npm test                     # 494 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -60,8 +60,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 19,575 lines of JavaScript |
-| Tests | 5,561 lines, 483 cases |
+| Every line of the tool | 19,886 lines of JavaScript |
+| Tests | 5,743 lines, 494 cases |
 | Source on disk | src 44 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -709,7 +709,7 @@ src/core/policy.js     the rules, enforced
 src/core/context.js    shared context and logger
 src/cli.js             argument parsing and wiring
 plugins/*/index.js     everything that knows a framework
-skills/                agent playbooks: legacy-to-react, adhd-brief
+skills/                six agent playbooks, from legacy-to-react to port-audit
 docs/PLUGIN-API.md     write your own
 example/legacy         a small Angular app to read
 example/blackbox-app   a running app to use, never read
@@ -719,16 +719,36 @@ media/                 the artwork in this README, out of the package
 
 ## Bundled skills
 
-`skills/` holds playbooks for use with an agent, and they work standalone.
+`skills/` holds six playbooks for use with an agent, and they work
+standalone. The plugins measure; the skills carry the judgment the
+measurements leave to a person.
 
 - **legacy-to-react** is the judgment the tool cannot mechanize: extracting a
   design system from screenshots, the construct by construct framework mapping,
   the API traps, and the parity checklist.
-- **adhd-brief** cuts long answers down and keeps them down. Answer first, three
-  supporting lines, stop. It also cuts input tokens, which is where the spend
-  actually is: one file instead of the directory, no re reading context, no
-  restating tool output. It never trades away a real risk or an exact number for
-  brevity.
+- **adhd-brief** writes for a reader whose attention is expensive, in four
+  layers: reading the reader's state before answering, the answer shape
+  (answer first, three supporting lines, stop), the work behind the reply
+  (one file instead of the directory, no re reading context, no restating
+  tool output — where the token spend actually is), writing people must act
+  on (one action per step, at most four choices, absolute dates, no forward
+  references), and the rewrite recipe for every finding dsp-cognitive
+  measures. It never trades away a real risk or an exact number for brevity.
+- **plain-language** repairs the words that ship inside a product: one verb
+  per action everywhere, links that say where they go, abbreviations
+  expanded once, walls broken at the topic turn, error messages that lead
+  with the fix. Distinct from adhd-brief on purpose: that skill shapes
+  conversation, this one fixes what COGNITIVE.md flagged.
+- **site-port** is the folder of old pages playbook: the flags in the order
+  they pay off, which redirect map spelling each host reads, the deploy
+  checklist, and the judgment calls the engine deliberately leaves open.
+- **doc-port** carries PDF tech documents honestly: what input-pdf proves
+  versus skips, the scanned and encrypted cases, when to trust the reading
+  versus the original, and the document of record rule.
+- **port-audit** decides whether a port ships: the evidence files in the
+  right order, the audit command, the three checks only a person can do,
+  and severity stated without averaging a broken endpoint against pretty
+  pixels.
 
 ## Known gaps
 
@@ -784,9 +804,9 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): four hundred and six features in
-thirty one phases, forty four shipped, three hundred and twenty seven new in the
-current branch, thirty five planned, every status honest. Each open one names
+The whole picture is [ROADMAP.md](ROADMAP.md): four hundred and eleven features in
+thirty two phases, forty four shipped, three hundred and forty three new in the
+current branch, twenty four planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
 portamp is a proprietary product. All rights reserved — see [LICENSE](LICENSE).
