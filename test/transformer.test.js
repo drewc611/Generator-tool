@@ -15,6 +15,8 @@ import {
   crossEntropyLoss,
   trainModularAddition,
   trainReverse,
+  trainSort,
+  sortGradientCheck,
 } from "../plugins/vis-transformer/index.js";
 import { transformCjsToEsm } from "../plugins/output-codemod/index.js";
 import { ROOT, runPipeline } from "./helpers.js";
@@ -74,6 +76,24 @@ test("reversal is learned as a rule and generalizes to sequences it never saw", 
   const again = trainReverse({ steps: 200 });
   const once = trainReverse({ steps: 200 });
   assert.equal(JSON.stringify(again.lossHistory), JSON.stringify(once.lossHistory), "training is deterministic");
+});
+
+test("sorting is learned and generalizes far above chance, gradients proven", () => {
+  const check = sortGradientCheck();
+  assert.ok(check.maxRelError < 1e-3, `the sort model's backprop is correct (${check.maxRelError})`);
+
+  const r = trainSort();
+  assert.ok(r.trainAccuracy >= 0.95, "it fits the training sequences");
+  const chance = 1 / Math.pow(r.symbols, r.L);
+  assert.ok(
+    r.heldOutAccuracy > 0.5 && r.heldOutAccuracy > chance * 10,
+    `held out ${r.heldOutAccuracy} is far above chance ${chance}`
+  );
+  assert.ok(r.heldOutAccuracy <= r.trainAccuracy, "held out is not overstated past the training set");
+
+  const a = trainSort({ steps: 200 });
+  const b = trainSort({ steps: 200 });
+  assert.equal(JSON.stringify(a.lossHistory), JSON.stringify(b.lossHistory), "training is deterministic");
 });
 
 test("modular addition is memorized, and the held out gap is reported honestly", () => {

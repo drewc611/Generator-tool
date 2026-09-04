@@ -657,6 +657,17 @@ jobs:
           if [ -f nomath-out/MATH.md ] || [ -f nomath-out/REVERSE.md ]; then echo "a math task ran unrequested"; exit 1; fi
           rm -rf nomath-out
 
+      - name: the transformer learns to sort and generalizes, honestly
+        run: |
+          node src/cli.js run --src test/fixtures/codemod-site --out sort-out --train-sort true
+          test -f sort-out/SORT.md || { echo "no sort report"; exit 1; }
+          grep -qiE "held out" sort-out/SORT.md || { echo "the sort report has no held out grade"; exit 1; }
+          grep -qiE "generaliz|partial" sort-out/SORT.md || { echo "the sort report does not state the honest verdict"; exit 1; }
+          rm -rf sort-out
+          node src/cli.js run --src test/fixtures/codemod-site --out nosort-out
+          if [ -f nosort-out/SORT.md ]; then echo "the sort task ran unrequested"; exit 1; fi
+          rm -rf nosort-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -668,6 +679,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "525" ]; then
-            echo "ROADMAP.md holds $count entries and claims 525"; exit 1
+          if [ "$count" != "529" ]; then
+            echo "ROADMAP.md holds $count entries and claims 529"; exit 1
           fi

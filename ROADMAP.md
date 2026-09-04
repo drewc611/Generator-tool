@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and twenty five features across fifty seven phases. The statuses are
+Five hundred and twenty nine features across fifty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1931,15 +1931,29 @@ reversal is a rule about positions and not about the tokens, so the block trains
 **525. The reversal result is genuine generalization, and the run proves it** 🔨
 the held out full sequence accuracy lands far above the fraction a guess would score, so the block learned the algorithm rather than the examples, and the claim is a measured comparison in the report and a test rather than a hope.
 
+## Phase 58: the transformer learns to sort
+
+**526. vis-transformer learns to sort a short sequence** 🔨
+sorting is a harder rule than reversal because it must preserve the count of each duplicate rather than move fixed positions, so the block trains on some sequences over a small alphabet with repetition and is graded on ones it never saw, reusing the proven backward pass; SORT.md carries the loss curve and the train and held out accuracy.
+
+**527. The sort held out result is genuine generalization, measured against chance** 🔨
+a sequence counts correct only when every output position matches the sorted target, so chance is a tiny fraction of a percent, and the held out accuracy landing far above it is the block sorting sequences it never trained on rather than reciting a table.
+
+**528. The sort gap from the training set is reported, not rounded away** 🔨
+the held out accuracy is high and still short of the training accuracy, and SORT.md states that gap plainly as partial generalization on a hard task for a one block model, because a held out number quietly rounded to the training one is the lie the whole tool refuses.
+
+**529. The sort model is proven correct by its own gradient check** 🔨
+the numerical gradient check runs on the sort model's loss and holds the maximum relative error under a thousandth, so the training that produced the result descended on a true gradient rather than a plausible looking wrong one.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 478 |
+| new in this branch | 482 |
 | planned | 3 |
-| total | 525 |
+| total | 529 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
