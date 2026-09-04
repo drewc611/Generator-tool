@@ -37,7 +37,8 @@ is worse than no ported screen.
 One flat object passed to every stage handler.
 
 ```js
-ctx.config          { src, shots, out, tokens, only }
+ctx.config          { src, shots, out, artifacts, tokens, only, skip, dryRun, ... }
+                    plus every option the CLI did not recognise, untouched
 ctx.log             info, warn, error, debug, already prefixed with your name
 ctx.policy          the policy object, see below
 

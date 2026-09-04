@@ -63,7 +63,7 @@ test/                  node --test, kernel, policy, translator, end to end
 
 Working end to end. The demo reads the example Angular app, finds one component,
 three endpoints and two interceptors, writes tokens, an endpoint map, a client,
-a React skeleton, a dozen analysis reports, and `PORT_NOTES.md` listing ten
+a React skeleton, a dozen analysis reports, and `PORT_NOTES.md` listing eleven
 unverified items. CI syntax checks every file, runs the pipeline, and asserts
 the secret gate fires.
 

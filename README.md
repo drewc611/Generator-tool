@@ -34,21 +34,21 @@ npm test                     # 430 tests, node --test, no framework
 No install step. No build step. Node 18 or newer and nothing else.
 
 ```
-scan      5 file(s) under ./legacy
-          2 screenshot(s), states: default, empty
+scan      2 screenshot(s), states: default, empty
 extract   1 component(s), 3 call(s), 2 interceptor(s)
 plan      3 distinct endpoint(s)
           tokens ready (density compact, accent #004B87), 1 value(s) measured
           no font or icon set needing a licence check
 emit      1 token pair(s) under AA, 0 of them badly
           1 component(s) emitted, 1 template(s) translated
-verify    parity report written, 7 item(s) unverified
+          states suite written; it reads the emitted components back
+verify    parity report written, 11 item(s) unverified
 
-done  6 file(s) written to ./out
-      7 item(s) could not be verified, see PORT_NOTES.md
+done  28 file(s) written to ./out
+      11 item(s) could not be verified, see PORT_NOTES.md
 ```
 
-Five unverified items on a four file example is the tool working, not failing.
+Eleven unverified items on a tiny example is the tool working, not failing.
 Each one is a thing it declined to guess.
 
 ## The size of it
