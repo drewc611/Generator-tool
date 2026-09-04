@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred features across fifty one phases. The statuses are
+Five hundred and four features across fifty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1844,15 +1844,29 @@ a function passed as an argument three or more callbacks deep is the pyramid of 
 **500. dsp-async finds the long promise chains too, and straightens nothing** 🔨
 a run of three or more `.then` links reads more clearly as a sequence of awaits, and the report names the chains and the pyramids alike as an approximation from the source text, rewriting no control flow, because how an app sequences its work is the port owner's call.
 
+## Phase 52: the transformer, in both senses
+
+**501. vis-transformer runs a real transformer forward pass in pure JavaScript** 🔨
+token embeddings, sinusoidal positions, multi head scaled dot product self attention, softmax, residual and layernorm, and a feed forward block, all in plain arithmetic with no dependency, so the plugin host loads a transformer the same way it loads everything else and the core still does not know what it is.
+
+**502. The transformer's math is proven, and it predicts nothing** 🔨
+the softmax, the layernorm and the attention are held to known answer values by test, the weights are seeded so two runs are byte identical, and the input is a fixed declared sequence, because an untrained forward pass is a demonstration of the mechanism and never a claim about the port; ATTENTION.md draws the attention and says so.
+
+**503. output-codemod is the other transformer, one that only moves what it can prove** 🔨
+a mechanical rewrite of CommonJS to ES modules, performing the default require, the destructured require, the default export and the named export where the form is unambiguous, and writing the transformed file beside the report rather than mutating the source.
+
+**504. The codemod refuses what it cannot prove, out loud** 🔨
+a dynamic `require`, an inline `require`, a multi line `module.exports` or a duplicate export is left verbatim and named in CODEMOD.md as a construct a person must lift by hand, because a wrong rewrite that looks right is exactly the failure this tool exists to avoid.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 453 |
+| new in this branch | 457 |
 | planned | 3 |
-| total | 500 |
+| total | 504 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
