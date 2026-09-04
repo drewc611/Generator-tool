@@ -1,6 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
 import { flatten } from "../dsp-routes/parse.js";
+import {
+  stripServerBlocks, resolveSsi, lowerLegacyHtml, readHead,
+  localAssets, imagemapLinks, readFrameset, layoutTables,
+} from "./lower.js";
 
 /**
  * The reader for a site that never had a framework. A folder of plain pages is
@@ -11,19 +15,38 @@ import { flatten } from "../dsp-routes/parse.js";
  * What disqualifies a page is any sign that something else owns it: a
  * directive, an interpolation, a template tag, or a body that is one mount
  * point for an app. Those pages belong to the reader of their dialect, and
- * claiming them here would port the shell and lose the app.
+ * claiming them here would port the shell and lose the app. A server page
+ * (.php, .asp, .jsp) is different: its blocks are stripped and named, and the
+ * HTML around them is exactly the page the server sent.
+ *
+ * With `--site true` the pages become an application: the shared chrome is
+ * lifted into a layout, internal links become routes, and ctx.site carries
+ * the graph the output-site plugin builds the shell from.
  */
 
 const OWNED = /\bng-[\w-]+=|\bv-(?:if|for|model|show|bind|on|html)\b|\bko-[\w-]+=|\bdata-bind=|\{\{|<%|\{%/;
+const PAGE_EXT = /\.(html?|shtml|php|asp|jsp)$/i;
+const SERVER_EXT = /\.(php|asp|jsp|shtml)$/i;
 
 const pascal = (s) =>
   String(s).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
-export function readPage(text, rel) {
-  if (OWNED.test(text)) return { skip: "another dialect owns it" };
+export function readPage(text, rel, { note = () => {}, resolveInclude = null } = {}) {
+  let source = String(text ?? "");
+  const server = SERVER_EXT.test(rel);
+  if (server) source = resolveSsi(stripServerBlocks(source, note), resolveInclude, note);
+  if (OWNED.test(server ? source : text)) return { skip: "another dialect owns it" };
+  if (!server) source = resolveSsi(source, resolveInclude, note);
 
-  const bodyMatch = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(text);
-  const body = stripStyles(stripScripts(bodyMatch ? bodyMatch[1] : text)).trim();
+  const head = readHead(source);
+
+  // A frameset page is a layout wearing 1996's clothes. Its frames are pages
+  // of their own; the frameset itself maps a route to its content frame.
+  const frameset = readFrameset(source);
+  if (frameset) return { frameset, head, skip: "a frameset; its frames are the pages" };
+
+  const bodyMatch = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(source);
+  const body = lowerLegacyHtml(stripStyles(stripScripts(bodyMatch ? bodyMatch[1] : source)), note).trim();
   if (!body) return { skip: "nothing renders" };
 
   // A body that is one dashed tag is an app shell, and its app is the thing
@@ -40,25 +63,34 @@ export function readPage(text, rel) {
     return { skip: "the body is a mount point for an app" };
   }
 
-  const name = rel.replace(/\.html?$/i, "").split("/").filter((p) => p !== ".").join("-") || "page";
+  const name = rel.replace(PAGE_EXT, "").split("/").filter((p) => p !== ".").join("-") || "page";
   const selector = name.toLowerCase() === "index" ? "home" : name.toLowerCase().replace(/[^\w-]/g, "-");
 
   const links = [];
-  for (const m of body.matchAll(/<a\b[^>]*\bhref\s*=\s*["']([^"'#?]+\.html?)(?:[#?][^"']*)?["']/gi)) {
+  for (const m of body.matchAll(/<a\b[^>]*\bhref\s*=\s*["']([^"'#?]+\.(?:html?|shtml|php|asp|jsp))(?:[#?][^"']*)?["']/gi)) {
     if (!/^[a-z][\w+.-]*:/i.test(m[1])) links.push(m[1]);
   }
+  for (const area of imagemapLinks(body)) links.push(area.href);
 
-  const title = /<title\b[^>]*>([\s\S]*?)<\/title\s*>/i.exec(text)?.[1]?.trim() ?? null;
+  const title = /<title\b[^>]*>([\s\S]*?)<\/title\s*>/i.exec(source)?.[1]?.trim() ?? null;
+
+  const tables = layoutTables(body);
+  if (tables) {
+    note(`${tables} table(s) carry no header cell and read as layout scaffolding. Proposed for CSS grid in the port; the tables are kept until a person makes that cut.`);
+  }
 
   // Scripts the page loads from its own tree mean the behavior is in the run,
   // and the reader of that behavior owns the page. Collected here, judged by
   // the caller against what the run actually holds.
-  const scripts = [...text.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)]
+  const scripts = [...source.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)]
     .map((m) => m[1])
     .filter((src) => !/^[a-z][\w+.-]*:|^\/\//i.test(src));
 
   return {
     scripts,
+    head,
+    assets: localAssets(body, head.cssLinks),
+    imagemap: imagemapLinks(body),
     screen: {
       selector,
       className: pascal(selector),
@@ -66,7 +98,7 @@ export function readPage(text, rel) {
       inputs: [],
       outputs: [],
       template: body,
-      templateOrigin: "a static page",
+      templateOrigin: server ? "a server page, its blocks stripped and named" : "a static page",
       usesNgIf: false,
       usesNgFor: false,
       usesTwoWay: false,
@@ -80,8 +112,43 @@ export function readPage(text, rel) {
 
 /** A page's rel path as the route the site serves it at. */
 export function routeFor(rel) {
-  const clean = "/" + rel.replace(/\.html?$/i, "").replace(/^\.\//, "");
+  const clean = "/" + rel.replace(PAGE_EXT, "").replace(/^\.\//, "");
   return clean.replace(/\/index$/i, "/").replace(/\/+/g, "/") || "/";
+}
+
+/** Resolve a link the way the browser would, against the page's directory
+ * or the <base href> when the page declares one. */
+export function resolveLink(fromRel, href, base = null) {
+  // A <base href> pointing at a full URL resolves outside the run's tree; the
+  // files still live beside the page, so the page's own directory is the base
+  // that can actually be checked, and dead link detection judges the result.
+  if (base && /^[a-z][\w+.-]*:|^\/\//i.test(base)) base = null;
+  const dir = base ? base.replace(/\/[^/]*$/, "").replace(/^\//, "") : fromRel.split("/").slice(0, -1).join("/");
+  const parts = [];
+  for (const piece of [...dir.split("/"), ...String(href).split("/")]) {
+    if (!piece || piece === ".") continue;
+    if (piece === "..") parts.pop();
+    else parts.push(piece);
+  }
+  return parts.join("/");
+}
+
+/**
+ * The chrome shared verbatim across pages: nav, header and footer blocks
+ * that appear on two or more of them. Returned with the pages each block
+ * was seen on, so site mode can lift them and everything else can propose.
+ */
+export function sharedChrome(pages) {
+  const seen = new Map();
+  for (const page of pages) {
+    for (const m of page.screen.template.matchAll(/<(nav|header|footer)\b[\s\S]*?<\/\1\s*>/gi)) {
+      const key = m[0].replace(/\s+/g, " ").trim();
+      const entry = seen.get(key) ?? { tag: m[1].toLowerCase(), html: m[0], on: [] };
+      entry.on.push(page.rel);
+      seen.set(key, entry);
+    }
+  }
+  return [...seen.values()].filter((c) => c.on.length >= 2);
 }
 
 export default {
@@ -90,15 +157,51 @@ export default {
   class: "input",
   setup({ on, log }) {
     on("extract", async (ctx) => {
-      const files = ctx.sources.files.filter((f) => /\.html?$/i.test(f.rel));
+      const files = ctx.sources.files.filter((f) => PAGE_EXT.test(f.rel));
       if (!files.length) return log.debug("no pages");
 
       const local = new Set(ctx.sources.files.map((f) => f.rel.replace(/^\.\//, "")));
+      const notes = [];
+      const note = (t) => { if (!notes.includes(t)) notes.push(t); };
+
+      // SSI resolves the way the server would: from the run's own tree.
+      const bodies = new Map();
+      const resolveInclude = (name) => {
+        const clean = String(name).replace(/^\.?\//, "");
+        return bodies.get(clean) ?? bodies.get([...bodies.keys()].find((k) => k.endsWith(`/${clean}`)) ?? "") ?? null;
+      };
+      for (const f of ctx.sources.files.filter((f) => /\.(inc|html?|shtml|txt)$/i.test(f.rel))) {
+        bodies.set(f.rel.replace(/^\.\//, ""), await readFile(f.path, "utf8").catch(() => null));
+      }
+
       const pages = [];
+      const framesets = [];
+      const redirects = [];
       for (const file of files) {
-        const text = await readFile(file.path, "utf8").catch(() => "");
+        let text = await readFile(file.path, "utf8").catch(() => "");
         if (!text) continue;
-        const page = readPage(text, file.rel);
+        // The page says its own charset. latin1 survives a utf8 read
+        // losslessly enough to detect, then the bytes are decoded as meant.
+        if (/iso-8859-1|windows-1252/i.test(/charset\s*=\s*["']?([\w-]+)/i.exec(text)?.[1] ?? "")) {
+          const bytes = await readFile(file.path).catch(() => null);
+          if (bytes) text = bytes.toString("latin1");
+        }
+        const page = readPage(text, file.rel, { note, resolveInclude });
+        if (page.frameset) {
+          framesets.push({ rel: file.rel, ...page.frameset });
+          note(`${file.rel} is a frameset. Each frame is ported as its own page; the frameset's route points at its content frame, and the frame layout is the site shell's to replace.`);
+          continue;
+        }
+        // A meta refresh is a redirect the server never knew about. The page
+        // exists to bounce, so it becomes a redirect entry, not a screen.
+        if (page.head?.refresh) {
+          const target = /^[a-z][\w+.-]*:|^\/\//i.test(page.head.refresh)
+            ? page.head.refresh
+            : routeFor(resolveLink(file.rel, page.head.refresh, page.head.base));
+          redirects.push({ from: routeFor(file.rel), to: target, kind: "meta refresh" });
+          note(`${file.rel} redirects by meta refresh to ${page.head.refresh}. It is in the redirect map instead of the screens.`);
+          continue;
+        }
         if (page.skip) { log.debug(`${file.rel}: ${page.skip}`); continue; }
         // A page that loads a script from its own tree is that script's page.
         // The behavior is in the run and another reader inventories it; the
@@ -111,22 +214,117 @@ export default {
         if (owned) { log.debug(`${file.rel}: its scripts are in the run`); continue; }
         pages.push({ ...page, rel: file.rel });
       }
-      if (!pages.length) return log.debug("no static pages");
+      if (!pages.length && !redirects.length) return log.debug("no static pages");
 
-      const bySelector = new Map(pages.map((p) => [p.rel, p.screen.selector]));
-      for (const page of pages) ctx.screens.push(page.screen);
+      // Two pages with the same body are one page with two addresses: the
+      // first keeps the screen, the rest become redirects to it.
+      const byBody = new Map();
+      const kept = [];
+      for (const page of pages) {
+        const body = page.screen.template.replace(/\s+/g, " ").trim();
+        const first = byBody.get(body);
+        if (first) {
+          redirects.push({ from: routeFor(page.rel), to: routeFor(first.rel), kind: "duplicate page" });
+          note(`${page.rel} is byte identical to ${first.rel}. One screen is ported; the other address redirects to it.`);
+          continue;
+        }
+        byBody.set(body, page);
+        kept.push(page);
+      }
+
+      const relOf = new Map(kept.map((p) => [p.rel.replace(/^\.\//, ""), p]));
+      const routeOf = (rel) => routeFor(rel);
+
+      /* ------------------------------------------------ the site, assembled */
+      let chrome = sharedChrome(kept);
+      if (ctx.config.site) {
+        // Performed here, proposed below: the shared chrome leaves the pages
+        // and becomes the layout the site shell wraps every route in.
+        for (const piece of chrome) {
+          for (const page of kept) {
+            if (page.screen.template.includes(piece.html)) {
+              page.screen.template = page.screen.template.replace(piece.html, "").trim();
+            }
+          }
+        }
+        // Internal links become the routes they always meant. The route is
+        // what the anchor navigates to; the router intercepts the click.
+        const rewrite = (html, fromRel, base) =>
+          html.replace(/(<(?:a|area)\b[^>]*\bhref\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, href, after) => {
+            const [pathPart, tail = ""] = [href.split(/([#?].*)$/)[0], /([#?].*)$/.exec(href)?.[1]];
+            if (/^[a-z][\w+.-]*:|^\/\//i.test(pathPart) || !PAGE_EXT.test(pathPart)) return whole;
+            const target = resolveLink(fromRel, pathPart, base);
+            if (!relOf.has(target)) return whole;
+            return `${before}${routeOf(target)}${tail}${after}`;
+          });
+        for (const page of kept) {
+          page.screen.template = rewrite(page.screen.template, page.rel, page.head?.base);
+        }
+        chrome = chrome.map((c) => ({ ...c, html: rewrite(c.html, kept[0]?.rel ?? "", null) }));
+
+        // Old addresses keep working: every page's .html path redirects to
+        // its route, because the address bar is half of the contract.
+        for (const page of kept) {
+          const old = "/" + page.rel.replace(/^\.\//, "");
+          if (old !== routeOf(page.rel)) redirects.push({ from: old, to: routeOf(page.rel), kind: "extension dropped" });
+        }
+
+        // Page families like news-1, news-2 are one screen and a parameter
+        // in everything but the filenames. Proposed, because merging them
+        // means deciding which copy is the template.
+        const families = new Map();
+        for (const page of kept) {
+          const m = /^(.*?)[-_]?(\d+)$/.exec(page.screen.selector);
+          if (m && m[1]) families.set(m[1], [...(families.get(m[1]) ?? []), page.screen.selector]);
+        }
+        const pagination = [...families.entries()].filter(([, list]) => list.length >= 2)
+          .map(([stem, list]) => ({ stem, pages: list }));
+        for (const family of pagination) {
+          note(`${family.pages.length} page(s) (${family.pages.join(", ")}) look like one screen paged by filename. A parameterized route (/${family.stem}/:page) is the port's shape; merging them means choosing the template, which is a person's call.`);
+        }
+
+        ctx.site = {
+          pages: kept.map((p) => ({
+            rel: p.rel,
+            route: routeOf(p.rel),
+            selector: p.screen.selector,
+            className: p.screen.className,
+            title: p.screen.title,
+            description: p.head?.description ?? null,
+            og: p.head?.og ?? {},
+            assets: p.assets ?? [],
+            cssLinks: p.head?.cssLinks ?? [],
+          })),
+          graph: {
+            nodes: kept.map((p) => routeOf(p.rel)),
+            edges: kept.flatMap((p) => p.links
+              .map((l) => resolveLink(p.rel, l, p.head?.base))
+              .filter((t) => relOf.has(t))
+              .map((t) => [routeOf(p.rel), routeOf(t)])),
+          },
+          chrome,
+          redirects,
+          pagination,
+          frames: framesets,
+          deadLinks: kept.flatMap((p) => p.links
+            .map((l) => ({ from: p.rel, target: resolveLink(p.rel, l, p.head?.base) }))
+            .filter((x) => !relOf.has(x.target))),
+        };
+      }
+
+      for (const page of kept) ctx.screens.push(page.screen);
 
       // Links between pages are the route table nobody wrote down. It is only
       // claimed when no declared table exists; a real router outranks
       // inference from anchors.
       if (!ctx.routes) {
-        const table = [];
-        const dir = (rel) => rel.split("/").slice(0, -1).join("/");
-        for (const page of pages) {
-          table.push({ path: routeFor(page.rel), component: page.screen.className, redirectTo: null, lazy: false, file: page.rel, children: [] });
+        const table = kept.map((page) => ({
+          path: routeOf(page.rel), component: page.screen.className, redirectTo: null, lazy: false, file: page.rel, children: [],
+        }));
+        for (const page of kept) {
           for (const link of page.links) {
-            const target = [dir(page.rel), link].filter(Boolean).join("/").replace(/\/+/g, "/").replace(/^\.\//, "");
-            if (!bySelector.has(target) && !bySelector.has(link)) {
+            const target = resolveLink(page.rel, link, page.head?.base);
+            if (!relOf.has(target)) {
               ctx.unverified(`${page.rel} links to ${link}, which is not a page in this run. The link will dangle in the port.`);
             }
           }
@@ -138,7 +336,7 @@ export default {
       // declare. The action and the field names are in the markup; where they
       // go afterwards is the server's business, and the note says which.
       let forms = 0;
-      for (const page of pages) {
+      for (const page of kept) {
         for (const m of page.screen.template.matchAll(/<form\b([^>]*)>([\s\S]*?)<\/form>/gi)) {
           const action = /action\s*=\s*["']([^"']+)["']/i.exec(m[1])?.[1];
           const method = (/method\s*=\s*["'](\w+)["']/i.exec(m[1])?.[1] ?? "GET").toUpperCase();
@@ -159,28 +357,34 @@ export default {
       }
       if (forms) log.info(`${forms} form submission(s) read as API calls`);
 
-      // The same nav on every page is a layout component nobody declared.
-      // Proposed, not performed: the pages keep their chrome, and the note
-      // names the consolidation.
-      const chrome = new Map();
-      for (const page of pages) {
-        for (const m of page.screen.template.matchAll(/<(nav|header|footer)\b[\s\S]*?<\/\1\s*>/gi)) {
-          const key = m[0].replace(/\s+/g, " ").trim();
-          const entry = chrome.get(key) ?? { tag: m[1].toLowerCase(), count: 0 };
-          entry.count += 1;
-          chrome.set(key, entry);
+      // The action leaves the markup in every mode: an endpoint in a
+      // component is the exact thing the endpoint gate exists to stop, and
+      // the call is already in the API map where the client owns it. The
+      // note names the wiring left to do, because a silent cut would be a
+      // guess about intent.
+      if (forms) {
+        for (const page of kept) {
+          page.screen.template = page.screen.template.replace(/(<form\b[^>]*?)\s+action\s*=\s*["']([^"']+)["']/gi, (whole, before, action) => {
+            if (/^(mailto:|javascript:|#)/i.test(action)) return whole;
+            ctx.unverified(`${page.rel}: the form's action (${action}) moved to the API map. Wire its onSubmit to the generated client; the fields travel as they did.`);
+            return before;
+          });
         }
       }
-      for (const { tag, count } of chrome.values()) {
-        if (count >= 2) {
+
+      // Without site mode the consolidation stays a proposal: the pages keep
+      // their chrome, and the note names the cut a person could make.
+      if (!ctx.config.site) {
+        for (const { tag, on: where } of chrome) {
           ctx.note(
-            `The same <${tag}> appears verbatim on ${count} of ${pages.length} page(s). ` +
-              `Port it once as a layout component; each page keeps its copy until a person makes that cut.`
+            `The same <${tag}> appears verbatim on ${where.length} of ${kept.length} page(s). ` +
+              `Port it once as a layout component; each page keeps its copy until a person makes that cut. --site true makes it.`
           );
         }
       }
 
-      log.info(`${pages.length} static page(s)`);
+      for (const n of notes) ctx.unverified(n);
+      log.info(`${kept.length} static page(s)${ctx.config.site ? `, the site assembled: ${ctx.site.graph.edges.length} link(s), ${redirects.length} redirect(s)` : ""}`);
     });
   },
 };

@@ -705,6 +705,35 @@ function buildElement(node, d, ctx, sw = null) {
       for (const e of styleEntries(value)) styles.push({ kind: "declaration", property: e.property, literal: e.value });
       continue;
     }
+    // Plain HTML had events before any framework did. An inline onclick is
+    // an event in every dialect, and a javascript: href was never a location,
+    // so both become the handler they always were.
+    const inline = /^on(abort|blur|change|click|contextmenu|dblclick|drag|dragend|dragenter|dragleave|dragover|dragstart|drop|error|focus|input|keydown|keypress|keyup|load|mousedown|mousemove|mouseout|mouseover|mouseup|reset|scroll|select|submit|touchend|touchmove|touchstart|unload|wheel)$/.exec(name.toLowerCase());
+    if (inline && value) {
+      const code = value
+        .replace(/^\s*return\s+/, "")
+        .replace(/;?\s*return\s+(true|false)\s*;?\s*$/, "")
+        .replace(/[;\s]+$/, "")
+        .trim();
+      if (code) events.push({ name: inline[1], handler: ctx.expr(code), modifiers: [] });
+      continue;
+    }
+    if (name.toLowerCase() === "href" && /^\s*javascript:/i.test(value ?? "")) {
+      const code = value.replace(/^\s*javascript:\s*/i, "").replace(/^void\(0?\);?$/, "").replace(/[;\s]+$/, "").trim();
+      if (code) events.push({ name: "click", handler: ctx.expr(code), modifiers: [] });
+      continue;
+    }
+
+    // The font era wrote style as attributes. Each one has an exact CSS
+    // meaning, so it is carried as the style it was, not dropped.
+    const lower = name.toLowerCase();
+    if (lower === "bgcolor" && value) { styles.push({ kind: "declaration", property: "background-color", literal: value }); continue; }
+    if (lower === "align" && value && !/^(img|input|iframe|object|embed)$/i.test(node.tag)) {
+      styles.push({ kind: "declaration", property: "text-align", literal: value.toLowerCase() });
+      continue;
+    }
+    if (lower === "valign" && value) { styles.push({ kind: "declaration", property: "vertical-align", literal: value.toLowerCase() }); continue; }
+
     if (value === null) attrs.push({ name, kind: "flag" });
     else if (/\{\{/.test(value)) attrs.push({ name, kind: "template", parts: interpolate(value, ctx.expr) });
     else attrs.push({ name, kind: "static", value });

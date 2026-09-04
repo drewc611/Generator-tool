@@ -90,10 +90,23 @@ const COMPONENT = ({ Name, props, notes, origin, body, models, collection, refer
     })
     .join("\n");
 
-  const empty =
+  // A screen that binds no collection has no data to be empty of. Guarding
+  // on a prop it does not take would throw instead; the comment records the
+  // decision so the states suite can see it was made, not missed.
+  const test =
     collection === "data"
       ? "!data || (Array.isArray(data) && data.length === 0)"
       : `!${collection} || ${collection}.length === 0`;
+  const empty = props.includes(collection.split(".")[0])
+    ? `  if (${test})
+    return (
+      <div style={{ padding: T.space[5], textAlign: "center", color: T.color.inkMuted }}>
+        Nothing to show yet.
+      </div>
+    );
+`
+    : `  // No collection is bound, so the empty state cannot occur on this screen.
+`;
 
   const imports = referenced.map((name) => `import ${name} from "../${name}/${name}.jsx";`).join("\n");
   return `import React${models.length ? ", { useState }" : ""} from "react";
@@ -119,13 +132,7 @@ ${state ? state + "\n" : ""}  if (loading) return <div role="status" style={{ pa
       </div>
     );
 
-  if (${empty})
-    return (
-      <div style={{ padding: T.space[5], textAlign: "center", color: T.color.inkMuted }}>
-        Nothing to show yet.
-      </div>
-    );
-
+${empty}
   return (
     <div style={{ padding: T.space[3], color: T.color.ink, background: T.color.surface }}>
 ${body ?? PLACEHOLDER(origin)}

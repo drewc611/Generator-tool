@@ -123,7 +123,10 @@ function attributes(node, ctx) {
     if (changeLike.includes(event)) continue;
     const base = camel(event.name);
     const on = `on${base.charAt(0).toUpperCase()}${base.slice(1)}`;
-    const handler = guardHandler(event.name, event.handler, event.modifiers, ctx?.note);
+    let handler = guardHandler(event.name, event.handler, event.modifiers, ctx?.note);
+    // An inline handler from the old web can be a statement list. A list is
+    // not an expression, so an arrow needs the block form around it.
+    if (/;/.test(handler) && !/^\{/.test(handler)) handler = `{ ${handler.replace(/[;\s]+$/, "")}; }`;
     out.push(`${on}={${/\bevent\b/.test(handler) ? `(event) => ${handler}` : `() => ${handler}`}}`);
   }
 

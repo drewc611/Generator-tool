@@ -16,7 +16,12 @@ export default {
   class: "general",
   setup({ on, log, policy }) {
     on("extract", async (ctx) => {
+      // Binary formats cannot carry a secret these patterns could name, and
+      // scanning their bytes decoded as text invents matches. Every format
+      // that is text, however obscure, still goes through the gate.
+      const binary = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|otf|eot|mp[34]|webm|ogg|wav|pdf|zip)$/i;
       for (const f of ctx.sources.files) {
+        if (binary.test(f.rel)) continue;
         const text = await readFile(f.path, "utf8").catch(() => "");
         policy.scanForSecrets(text, f.rel);
       }
@@ -31,7 +36,7 @@ export default {
       // Every emitted component, whichever target wrote it. src/api is the
       // one place endpoints belong, so it is exactly the tree not checked.
       const components = ctx.written.filter(
-        (f) => (f.startsWith("src/features/") || f.startsWith("src/elements/")) && /\.(jsx|tsx|vue|svelte|js)$/.test(f)
+        (f) => (f.startsWith("src/features/") || f.startsWith("src/elements/") || f.startsWith("src/app/")) && /\.(jsx|tsx|vue|svelte|js)$/.test(f)
       );
       for (const rel of components) {
         const text = await readFile(join(ctx.config.out, rel), "utf8").catch(() => "");

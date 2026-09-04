@@ -69,7 +69,9 @@ function attributes(node) {
     else out.push(`bind:value={${target}}`);
   }
   for (const event of node.events) {
-    const handler = guardHandler(event.name, event.handler, event.modifiers);
+    let handler = guardHandler(event.name, event.handler, event.modifiers);
+    // A statement list from an inline handler needs the block form of an arrow.
+    if (/;/.test(handler) && !/^\{/.test(handler)) handler = `{ ${handler.replace(/[;\s]+$/, "")}; }`;
     out.push(`on:${event.name}={${/\bevent\b/.test(handler) ? `(event) => ${handler}` : `() => ${handler}`}}`);
   }
   styleAttribute(node.styles, out);

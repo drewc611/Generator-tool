@@ -3,7 +3,14 @@ import { join, relative, extname, dirname, resolve, sep } from "node:path";
 import { loadTypeScript, readSourceFile } from "./ast.js";
 import { readWithRegex } from "./regex.js";
 
-const KEEP = new Set([".ts", ".js", ".html", ".scss", ".css", ".vue"]);
+// One walk serves every reader, so the set spans every era this tool reads:
+// framework sources, the old web's server pages and includes, and the assets
+// a page renders, which the site engine copies through as the bytes they are.
+const KEEP = new Set([
+  ".ts", ".js", ".html", ".scss", ".css", ".vue",
+  ".htm", ".shtml", ".php", ".asp", ".jsp", ".inc", ".txt", ".xml",
+  ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp", ".woff", ".woff2",
+]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
 
