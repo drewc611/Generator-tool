@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and sixty four features across forty two phases. The statuses are
+Four hundred and sixty eight features across forty three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-555 tests, on Node 18, 20 and 22, and on Windows in CI.
+558 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1674,14 +1674,33 @@ the flattened redirect map lands in `nuxt.config.ts` as `routeRules` with a 301 
 the redirect map lands in `src/hooks.server.js`, where SvelteKit throws a 301 for a retired address, because SvelteKit has no config redirect table and the hook is where that decision belongs; the run asks for --svelte when the components are not there.
 
 
+## Phase 43 · 6.4 · The port measured whole
+
+*A hundred plugins measure a piece each; two more measure the whole. general-size
+weighs what the port ships and holds it to a budget the run enforces, and
+vis-graph draws the architecture the reports describe in prose as one picture.*
+
+**465. general-size weighs the port** 🔨
+what the run wrote, by kind, reading the bytes on disk: components, the api client, tokens and styles, the host arrangement, each with its share; reports and tests are excluded because they do not ship and their volatile files would make the total non deterministic.
+
+**466. --max-kb is the budget the run enforces** 🔨
+the component code over the ceiling fails the run, the same shape as the unverified ceiling, so a migration cannot quietly trade a small legacy bundle for a large modern one; the number to watch is the component share, and --components is the cheapest weight a port can lose.
+
+**467. vis-graph draws the shape** 🔨
+every screen, a solid arrow where one screen's template names another (the same reference every target resolves to a child component), and a dotted arrow where an endpoint call was recorded from a screen's own file, emitted as a Mermaid flowchart in GRAPH.md that renders where the reports are read.
+
+**468. The graph is the run's own facts, not a guess** 🔨
+a composition edge is a tag that exists in a template and an endpoint edge is a call the reader attributed to a screen; a call it could not place is in the endpoint map, not invented onto an arrow, the same measure don't guess contract every plugin keeps.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 417 |
+| new in this branch | 421 |
 | planned | 3 |
-| total | 464 |
+| total | 468 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

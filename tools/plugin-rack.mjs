@@ -39,6 +39,8 @@ const DOES = {
   "dsp-ir": "one representation in the middle, so a target costs a printer",
   "dsp-apistyle": "the API's house style, so the port keeps it, quirks included",
   "general-history": "the run over time, counts only, so trends have a table",
+  "general-size": "the port weighed by kind, with --max-kb the budget the run enforces",
+  "vis-graph": "the port's shape drawn: screens, what composes what, which endpoints each calls",
   "output-preact": "the same proven JSX, a tenth the runtime",
   "output-solid": "props as props.x and signals as x(), because Solid punishes spelling",
   "output-alpine": "behavior written on the markup, for apps that never wanted a build",

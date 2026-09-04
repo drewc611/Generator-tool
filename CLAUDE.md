@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and five in five classes, and the core has never learned
+Plugins that ship, a hundred and seven in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -96,8 +96,8 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-alpine  output-cem  output-postman  output-curl
          output-fixtures  output-readme  output-ci  output-site
          output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit
-vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip
-general  general-policy  general-authorization  general-license
+vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph
+general  general-policy  general-authorization  general-license  general-size
          general-doctor  general-scaffold  general-watch  general-history
 ```
 
@@ -292,6 +292,18 @@ because it has no config redirect table. Like output-next and output-remix,
 neither ports a component twice: the files under src/features are the single
 source, imported not copied, and each asks for --vue or --svelte when the
 components it arranges are not there. test/metaframeworks.test.js holds both.
+
+6.4 measures the port whole. general-size weighs what the run wrote by kind,
+reading the bytes on disk: components, the api client, tokens and styles, the
+host arrangement, each with its share; reports and tests are excluded because
+they do not ship and their volatile files would make the total non
+deterministic. With `--max-kb` it becomes a budget the run enforces, the same
+shape as the unverified ceiling: component code over the ceiling fails the
+run. vis-graph draws the architecture the reports describe in prose as one
+Mermaid flowchart in GRAPH.md, a solid arrow where one screen's template names
+another and a dotted one where an endpoint call was recorded from a screen's
+own file, both the run's own facts and neither invented. test/finale.test.js
+holds both.
 
 ## What is honestly incomplete
 
