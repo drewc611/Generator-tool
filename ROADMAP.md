@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and forty four features across thirty eight phases. The statuses are
+Four hundred and fifty features across thirty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-540 tests, on Node 18, 20 and 22, and on Windows in CI.
+543 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1581,14 +1581,42 @@ the tracking vendors the source loaded, recognised by signature across fifteen o
 none is carried into the output and each is reported as a consent decision a person makes on purpose, especially under a regime that may not have existed when the markup was written; the identifier a tag carries is shown by its prefix only, the same caution the secret gate keeps.
 
 
+## Phase 39 · 6.0 · portamp reads what it writes
+
+*Every reader lowers a legacy dialect onto the IR. 6.0 adds the one that
+reads React, the language portamp most often emits, and closes the loop: a
+React front end becomes a source the tool can port onward, and the emitted
+React can be read back and checked against what it came from. The claim that
+the port keeps the shape it was given stops being a claim and becomes a
+comparison that fails out loud.*
+
+**445. input-react lowers JSX onto the dialect** 🔨
+a React function component's props become inputs, its `on*` props become outputs, and its JSX return is lowered onto the same AngularJS dialect every other reader targets, so a React screen reaches the translator, the endpoint map and every emitter as any other does.
+
+**446. The JSX shapes with an inverse are reversed** 🔨
+`{cond && (<x/>)}` becomes a conditional, `{list.map((item) => <x/>)}` a loop, `{expr}` in text an interpolation, an input with value and onChange a model, an event prop an event, and className a class; a ternary or anything with no clean inverse is left as written and named, never guessed.
+
+**447. vis-roundtrip reads the port back** 🔨
+each screen's template is emitted to React by output-react and read back by input-react, and the structure that returns is compared to the structure that went in: the elements, the conditionals, the loops, the models and the set of tags.
+
+**448. A drift fails out loud** 🔨
+where the round trip returns the same structure the round trip held and the port provably kept its shape; where it does not, ROUNDTRIP.md names the drift per screen and the run reports it, rather than trusting the emit and the read to agree.
+
+**449. Whitespace is not drift** 🔨
+emitting to JSX and reading back re-splits text around interpolations and indentation, so text node count is excluded from the comparison and only the structure that must survive is held, which is the difference between a check that means something and one that always fails.
+
+**450. The loop closes both ways** 🔨
+because React lowers onto the IR like any dialect, a React app is now a source portamp ports to Vue, Svelte or a custom element, and the same machinery that proves Angular and Vue emit identical output proves the emitted React reads back to where it started.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 397 |
+| new in this branch | 403 |
 | planned | 3 |
-| total | 444 |
+| total | 450 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

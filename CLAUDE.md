@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, ninety six in five classes, and the core has never learned
+Plugins that ship, ninety eight in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -82,7 +82,7 @@ input    input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot
+         input-blackbox  input-polymer  input-riot  input-react
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
@@ -96,7 +96,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-alpine  output-cem  output-postman  output-curl
          output-fixtures  output-readme  output-ci  output-site
          output-next  output-remix  output-astro  output-qwik
-vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence
+vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip
 general  general-policy  general-authorization  general-license
          general-doctor  general-scaffold  general-watch  general-history
 ```
@@ -237,6 +237,22 @@ the source loaded, fifteen recognised by signature, and treats re-adding any
 of them as a consent decision rather than a default; none is carried into
 the output, and the identifier a tag carries is shown by its prefix only,
 the caution the secret gate keeps. test/machines.test.js holds both.
+
+6.0 makes portamp read what it writes. input-react is the first reader of a
+modern framework: a React function component's props become inputs, its `on*`
+props outputs, and its JSX return lowers onto the same AngularJS dialect every
+other reader targets, reversing the shapes that have an inverse (`{cond &&
+(<x/>)}` a conditional, `{list.map(...)}` a loop, `{expr}` interpolation, an
+input with value and onChange a model, an event prop an event) and naming a
+ternary or anything else rather than guessing. vis-roundtrip then closes the
+loop: each screen's template is emitted to React by output-react and read
+back by input-react, and the structure that returns (elements, conditionals,
+loops, models, tags, whitespace set aside) is compared to what went in.
+ROUNDTRIP.md names any drift per screen and the run reports it, so the claim
+that the port keeps its shape is a comparison that fails out loud rather than
+a promise. A React app is now also a source portamp ports onward. Values are
+not proven by a round trip, only structure; that is what can be checked
+without a person, so it is. test/roundtrip.test.js holds it.
 
 ## What is honestly incomplete
 

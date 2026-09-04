@@ -453,6 +453,17 @@ jobs:
           if grep -qE "ABC1234567|123456789012345" m-out/ANALYTICS.md; then echo "a full tracking id was printed"; exit 1; fi
           rm -rf m-out
 
+      - name: portamp reads what it writes, and the round trip holds
+        run: |
+          node src/cli.js run --src test/fixtures/react-app --out rt-out
+          grep -q "product-card" rt-out/ROUNDTRIP.md || { echo "the React component was not read"; exit 1; }
+          if grep -q "drifted" rt-out/ROUNDTRIP.md; then echo "a React source did not round trip"; exit 1; fi
+          # The example's own screen must round trip without drift.
+          node src/cli.js run --src example/legacy --shots example/screenshots --out rt2-out
+          grep -q "app-orders" rt2-out/ROUNDTRIP.md || { echo "the screen was not round tripped"; exit 1; }
+          if grep -q "drifted" rt2-out/ROUNDTRIP.md; then echo "the emitted React did not read back to its own structure"; exit 1; fi
+          rm -rf rt-out rt2-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -464,6 +475,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "444" ]; then
-            echo "ROADMAP.md holds $count entries and claims 444"; exit 1
+          if [ "$count" != "450" ]; then
+            echo "ROADMAP.md holds $count entries and claims 450"; exit 1
           fi
