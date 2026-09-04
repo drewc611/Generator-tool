@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and thirty features across thirty five phases. The statuses are
+Four hundred and thirty six features across thirty six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-526 tests, on Node 18, 20 and 22, and on Windows in CI.
+532 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1513,14 +1513,41 @@ a shape whose every slot agrees on every screen is an exact repeat, not a parame
 the parameterized components are named in PROPS.md with their props and evidence and nothing is emitted from them: which slots are allowed to vary is a decision about the product, so the tool measures the shape and leaves the call to a person.
 
 
+## Phase 36 · 5.2 · Two more of the old web
+
+*Polymer and Riot read into the one screen shape. Each had its own binding
+spelling and none of it survives into the target; it lowers onto the
+AngularJS attribute dialect the rest of the tool already reads, so the
+translator, the endpoint map and every emitter treat a Polymer element and a
+Riot tag exactly as they treat an Angular component.*
+
+**431. input-polymer reads a dom-module** 🔨
+the `<dom-module id>` and its inner `<template>` become a screen, its declared `properties` become inputs, `fire`/`dispatchEvent` names become outputs, and `<iron-ajax>` urls and `fetch` calls join the endpoint map.
+
+**432. Polymer bindings lowered** 🔨
+`[[x]]` one way and `{{x}}` two way become interpolation and, on a form control, a model; `on-event` becomes the dialect's event calling the method; `<template is="dom-if">` and `<template is="dom-repeat">` become ng-container conditionals and loops, and a two way binding with no honest equivalent is said, not faked.
+
+**433. input-riot reads a tag** 🔨
+a `.riot` or `.tag` file's root custom tag becomes a screen, `opts` and `this.props` reads become inputs, `this.trigger` names become outputs, and its `<script>` and `<style>` are set aside from the markup.
+
+**434. Riot bindings lowered** 🔨
+`{ expr }` becomes interpolation without doubling an already converted brace, `each={ x in xs }` becomes a loop, `if`/`show`/`hide` become the conditional directives, and `on<event>={ handler }` becomes the dialect's event.
+
+**435. Both land on the dialect, framework blind** 🔨
+the lowered markup is read by detectDialect as AngularJS and travels the unchanged pipeline; a Polymer element and a Riot tag each port to React, Vue and Svelte with no printer taught either framework's name, the same claim the Angular and Vue readers make.
+
+**436. The gaps are named, never guessed** 🔨
+a delimiter a person changed, an event with no dialect equivalent, a structural template left open, or an expression the reader cannot place is reported through ctx.unverified rather than lowered into something that only looks right.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 383 |
+| new in this branch | 389 |
 | planned | 3 |
-| total | 430 |
+| total | 436 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

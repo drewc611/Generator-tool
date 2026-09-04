@@ -58,6 +58,8 @@ const DOES = {
   "dsp-components": "blocks two screens repeat, lifted into one shared component",
   "dsp-props": "blocks that share a shape but differ in words, proposed as one with props",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
+  "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
+  "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",
   "output-next": "the site model as a Next app directory, components imported not copied",
   "output-remix": "the site as route modules, retired addresses as loaders that 301",
   "dsp-state": "where state should live, argued from what each screen reads",

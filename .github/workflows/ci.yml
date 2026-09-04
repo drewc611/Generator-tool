@@ -423,6 +423,16 @@ jobs:
           if ls props-out/src/features 2>/dev/null | grep -qE "PortShape|PortThe"; then echo "a parameterized proposal was lifted, but it must not be"; exit 1; fi
           rm -rf props-out
 
+      - name: a Polymer element and a Riot tag port through the unchanged pipeline
+        run: |
+          node src/cli.js run --src test/fixtures/polymer --out poly-out
+          grep -q "user.roles.map(" poly-out/src/features/UserCard/UserCard.jsx || { echo "the dom-repeat did not become a loop"; exit 1; }
+          if grep -qE "\[\[|dom-repeat" poly-out/src/features/UserCard/UserCard.jsx; then echo "Polymer syntax leaked into the port"; exit 1; fi
+          node src/cli.js run --src test/fixtures/riot --out riot-out
+          grep -q "users.map(" riot-out/src/features/UserList/UserList.jsx || { echo "the each did not become a loop"; exit 1; }
+          if grep -qE "each=|onclick=" riot-out/src/features/UserList/UserList.jsx; then echo "Riot syntax leaked into the port"; exit 1; fi
+          rm -rf poly-out riot-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -434,6 +444,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "430" ]; then
-            echo "ROADMAP.md holds $count entries and claims 430"; exit 1
+          if [ "$count" != "436" ]; then
+            echo "ROADMAP.md holds $count entries and claims 436"; exit 1
           fi

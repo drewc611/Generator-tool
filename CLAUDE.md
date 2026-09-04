@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, ninety in five classes, and the core has never learned
+Plugins that ship, ninety two in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -82,7 +82,7 @@ input    input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox
+         input-blackbox  input-polymer  input-riot
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
@@ -202,6 +202,18 @@ a prop with the values it observed. A shape whose every slot agrees is an
 exact repeat and left to dsp-components; the rest land in PROPS.md as
 parameterized proposals, never lifted, because which slots are allowed to
 vary is a decision about the product. test/props.test.js holds it.
+
+5.2 reads two more of the old web. input-polymer takes a `<dom-module>` with
+its inner `<template>`, its declared `properties` as inputs and its
+`fire`/`dispatchEvent` names as outputs; input-riot takes a `.riot` or `.tag`
+file's root custom tag, its `opts` and `this.props` reads as inputs and its
+`this.trigger` names as outputs. Neither survives into the target as itself:
+Polymer's `[[x]]`/`{{x}}`/`on-event`/`dom-if`/`dom-repeat` and Riot's `{ x }`/
+`each`/`if`/`on<event>` are lowered onto the AngularJS attribute dialect the
+rest of the tool already reads, so detectDialect picks them up and the
+translator, the endpoint map and every emitter treat them as any other
+component. Where a binding has no honest equivalent the lowering says so
+through ctx.unverified rather than inventing one. test/oldweb.test.js holds it.
 
 ## What is honestly incomplete
 
