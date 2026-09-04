@@ -114,7 +114,7 @@ function within(base, requested) {
   return rel && !rel.startsWith("..") && !rel.startsWith(sep) ? full : null;
 }
 
-export async function serve({ outDir, shotsDir, port = 4321, log = console }) {
+export async function serve({ outDir, shotsDir, port = 4321, log = console, rerun = null }) {
   const runPath = join(outDir, ".portamp", "run.json");
   const shell = await readFile(join(here, "app.html"), "utf8");
 
@@ -127,6 +127,20 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console }) {
 
     try {
       if (url.pathname === "/") return send(200, TYPES[".html"], shell);
+
+      // The one thing the UI may cause: running the tool again. It still does
+      // not edit a file, and the pipeline remains the only thing that writes.
+      if (url.pathname === "/rerun" && req.method === "POST") {
+        if (!rerun) return send(501, TYPES[".json"], '{"error":"this server was started without a way to re run"}');
+        const started = Date.now();
+        try {
+          await rerun();
+          return send(200, TYPES[".json"], JSON.stringify({ ok: true, ms: Date.now() - started }));
+        } catch (err) {
+          // A policy stop is a result, not a crash. The UI shows it.
+          return send(200, TYPES[".json"], JSON.stringify({ ok: false, error: err.message, ms: Date.now() - started }));
+        }
+      }
       if (url.pathname === "/run.json") return send(200, TYPES[".json"], await readFile(runPath, "utf8"));
 
       if (url.pathname.startsWith("/shots/")) {
@@ -206,6 +220,7 @@ export default {
           shotsDir: config.shots,
           port: Number(args.port) || 4321,
           log,
+          rerun: runPipeline,
         });
         if (!openBrowser(address)) log.info("could not open a browser, open that address yourself");
 

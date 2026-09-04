@@ -86,6 +86,16 @@
     border-right: 1px solid var(--edge-lo); border-bottom: 1px solid var(--edge-lo);
   }
   .key.done { color: var(--p-hi); }
+  .key { cursor: pointer; user-select: none; }
+  .key:hover { color: var(--amber); }
+  .key[aria-pressed="true"] {
+    color: var(--amber); background: linear-gradient(180deg, #2a2118, #171009);
+    border-top-color: var(--edge-lo); border-left-color: var(--edge-lo);
+    border-right-color: var(--edge-hi); border-bottom-color: var(--edge-hi);
+  }
+  .key:focus-visible { outline: 1px dotted var(--amber); outline-offset: 1px; }
+  .run { flex: 0 0 62px; color: var(--p-hi); }
+  .run.busy { color: var(--amber); }
 
   /* rack and screens: the playlist */
   .rack { grid-area: rack; }
@@ -195,6 +205,10 @@
   <div class="cap"><span>plugins per stage</span><b id="deck-total"></b></div>
   <div class="sunk"><div class="analyser" id="analyser"></div></div>
   <div class="transport" id="transport"></div>
+  <div class="transport">
+    <button class="key run" id="run" title="Run the pipeline again">▶ run</button>
+    <button class="key" id="all" aria-pressed="true">all stages</button>
+  </div>
 </section>
 
 <section class="unit rack">
@@ -301,14 +315,36 @@ function renderDeck() {
     }).join("");
     return '<div class="col">' + cells + "<em>" + s.stage + "</em></div>";
   }).join("");
-  $("transport").innerHTML = STAGES.map((s) => '<div class="key done">' + s + "</div>").join("");
+  $("transport").innerHTML = STAGES.map((s) =>
+    '<button class="key done" data-stage="' + s + '" aria-pressed="false">' + s + "</button>"
+  ).join("");
+  for (const key of $("transport").children) {
+    key.addEventListener("click", () => selectStage(key.dataset.stage));
+  }
+}
+
+let stageFilter = null;
+
+/** A transport key selects a stage. The rack shows what ran in it. */
+function selectStage(stage) {
+  stageFilter = stageFilter === stage ? null : stage;
+  for (const key of $("transport").children) {
+    key.setAttribute("aria-pressed", String(key.dataset.stage === stageFilter));
+  }
+  $("all").setAttribute("aria-pressed", String(stageFilter === null));
+  const shown = run.plugins.filter((p) => !stageFilter || p.stages.includes(stageFilter));
+  $("now").textContent = stageFilter
+    ? stageFilter + " — " + shown.length + " plugin(s)"
+    : run.screens.length ? run.screens[0].name : "run loaded";
+  renderRack();
 }
 
 function renderRack() {
-  $("rack-total").textContent = run.plugins.length;
+  const visible = run.plugins.filter((p) => !stageFilter || p.stages.includes(stageFilter));
+  $("rack-total").textContent = stageFilter ? visible.length + "/" + run.plugins.length : run.plugins.length;
   let n = 0;
   $("rack").innerHTML = CLASSES.map((cls) => {
-    const group = run.plugins.filter((p) => p.class === cls);
+    const group = visible.filter((p) => p.class === cls);
     if (!group.length) return "";
     return '<div class="grp">' + cls + "</div>" + group.map((p) => {
       n += 1;
@@ -411,6 +447,34 @@ function applyWipe() {
 }
 
 $("wipe").addEventListener("input", applyWipe);
+$("all").addEventListener("click", () => selectStage(null));
+
+// Running the tool again is the one thing this window is allowed to cause.
+$("run").addEventListener("click", async () => {
+  const button = $("run");
+  if (button.classList.contains("busy")) return;
+  button.classList.add("busy");
+  button.textContent = "· running";
+  $("now").textContent = "running the pipeline";
+  try {
+    const result = await fetch("/rerun", { method: "POST" }).then((r) => r.json());
+    if (!result.ok) {
+      $("now").textContent = "stopped: " + (result.error ?? "unknown").split("\n")[0];
+      $("lamp-unver").classList.add("warn");
+      return;
+    }
+    run = await fetch("/run.json").then((r) => r.json());
+    stageFilter = null;
+    renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens(); renderEndpoints(); renderUnverified();
+    if (run.screens.length) select(0);
+    $("now").textContent = "done in " + result.ms + "ms";
+  } catch (err) {
+    $("now").textContent = "could not run: " + err.message;
+  } finally {
+    button.classList.remove("busy");
+    button.textContent = "▶ run";
+  }
+});
 
 (async function start() {
   try {

@@ -84,7 +84,7 @@ test("ng-container and ng-template disappear, ng-content becomes children", () =
 test("a pipe is not invented, it is reported", () => {
   const r = translate(`<p>{{ total | currency }}</p>`, { indent: 0 });
   assert.match(r.jsx, /\{total\}/);
-  assert.ok(r.notes.some((n) => /currency/.test(n) && /no React equivalent/.test(n)));
+  assert.ok(r.notes.some((n) => /currency/.test(n) && /no direct equivalent/.test(n)));
 });
 
 test("a pipe character inside a string is not a pipe", () => {
