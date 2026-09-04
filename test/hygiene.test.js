@@ -32,7 +32,7 @@ test("the README's size table is the truth, counted", async () => {
   const table = /\| Core \| \*\*(\d+) lines\*\*/.exec(readme);
   assert.ok(table, "the README states the core's size");
   assert.equal(Number(table[1]), lines, `README says the core is ${table[1]} lines; it is ${lines}. Update the table.`);
-  const panel = /(\d+)\nlines of core/.exec(readme);
+  const panel = /(\d+)\r?\nlines of core/.exec(readme);
   assert.ok(panel && Number(panel[1]) === lines, "the console caption states the same number");
 
   const claude = await readFile(join(ROOT, "CLAUDE.md"), "utf8");
@@ -60,6 +60,6 @@ test("the shared helpers exist exactly once", async () => {
     }
   }
   for (const [needle, where] of Object.entries(defs)) {
-    assert.deepEqual(where.map((f) => f.split("/").slice(-2).join("/")), ["dsp-ir/emit.js"], `${needle} is defined in ${where.length} place(s); the one spelling lives in dsp-ir/emit.js`);
+    assert.deepEqual(where.map((f) => f.split(/[\\/]/).slice(-2).join("/")), ["dsp-ir/emit.js"], `${needle} is defined in ${where.length} place(s); the one spelling lives in dsp-ir/emit.js`);
   }
 });
