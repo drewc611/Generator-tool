@@ -419,7 +419,7 @@ jobs:
         run: |
           node src/cli.js run --src test/fixtures/variant-cards --out props-out --site true
           test -f props-out/PROPS.md || { echo "PROPS.md was not written"; exit 1; }
-          grep -q "href` attribute" props-out/PROPS.md || { echo "the varying href was not proposed as a prop"; exit 1; }
+          grep -qE "href.{0,3}attribute" props-out/PROPS.md || { echo "the varying href was not proposed as a prop"; exit 1; }
           if ls props-out/src/features 2>/dev/null | grep -qE "PortShape|PortThe"; then echo "a parameterized proposal was lifted, but it must not be"; exit 1; fi
           rm -rf props-out
 
