@@ -433,6 +433,17 @@ jobs:
           if grep -qE "each=|onclick=" riot-out/src/features/UserList/UserList.jsx; then echo "Riot syntax leaked into the port"; exit 1; fi
           rm -rf poly-out riot-out
 
+      - name: the Qwik and Astro targets emit what each framework requires
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out t-out --qwik true --astro true
+          grep -q "component\$((props) =>" t-out/src/qwik/AppOrders/AppOrders.jsx || { echo "qwik component wrapper missing"; exit 1; }
+          grep -q "value={query.value}" t-out/src/qwik/AppOrders/AppOrders.jsx || { echo "qwik signal read missing"; exit 1; }
+          # Every handler prop must carry its $, or Qwik rejects the build.
+          if grep -qE " on(Click|Change|Input|Blur)=\{" t-out/src/qwik/AppOrders/AppOrders.jsx; then echo "a qwik handler lost its \$"; exit 1; fi
+          grep -q 'import AppOrders from "../features/AppOrders/AppOrders.jsx"' t-out/src/astro/AppOrders.astro || { echo "astro island does not import the component"; exit 1; }
+          grep -q "client:load" t-out/src/astro/AppOrders.astro || { echo "astro island is not hydrated"; exit 1; }
+          rm -rf t-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -444,6 +455,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "436" ]; then
-            echo "ROADMAP.md holds $count entries and claims 436"; exit 1
+          if [ "$count" != "440" ]; then
+            echo "ROADMAP.md holds $count entries and claims 440"; exit 1
           fi

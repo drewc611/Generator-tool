@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and thirty six features across thirty six phases. The statuses are
+Four hundred and forty features across thirty seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-532 tests, on Node 18, 20 and 22, and on Windows in CI.
+534 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1540,14 +1540,34 @@ the lowered markup is read by detectDialect as AngularJS and travels the unchang
 a delimiter a person changed, an event with no dialect equivalent, a structural template left open, or an expression the reader cannot place is reported through ctx.unverified rather than lowered into something that only looks right.
 
 
+## Phase 37 · 5.3 · Two more targets, two ways to reach them
+
+*Qwik and Astro, added without a printer either taught the reader anything.
+Qwik renders the proven JSX with its own two rules respected; Astro does not
+translate a screen twice but composes the React component the run already
+emitted, as an island.*
+
+**437. output-qwik renders the proven JSX** 🔨
+the same JSX the React printer proves against the other targets, reused whole, because Qwik renders JSX; the printer touches only what Qwik requires and nothing upstream learned its name.
+
+**438. Qwik's two constraints, respected** 🔨
+every handler prop carries the `$` the optimizer splits it out by, and local state is a `useSignal` read through `.value` with a plain setter the handler calls, so the output runs rather than merely looking like React.
+
+**439. output-astro composes an island** 🔨
+each screen becomes an `.astro` page that imports the emitted React component and hydrates it with `client:load`, the honest Astro port of a screen with client state: the static shell is served and the component keeps every state it already had.
+
+**440. Astro translates nothing twice** 🔨
+because the island imports the component rather than rewriting the screen into Astro's own dialect, no handler is dropped to a second translation and the port stays one source; the run notes that Astro's React integration is needed and says how to add it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 389 |
+| new in this branch | 393 |
 | planned | 3 |
-| total | 436 |
+| total | 440 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

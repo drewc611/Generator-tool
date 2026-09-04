@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, ninety two in five classes, and the core has never learned
+Plugins that ship, ninety four in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -95,7 +95,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-i18n  output-adr  output-migration  output-preact  output-solid
          output-alpine  output-cem  output-postman  output-curl
          output-fixtures  output-readme  output-ci  output-site
-         output-next  output-remix
+         output-next  output-remix  output-astro  output-qwik
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence
 general  general-policy  general-authorization  general-license
          general-doctor  general-scaffold  general-watch  general-history
@@ -214,6 +214,17 @@ rest of the tool already reads, so detectDialect picks them up and the
 translator, the endpoint map and every emitter treat them as any other
 component. Where a binding has no honest equivalent the lowering says so
 through ctx.unverified rather than inventing one. test/oldweb.test.js holds it.
+
+5.3 reaches two more targets by two different routes. output-qwik reuses the
+exact JSX the React printer proves against the other targets, because Qwik
+renders JSX; the printer only respects Qwik's two rules, that every handler
+prop carry the `$` the optimizer splits it out by and that local state be a
+useSignal read through `.value`, both mechanical over the proven JSX.
+output-astro translates no screen twice: it emits an `.astro` page that
+imports the React component the run already emitted and hydrates it with
+`client:load`, the honest Astro port of a screen with client state, so no
+handler is lost to a second translation and the port stays one source.
+test/targets4.test.js holds both.
 
 ## What is honestly incomplete
 

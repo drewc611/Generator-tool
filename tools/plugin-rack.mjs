@@ -61,6 +61,8 @@ const DOES = {
   "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",
   "output-next": "the site model as a Next app directory, components imported not copied",
+  "output-astro": "each screen as an Astro island hydrating the emitted React component",
+  "output-qwik": "the proven JSX as a Qwik component: handlers split with $, state as signals",
   "output-remix": "the site as route modules, retired addresses as loaders that 301",
   "dsp-state": "where state should live, argued from what each screen reads",
   "dsp-weight": "how much port each screen is, by a formula printed beside it",
