@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and eight features across fifty three phases. The statuses are
+Five hundred and fourteen features across fifty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1872,15 +1872,35 @@ the deploy script uses the user's own `aws` CLI configuration and reads the buck
 **508. output-aws names what a plan cannot know** 🔨
 DNS, certificates and the account's own specifics are named in the plan's README as the user's to fill in rather than guessed, because an infrastructure value invented to look complete is the failure this tool exists to avoid.
 
+## Phase 54: the port knows the other clouds
+
+**509. output-gcp emits a Google Cloud deploy plan** 🔨
+the static export becomes a Cloud Storage bucket behind an external HTTPS load balancer with Cloud CDN, as Terraform the user applies, so the same site model that knew AWS now knows Google Cloud.
+
+**510. output-gcp carries the redirects in the URL map** 🔨
+every retired address becomes a URL map redirect rule answering a 301, the same flattened map every other host target carries, because a static host that forgets the old links breaks what the port promised to keep.
+
+**511. output-gcp takes no credentials and names its gaps** 🔨
+the deploy script uses the user's own `gcloud` and `gsutil` configuration, portamp applies nothing and touches no key, and DNS, the managed certificate and the project's specifics are named in the README as the user's to fill in.
+
+**512. output-azure emits a Microsoft Azure deploy plan** 🔨
+the static export becomes a Storage account static website behind Azure Front Door, as Terraform the user applies, so the third major cloud reads from the same site model with nothing about the port reinvented.
+
+**513. output-azure carries the redirects in the Front Door rules engine** 🔨
+each retired address becomes a Front Door rule matching the path and issuing a 301 to the new one, the flattened redirect map once more, so a move to Azure keeps every old address answering.
+
+**514. output-azure takes no credentials and names its gaps** 🔨
+the deploy script uses the user's own `az` login, no account key or connection string is ever emitted, and DNS, the certificate and the subscription's specifics are named in the README rather than guessed.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 461 |
+| new in this branch | 467 |
 | planned | 3 |
-| total | 508 |
+| total | 514 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

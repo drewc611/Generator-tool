@@ -148,6 +148,27 @@ modules, performing only the rewrites it can prove from the shape of the line
 and refusing the rest, a dynamic `require` left verbatim and named in
 CODEMOD.md rather than guessed. Run it with `--codemod true`.
 
+## Deploy the port to any of the three clouds
+
+The site engine already writes a full application and a zero dependency server.
+Three output targets turn that same site model into infrastructure as code for
+the major clouds, each a deterministic plan the user reviews and applies with
+their own credentials. None of them takes a secret; taking a credential is what
+the secret gate refuses.
+
+| cloud | hosting | edge | the 301 map becomes | you apply with | flag |
+| --- | --- | --- | --- | --- | --- |
+| AWS | S3 | CloudFront | a CloudFront function | the `aws` CLI | `--aws true` |
+| Google Cloud | Cloud Storage | Cloud CDN + HTTPS LB | URL map redirect rules | `gcloud` / `gsutil` | `--gcp true` |
+| Azure | Storage static site | Front Door | Front Door rules | the `az` CLI | `--azure true` |
+
+Each emits Terraform, a deploy script that reads your own configured
+credentials from the environment, the flattened redirect map so every retired
+address keeps answering, and a README that names DNS, the certificate and the
+account's own specifics as yours to fill in rather than guessing them. It knows
+how to architect the hosting because the rules are written and tested, not
+learned.
+
 ## What a translation looks like
 
 The example's template, and what portamp emits for it:

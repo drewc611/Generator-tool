@@ -54,6 +54,36 @@ test("output-aws emits an S3 + CloudFront plan carrying the redirect map, no sec
   }
 });
 
+test("output-gcp and output-azure emit their own plans, opt in, no secrets", async () => {
+  const clouds = [
+    { flag: "gcp", dir: "gcp", names: /storage|cdn/i, leak: /private_key|BEGIN [A-Z ]*PRIVATE KEY/ },
+    { flag: "azure", dir: "azure", names: /storage|front_?door|cdn/i, leak: /AccountKey=|SharedAccessSignature/ },
+  ];
+  for (const cloud of clouds) {
+    const off = await runPipeline({ src, site: true });
+    try {
+      assert.ok(!off.ctx.written.some((f) => f.startsWith(`${cloud.dir}/`)), `${cloud.flag} is opt in`);
+    } finally {
+      await off.cleanup();
+    }
+
+    const on = await runPipeline({ src, site: true, [cloud.flag]: true });
+    try {
+      assert.equal(on.error, null);
+      assert.ok(on.ctx.written.includes(`${cloud.dir}/main.tf`), `${cloud.flag} wrote its terraform`);
+      const tf = await readFile(join(on.out, `${cloud.dir}/main.tf`), "utf8");
+      assert.match(tf, cloud.names, `${cloud.flag} names its hosting and CDN`);
+      const files = await readdir(join(on.out, cloud.dir));
+      for (const name of files) {
+        const body = await readFile(join(on.out, cloud.dir, name), "utf8");
+        assert.doesNotMatch(body, cloud.leak, `${cloud.dir}/${name} leaks a credential`);
+      }
+    } finally {
+      await on.cleanup();
+    }
+  }
+});
+
 test("two AWS plans over the same site are byte identical", async () => {
   const a = await runPipeline({ src, site: true, aws: true });
   const b = await runPipeline({ src, site: true, aws: true });

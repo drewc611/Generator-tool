@@ -84,6 +84,8 @@ const DOES = {
   "output-next": "the site model as a Next app directory, components imported not copied",
   "output-astro": "each screen as an Astro island hydrating the emitted React component",
   "output-aws": "the site as an AWS deploy plan: S3, CloudFront, the 301 map compiled to a function, no secrets taken",
+  "output-azure": "the site as an Azure deploy plan: Storage static site, Front Door, the 301 map as rules, no secrets taken",
+  "output-gcp": "the site as a Google Cloud deploy plan: Cloud Storage, Cloud CDN, the 301 map as URL map rules, no secrets taken",
   "output-qwik": "the proven JSX as a Qwik component: handlers split with $, state as signals",
   "output-remix": "the site as route modules, retired addresses as loaders that 301",
   "output-nuxt": "the site model as a Nuxt app, the emitted Vue imported not copied",

@@ -534,6 +534,22 @@ jobs:
           test -d noaws-out/aws && { echo "the aws plan ran unrequested"; exit 1; }
           rm -rf noaws-out
 
+      - name: the GCP and Azure deploy plans emit, carry the redirects, and take no secrets
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out gcp-out --site true --gcp true
+          test -f gcp-out/gcp/main.tf || { echo "no gcp terraform plan"; exit 1; }
+          grep -qiE "storage|cdn" gcp-out/gcp/main.tf || { echo "the gcp plan names no storage or CDN"; exit 1; }
+          if grep -rniE "private_key|BEGIN [A-Z ]*PRIVATE KEY|service_account.*key" gcp-out/gcp; then echo "the gcp plan leaked a credential"; exit 1; fi
+          rm -rf gcp-out
+          node src/cli.js run --src test/fixtures/repeat-site --out az-out --site true --azure true
+          test -f az-out/azure/main.tf || { echo "no azure terraform plan"; exit 1; }
+          grep -qiE "storage|front_?door|cdn" az-out/azure/main.tf || { echo "the azure plan names no storage or Front Door"; exit 1; }
+          if grep -rniE "AccountKey=|DefaultEndpointsProtocol=.*AccountKey|SharedAccessSignature" az-out/azure; then echo "the azure plan leaked a connection string"; exit 1; fi
+          rm -rf az-out
+          node src/cli.js run --src test/fixtures/repeat-site --out nocloud-out --site true
+          if [ -d nocloud-out/gcp ] || [ -d nocloud-out/azure ]; then echo "a cloud plan ran unrequested"; exit 1; fi
+          rm -rf nocloud-out
+
       - name: the debug output and the global pollution are named, not deleted
         run: |
           node src/cli.js run --src test/fixtures/debt-site --out cln-out
@@ -614,6 +630,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "508" ]; then
-            echo "ROADMAP.md holds $count entries and claims 508"; exit 1
+          if [ "$count" != "514" ]; then
+            echo "ROADMAP.md holds $count entries and claims 514"; exit 1
           fi
