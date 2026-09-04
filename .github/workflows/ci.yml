@@ -464,6 +464,15 @@ jobs:
           if grep -q "drifted" rt2-out/ROUNDTRIP.md; then echo "the emitted React did not read back to its own structure"; exit 1; fi
           rm -rf rt-out rt2-out
 
+      - name: the asset weight is measured and proposed, never applied
+        run: |
+          node src/cli.js run --src test/fixtures/assets-site --out a-out
+          grep -q "hero.jpg" a-out/IMAGES.md || { echo "an image was not weighed"; exit 1; }
+          grep -q 'loading="lazy"' a-out/IMAGES.md || { echo "a lazy loading proposal was not named"; exit 1; }
+          grep -q "Legacy Serif" a-out/FONTS.md || { echo "a font face was not read"; exit 1; }
+          grep -qiE "woff2|invisible|dropped" a-out/FONTS.md || { echo "a font gap was not named"; exit 1; }
+          rm -rf a-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -475,6 +484,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "450" ]; then
-            echo "ROADMAP.md holds $count entries and claims 450"; exit 1
+          if [ "$count" != "454" ]; then
+            echo "ROADMAP.md holds $count entries and claims 454"; exit 1
           fi

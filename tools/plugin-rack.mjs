@@ -59,6 +59,8 @@ const DOES = {
   "dsp-props": "blocks that share a shape but differ in words, proposed as one with props",
   "dsp-seo": "the signals each page told a machine: title, canonical, cards, the gaps named",
   "dsp-analytics": "the trackers the old front end loaded, named as a consent decision, ids withheld",
+  "dsp-images": "images shipped at one fixed size: srcset, dimensions and format proposed",
+  "dsp-fonts": "how the old app loaded its type: formats to drop, a display strategy to add",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
   "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",

@@ -1,0 +1,14 @@
+@font-face {
+  font-family: "Brand Sans";
+  src: url("fonts/brand.woff2") format("woff2"),
+       url("fonts/brand.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Legacy Serif";
+  src: url("fonts/legacy.eot");
+  src: url("fonts/legacy.eot?#iefix") format("embedded-opentype"),
+       url("fonts/legacy.woff") format("woff");
+}
+
+body { font-family: "Brand Sans", sans-serif; }

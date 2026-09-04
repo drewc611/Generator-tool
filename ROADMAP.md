@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and fifty features across thirty nine phases. The statuses are
+Four hundred and fifty four features across forty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-543 tests, on Node 18, 20 and 22, and on Windows in CI.
+548 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1609,14 +1609,34 @@ emitting to JSX and reading back re-splits text around interpolations and indent
 because React lowers onto the IR like any dialect, a React app is now a source portamp ports to Vue, Svelte or a custom element, and the same machinery that proves Angular and Vue emit identical output proves the emitted React reads back to where it started.
 
 
+## Phase 40 · 6.1 · The asset weight the port should not inherit
+
+*A legacy page ships one fixed size of every image and declares its type in
+formats no browser has needed in a decade. None of that is a taste question,
+so dsp-images and dsp-fonts measure it and propose the port carry it lighter,
+leaving the encoding a person's call.*
+
+**451. dsp-images weighs every image** 🔨
+each `<img>` is read for a srcset, a sizes hint, a loading attribute, explicit width and height, an alt, and its format, and what is missing is named per image so a small screen stops downloading the desktop image and the page stops reflowing when one arrives.
+
+**452. The image proposals are named, not applied** 🔨
+which srcset to generate and which modern format to encode are build decisions the port's own tooling should own, so IMAGES.md proposes them and rewrites no tag, the same measure then leave it contract the rest of the tool keeps.
+
+**453. dsp-fonts reads how the type loads** 🔨
+each `@font-face` is read for its formats and its font-display, hosted Google Fonts links are noted, and the font files actually in the tree are counted, so a face missing its woff2 is told apart from one whose file simply was not shipped.
+
+**454. The font gaps are measurable, not taste** 🔨
+a face with no woff2, one declared in eot, svg or ttf that no target needs, and font-display left unset so text is invisible while the font loads are each reported; whether a licence lets a face travel stays general-license's job, and this is about weight and the flash of invisible text.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 403 |
+| new in this branch | 407 |
 | planned | 3 |
-| total | 450 |
+| total | 454 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

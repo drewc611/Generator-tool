@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, ninety eight in five classes, and the core has never learned
+Plugins that ship, a hundred in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -88,7 +88,7 @@ dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
-         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics
+         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts
 output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-html  output-storybook  output-tests  output-openapi
          output-msw  output-tailwind  output-design-tokens  output-forms
@@ -252,7 +252,20 @@ ROUNDTRIP.md names any drift per screen and the run reports it, so the claim
 that the port keeps its shape is a comparison that fails out loud rather than
 a promise. A React app is now also a source portamp ports onward. Values are
 not proven by a round trip, only structure; that is what can be checked
-without a person, so it is. test/roundtrip.test.js holds it.
+without a person, so it is. test/readback.test.js holds it.
+
+6.1 weighs the assets the port should not inherit unchanged. dsp-images reads
+every `<img>` for a srcset, a sizes hint, a loading attribute, explicit
+dimensions, an alt and its format, and names what is missing per image so a
+small screen stops downloading the desktop picture and the page stops
+reflowing when one lands; which srcset to generate and which modern format to
+encode are build decisions, so IMAGES.md proposes them and rewrites no tag.
+dsp-fonts reads each `@font-face` for its formats and its font-display, notes
+hosted Google Fonts links, and counts the font files in the tree, then names
+the measurable gaps: no woff2, a face declared in eot, svg or ttf no target
+needs, and font-display left unset so text is invisible while the font loads.
+Whether a licence lets a face travel stays general-license's job.
+test/assets2.test.js holds both.
 
 ## What is honestly incomplete
 
