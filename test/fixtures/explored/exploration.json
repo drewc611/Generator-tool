@@ -1,6 +1,6 @@
 {
  "baseUrl": "http://127.0.0.1:8742/",
- "recordedAt": "2026-08-31T01:56:49.618Z",
+ "recordedAt": "2026-08-31T02:55:37.795Z",
  "screens": [
   {
    "id": "screen-1",
@@ -653,6 +653,7 @@
  "steps": [
   {
    "from": "screen-1",
+   "path": [],
    "action": {
     "kind": "fill",
     "selector": "#q",
@@ -666,6 +667,7 @@
   },
   {
    "from": "screen-1",
+   "path": [],
    "action": {
     "kind": "click",
     "selector": "#search",
@@ -687,6 +689,7 @@
   },
   {
    "from": "screen-1",
+   "path": [],
    "action": {
     "kind": "click",
     "selector": "#refresh",
@@ -708,6 +711,7 @@
   },
   {
    "from": "screen-1",
+   "path": [],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
@@ -731,6 +735,7 @@
   },
   {
    "from": "screen-1",
+   "path": [],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
@@ -754,6 +759,7 @@
   },
   {
    "from": "screen-1",
+   "path": [],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
@@ -777,6 +783,7 @@
   },
   {
    "from": "screen-1",
+   "path": [],
    "action": {
     "kind": "click",
     "selector": "#new-order",
@@ -791,6 +798,14 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "fill",
     "selector": "#q",
@@ -804,6 +819,14 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#search",
@@ -829,6 +852,14 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#refresh",
@@ -854,6 +885,14 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
@@ -877,6 +916,14 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
@@ -900,6 +947,14 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
@@ -923,6 +978,14 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#new-order",
@@ -937,6 +1000,13 @@
   },
   {
    "from": "screen-2",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
+     "label": "A-1001Northwindopen4210.5"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#back",
@@ -952,6 +1022,13 @@
   },
   {
    "from": "screen-2",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
+     "label": "A-1002Contososhipped118"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#back",
@@ -967,6 +1044,13 @@
   },
   {
    "from": "screen-2",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
+     "label": "A-1003Fabrikamopen990.25"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#back",
@@ -982,6 +1066,13 @@
   },
   {
    "from": "screen-3",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    }
+   ],
    "action": {
     "kind": "fill",
     "selector": "#customer",
@@ -995,6 +1086,13 @@
   },
   {
    "from": "screen-3",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#submit",
@@ -1009,6 +1107,13 @@
   },
   {
    "from": "screen-3",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#cancel",
@@ -1024,6 +1129,20 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "fill",
     "selector": "#q",
@@ -1037,6 +1156,20 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#search",
@@ -1062,6 +1195,20 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#refresh",
@@ -1087,6 +1234,20 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
@@ -1110,6 +1271,20 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
@@ -1133,6 +1308,20 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
@@ -1156,6 +1345,20 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#new-order",
@@ -1170,6 +1373,19 @@
   },
   {
    "from": "screen-2",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
+     "label": "A-1001Northwindopen4210.5"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#back",
@@ -1185,6 +1401,19 @@
   },
   {
    "from": "screen-2",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
+     "label": "A-1002Contososhipped118"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#back",
@@ -1200,6 +1429,19 @@
   },
   {
    "from": "screen-2",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
+     "label": "A-1003Fabrikamopen990.25"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#back",
@@ -1215,6 +1457,19 @@
   },
   {
    "from": "screen-3",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    }
+   ],
    "action": {
     "kind": "fill",
     "selector": "#customer",
@@ -1228,6 +1483,19 @@
   },
   {
    "from": "screen-3",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#submit",
@@ -1242,6 +1510,19 @@
   },
   {
    "from": "screen-3",
+   "path": [
+    {
+     "kind": "fill",
+     "selector": "#q",
+     "label": "",
+     "value": "Northwind"
+    },
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#cancel",
@@ -1257,6 +1538,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
+     "label": "A-1001Northwindopen4210.5"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "fill",
     "selector": "#q",
@@ -1270,6 +1563,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
+     "label": "A-1001Northwindopen4210.5"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#search",
@@ -1291,6 +1596,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
+     "label": "A-1001Northwindopen4210.5"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#refresh",
@@ -1312,6 +1629,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
+     "label": "A-1001Northwindopen4210.5"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
@@ -1335,6 +1664,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
+     "label": "A-1001Northwindopen4210.5"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
@@ -1358,6 +1699,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
+     "label": "A-1001Northwindopen4210.5"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
@@ -1381,6 +1734,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
+     "label": "A-1001Northwindopen4210.5"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#new-order",
@@ -1395,6 +1760,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
+     "label": "A-1002Contososhipped118"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "fill",
     "selector": "#q",
@@ -1408,6 +1785,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
+     "label": "A-1002Contososhipped118"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#search",
@@ -1429,6 +1818,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
+     "label": "A-1002Contososhipped118"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#refresh",
@@ -1450,6 +1851,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
+     "label": "A-1002Contososhipped118"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
@@ -1473,6 +1886,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
+     "label": "A-1002Contososhipped118"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
@@ -1496,6 +1921,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
+     "label": "A-1002Contososhipped118"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
@@ -1519,6 +1956,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
+     "label": "A-1002Contososhipped118"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#new-order",
@@ -1533,6 +1982,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
+     "label": "A-1003Fabrikamopen990.25"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "fill",
     "selector": "#q",
@@ -1546,6 +2007,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
+     "label": "A-1003Fabrikamopen990.25"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#search",
@@ -1567,6 +2040,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
+     "label": "A-1003Fabrikamopen990.25"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#refresh",
@@ -1588,6 +2073,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
+     "label": "A-1003Fabrikamopen990.25"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(1)",
@@ -1611,6 +2108,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
+     "label": "A-1003Fabrikamopen990.25"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(2)",
@@ -1634,6 +2143,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
+     "label": "A-1003Fabrikamopen990.25"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
@@ -1657,6 +2178,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "section:nth-of-type(1) > table > tbody > tr:nth-of-type(3)",
+     "label": "A-1003Fabrikamopen990.25"
+    },
+    {
+     "kind": "click",
+     "selector": "#back",
+     "label": "Back to orders"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#new-order",
@@ -1671,6 +2204,19 @@
   },
   {
    "from": "screen-3",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    },
+    {
+     "kind": "fill",
+     "selector": "#customer",
+     "label": "Customer",
+     "value": "Test Customer"
+    }
+   ],
    "action": {
     "kind": "fill",
     "selector": "#customer",
@@ -1684,6 +2230,19 @@
   },
   {
    "from": "screen-3",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    },
+    {
+     "kind": "fill",
+     "selector": "#customer",
+     "label": "Customer",
+     "value": "Test Customer"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#submit",
@@ -1716,6 +2275,19 @@
   },
   {
    "from": "screen-3",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    },
+    {
+     "kind": "fill",
+     "selector": "#customer",
+     "label": "Customer",
+     "value": "Test Customer"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#cancel",
@@ -1731,6 +2303,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    },
+    {
+     "kind": "click",
+     "selector": "#cancel",
+     "label": "Cancel"
+    }
+   ],
    "action": {
     "kind": "fill",
     "selector": "#q",
@@ -1744,6 +2328,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    },
+    {
+     "kind": "click",
+     "selector": "#cancel",
+     "label": "Cancel"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#search",
@@ -1765,6 +2361,18 @@
   },
   {
    "from": "screen-1",
+   "path": [
+    {
+     "kind": "click",
+     "selector": "#new-order",
+     "label": "New order"
+    },
+    {
+     "kind": "click",
+     "selector": "#cancel",
+     "label": "Cancel"
+    }
+   ],
    "action": {
     "kind": "click",
     "selector": "#refresh",
