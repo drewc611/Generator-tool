@@ -550,6 +550,19 @@ jobs:
           if [ -d nocloud-out/gcp ] || [ -d nocloud-out/azure ]; then echo "a cloud plan ran unrequested"; exit 1; fi
           rm -rf nocloud-out
 
+      - name: the Cloudflare, Vercel and Netlify deploy plans emit their redirects and take no secrets
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out host-out --site true --cloudflare true --vercel true --netlify true
+          grep -q "301" host-out/cloudflare/_redirects || { echo "the cloudflare redirects are missing"; exit 1; }
+          grep -q "permanent" host-out/vercel/vercel.json || { echo "the vercel permanent redirects are missing"; exit 1; }
+          node -e "JSON.parse(require('fs').readFileSync('host-out/vercel/vercel.json','utf8'))" || { echo "vercel.json is not valid JSON"; exit 1; }
+          grep -q "301" host-out/netlify/_redirects || { echo "the netlify redirects are missing"; exit 1; }
+          if grep -rniE "CLOUDFLARE_API_TOKEN\s*=\s*[\"'][A-Za-z0-9_-]{20,}|VERCEL_TOKEN\s*=\s*[\"'][A-Za-z0-9]|NETLIFY_AUTH_TOKEN\s*=\s*[\"'][A-Za-z0-9]" host-out; then echo "a host plan leaked a token"; exit 1; fi
+          rm -rf host-out
+          node src/cli.js run --src test/fixtures/repeat-site --out nohost-out --site true
+          if [ -d nohost-out/cloudflare ] || [ -d nohost-out/vercel ] || [ -d nohost-out/netlify ]; then echo "a host plan ran unrequested"; exit 1; fi
+          rm -rf nohost-out
+
       - name: the debug output and the global pollution are named, not deleted
         run: |
           node src/cli.js run --src test/fixtures/debt-site --out cln-out
@@ -642,6 +655,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "518" ]; then
-            echo "ROADMAP.md holds $count entries and claims 518"; exit 1
+          if [ "$count" != "521" ]; then
+            echo "ROADMAP.md holds $count entries and claims 521"; exit 1
           fi

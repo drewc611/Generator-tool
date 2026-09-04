@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and eighteen features across fifty five phases. The statuses are
+Five hundred and twenty one features across fifty six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1906,15 +1906,26 @@ training overfits one fixed next token sequence to completion, the loss falls fr
 **518. The training says plainly what it is** 🔨
 it overfits one example on purpose to demonstrate the loop is correct, the trainable block leaves out layer norm so every gradient is exactly checkable, and the report states it is a proof of the mechanism and not a general language model, because the point is a result you can check rather than a number to trust.
 
+## Phase 56: every deploy target
+
+**519. output-cloudflare emits a Cloudflare Pages deploy plan** 🔨
+the static export becomes a Cloudflare Pages project with the flattened redirect map carried in Cloudflare's native `_redirects` file, a wrangler config and a deploy script the user runs with their own `wrangler login`, no token ever emitted.
+
+**520. output-vercel emits a Vercel deploy plan** 🔨
+the export becomes a Vercel deployment whose `vercel.json` carries each retired address as a permanent redirect, applied with the user's own `vercel login`, the same site model reaching a fifth host with nothing reinvented.
+
+**521. output-netlify emits a Netlify deploy plan** 🔨
+the export becomes a Netlify site whose native `_redirects` file forces each 301 and whose `netlify.toml` publishes the export, applied with the user's own `netlify login`, so the port knows the big three clouds and the three static hosts alike, and each takes no credential.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 471 |
+| new in this branch | 474 |
 | planned | 3 |
-| total | 518 |
+| total | 521 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
