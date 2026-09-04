@@ -105,6 +105,11 @@ duplicate name is refused rather than silently winning. And every rule in
 this document binds a project plugin the same way, policy object included;
 where the plugins came from was never a policy boundary.
 
+Plugins are ES modules, so the project's own package.json must say
+`"type": "module"` (or the plugin files must end in `.mjs`): on Node 18 a
+bare `.js` file outside a module scope reads as CommonJS and discovery
+skips it, with the warning saying which file and why.
+
 `portamp new-plugin <class>-<subject>` scaffolds the whole kit in the
 working directory: the plugin with the contract in its header, a test, docs
 in the plugin's own README, and a fixture directory for the test to run

@@ -185,6 +185,9 @@ test("improvements rank by the emitted code each fix would touch, measured from 
 test("a project's own plugin loads beside the builtins, and a name clash is refused", async (t) => {
   const dir = await mkdtemp(join(tmpdir(), "portamp-project-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
+  // A real project declares itself a module; without it, Node 18 reads the
+  // plugin as CommonJS and discovery skips it with a warning.
+  await writeFile(join(dir, "package.json"), `{ "type": "module" }\n`);
   await mkdir(join(dir, "vis-mine"), { recursive: true });
   await writeFile(join(dir, "vis-mine/index.js"), `export default { name: "vis-mine", version: "0.0.1", class: "vis", setup() {} };`);
   await mkdir(join(dir, "dsp-ir"), { recursive: true });
