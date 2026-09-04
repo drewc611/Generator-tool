@@ -122,6 +122,21 @@ test("presentational attributes carry their exact CSS meaning", () => {
   ]);
 });
 
+test("the shouted old web lowers to the elements it always was", () => {
+  const { jsx } = translate(`<TABLE WIDTH="500"><TR><TD ALIGN="LEFT">x</TD></TR></TABLE>`, { dialect: DIALECTS.angularjs });
+  assert.match(jsx, /<table width="500">/);
+  assert.match(jsx, /<td style=\{\{ textAlign: "left" \}\}>/);
+  assert.ok(!/<TR|<TABLE/.test(jsx), "no capitalized tag survives to read as a component");
+});
+
+test("a bare SGML token attribute is dropped and said, and a digit led page name can stand", async () => {
+  const { buildIr: build } = await import("../plugins/dsp-ir/ir.js");
+  const ir = build(`<NEXTID 7>text`, { dialect: DIALECTS.angularjs });
+  assert.ok(ir.notes.some((n) => /`7`.*dropped/i.test(n) || /attribute spelled/.test(n)));
+  const { pascal } = await import("../plugins/dsp-ir/emit.js");
+  assert.equal(pascal("1996-cmp-ad5"), "P1996CmpAd5", "an identifier cannot open with a digit");
+});
+
 test("a multi statement inline handler reaches react as a block, not a syntax error", () => {
   const { jsx } = translate(`<button onclick="a(); b();">x</button>`, { dialect: DIALECTS.angularjs });
   assert.match(jsx, /onClick=\{\(\) => \{ a\(\); b\(\); \}\}/);
@@ -156,6 +171,7 @@ test("a folder of old pages becomes a React application architecture", async (t)
   const redirects = JSON.parse(await readFile(join(out, "redirects.json"), "utf8"));
   assert.ok(redirects.some((r) => r.from === "/moved" && r.to === "/about" && r.kind === "meta refresh"));
   assert.ok(redirects.some((r) => r.from === "/about.html" && r.to === "/about" && r.kind === "extension dropped"));
+  assert.ok(redirects.some((r) => r.from === "/frames" && r.to === "/about" && r.kind === "frameset content"), "a frameset's address was its content frame's address");
   assert.match(await readFile(join(out, "_redirects"), "utf8"), /\/moved \/about 301/);
 
   // Assets travel as bytes; the form's action moved to the API map.

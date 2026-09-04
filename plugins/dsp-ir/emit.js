@@ -96,6 +96,10 @@ export function templateText(value) {
 
 /** kebab-or-snake to PascalCase, the one spelling of a component's name.
  * Shared here because twenty plugins each carrying their own copy is how
- * two of them end up disagreeing about what a screen is called. */
-export const pascal = (sel) =>
-  String(sel ?? "").split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
+ * two of them end up disagreeing about what a screen is called. A name is
+ * used as an identifier, and an identifier cannot open with a digit, so a
+ * screen born from a path like 1996/index gets a P it can stand on. */
+export const pascal = (sel) => {
+  const out = String(sel ?? "").split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
+  return /^\d/.test(out) ? `P${out}` : out;
+};

@@ -248,13 +248,17 @@ export default {
         }
         // Internal links become the routes they always meant. The route is
         // what the anchor navigates to; the router intercepts the click.
+        // A link to a frameset is a link to the place the frameset stood;
+        // its route redirects on to the content frame, so the anchor can
+        // point at the frameset's own route and still land right.
+        const framesetRels = new Set(framesets.map((f) => f.rel.replace(/^\.\//, "")));
         const rewrite = (html, fromRel, base) =>
           html
             .replace(/(<(?:a|area)\b[^>]*\bhref\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, href, after) => {
               const [pathPart, tail = ""] = [href.split(/([#?].*)$/)[0], /([#?].*)$/.exec(href)?.[1]];
               if (/^[a-z][\w+.-]*:|^\/\//i.test(pathPart) || !PAGE_EXT.test(pathPart)) return whole;
               const target = resolveLink(fromRel, pathPart, base);
-              if (!relOf.has(target)) return whole;
+              if (!relOf.has(target) && !framesetRels.has(target)) return whole;
               return `${before}${routeOf(target)}${tail}${after}`;
             })
             // An asset spelled relative to the page breaks the moment the page
@@ -275,6 +279,17 @@ export default {
         for (const page of kept) {
           const old = "/" + page.rel.replace(/^\.\//, "");
           if (old !== routeOf(page.rel)) redirects.push({ from: old, to: routeOf(page.rel), kind: "extension dropped" });
+        }
+
+        // A frameset's address was really its content frame's address. When
+        // the frame's page is in the run, the frameset's route redirects to
+        // it; when it is not, the gap stays named in the frames report.
+        for (const fs of framesets) {
+          if (!fs.main) continue;
+          const target = resolveLink(fs.rel, fs.main);
+          if (relOf.has(target)) {
+            redirects.push({ from: routeOf(fs.rel), to: routeOf(target), kind: "frameset content" });
+          }
         }
 
         // Page families like news-1, news-2 are one screen and a parameter

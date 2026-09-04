@@ -769,4 +769,5 @@ twenty nine phases, forty four shipped, two hundred and sixty seven new in the
 current branch, fifty planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
-MIT. See [LICENSE](LICENSE).
+portamp is a proprietary product. All rights reserved — see [LICENSE](LICENSE).
+What it emits from your own source is yours.

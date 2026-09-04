@@ -572,6 +572,12 @@ function loopList(loop, ctx) {
   return list;
 }
 
+/** The old web shouted its tags: TR and tr are the same element, and a
+ * printer that treats TR as a component invents one. An all caps name is
+ * lowered to the element it always was; a mixed case name is somebody's
+ * component and keeps its spelling. */
+const tagOf = (raw) => (/^[A-Z][A-Z0-9]*$/.test(raw) ? raw.toLowerCase() : raw);
+
 /** A subtree the author marked uncompiled: everything stays as written. */
 function literalElement(node, d) {
   if (node.type === "text") return { kind: "text", parts: [{ literal: node.text }] };
@@ -579,7 +585,7 @@ function literalElement(node, d) {
   const tag = node.tag.toLowerCase();
   return {
     kind: "element",
-    tag: node.tag,
+    tag: tagOf(node.tag),
     void: VOID.has(tag),
     attrs: node.attrs
       .filter((a) => !d.pre?.(a.name))
@@ -736,9 +742,21 @@ function buildElement(node, d, ctx, sw = null) {
     }
     if (lower === "valign" && value) { styles.push({ kind: "declaration", property: "vertical-align", literal: value.toLowerCase() }); continue; }
 
-    if (value === null) attrs.push({ name, kind: "flag" });
-    else if (/\{\{/.test(value)) attrs.push({ name, kind: "template", parts: interpolate(value, ctx.expr) });
-    else attrs.push({ name, kind: "static", value });
+    // What reaches this point is a plain markup attribute; every dialect
+    // spelling was claimed above. Pre-HTML2 SGML allowed a bare token here,
+    // like <NEXTID 7> on the first website ever written, and no modern
+    // target can spell an attribute that opens with anything but a letter,
+    // so it is dropped and the note is where it went.
+    if (!/^[a-zA-Z_]/.test(name)) {
+      ctx.note(`<${node.tag}> carries an attribute spelled \`${name}\`, which no target can carry. It was dropped.`);
+      continue;
+    }
+
+    // Shouted attribute names are the same attributes; WIDTH is width.
+    const spelled = /^[A-Z][A-Z0-9-]*$/.test(name) ? name.toLowerCase() : name;
+    if (value === null) attrs.push({ name: spelled, kind: "flag" });
+    else if (/\{\{/.test(value)) attrs.push({ name: spelled, kind: "template", parts: interpolate(value, ctx.expr) });
+    else attrs.push({ name: spelled, kind: "static", value });
   }
 
   if (staticClass !== null) classes.unshift({ kind: "literal", value: staticClass });
@@ -765,7 +783,7 @@ function buildElement(node, d, ctx, sw = null) {
 
   return {
     kind: "element",
-    tag: TRANSPARENT.has(tag) ? null : node.tag,
+    tag: TRANSPARENT.has(tag) ? null : tagOf(node.tag),
     tagExpression,
     void: VOID.has(tag),
     attrs, classes, styles, events, model, modelKind,

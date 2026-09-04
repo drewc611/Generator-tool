@@ -1,6 +1,6 @@
 {
   "name": "portamp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A tiny plugin host that ports legacy front ends. Reads Angular, AngularJS, Vue, Knockout, Backbone, jQuery or a running app with no source; recognises what it is; emits React, Vue, Svelte, Angular, Lit or a custom element, with the proofs beside them.",
   "type": "module",
   "bin": {
@@ -44,7 +44,8 @@
     "plugin-host"
   ],
   "dependencies": {},
-  "license": "MIT",
+  "license": "UNLICENSED",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/drewc611/portamp.git"
