@@ -56,6 +56,8 @@ const DOES = {
   "dsp-entropy": "strings random enough to be credentials, values withheld",
   "dsp-era": "when the site was built, dated by seventeen signals with a spread",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
+  "output-next": "the site model as a Next app directory, components imported not copied",
+  "output-remix": "the site as route modules, retired addresses as loaders that 301",
   "dsp-state": "where state should live, argued from what each screen reads",
   "dsp-weight": "how much port each screen is, by a formula printed beside it",
   "dsp-archetype": "what kind of app this is, from its structure and its traffic",

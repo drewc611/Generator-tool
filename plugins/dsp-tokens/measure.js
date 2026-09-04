@@ -242,3 +242,55 @@ export function measureSpacing(exploration, defaults) {
       (measured.length < 7 ? ", the rest defaulted above them" : ""),
   };
 }
+
+/**
+ * Several recordings, merged with the disagreement kept. Each session is
+ * measured on its own; a rung every session found is agreed, a rung only
+ * some found is reported as disputed with the count, and nothing averages
+ * two sessions into a number neither of them measured.
+ */
+export function mergeSpacing(explorations, defaults) {
+  const sessions = (explorations ?? [])
+    .map((e) => measureSpacing(e, defaults))
+    .filter(Boolean);
+  if (!sessions.length) return null;
+  if (sessions.length === 1) return { ...sessions[0], sessions: 1 };
+
+  const rungs = new Map();
+  for (const session of sessions) {
+    for (const value of session.scale) {
+      const near = [...rungs.keys()].find((k) => Math.abs(k - value) <= 2);
+      if (near !== undefined) rungs.get(near).push(value);
+      else rungs.set(value, [value]);
+    }
+  }
+  const agreed = [];
+  const disputed = [];
+  for (const [, values] of rungs) {
+    const rung = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+    if (values.length === sessions.length) agreed.push(rung);
+    else disputed.push({ rung, agreedBy: values.length, of: sessions.length });
+  }
+  agreed.sort((a, b) => a - b);
+  disputed.sort((a, b) => a.rung - b.rung);
+
+  // The merged ladder keeps the agreed rungs and fills to seven from the
+  // defaults, exactly the way a single session's ladder fills its gaps.
+  const scale = [...agreed];
+  for (const d of defaults) {
+    if (scale.length >= 7) break;
+    if (!scale.some((v) => Math.abs(v - d) <= 2)) scale.push(d);
+  }
+  scale.sort((a, b) => a - b);
+
+  return {
+    scale: scale.slice(0, 7),
+    sessions: sessions.length,
+    agreed,
+    disputed,
+    evidence:
+      `measured across ${sessions.length} recording(s): ${agreed.length} rung(s) agree in every session` +
+      (disputed.length ? `; disputed: ${disputed.map((d) => `${d.rung}px in ${d.agreedBy} of ${d.of}`).join(", ")}` : "") +
+      "; the rest of the ladder is default.",
+  };
+}

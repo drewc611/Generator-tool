@@ -96,8 +96,8 @@ test("discovery loads every plugin that ships", async () => {
     "input-openapi", "input-pdf", "input-record", "input-shots", "input-static", "input-underscore", "input-vue",
     "output-adr", "output-alpine", "output-angular", "output-cem", "output-ci", "output-curl",
     "output-design-tokens", "output-fixtures", "output-forms", "output-html", "output-i18n", "output-lit",
-    "output-migration", "output-msw",
-    "output-openapi", "output-postman", "output-preact", "output-react", "output-readme", "output-site", "output-solid",
+    "output-migration", "output-msw", "output-next",
+    "output-openapi", "output-postman", "output-preact", "output-react", "output-readme", "output-remix", "output-site", "output-solid",
     "output-storybook", "output-svelte", "output-tailwind",
     "output-tests", "output-vue", "vis-coverage", "vis-equivalence", "vis-parity", "vis-timeline", "vis-ui",
   ]);

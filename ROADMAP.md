@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and eleven features across thirty two phases. The statuses are
+Four hundred and twenty features across thirty three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-504 tests, on Node 18, 20 and 22, and on Windows in CI.
+515 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1064,11 +1064,11 @@ example/legacy-site holds a frameset, a meta refresh, SSI, a form, a font era pa
 
 *Planned: from an app shell to a product port.*
 
-**300. A Next.js target** ▢
-the same site model as an app directory: layout.tsx from the chrome, one page per route, redirects in next.config.
+**300. A Next.js target** 🔨
+the same site model as an app directory: layout.jsx from the lifted chrome, one page per route importing the component the run emitted, redirects in next.config.mjs, and nothing ported twice.
 
-**301. A Remix target** ▢
-routes as route modules, the redirect map as loaders that 301.
+**301. A Remix target** 🔨
+routes as route modules, and every retired address a route module whose loader answers the real 301; the components stay the single source.
 
 **302. Static export mode** 🔨
 one HTML file per route, prerendered from the model, for sites that never needed hydration at all.
@@ -1085,8 +1085,8 @@ content hashed filenames with every written reference rewritten, behind --hash-a
 **306. Layout tables performed** 🔨
 the proposed grid conversion executed behind --perform-tables, the original markup kept beside each component for the diff, and a table with a header cell never touched.
 
-**307. jQuery behavior hydrated** ▢
-the inventory input-jquery already writes, matched to the site's pages so a handler lands on the route that owned its selector.
+**307. jQuery behavior hydrated** 🔨
+the inventory input-jquery writes, matched by selector to each page's markup so a handler lands on the route that owned it; a behavior-manifest and a work list, never invented wiring.
 
 **308. i18n routes** 🔨
 /en/ and /de/ trees recognised as one site in two languages: the /:locale patterns and every page's siblings emitted as data, hreflang applied per navigation, and merging the trees left to a person.
@@ -1165,8 +1165,8 @@ a named slot with its fallback, spelled in Angular and in Vue, prints byte ident
 **331. Two way binding in lit** 🔨
 the lit target catches up: a multiple select reads its selected options and every literal option renders its membership in the model.
 
-**332. A store reader** ▢
-Vuex and NgRx shapes read as state evidence, mapped to the state report.
+**332. A store reader** 🔨
+Vuex, Pinia and NgRx shapes read from source with balanced braces: store names, state keys and action names, no reducer executed and no value reproduced, listed in STATE.md.
 
 **333. WebSocket calls in the API map** 🔨
 subscriptions read from source the way requests are: raw sockets, the rxjs wrapper and socket.io, described in API_CHANNELS.md with nothing about the messages invented.
@@ -1180,17 +1180,17 @@ AUTH_FLOW.mmd draws only arrows the source proves — the token read, the header
 **336. Route guards carried** 🔨
 canActivate and friends, and Vue's beforeEnter, read as route metadata in src/app/route-guards.js; what each guard checks is never reinvented, and the note says to wire them by hand.
 
-**337. Recorded interactions replayed** ▢
-input-record's sessions replayed against the port, drift reported per step.
+**337. Recorded interactions replayed** 🔨
+each recorded step with a selector becomes a replay step in tests/replay.spec.js; the suite reports drift per step, and a recorded input value is not reproduced.
 
-**338. The parity pane diffs the DOM** ▢
-structure diff beside the pixel wipe, because a moved div explains a changed pixel.
+**338. The parity pane diffs the DOM** 🔨
+PARITY_STRUCTURE.md compares the recording's element list against each ported screen's IR by tag counts and named controls; a missing button is named, not scored.
 
 **339. Accessibility gates, opt in** 🔨
 --max-a11y N fails a run whose measured findings exceed the line, same shape as --max-unverified: a gate that only ever adds.
 
-**340. The console compares runs** ▢
-two run.json files side by side: what changed, what got worse, which notes closed.
+**340. The console compares runs** 🔨
+the previous run.json is kept one generation, and the console holds two runs side by side: what moved, what got worse, which notes closed.
 
 **341. A plugin author kit** 🔨
 new-plugin scaffolds the whole kit: the plugin with the contract in its header, its test, docs in its own README, and a fixture directory the test runs against.
@@ -1198,8 +1198,8 @@ new-plugin scaffolds the whole kit: the plugin with the contract in its header, 
 **342. Third party plugin discovery** 🔨
 a project's plugins/ directory loads the way builtin ones do, documented in PLUGIN-API.md; a name clash never replaces a builtin and the refusal is said, not silent.
 
-**343. Windows paths in every plugin** ▢
-the suite already runs on Windows in CI; an audit closes the file URL and separator gaps it does not cover.
+**343. Windows paths in every plugin** 🔨
+test/windows.test.js gates it: every computed dynamic import goes through pathToFileURL, no fs path is glued from the output dir with a slash, and rel paths are normalized once.
 
 **344. The CLI explains a failure** 🔨
 a policy stop prints what evidence would clear it, not just what rule fired.
@@ -1210,8 +1210,8 @@ two runs over the same tree byte identical, gated in CI, temp paths and timestam
 **346. The improve report ranks by cost** 🔨
 findings ordered by the size of the emitted component each fix would touch, measured from the file on disk; a screen the run never emitted is listed last, unranked.
 
-**347. Tokens from more than one recording** ▢
-several sessions merged with agreement measured, disagreement reported as a range.
+**347. Tokens from more than one recording** 🔨
+several exploration*.json sessions merged: a rung every session found is agreed, a rung only some found is disputed with its count, and nothing averages two sessions into a number neither measured.
 
 **348. The behavior report names races** 🔨
 debounce, cancellation and teardown patterns named where they stand in RACES.md: each one is a bug somebody already fought, and the port keeps the pattern or reintroduces the bug.
@@ -1432,19 +1432,59 @@ PDF documents carried honestly: what the reader proves versus skips, the scanned
 whether a port ships, from the evidence it wrote about itself: the files in order, the audit command, the three checks only a person can do, severity without averaging.
 
 
+## Phase 33 · Two more frameworks, and the port meets its witnesses
+
+*The site model reaches Next and Remix, and the port is held against what
+recorded it: the stores it declared, the sessions it was driven through, the
+structure it showed, and the run before this one.*
+
+**412. output-next** 🔨
+the Next.js arrangement: layout.jsx from the lifted chrome, one page per route importing the emitted component, the flattened redirect map in next.config.mjs, head data on each page's metadata.
+
+**413. output-remix** 🔨
+the Remix arrangement: route modules for the pages, and a route module whose loader answers the real 301 for every retired address; flat route names escape a literal dot as [.].
+
+**414. jQuery behavior by route** 🔨
+the inventory matched by selector to each page's markup, written as src/app/behavior-manifest.js and a per route work list; a handler that matches no page is named, never guessed onto one.
+
+**415. Stores read as shapes** 🔨
+Vuex, Pinia and NgRx read from source with balanced braces; the state keys and action names are the app's contract with itself, and STATE.md answers each by name.
+
+**416. Recordings replayed** 🔨
+tests/replay.spec.js walks the recorded steps against the served port and reports drift per step; a step with no selector is counted, a recorded input value is not reproduced.
+
+**417. Structure diffed** 🔨
+PARITY_STRUCTURE.md holds the recording's element list against each ported screen's IR: tag counts and named controls, because a moved div explains a changed pixel and attributes the recording never carried are not compared.
+
+**418. Runs compared** 🔨
+the previous run.json survives one generation and the console puts two runs side by side: what moved, what got worse, which notes closed.
+
+**419. The Windows audit, gated** 🔨
+test/windows.test.js turns the platform assumptions into checks: every computed import through pathToFileURL, no fs path glued from the output dir, rel paths normalized at their one source.
+
+**420. Tokens across recordings** 🔨
+several sessions merged with the disagreement kept: agreement measured, a disputed rung reported with its count, nothing averaged into a rung neither session found.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 355 |
-| planned | 12 |
-| total | 411 |
+| new in this branch | 373 |
+| planned | 3 |
+| total | 420 |
 
-The twelve open are open for stated reasons, not for lack of time: phases
-27 and 28 name what each one waits on, and npm publish stays the one
-command that belongs to a person, with docs/PUBLISHING.md waiting beside it.
-3.0 closed twelve more in one batch — the grammar with its positions, slots
+The three open are open for stated reasons, not for lack of time: npm
+publish is the one command that belongs to a person, with docs/PUBLISHING.md
+waiting beside it, and it appears twice; the calibration corpus grows only
+when apps somebody actually shipped can be labelled. Everything else is
+built.
+3.1 closed nine more — the Next and Remix targets on the site model, the
+jQuery inventory landed per route, the store reader, recorded sessions
+replayed, the parity structure diff, the console comparing runs, the
+Windows audit as a gate, and tokens merged across recordings.
+3.0 closed twelve in one batch — the grammar with its positions, slots
 everywhere, lit's models, channels, GraphQL, auth flows, guards, races, the
 ranked improve report, and the author kit with project plugin discovery.
 Seventeen that were open closed in this branch: focus order once the probe

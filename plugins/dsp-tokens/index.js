@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import {
-  flattenSamples, measureColors, measureDensity, measureRadius, measureSpacing, measureTypeScale,
+  flattenSamples, measureColors, measureDensity, measureRadius, measureSpacing, mergeSpacing, measureTypeScale,
   readStyleVariables, rolesFromVariables,
 } from "./measure.js";
 
@@ -77,10 +77,22 @@ export default {
 
       // Spacing needs positions, which only an exploration records. Without
       // one the scale stays a default and the note below still says so.
-      const spacing = measureSpacing(ctx.sources.exploration, DEFAULTS.space);
+      // Several recordings merge with the disagreement kept: agreement is
+      // measured, a disputed rung is reported with its count, and nothing
+      // averages two sessions into a number neither measured.
+      const sessions = ctx.sources.explorations?.length
+        ? ctx.sources.explorations
+        : ctx.sources.exploration ? [ctx.sources.exploration] : [];
+      const spacing = mergeSpacing(sessions, DEFAULTS.space);
       if (spacing) {
         recovered.space = spacing.scale;
         evidence.push(spacing.evidence);
+        if (spacing.disputed?.length) {
+          ctx.unverified(
+            `spacing: ${spacing.disputed.length} rung(s) the recordings disagree on (${spacing.disputed.map((d) => `${d.rung}px in ${d.agreedBy} of ${d.of}`).join(", ")}). ` +
+            "The disputed rungs stayed out of the ladder; record the disagreeing session again or accept the agreed rungs."
+          );
+        }
       }
 
       const density = measureDensity(rowHeights);

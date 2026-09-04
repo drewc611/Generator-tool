@@ -309,6 +309,12 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         const raw = await readFile(join(outDir, ".portamp", "history.jsonl"), "utf8").catch(() => "");
         return send(200, TYPES[".json"], JSON.stringify(raw.split("\n").filter(Boolean).map((line) => JSON.parse(line))));
       }
+      // The run before this one, kept one generation deep, so the console
+      // can hold two runs side by side; "null" is a first run, not an error.
+      if (url.pathname === "/run.previous.json") {
+        const prev = await readFile(join(outDir, ".portamp", "run.previous.json"), "utf8").catch(() => null);
+        return send(200, TYPES[".json"], prev ?? "null");
+      }
 
       if (url.pathname.startsWith("/shots/")) {
         const file = within(shotsDir, decodeURIComponent(url.pathname.slice(7)));
@@ -468,6 +474,12 @@ export default {
       // A dry run leaves no trace on disk, this sidecar included.
       if (ctx.config.dryRun) return log.debug("dry run; run.json not written");
       await mkdir(dirname(target), { recursive: true });
+      // The previous run survives one generation, so the console can put two
+      // runs side by side: what changed, what got worse, which notes closed.
+      const previous = await readFile(target, "utf8").catch(() => null);
+      if (previous !== null) {
+        await writeFile(join(ctx.config.out, ".portamp", "run.previous.json"), previous, "utf8");
+      }
       await writeFile(target, JSON.stringify(run, null, 2) + "\n", "utf8");
       log.info(
         `run.json written, ${run.plugins.length} plugin(s), ${run.screens.length} screen(s), ` +

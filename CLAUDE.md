@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, eighty six in five classes, and the core has never learned
+Plugins that ship, eighty eight in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -95,6 +95,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-i18n  output-adr  output-migration  output-preact  output-solid
          output-alpine  output-cem  output-postman  output-curl
          output-fixtures  output-readme  output-ci  output-site
+         output-next  output-remix
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence
 general  general-policy  general-authorization  general-license
          general-doctor  general-scaffold  general-watch  general-history
@@ -167,6 +168,19 @@ would touch; and new-plugin scaffolds the whole author kit, with a
 project's own plugins/ directory loading beside the builtins and a name
 clash refused out loud. test/exact.test.js holds all of it.
 
+3.1 reaches two more frameworks and holds the port against its witnesses:
+output-next and output-remix arrange the site model as an app directory and
+as route modules, importing the components the run already emitted and
+carrying the flattened redirect map in each host's own spelling; the jQuery
+inventory lands per route in src/app/behavior-manifest.js, matched by
+selector to each page's markup; dsp-state reads Vuex, Pinia and NgRx shapes
+with balanced braces; tests/replay.spec.js walks the recorded steps and
+reports drift per step; PARITY_STRUCTURE.md diffs the recording's elements
+against each ported screen's IR; the console keeps the previous run.json and
+compares the two; test/windows.test.js gates the platform assumptions; and
+dsp-tokens merges spacing across several recordings with the disagreement
+kept. test/frontier.test.js and test/windows.test.js hold it.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -232,8 +246,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: four hundred and eleven features in
-thirty two phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: four hundred and twenty features in
+thirty three phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.

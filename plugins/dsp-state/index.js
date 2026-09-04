@@ -7,6 +7,7 @@
 
 import { readFile } from "node:fs/promises";
 import { translate } from "../output-react/template.js";
+import { balanced } from "../dsp-ir/scan.js";
 
 /**
  * The state that survives a reload: every localStorage and sessionStorage
@@ -27,6 +28,83 @@ export function persistedKeys(text, rel) {
   return found;
 }
 
+/**
+ * The stores the app declared: Vuex, Pinia and NgRx shapes read from source
+ * as state evidence. What is read is what is written down: store names,
+ * state keys, and the actions' own names. No reducer is executed and no
+ * initial value is reproduced; the shape is the evidence, the values are
+ * the app's.
+ */
+export function readStores(text, rel) {
+  const found = [];
+  // Top level keys of one object body: a name at brace or comma depth zero
+  // followed by a colon. Nested bodies never reach here, because the body
+  // was cut out with balanced braces first.
+  const keysOf = (body) => {
+    // Blank every nested (), [] and {} to spaces of the same length, so what
+    // remains is only the top level, where a member is a name at the start
+    // or after a comma followed by a colon (a key) or a paren (a method).
+    let flat = String(body ?? "");
+    let prev;
+    // Collapse the innermost brackets to an empty pair, repeatedly, so a
+    // value's own commas and colons never look like members but a method's
+    // own `()` and a value's `{}`/`[]` still terminate their key.
+    do {
+      prev = flat;
+      flat = flat.replace(/\([^()]*\)/g, "()").replace(/\{[^{}]*\}/g, "{}").replace(/\[[^\][]*\]/g, "[]");
+    } while (flat !== prev);
+    const keys = [];
+    for (const m of flat.matchAll(/(?:^|,)\s*([\w$]+)\s*[:(]/g)) keys.push(m[1]);
+    return [...new Set(keys)].filter((k) => k !== "state" && k !== "return");
+  };
+  // The object literal that follows a marker like `state:` or `mutations:`,
+  // read with balanced braces so a nested `{}` cannot end it early.
+  const blockAfter = (body, marker) => {
+    const at = new RegExp(`\\b${marker}\\s*:\\s*(?:\\(\\s*\\)\\s*=>\\s*)?\\(?\\s*\\{`).exec(body);
+    if (!at) return null;
+    const open = body.indexOf("{", at.index);
+    const block = balanced(body, open);
+    return block ? block.slice(1, -1) : null;
+  };
+  const storeBody = (re) => {
+    const out = [];
+    for (const m of text.matchAll(re)) {
+      const open = text.indexOf("{", m.index + m[0].length - 1);
+      const block = balanced(text, open);
+      if (block) out.push({ body: block.slice(1, -1), name: m[1] ?? null });
+    }
+    return out;
+  };
+
+  for (const { body } of storeBody(/(?:new\s+Vuex\.Store|createStore)\s*\(\s*\{/g)) {
+    const state = blockAfter(body, "state");
+    const mutations = blockAfter(body, "mutations");
+    found.push({ kind: "vuex", name: null, stateKeys: state ? keysOf(state) : [], actions: mutations ? keysOf(mutations) : [], file: rel });
+  }
+  for (const m of text.matchAll(/defineStore\s*\(\s*['"`]([\w-]+)['"`]\s*,\s*\{/g)) {
+    const open = text.indexOf("{", m.index + m[0].length - 1);
+    const block = balanced(text, open);
+    if (!block) continue;
+    const body = block.slice(1, -1);
+    const state = blockAfter(body, "state");
+    const actions = blockAfter(body, "actions");
+    found.push({ kind: "pinia", name: m[1], stateKeys: state ? keysOf(state) : [], actions: actions ? keysOf(actions) : [], file: rel });
+  }
+  for (const m of text.matchAll(/createAction\s*\(\s*['"`]\[([^\]]+)\]\s*([^'"`]+)['"`]/g)) {
+    const scope = m[1].trim();
+    let store = found.find((s) => s.kind === "ngrx" && s.name === scope && s.file === rel);
+    if (!store) {
+      store = { kind: "ngrx", name: scope, stateKeys: [], actions: [], file: rel };
+      found.push(store);
+    }
+    store.actions.push(m[2].trim());
+  }
+  if (/createReducer\s*\(/.test(text) && !found.some((s) => s.kind === "ngrx" && s.file === rel)) {
+    found.push({ kind: "ngrx", name: null, stateKeys: [], actions: [], file: rel });
+  }
+  return found;
+}
+
 export default {
   name: "dsp-state",
   version: "0.1.0",
@@ -34,9 +112,20 @@ export default {
   setup({ on, log }) {
     on("plan", async (ctx) => {
       const persisted = [];
+      const stores = [];
       for (const file of ctx.sources.files.filter((f) => /\.(js|ts|vue|html?)$/.test(f.rel) && !/\.min\./.test(f.rel))) {
         const text = await readFile(file.path, "utf8").catch(() => "");
-        if (text) persisted.push(...persistedKeys(text, file.rel));
+        if (!text) continue;
+        persisted.push(...persistedKeys(text, file.rel));
+        stores.push(...readStores(text, file.rel));
+      }
+      if (stores.length) {
+        ctx.stores = stores;
+        ctx.unverified(
+          `${stores.length} declared store shape(s) read from source (${[...new Set(stores.map((s) => s.kind))].join(", ")}). ` +
+          "The state keys and action names are the app's own contract with itself; STATE.md lists them, and the port's state design should answer each one by name."
+        );
+        log.info(`${stores.length} store shape(s): ${[...new Set(stores.map((s) => s.kind))].join(", ")}`);
       }
       if (persisted.length) {
         const keys = new Map();
@@ -80,7 +169,7 @@ export default {
     });
 
     on("emit", async (ctx) => {
-      if (!ctx.stateShape && !ctx.persistedState) return;
+      if (!ctx.stateShape && !ctx.persistedState && !ctx.stores) return;
       const { perScreen = [], shared = [], local = [] } = ctx.stateShape ?? {};
       const lines = [
         "# Where state should live",
@@ -125,6 +214,17 @@ export default {
         "URL parameter is usually the honest container.",
         ""
       );
+      if (ctx.stores?.length) {
+        lines.push("## The stores the app declared", "");
+        lines.push("Read from source as shapes, never executed. Each row is a contract");
+        lines.push("the app made with itself; the port's state design answers it by name.", "");
+        lines.push("| kind | store | state keys | actions | file |");
+        lines.push("| --- | --- | --- | --- | --- |");
+        for (const store of ctx.stores) {
+          lines.push(`| ${store.kind} | ${store.name ?? "(unnamed)"} | ${store.stateKeys.map((k) => `\`${k}\``).join(", ") || "unread"} | ${store.actions.map((a) => `\`${a}\``).join(", ") || "unread"} | ${store.file} |`);
+        }
+        lines.push("");
+      }
       await ctx.write("STATE.md", lines.join("\n"));
     });
   },

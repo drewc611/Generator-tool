@@ -264,6 +264,86 @@ export default {
       }
     });
 
+    // After input-static assembled the site: each handler lands on the route
+    // whose markup its selector matches. The join is a matching, never a
+    // port: what the handler does stays its own code's business, and the
+    // manifest says which routes need which behavior wired by hand.
+    on("plan", (ctx) => {
+      if (!ctx.site?.pages?.length || !ctx.widgets?.length) return;
+      const matches = (selector, template) => {
+        const id = /^#([\w-]+)$/.exec(selector);
+        if (id) return new RegExp(`\\bid\\s*=\\s*["']${id[1]}["']`).test(template);
+        const cls = /^\.([\w-]+)$/.exec(selector);
+        if (cls) return new RegExp(`\\bclass\\s*=\\s*["'][^"']*\\b${cls[1]}\\b`).test(template);
+        const tag = /^([a-z][\w-]*)$/i.exec(selector);
+        if (tag) return new RegExp(`<${tag[1]}\\b`, "i").test(template);
+        return null;
+      };
+      const byRoute = new Map();
+      const homeless = [];
+      for (const widget of ctx.widgets.filter((w) => w.events?.length)) {
+        let landed = false;
+        let judged = false;
+        for (const page of ctx.site.pages) {
+          const template = ctx.screens.find((s) => s.selector === page.selector)?.template ?? "";
+          const hit = matches(widget.selector, template);
+          if (hit === null) continue;
+          judged = true;
+          if (hit) {
+            if (!byRoute.has(page.route)) byRoute.set(page.route, []);
+            byRoute.get(page.route).push(widget);
+            landed = true;
+          }
+        }
+        if (!landed) homeless.push({ widget, judged });
+      }
+      if (!byRoute.size && !homeless.length) return;
+      ctx.jqueryByRoute = [...byRoute.entries()]
+        .map(([route, widgets]) => ({ route, widgets }))
+        .sort((a, b) => a.route.localeCompare(b.route));
+      for (const { widget, judged } of homeless) {
+        ctx.unverified(
+          judged
+            ? `the handler on \`${widget.selector}\` (${widget.file}) matches no page in this run; the markup it wired to may be gone, or built at runtime.`
+            : `the handler on \`${widget.selector}\` (${widget.file}) uses a selector this matching does not judge; place it by hand.`
+        );
+      }
+      log.info(`${ctx.jqueryByRoute.length} route(s) own jQuery behavior, ${homeless.length} handler(s) unplaced`);
+    });
+
+    on("emit", async (ctx) => {
+      if (!ctx.jqueryByRoute?.length) return;
+      await ctx.write("src/app/behavior-manifest.js", [
+        "/**",
+        " * Which routes own which legacy handlers, matched by selector against",
+        " * each page's own markup. Nothing here is ported behavior: the wiring",
+        " * is a person's work, and this manifest says exactly where it is owed.",
+        " */",
+        "export const BEHAVIOR = {",
+        ...ctx.jqueryByRoute.map(({ route, widgets }) =>
+          `  ${JSON.stringify(route)}: ${JSON.stringify(widgets.map((w) => ({ selector: w.selector, events: w.events, file: w.file })))},`
+        ),
+        "};",
+        "",
+      ].join("\n"));
+      await ctx.write("BEHAVIOR_BY_ROUTE.md", [
+        "# The behavior each route is owed",
+        "",
+        "The jQuery inventory, matched to the routes whose markup each selector",
+        "hits. The handlers were never ported, because jQuery declared no",
+        "boundaries and portamp does not invent them; this is the work list for",
+        "wiring each one into its component, with the file that holds the logic.",
+        "",
+        ...ctx.jqueryByRoute.flatMap(({ route, widgets }) => [
+          `## \`${route}\``,
+          "",
+          ...widgets.map((w) => `- \`${w.selector}\` listens for ${w.events.join(", ") || "events"} (${w.file})`),
+          "",
+        ]),
+      ].join("\n"));
+      log.info(`behavior manifest: ${ctx.jqueryByRoute.length} route(s)`);
+    });
+
     on("emit", async (ctx) => {
       if (!ctx.widgets?.length) return;
       await ctx.write("WIDGETS.md", render(ctx.widgets) + renderLibs(ctx.widgetLibs ?? []));

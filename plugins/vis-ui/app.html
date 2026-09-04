@@ -279,6 +279,7 @@
   </div>
   <div class="sunk gauge spark-box" title="unverified per run, oldest first">
     <svg id="spark" width="54" height="16" viewBox="0 0 54 16" aria-label="unverified count per run, oldest first"><polyline id="spark-line" points="" /></svg>
+    <aside id="compare" hidden aria-label="comparison with the previous run"></aside>
     <span>trend</span>
   </div>
   <div class="gauges">
@@ -374,7 +375,7 @@
 <script type="module">
 import {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
-  sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn,
+  sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn, compareRuns,
 } from "/lib.js";
 
 const $ = (id) => document.getElementById(id);
@@ -807,7 +808,7 @@ $("run").addEventListener("click", rerun);
 
 function renderAll() {
   renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens();
-  renderEndpoints(); renderUnverified(); renderFiles(); renderReports(); renderTrend();
+  renderEndpoints(); renderUnverified(); renderFiles(); renderReports(); renderTrend(); renderComparison();
 }
 
 // One keymap, decided in lib.js where the suite can read it. Keys inside an
@@ -862,6 +863,21 @@ setInterval(async () => {
     if (await refresh()) $("now-sub").textContent = "refreshed from a newer run";
   } catch { /* the server may be restarting; the next tick asks again */ }
 }, 5000);
+
+// The previous run beside this one, from the one generation the server keeps.
+async function renderComparison() {
+  try {
+    const cmp = compareRuns(run, await fetch("/run.previous.json").then((r) => r.json()));
+    const box = $("compare");
+    if (!cmp || !box) return;
+    const moved = cmp.metrics.filter((m) => m.delta !== 0);
+    box.hidden = false;
+    box.innerHTML = "<h3>vs the previous run</h3>" +
+      (moved.length ? "<ul>" + moved.map((m) => `<li>${m.name}: ${m.was} → ${m.is}${m.verdict === "level" || m.verdict === "changed" ? "" : ` (${m.verdict})`}</li>`).join("") + "</ul>" : "<p>Nothing moved.</p>") +
+      (cmp.notesClosed.length ? `<p>${cmp.notesClosed.length} note(s) closed.</p>` : "") +
+      (cmp.notesOpened.length ? `<p>${cmp.notesOpened.length} note(s) opened.</p>` : "");
+  } catch { /* no previous run kept yet */ }
+}
 
 // The trend under the readout: the unverified counts of the recorded runs,
 // as a line, with the latest delta in words.
