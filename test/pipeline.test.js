@@ -13,11 +13,33 @@ test("the example runs end to end and writes the port", async (t) => {
 
   assert.deepEqual(ctx.written.sort(), [
     "A11Y.md",
+    "API_FIELDS.md",
+    "API_STYLE.md",
+    "ARCHITECTURE.md",
+    "COVERAGE.md",
+    "CSS_STATS.md",
+    "DEAD_CODE.md",
+    "DESIGN_UPLIFT.md",
+    "HISTORY.md",
+    "MODERNIZATION.md",
+    "PERF.md",
     "PORT_NOTES.md",
+    "PORT_README.md",
+    "ROUTES.md",
+    "STATE.md",
+    "WEIGHT.md",
+    "badges/archetype.svg",
+    "badges/ported.svg",
+    "badges/unverified.svg",
     "src/api/client.js",
     "src/api/endpoints.js",
     "src/features/AppOrders/AppOrders.jsx",
+    "src/i18n/README.md",
+    "src/i18n/en.json",
     "src/tokens.js",
+    "src/tokens.modern.css",
+    "src/tokens.modern.js",
+    "tests/states.test.js",
   ]);
   for (const file of ctx.written) {
     const text = await readFile(join(out, file), "utf8");
@@ -133,10 +155,15 @@ test("the run is deterministic", async (t) => {
 
   assert.deepEqual(first.ctx.written.sort(), second.ctx.written.sort());
   for (const file of first.ctx.written) {
-    assert.equal(
-      await readFile(join(first.out, file), "utf8"),
-      await readFile(join(second.out, file), "utf8"),
-      `${file} differs between runs`
-    );
+    const a = await readFile(join(first.out, file), "utf8");
+    const b = await readFile(join(second.out, file), "utf8");
+    // HISTORY.md exists to record when each run happened, so two runs at
+    // different moments must differ there, in the timestamp and nowhere else.
+    if (file === "HISTORY.md") {
+      const stripTime = (text) => text.replace(/^\| [\d:TZ-]+ \|/gm, "| when |");
+      assert.equal(stripTime(a), stripTime(b), "HISTORY.md differs beyond its timestamps");
+      continue;
+    }
+    assert.equal(a, b, `${file} differs between runs`);
   }
 });

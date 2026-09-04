@@ -1,8 +1,51 @@
+import { buildIr } from "../dsp-ir/ir.js";
+
 /**
  * Turns the call inventory into one endpoint map plus a client, so the ported
  * components never contain a URL. Every call the inventory could not fully
  * describe is recorded as unverified rather than guessed at.
  */
+
+/**
+ * Which fields of each collection the templates actually read. A response
+ * usually carries more than the screens use, and the difference is the
+ * contract the port really depends on: everything else can change server
+ * side without anything on screen noticing.
+ */
+export function fieldsRead(ir) {
+  const out = new Map();
+  const collect = (expr, scopes) => {
+    for (const m of String(expr ?? "").matchAll(/\b([\w$]+)\.([\w$]+)/g)) {
+      const list = scopes.get(m[1]);
+      if (!list) continue;
+      if (!out.has(list)) out.set(list, new Set());
+      out.get(list).add(m[2]);
+    }
+  };
+  const walk = (node, scopes) => {
+    if (!node) return;
+    if (node.kind === "text") for (const p of node.parts) collect(p.expression, scopes);
+    if (node.kind === "when") collect(node.test, scopes);
+    if (node.kind === "html") collect(node.expression, scopes);
+    if (node.kind === "each") {
+      scopes = new Map([...scopes, [node.item, node.list]]);
+      collect(node.key, scopes);
+    }
+    if (node.kind === "element") {
+      for (const a of node.attrs) {
+        collect(a.expression, scopes);
+        for (const p of a.parts ?? []) collect(p.expression, scopes);
+      }
+      for (const c of node.classes) collect(c.expression ?? c.when, scopes);
+      for (const s of node.styles) collect(s.expression, scopes);
+      for (const e of node.events) collect(e.handler, scopes);
+      collect(node.model, scopes);
+    }
+    for (const child of node.children ?? []) walk(child, scopes);
+  };
+  walk(ir.root, new Map());
+  return out;
+}
 const nameFor = (call) => {
   const parts = call.path.split(/[/?]/).filter((p) => p && !p.startsWith("$") && !p.startsWith(":"));
   const tail = parts.slice(-2).map((p) => p.replace(/[^a-z0-9]/gi, "")).filter(Boolean);
@@ -29,6 +72,30 @@ export default {
           ctx.unverified(`Body shape for ${c.method} ${c.path} was not determined (${c.file}).`);
       }
       log.info(`${ctx.api.calls.length} distinct endpoint(s)`);
+
+      // Join what the templates read to the endpoints the app called: the
+      // collection's leaf name against a GET path's last plain segment. A
+      // join by name is a reading, and the file says so.
+      const usage = new Map();
+      for (const screen of ctx.screens.filter((s) => s.template)) {
+        const ir = screen.ir ?? (() => { try { return buildIr(screen.template); } catch { return null; } })();
+        if (!ir) continue;
+        for (const [list, fields] of fieldsRead(ir)) {
+          const leaf = list.split(".").pop().toLowerCase();
+          if (!usage.has(leaf)) usage.set(leaf, { list, fields: new Set(), screens: new Set() });
+          for (const f of fields) usage.get(leaf).fields.add(f);
+          usage.get(leaf).screens.add(screen.selector);
+        }
+      }
+      ctx.apiFields = [];
+      for (const call of ctx.api.calls.filter((c) => c.method === "GET")) {
+        const segment = call.path.split("?")[0].split("/").filter((p) => p && !/[:{$]/.test(p)).pop()?.toLowerCase();
+        const hit = segment ? usage.get(segment) ?? usage.get(segment.replace(/s$/, "")) : null;
+        if (hit) {
+          ctx.apiFields.push({ endpoint: call.name, method: call.method, path: call.path, fields: [...hit.fields].sort(), screens: [...hit.screens] });
+        }
+      }
+      if (ctx.apiFields.length) log.info(`${ctx.apiFields.length} endpoint(s) joined to the fields their screens read`);
     });
 
     on("emit", async (ctx) => {
@@ -37,9 +104,27 @@ export default {
         .join("\n");
       await ctx.write("src/api/endpoints.js", `export const endpoints = {\n${lines}\n};\n`);
       await ctx.write("src/api/client.js", CLIENT);
+      if (ctx.apiFields?.length) {
+        await ctx.write("API_FIELDS.md", FIELDS(ctx.apiFields));
+      }
     });
   },
 };
+
+const FIELDS = (rows) => `# The fields the screens actually read
+
+Each GET below was joined to a collection a template iterates, by name, which
+is a reading rather than a fact: a collection assigned from a different call
+would join wrongly, so check the pairs before leaning on them.
+
+The point of the list: the response can carry anything, and only these fields
+put pixels on screen. Everything else can change server side without the port
+noticing, and nothing here says the response is *limited* to these fields.
+
+| endpoint | path | fields read | read by |
+| --- | --- | --- | --- |
+${rows.map((r) => `| \`${r.endpoint}\` | \`${r.method} ${r.path}\` | ${r.fields.map((f) => `\`${f}\``).join(", ") || "none"} | ${r.screens.join(", ")} |`).join("\n")}
+`;
 
 const CLIENT = `import { endpoints } from "./endpoints.js";
 

@@ -1,0 +1,7 @@
+{
+  "label": { "from": 1995, "to": 2005 },
+  "why": "server side includes under an HTML 4 doctype with inline handlers",
+  "files": [
+    { "rel": "index.shtml", "text": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"><html><body><!--#include virtual=\"header.inc\" --><a href=\"#\" onclick=\"go()\">go</a></body></html>" }
+  ]
+}

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html ng-app="orderDesk">
+<head><title>Order Desk</title></head>
+<body>
+  <div ng-controller="OrdersCtrl">
+    <input ng-model="q" ng-change="reload()" placeholder="Filter orders">
+    <p ng-show="loading">Loading</p>
+    <table>
+      <tr ng-repeat="o in orders track by o.id" ng-click="pick(o)" ng-class="{selected: o.id === chosen}">
+        <td>{{ o.id }}</td><td>{{ o.total | currency }}</td>
+      </tr>
+    </table>
+    <p ng-hide="orders.length">No orders yet</p>
+  </div>
+  <script src="js/angular-1.4.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

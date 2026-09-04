@@ -98,6 +98,43 @@ export function findIssues(exploration, model) {
       }
     }
 
+    // Tab order against reading order, when the recording carries positions.
+    // A recording made before positions were captured simply has nothing to
+    // measure here; the check never guesses from a coordinate it does not have.
+    const focusables = (screen.elements ?? []).filter(
+      (e) => !e.disabled && (["input", "select", "textarea", "button", "a"].includes(e.tag) || e.tabindex != null)
+    );
+    if (focusables.length >= 2 && focusables.every((e) => e.box && typeof e.box.x === "number" && typeof e.box.y === "number")) {
+      const explicit = focusables.filter((e) => (e.tabindex ?? 0) > 0);
+      if (explicit.length) {
+        add({
+          id: `focus-explicit:${screen.id}`,
+          severity: "medium",
+          kind: "focus-order",
+          screen: screen.id,
+          element: explicit.map((e) => e.selector).join(", "),
+          evidence: `tabindex above zero on ${explicit.length} element(s), which pulls them out of document order and breaks the moment the page changes.`,
+          instead: "The port keeps the DOM in visual order and never sets a positive tabindex.",
+        });
+      }
+      const rank = (e) => ((e.tabindex ?? 0) > 0 ? e.tabindex : Infinity);
+      const tabOrder = [...focusables].sort((a, b) => rank(a) - rank(b));
+      const row = (e) => Math.round(e.box.y / 16);
+      const reading = [...focusables].sort((a, b) => (row(a) - row(b)) || (a.box.x - b.box.x));
+      const diverges = tabOrder.findIndex((e, i) => e !== reading[i]);
+      if (diverges !== -1) {
+        add({
+          id: `focus-order:${screen.id}`,
+          severity: "medium",
+          kind: "focus-order",
+          screen: screen.id,
+          element: tabOrder[diverges].selector,
+          evidence: `tab stop ${diverges + 1} is \`${tabOrder[diverges].selector}\` but the element there on screen is \`${reading[diverges].selector}\`. Keyboard users travel a different page than sighted ones read.`,
+          instead: "The port orders the markup the way the screen reads, so the tab sequence needs no correction.",
+        });
+      }
+    }
+
     for (const sample of screen.sample ?? []) {
       const background = opaque(sample.background) ? sample.background : pageBackground;
       const ratio = contrastRatio(sample.color, background);

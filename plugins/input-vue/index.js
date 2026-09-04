@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
+import { balanced } from "../dsp-ir/scan.js";
+import { objectLiteralEntries } from "../dsp-ir/parse.js";
 
 /**
  * Reads Vue single file components into the same context shape input-angular
@@ -8,37 +10,84 @@ import { basename, extname } from "node:path";
  * tests it: the template translator, the endpoint map and the emitter were all
  * written against Angular and none of them changed to accept this.
  *
- * Regular expressions, like the Angular reader's fallback, and honest about it.
+ * Structural now, not regular expressions: blocks are found by walking the
+ * markup and counting nesting, and props come out of the real object literal
+ * through balanced brace scanning. The replacement landed behind the byte
+ * identical output gate, which is the only way a reader is allowed to change
+ * here. A grammar it still is not: a template block is handed whole to the
+ * dialect parser, which was always the plan.
  */
 
-const BLOCK = (tag) => new RegExp(`<${tag}(\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, "i");
 const RXJS = /\b(watch|computed|onMounted|onUnmounted|nextTick|reactive|ref)\b/g;
 
 const kebab = (name) =>
   name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[_\s]+/g, "-").toLowerCase();
 
+/**
+ * The content of a top level block, found by nesting count rather than by a
+ * lazy match. The difference is every template that contains a <template>
+ * of its own, which is how Vue spells v-if on a group.
+ */
+export function sfcBlock(text, tag) {
+  const open = new RegExp(`<${tag}(\\s[^>]*)?>`, "ig");
+  const any = new RegExp(`<(/?)${tag}(\\s[^>]*)?>`, "ig");
+  const m = open.exec(text);
+  if (!m) return null;
+  any.lastIndex = open.lastIndex;
+  let depth = 1;
+  let step;
+  while ((step = any.exec(text))) {
+    depth += step[1] ? -1 : 1;
+    if (depth === 0) return { attrs: m[1] ?? "", body: text.slice(open.lastIndex, step.index) };
+  }
+  // An unclosed block takes the rest of the file, which is what the compiler
+  // would have rejected; reading to the end at least loses nothing.
+  return { attrs: m[1] ?? "", body: text.slice(open.lastIndex) };
+}
+
+/** Names out of a props declaration, whichever of the three spellings it uses. */
+export function propNames(source) {
+  const names = new Set();
+  const value = String(source ?? "").trim();
+  if (value.startsWith("[")) {
+    for (const m of value.matchAll(/['"]([\w$]+)['"]/g)) names.add(m[1]);
+    return [...names];
+  }
+  const entries = objectLiteralEntries(value);
+  if (entries) for (const e of entries) names.add(e.key.replace(/^['"]|['"]$/g, ""));
+  return [...names];
+}
+
+/** The argument of a call like defineProps(...), scanned, not guessed at. */
+function callArgument(body, name) {
+  const m = new RegExp(`${name}\\s*(?:<[^>]*>)?\\s*\\(`).exec(body);
+  if (!m) return null;
+  const open = body.indexOf("(", m.index + m[0].length - 1);
+  const parens = balanced(body, open);
+  return parens ? parens.slice(1, -1).trim() : null;
+}
+
+/** The value of an option like `props:`, whether it is an object or an array. */
+function optionValue(body, name) {
+  const m = new RegExp(`\\b${name}\\s*:\\s*([\\[{])`).exec(body);
+  if (!m) return null;
+  const open = body.indexOf(m[1], m.index + m[0].length - 1);
+  return balanced(body, open);
+}
+
 export function readSfc(text, rel) {
-  const template = BLOCK("template").exec(text);
-  const script = BLOCK("script").exec(text);
-  const body = script?.[2] ?? "";
+  const template = sfcBlock(text, "template");
+  const script = sfcBlock(text, "script");
+  const body = script?.body ?? "";
 
   const props = new Set();
-  // defineProps({ a: String }) or defineProps(['a','b'])
-  const defined = /defineProps\s*(?:<[^>]*>)?\s*\(\s*([\s\S]*?)\)\s*;?/.exec(body);
-  if (defined) {
-    for (const m of defined[1].matchAll(/['"]([\w$]+)['"]\s*(?::|,|\])/g)) props.add(m[1]);
-    for (const m of defined[1].matchAll(/(?:^|[{,])\s*([\w$]+)\s*:/g)) props.add(m[1]);
-  }
-  // props: { a: ... } or props: ['a']
-  const optionProps = /\bprops\s*:\s*(\{[\s\S]*?\}|\[[\s\S]*?\])/.exec(body);
-  if (optionProps) {
-    for (const m of optionProps[1].matchAll(/['"]([\w$]+)['"]/g)) props.add(m[1]);
-    for (const m of optionProps[1].matchAll(/(?:^|[{,])\s*([\w$]+)\s*:/g)) props.add(m[1]);
+  for (const source of [callArgument(body, "defineProps"), optionValue(body, "props")]) {
+    if (source) for (const name of propNames(source)) props.add(name);
   }
 
   const emits = new Set();
-  const defineEmits = /defineEmits\s*(?:<[^>]*>)?\s*\(\s*\[([\s\S]*?)\]\s*\)/.exec(body);
-  if (defineEmits) for (const m of defineEmits[1].matchAll(/['"]([\w$-]+)['"]/g)) emits.add(m[1]);
+  const declaredEmits = callArgument(body, "defineEmits");
+  if (declaredEmits) for (const m of declaredEmits.matchAll(/['"]([\w$-]+)['"]/g)) emits.add(m[1]);
   for (const m of body.matchAll(/\$?emit\(\s*['"]([\w$-]+)['"]/g)) emits.add(m[1]);
 
   const name = /\bname\s*:\s*['"]([\w-]+)['"]/.exec(body)?.[1] ?? basename(rel, extname(rel));
@@ -62,7 +111,7 @@ export function readSfc(text, rel) {
       file: rel,
       inputs: [...props],
       outputs: [...emits],
-      template: template ? template[2] : null,
+      template: template ? template.body : null,
       templateOrigin: template ? "the single file component" : null,
       usesNgIf: /\bv-if\b/.test(text),
       usesNgFor: /\bv-for\b/.test(text),
@@ -95,12 +144,7 @@ export default {
         ctx.api.calls.push(...calls);
         found += 1;
       }
-      log.info(`${found} single file component(s), read with regular expressions`);
-      if (found) {
-        ctx.unverified(
-          "Vue components were read with regular expressions, not a parser. A component written unusually may have been missed."
-        );
-      }
+      log.info(`${found} single file component(s), read structurally`);
     });
   },
 };

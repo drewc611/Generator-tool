@@ -84,10 +84,22 @@ test("discovery loads every plugin that ships", async () => {
   await k.discover({ builtinDir: BUILTIN });
   const names = k.plugins.map((p) => p.name).sort();
   assert.deepEqual(names, [
-    "dsp-a11y", "dsp-apimap", "dsp-behavior", "dsp-improve", "dsp-ir", "dsp-tokens",
-    "general-authorization", "general-license", "general-policy",
-    "input-angular", "input-blackbox", "input-explore", "input-record", "input-shots", "input-vue",
-    "output-react", "output-storybook", "output-svelte", "output-tests", "vis-parity", "vis-ui",
+    "dsp-a11y", "dsp-apimap", "dsp-apistyle", "dsp-archetype", "dsp-assets", "dsp-auth", "dsp-behavior",
+    "dsp-boundaries", "dsp-cognitive", "dsp-css", "dsp-dates",
+    "dsp-deadcode", "dsp-diff", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-era", "dsp-flags", "dsp-forms",
+    "dsp-i18n", "dsp-improve",
+    "dsp-ir", "dsp-modernize", "dsp-perf", "dsp-permissions", "dsp-routes", "dsp-state", "dsp-tokens",
+    "dsp-uplift", "dsp-weight",
+    "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-scaffold", "general-watch",
+    "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",
+    "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-knockout",
+    "input-openapi", "input-pdf", "input-record", "input-shots", "input-static", "input-underscore", "input-vue",
+    "output-adr", "output-alpine", "output-angular", "output-cem", "output-ci", "output-curl",
+    "output-design-tokens", "output-fixtures", "output-forms", "output-html", "output-i18n", "output-lit",
+    "output-migration", "output-msw",
+    "output-openapi", "output-postman", "output-preact", "output-react", "output-readme", "output-site", "output-solid",
+    "output-storybook", "output-svelte", "output-tailwind",
+    "output-tests", "output-vue", "vis-coverage", "vis-equivalence", "vis-parity", "vis-timeline", "vis-ui",
   ]);
   for (const p of k.plugins) assert.ok(CLASSES.includes(p.class), `${p.name} has a real class`);
 });

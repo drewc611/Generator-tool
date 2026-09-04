@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+<channel>
+<title>The Journal</title>
+<item><title>Story one</title><link>/story-1.html</link></item>
+<item><title>Story two</title><link>http://journal.example/story-2.html</link></item>
+</channel>
+</rss>

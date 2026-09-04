@@ -1,0 +1,8 @@
+{
+  "label": { "from": 1994, "to": 2001 },
+  "why": "a frameset beside font tags is the mid nineties, nothing else writes that pair",
+  "files": [
+    { "rel": "index.html", "text": "<html><frameset cols=\"180,*\"><frame src=\"nav.html\" name=\"nav\"><frame src=\"main.html\" name=\"main\"></frameset></html>" },
+    { "rel": "nav.html", "text": "<html><body><font size=\"2\">Menu</font></body></html>" }
+  ]
+}

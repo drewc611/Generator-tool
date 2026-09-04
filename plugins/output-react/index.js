@@ -1,9 +1,7 @@
 import { translate } from "./template.js";
+import { pascal, unique } from "../dsp-ir/emit.js";
 
-const pascal = (sel) =>
-  sel.split(/[-_]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
-const unique = (list) => [...new Set(list.filter(Boolean))];
 
 /**
  * Emits one React component per Angular component. The template is translated
@@ -20,6 +18,14 @@ export default {
     on("emit", async (ctx) => {
       let translated = 0;
 
+      // Every screen in the run, addressable by its tag, so a template that
+      // uses one becomes a reference to the ported component instead of an
+      // unknown element. A screen cannot resolve to itself: a self reference
+      // is recursion, and deciding that is not a translation.
+      const components = new Map(
+        ctx.screens.map((screen) => [screen.selector.toLowerCase(), { name: pascal(screen.selector) || "Screen" }])
+      );
+
       for (const s of ctx.screens) {
         const Name = pascal(s.selector) || "Screen";
         const notes = [];
@@ -32,9 +38,16 @@ export default {
         let props = unique([...s.inputs, ...s.outputs.map((o) => `on${pascal(o)}`)]);
         let collection = "data";
 
+        let referenced = [];
         if (s.template) {
-          const result = translate(s.template, { indent: 3 });
+          const scoped = new Map(components);
+          scoped.delete(s.selector.toLowerCase());
+          const result = translate(s.template, { indent: 3, components: scoped });
           body = result.jsx;
+          referenced = result.components.map((sel) => components.get(sel).name);
+          for (const note of result.notes.filter((n) => /looks like a component/.test(n))) {
+            ctx.unverified(`<${s.selector}>: ${note}`);
+          }
           models = result.models;
           collection = result.collections[0] ?? "data";
           props = unique([...props, ...result.reads]);
@@ -52,7 +65,7 @@ export default {
 
         await ctx.write(
           `src/features/${Name}/${Name}.jsx`,
-          COMPONENT({ Name, props, notes, origin: s.file, body, models, collection })
+          COMPONENT({ Name, props, notes, origin: s.file, body, models, collection, referenced })
         );
       }
 
@@ -67,7 +80,7 @@ export default {
 const PLACEHOLDER = (origin) =>
   `      {/* No template was found for this component. Port the body from ${origin}. */}`;
 
-const COMPONENT = ({ Name, props, notes, origin, body, models, collection }) => {
+const COMPONENT = ({ Name, props, notes, origin, body, models, collection, referenced = [] }) => {
   const state = models
     .map((m) => {
       const leaf = m.split(".").pop().replace(/[^\w$]/g, "");
@@ -75,13 +88,28 @@ const COMPONENT = ({ Name, props, notes, origin, body, models, collection }) => 
     })
     .join("\n");
 
-  const empty =
+  // A screen that binds no collection has no data to be empty of. Guarding
+  // on a prop it does not take would throw instead; the comment records the
+  // decision so the states suite can see it was made, not missed.
+  const test =
     collection === "data"
       ? "!data || (Array.isArray(data) && data.length === 0)"
       : `!${collection} || ${collection}.length === 0`;
+  const empty = props.includes(collection.split(".")[0])
+    ? `  if (${test})
+    return (
+      <div style={{ padding: T.space[5], textAlign: "center", color: T.color.inkMuted }}>
+        Nothing to show yet.
+      </div>
+    );
+`
+    : `  // No collection is bound, so the empty state cannot occur on this screen.
+`;
 
+  const imports = referenced.map((name) => `import ${name} from "../${name}/${name}.jsx";`).join("\n");
   return `import React${models.length ? ", { useState }" : ""} from "react";
 import { tokens as T } from "../../tokens.js";
+${imports ? imports + "\n" : ""}
 
 /**
  * Ported from ${origin}
@@ -91,24 +119,18 @@ ${notes.length ? notes.join("\n") : " *"}
  * checked the legacy screen genuinely cannot reach it.
  */
 export default function ${Name}({ ${props.join(", ")} }) {
-${state ? state + "\n" : ""}  if (loading) return <div style={{ padding: T.space[4], color: T.color.inkMuted }}>Loading…</div>;
+${state ? state + "\n" : ""}  if (loading) return <div role="status" style={{ padding: T.space[4], color: T.color.inkMuted }}>Loading…</div>;
 
   if (error)
     return (
-      <div style={{ padding: T.space[4] }}>
+      <div role="alert" style={{ padding: T.space[4] }}>
         <div style={{ fontWeight: T.weight.bold, marginBottom: T.space[0] }}>Could not load</div>
         <div style={{ color: T.color.inkMuted, fontSize: T.size.sm }}>{String(error.message ?? error)}</div>
         <button onClick={onRetry} style={{ marginTop: T.space[2] }}>Try again</button>
       </div>
     );
 
-  if (${empty})
-    return (
-      <div style={{ padding: T.space[5], textAlign: "center", color: T.color.inkMuted }}>
-        Nothing to show yet.
-      </div>
-    );
-
+${empty}
   return (
     <div style={{ padding: T.space[3], color: T.color.ink, background: T.color.surface }}>
 ${body ?? PLACEHOLDER(origin)}

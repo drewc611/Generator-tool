@@ -1,12 +1,13 @@
 # portamp
 
-Port a legacy front end to React without losing the look or the API contract.
+Port a legacy front end without losing the look or the API contract.
+Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 ![The portamp console: a skinned panel showing a pipeline run, plugin meters and the five stage buttons](media/portamp-console.svg)
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
-about where the plugin classes come from. Everything on the panel is real: 527
-lines of core, no runtime dependencies, ten plugins, and the literal output of
+about where the plugin classes come from. Everything on the panel is real: 718
+lines of core, no runtime dependencies, 86 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -19,62 +20,62 @@ up playing formats its authors had never heard of.
 portamp is that idea pointed at front end migration. Same five classes, same
 small core, same rule that everything interesting lives outside it. `input`
 reads a legacy app instead of a file, `dsp` transforms what was read, `output`
-writes React instead of audio, and `vis` shows you what you got.
+writes components instead of audio, and `vis` shows you what you got.
 
 ## Thirty seconds
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 10 plugin(s)
+node src/cli.js plugins      # 86 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 149 tests, node --test, no framework
+npm test                     # 494 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
 
 ```
-scan      5 file(s) under ./legacy
-          2 screenshot(s), states: default, empty
+scan      2 screenshot(s), states: default, empty
 extract   1 component(s), 3 call(s), 2 interceptor(s)
 plan      3 distinct endpoint(s)
           tokens ready (density compact, accent #004B87), 1 value(s) measured
           no font or icon set needing a licence check
 emit      1 token pair(s) under AA, 0 of them badly
           1 component(s) emitted, 1 template(s) translated
-verify    parity report written, 7 item(s) unverified
+          states suite written; it reads the emitted components back
+verify    parity report written, 11 item(s) unverified
 
-done  6 file(s) written to ./out
-      7 item(s) could not be verified, see PORT_NOTES.md
+done  28 file(s) written to ./out
+      11 item(s) could not be verified, see PORT_NOTES.md
 ```
 
-Five unverified items on a four file example is the tool working, not failing.
+Eleven unverified items on a tiny example is the tool working, not failing.
 Each one is a thing it declined to guess.
 
 ## The size of it
 
 The constraint is the feature. A core small enough to read in one sitting is a
 core you can be sure about, and it is the only reason the plugin boundary stays
-honest: there is nowhere in 527 lines to hide a special case for Angular.
+honest: there is nowhere in 718 lines to hide a special case for Angular.
 
 | | |
 | --- | --- |
-| Core | **527 lines** across four files |
-| Every line of the tool | 4,667 lines of JavaScript |
-| Tests | 1,473 lines, 149 cases |
-| Source on disk | **199 KB** |
-| Published package | 234 KB |
+| Core | **718 lines** across four files |
+| Every line of the tool | 19,886 lines of JavaScript |
+| Tests | 5,743 lines, 494 cases |
+| Source on disk | src 44 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
 ```bash
-cat src/core/*.js src/cli.js | wc -l    # 527
+cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table drifts
 du -sh src plugins                      # the whole tool
 ```
 
-The core has not grown a line since the first commit while the plugins learned
-to translate templates and read a syntax tree. That is the whole argument for
-the shape: capability arrives in `plugins/`, and `src/` stays something one
-person can hold in their head.
+The core grew from 527 lines to 718 across three hundred features, and every
+one of those lines is a rule earning its place: sharper policy gates, the
+explanations a stopped run prints, the flags the workbench needed. Nothing in
+`src/` knows a framework. Capability arrives in `plugins/`, and the suite
+holds this table to the real numbers so the claim cannot quietly rot.
 
 The artwork in this README lives in `media/`, which is deliberately outside the
 `files` list in `package.json`. Pictures are for the repository. They have no
@@ -112,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: ten plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 86 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -160,9 +161,11 @@ is a printer.
 
 ```
   input-angular ─┐                             ┌─ output-react
-  input-vue     ─┼──▶  dsp-ir  ──▶  the IR ──▶ ┼─ output-svelte
-  input-explore ─┘                             ├─ output-storybook
-  (used, not read)                             └─ output-tests
+  input-vue     ─┤                             ├─ output-vue
+  input-jquery  ─┼──▶  dsp-ir  ──▶  the IR ──▶ ┼─ output-svelte
+  input-explore ─┤                             ├─ output-html   (no framework)
+  (used, not read)                             ├─ output-storybook
+                 │                             └─ output-tests
 ```
 
 The IR says what markup means, not how anybody spells it: `when`, `each`,
@@ -179,12 +182,200 @@ The proof is not a diagram. This screen, written twice:
 <li v-for="o in orders" :class="{hot: o.hot}" @click="pick(o)">{{o.n}}</li>
 ```
 
-produces byte identical React, and byte identical Svelte, from both. CI asserts
-it. The Svelte printer is 150 lines and nothing else changed to add it, which is
-the only honest way to claim the middle is framework blind.
+produces byte identical React, Vue, Svelte and custom element output, from both.
+CI asserts all four. Each printer is around 150 lines and nothing upstream
+changed to add any of them, which is the only honest way to claim the middle is
+framework blind.
 
-Svelte gets `class:hot={o.hot}` rather than a joined string, because a printer
-per target beats one shared printer that speaks nobody's language well.
+Each target gets what its own language does best rather than a lowest common
+denominator: Svelte gets `class:hot={o.hot}`, Vue gets `:class="{ hot: o.hot }"`,
+React gets a joined string, because a printer per target beats one shared
+printer that speaks nobody's language well.
+
+`output-html` is the one worth reading. A custom element supplies no renderer,
+no way to spell a condition and no way to attach a handler, so the printer
+answers all three itself: markup prints as a template literal with every value
+escaped, and handlers are indexed and attached by one delegated listener per
+event type, on the shadow root rather than the host. It is the target that
+makes the portable claim checkable, because emitting to a platform with no
+framework at all needed nothing upstream to change.
+
+## It reads what your decade actually shipped
+
+Angular, AngularJS, Vue, Knockout, Backbone, jQuery, a facelets tree, a
+WebForms tree, an OpenAPI document, or a running app with no source at all.
+Each reader turns its world into the same middle, which is why the emitters
+never learned any of their names.
+
+And it writes this decade back out: React, Vue, Svelte, modern Angular with
+the block syntax, Lit, or a custom element that depends on nothing, plus the
+proofs beside them: a conformance suite, mocks that carry nobody's data, a
+spec that admits what it never saw, stories for every state of every target.
+
+## A folder of old pages becomes an application
+
+The oldest front end there is: a directory of .html files, some .php, an
+.shtml with server side includes, a frameset, a page that still opens with
+`<font color="red">`. There was never a framework to read. There is still an
+application in there, and `--site true` builds it:
+
+```bash
+npm run demo-site      # example/legacy-site → example/out-site
+```
+
+Every page becomes a routed React component. The nav and footer the pages
+repeated verbatim leave them and become the layout, once. Internal links are
+rewritten to routes and one document level click listener makes plain anchors
+navigate; the router is emitted with the port, has no dependency, and its pure
+matcher ships with its own tests that run inside the port. Every old address
+keeps working: `/about.html` redirects to `/about`, a meta refresh page joins
+the redirect map instead of the screens, and the map is written three ways —
+`redirects.json`, `_redirects`, and an nginx block. Titles, descriptions and
+og tags are reapplied per route because a single page app forgets them.
+Stylesheets and images travel as bytes into `public/`.
+
+The old web's spellings are read for what they meant: `<font>` becomes a
+styled span with the seven sizes browsers actually used, `onclick` and
+`javascript:` hrefs become the handlers they always were, PHP and ASP blocks
+are stripped and counted as named gaps, SSI includes resolve from the tree
+the way the server resolved them, and a frameset is read as the layout it
+was. What cannot be known is reported: dead links dangle where they dangled,
+orphan pages are named, `news-1.html`/`news-2.html` are proposed as one
+parameterized route rather than merged by guesswork, and `SITE_MAP.mmd` draws
+the whole graph so the gaps have a picture.
+
+And the port is full stack, not a folder of JSX: it lands with its own zero
+dependency server (`npm run serve`) that serves the app, answers every retired
+address with the real 301 the redirect map promised, and answers the API
+surface honestly — a fixture where the run emitted one, marked as invented,
+and a 501 naming `src/api/endpoints.js` where it did not — plus the router and
+server test suites, which run inside the port with `npm test`. The engine was
+proven against `example/legacy-portal`, a fictional postal service portal with
+the shapes of the real ones, and smoke tested against a real government
+developer portal's public pages.
+
+## A data sheet becomes a page
+
+Technical documentation shipped as PDF is legacy front end too, and
+`input-pdf` reads it with no dependencies: PDF's one compression that
+matters is Flate, and Node ships it. The reader takes the file apart by
+linear scan so hand-edited and broken files still read, keeps every text
+run with its measured position and size, sizes the headings the way the
+document actually set them (body text is the size most characters wear;
+anything larger becomes h1, h2, h3 with anchors and a table of contents),
+lists the link annotations exactly as spelled, and reports the document's
+own outline beside the measured one.
+
+Drop a PDF next to the pages and `--site true` gives it a route, redirects
+the old `.pdf` address to it, and copies the original in byte for byte —
+the PDF stays the document of record, linked from its page. The port's own
+search engine finds the document by its words. What cannot be decoded is
+counted, never faked: an encrypted file is refused by name, an exotic
+stream filter is skipped and said, and a glyph with no text mapping is a
+number in `DOCS.md`, not a lookalike character.
+
+## On your desk and in your pocket
+
+The console is an installable app now, in both senses that actually make sense
+for a tool whose pipeline runs where Node runs:
+
+- **Desktop.** `desktop/` wraps the console in a window; the pipeline, the
+  policy gates and the server inside it are imported from this repository, so
+  the app can never disagree with the CLI about what a run did. CI builds the
+  installers where installers have to be built: a `.dmg` on macOS runners, an
+  NSIS installer on Windows, an AppImage on Linux, on every version tag.
+- **Phone.** The served console is a progressive web app: install it from the
+  browser and the rack, the wipe and the unverified list are on your phone.
+  The shell caches; the run data deliberately never does, because a report
+  that silently shows yesterday's run is worse than one that says it cannot
+  reach the server.
+- The server still binds 127.0.0.1 only, in every wrapper. A window in front
+  of the console does not change what it serves, or to whom.
+
+## It works out what it is looking at
+
+A codemod translates syntax. It has no opinion about what the application *is*,
+so it cannot have one about what it should become, and you get the same app with
+newer punctuation.
+
+`dsp-archetype` reads the structure, not the framework, off the same IR
+everything else uses. So it answers the same question whether the app arrived as
+Angular, as Vue, as jQuery, or as a running thing somebody drove with no source
+at all.
+
+```
+[dsp-archetype] crud-table (3/4 signals), 2 observation(s)
+[dsp-modernize] 7 decision(s) proposed for a crud-table
+[dsp-uplift]    6 colour pair(s) brought to contrast, 2 already passing
+```
+
+It never reports only a verdict. Every candidate carries the signals it matched
+and the ones it did not, because what a rule looked for and failed to find is
+exactly what would have to be true for the answer to be different:
+
+```
+### Table of records, edited in place  (crud-table)
+Matched 3 of 4 signals, 75%.
+- 1 table(s)
+- 1 read endpoint(s)
+- 2 write endpoint(s) on the same resource
+1 signal(s) this shape usually shows were not found.
+```
+
+When two readings land within twenty points the report says so and sets out
+both, rather than picking one and sounding certain.
+
+Then `dsp-modernize` turns the reading into a plan, and every decision names the
+thing in the old app that makes it necessary, so you can disagree with the
+premise instead of the taste:
+
+> **Put the filters in the address bar**
+> **Because** filter state lives in the component, so a filtered view cannot be
+> linked, bookmarked, or restored by a reload.
+> **Instead** the query string is the source of truth.
+
+It proposes and does not perform. How an application fetches, routes and holds
+state is a decision about the product, and a tool that made it quietly would be
+worse than one that did not make it at all.
+
+### And it makes it look like something from this decade
+
+`dsp-uplift` does the visual half, under one rule: **a legacy palette contains
+one thing somebody genuinely chose, and a lot of things nobody did.**
+
+The brand colour is kept. What changes is lightness, and only as far as a
+contrast ratio requires:
+
+```
+inkMuted on surface   #999999 -> #757575    2.85:1 -> 4.61:1   moved -14%
+accent   on surface   #5BA4E6 -> #1F79CB    2.66:1 -> 4.51:1   moved -17%
+warn     on surface   #E8C25D -> #927015    1.71:1 -> 4.61:1   moved -31%
+ink      on surface   #555555 -> #555555    7.46:1 -> 7.46:1   kept
+```
+
+Same blue. Readable now. A pair that already passed is not touched, and on a
+dark ground it lightens rather than inverting, because a palette that flips a
+colour to meet a number has stopped being the same palette. CI asserts no run
+ever lowers a ratio.
+
+The type scale is the app's own, recovered by fitting a line through its sizes
+rather than imposed. An app whose display size is 28px next to a 13px body has
+made a decision, and replacing it with 19px because a minor third says so is a
+redesign nobody asked for:
+
+```
+was      xs 10   sm 11   md 13   lg 18   xl 28
+becomes  xs  8   sm 10   md 13   lg 17   xl 22   2xl 28
+```
+
+Elevation, motion, a focus ring and a spacing rhythm are added outright, because
+an app written before those were easy has nothing there to preserve. The shadows
+are tinted with the palette's own ink rather than black, which is the difference
+between a card that looks placed and one that looks pasted.
+
+All of it lands in `src/tokens.modern.js` and `src/tokens.modern.css`. The
+emitted components keep importing `src/tokens.js`. Adopting a new palette is not
+a thing to do to somebody quietly.
 
 ## Conformance: the part nobody else does
 
@@ -518,7 +709,7 @@ src/core/policy.js     the rules, enforced
 src/core/context.js    shared context and logger
 src/cli.js             argument parsing and wiring
 plugins/*/index.js     everything that knows a framework
-skills/                agent playbooks: legacy-to-react, adhd-brief
+skills/                six agent playbooks, from legacy-to-react to port-audit
 docs/PLUGIN-API.md     write your own
 example/legacy         a small Angular app to read
 example/blackbox-app   a running app to use, never read
@@ -528,16 +719,36 @@ media/                 the artwork in this README, out of the package
 
 ## Bundled skills
 
-`skills/` holds playbooks for use with an agent, and they work standalone.
+`skills/` holds six playbooks for use with an agent, and they work
+standalone. The plugins measure; the skills carry the judgment the
+measurements leave to a person.
 
 - **legacy-to-react** is the judgment the tool cannot mechanize: extracting a
   design system from screenshots, the construct by construct framework mapping,
   the API traps, and the parity checklist.
-- **adhd-brief** cuts long answers down and keeps them down. Answer first, three
-  supporting lines, stop. It also cuts input tokens, which is where the spend
-  actually is: one file instead of the directory, no re reading context, no
-  restating tool output. It never trades away a real risk or an exact number for
-  brevity.
+- **adhd-brief** writes for a reader whose attention is expensive, in four
+  layers: reading the reader's state before answering, the answer shape
+  (answer first, three supporting lines, stop), the work behind the reply
+  (one file instead of the directory, no re reading context, no restating
+  tool output — where the token spend actually is), writing people must act
+  on (one action per step, at most four choices, absolute dates, no forward
+  references), and the rewrite recipe for every finding dsp-cognitive
+  measures. It never trades away a real risk or an exact number for brevity.
+- **plain-language** repairs the words that ship inside a product: one verb
+  per action everywhere, links that say where they go, abbreviations
+  expanded once, walls broken at the topic turn, error messages that lead
+  with the fix. Distinct from adhd-brief on purpose: that skill shapes
+  conversation, this one fixes what COGNITIVE.md flagged.
+- **site-port** is the folder of old pages playbook: the flags in the order
+  they pay off, which redirect map spelling each host reads, the deploy
+  checklist, and the judgment calls the engine deliberately leaves open.
+- **doc-port** carries PDF tech documents honestly: what input-pdf proves
+  versus skips, the scanned and encrypted cases, when to trust the reading
+  versus the original, and the document of record rule.
+- **port-audit** decides whether a port ships: the evidence files in the
+  right order, the audit command, the three checks only a person can do,
+  and severity stated without averaging a broken endpoint against pretty
+  pixels.
 
 ## Known gaps
 
@@ -567,30 +778,36 @@ The plugin classes are the point. Everything below is a directory and an
 | | |
 | --- | --- |
 | `input-vue` | Single file components, into the same shape the Angular reader produces |
+| `input-jquery` | A front end that never declared a component, inventoried without inventing one |
 | `input-explore` | Drives a running app and works out what it is |
-| `dsp-behavior` | Turns that into screens, fields, flow and endpoints |
+| `dsp-ir` | One representation in the middle, so a target costs a printer |
+| `dsp-behavior` | Turns an exploration into screens, fields, flow and endpoints |
 | `dsp-improve` | What the original got wrong, measured while it ran |
 | `dsp-a11y` | Contrast and target size over the palette the port will use |
+| `dsp-i18n` | The copy welded into the markup, and the sentences split around a value |
+| `dsp-deadcode` | What is declared and never used, as candidates and never as a verdict |
+| `dsp-archetype` | What kind of app this is, from its structure rather than its framework |
+| `dsp-modernize` | What to build instead, with the evidence for every decision |
+| `dsp-uplift` | The old palette brought to contrast, without losing the brand |
+| `dsp-routes` | The route table, because the address bar is half the contract |
+| `dsp-boundaries` | Components proposed for an app that declared none |
+| component references | A tag naming another screen becomes that ported component |
+| `output-vue` | The third target on the IR |
+| `output-svelte` | The second target on the IR |
+| `output-html` | A custom element, depending on nothing |
 | `output-storybook` | A story per component, one per state |
+| `output-tests` | A conformance suite, written from what the original did |
+| `output-openapi` | The requests the port makes, and no response it never saw |
+| `output-msw` | Something for the port to talk to, carrying nobody's data |
 | `general-license` | Fonts and icon sets whose licence does not travel |
 | `vis-ui` | The comparison view, which is where `vis-diff` landed |
 
-**Still open, in the order they pay off**
+**Still open**
 
-1. **A real preview in the compare pane.** The right side shows the emitted
-   source because rendering it needs a build. A tiny esbuild step behind an
-   optional dependency would make it a real side by side.
-2. **Component references in templates.** A template using `<app-row>` emits
-   `<app-row>` and leaves you to wire it. Resolving it against the other
-   components in the same run is the next real step in the translator.
-3. **`input-jsf`, `input-jquery`.** The readers that would prove the shape holds
-   for something that is not a component framework at all.
-4. **`output-svelte`, `output-vue`.** The emitters are the least framework blind
-   part of the tool, and a second one would say how much.
-5. **Focus order in `dsp-a11y`.** It measures contrast and target size. Focus
-   order needs the DOM, which means it belongs on the exploration rather than
-   on the tokens.
-6. **A parser for the Vue reader.** It is regular expressions, like the Angular
-   fallback, and it says so in the run.
+The whole picture is [ROADMAP.md](ROADMAP.md): four hundred and eleven features in
+thirty two phases, forty four shipped, three hundred and forty three new in the
+current branch, twenty four planned, every status honest. Each open one names
+what it waits on; npm publish stays a command that belongs to a person.
 
-MIT. See [LICENSE](LICENSE).
+portamp is a proprietary product. All rights reserved — see [LICENSE](LICENSE).
+What it emits from your own source is yours.

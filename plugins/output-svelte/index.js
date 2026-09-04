@@ -1,9 +1,7 @@
 import { toSvelte } from "./print.js";
+import { pascal, unique } from "../dsp-ir/emit.js";
 
-const pascal = (sel) =>
-  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
-const unique = (list) => [...new Set(list.filter(Boolean))];
 
 /**
  * A second target, to keep the first one honest.
@@ -34,7 +32,23 @@ export default {
           "loading", "error", "onRetry",
         ]);
 
-        await ctx.write(`src/features/${name}/${name}.svelte`, COMPONENT({ name, props, result, collection, screen }));
+        // A tag naming another screen in the run is that screen, ported.
+        // Svelte components render under their class name, so the tag is
+        // respelled and the import added; an unmatched tag stays as it was.
+        const referenced = [];
+        if (result?.markup) {
+          for (const other of ctx.screens) {
+            if (other === screen) continue;
+            const tag = new RegExp(`(</?)${other.selector}(?=[\\s>/])`, "g");
+            if (tag.test(result.markup)) {
+              const otherName = pascal(other.selector) || "Screen";
+              result.markup = result.markup.replace(tag, `$1${otherName}`);
+              referenced.push(otherName);
+            }
+          }
+        }
+
+        await ctx.write(`src/features/${name}/${name}.svelte`, COMPONENT({ name, props, result, collection, screen, referenced: unique(referenced) }));
         emitted += 1;
       }
       log.info(`${emitted} svelte component(s)`);
@@ -42,7 +56,7 @@ export default {
   },
 };
 
-const COMPONENT = ({ name, props, result, collection, screen }) => {
+const COMPONENT = ({ name, props, result, collection, screen, referenced = [] }) => {
   const state = (result?.models ?? []).map((m) => {
     const leaf = m.split(".").pop().replace(/[^\w$]/g, "");
     return `  let ${leaf} = "";`;
@@ -53,7 +67,7 @@ const COMPONENT = ({ name, props, result, collection, screen }) => {
     : `!${collection} || ${collection}.length === 0`;
 
   return `<script>
-  // Ported from ${screen.file} by portamp.
+${referenced.map((r) => `  import ${r} from "../${r}/${r}.svelte";`).join("\n")}${referenced.length ? "\n" : ""}  // Ported from ${screen.file} by portamp.
   //
   // Every state below is present on purpose. Delete one only when you have
   // checked the legacy screen genuinely cannot reach it.

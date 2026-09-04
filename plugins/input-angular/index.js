@@ -1,9 +1,17 @@
 import { readdir, readFile, stat } from "node:fs/promises";
-import { join, relative, extname, dirname, resolve } from "node:path";
+import { join, relative, extname, dirname, resolve, sep } from "node:path";
 import { loadTypeScript, readSourceFile } from "./ast.js";
 import { readWithRegex } from "./regex.js";
 
-const KEEP = new Set([".ts", ".js", ".html", ".scss", ".css", ".vue"]);
+// One walk serves every reader, so the set spans every era this tool reads:
+// framework sources, the old web's server pages and includes, and the assets
+// a page renders, which the site engine copies through as the bytes they are.
+const KEEP = new Set([
+  ".ts", ".js", ".html", ".scss", ".css", ".vue",
+  ".htm", ".shtml", ".php", ".asp", ".jsp", ".inc", ".txt", ".xml", ".pdf",
+  ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp",
+  ".woff", ".woff2", ".ttf", ".otf", ".eot",
+]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
 
@@ -16,7 +24,11 @@ async function walk(dir, root, out = []) {
     const s = await stat(p).catch(() => null);
     if (!s) continue;
     if (s.isDirectory()) await walk(p, root, out);
-    else if (KEEP.has(extname(e))) out.push({ path: p, rel: relative(root, p) });
+    // rel always uses forward slashes, whatever the platform, so every
+    // plugin that reads it can split on one separator.
+    // .htaccess has no extension to keep; the server's own redirect
+    // declarations are exactly the evidence the site engine reads.
+    else if (KEEP.has(extname(e)) || e === ".htaccess") out.push({ path: p, rel: relative(root, p).split(sep).join("/") });
   }
   return out;
 }

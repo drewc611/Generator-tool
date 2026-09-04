@@ -63,6 +63,29 @@ export function inspect(text, file) {
   return findings;
 }
 
+/**
+ * The legacy source's own licence, which governs what a port of it is. This
+ * reads a LICENSE file's first line and any SPDX headers, names the family,
+ * and stops there: whether a derivative is permitted is a question for
+ * whoever holds the agreement, never for a scanner.
+ */
+export function readSourceLicense(files) {
+  const findings = [];
+  for (const { rel, text } of files) {
+    if (/^(LICENSE|LICENCE|COPYING)(\.(md|txt))?$/i.test(rel.split("/").pop())) {
+      const head = text.split("\n").find((l) => l.trim()) ?? "";
+      const family = /GNU (AFFERO |LESSER )?GENERAL PUBLIC/i.test(text) ? "a copyleft family licence"
+        : /\b(MIT License|BSD|Apache License|ISC)\b/i.test(text) ? "a permissive licence"
+        : "a licence this scan does not recognise";
+      findings.push({ file: rel, id: head.trim().slice(0, 80), family });
+    }
+    for (const m of text.matchAll(/SPDX-License-Identifier:\s*([\w.+-]+)/g)) {
+      findings.push({ file: rel, id: m[1], family: /GPL/i.test(m[1]) ? "a copyleft family licence" : "declared per file" });
+    }
+  }
+  return findings;
+}
+
 export default {
   name: "general-license",
   version: "0.1.0",
@@ -78,6 +101,32 @@ export default {
       // reliable statement of what it uses.
       for (const observed of ctx.sources.observedStyles) {
         if (observed.font) findings.push(...inspect(`font-family: ${observed.font};`, "observed"));
+      }
+
+      // The port is derived from the legacy source, so the source's own
+      // licence rides along. Found is reported; not found is reported too,
+      // because unlicensed code means all rights reserved, not no rules.
+      const licenseCandidates = ctx.sources.files.filter((f) =>
+        /^(LICENSE|LICENCE|COPYING)(\.(md|txt))?$/i.test(f.rel.split("/").pop()) || /\.(js|ts|css)$/.test(f.rel));
+      const sourceTexts = [];
+      for (const f of licenseCandidates.slice(0, 200)) {
+        sourceTexts.push({ rel: f.rel, text: await readFile(f.path, "utf8").catch(() => "") });
+      }
+      const source = readSourceLicense(sourceTexts);
+      ctx.sourceLicense = source;
+      if (source.length) {
+        const copyleft = source.filter((s) => s.family.includes("copyleft"));
+        ctx.unverified(
+          `The legacy source declares its licence: ${[...new Set(source.map((s) => `\`${s.id}\` (${s.file})`))].slice(0, 3).join(", ")}. ` +
+          `The port is a derivative of that source, so the licence rides along` +
+          (copyleft.length ? ", and a copyleft family licence reaches the derivative by design" : "") +
+          `. Whether the port complies is a question for whoever holds the agreement.`
+        );
+      } else if (ctx.sources.files.length) {
+        ctx.unverified(
+          "No LICENSE file or SPDX header was found in the legacy source. Someone else's unlicensed code is " +
+          "all rights reserved by default; confirm you may port it before the result ships."
+        );
       }
 
       ctx.licensing = findings;

@@ -1,0 +1,20 @@
+{
+  "label": "selector-soup",
+  "html": "<div id=\"app\"><div id=\"toolbar\"></div><div id=\"rows\"></div><div id=\"count\"></div></div>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/rows"
+    }
+  ],
+  "widgets": [
+    { "selector": "#refresh", "events": ["click"], "writes": [] },
+    { "selector": "#rows", "events": [], "writes": ["html"] },
+    { "selector": "#count", "events": [], "writes": ["text"] },
+    { "selector": "#toolbar .filter", "events": ["change"], "writes": [] },
+    { "selector": "#rows tr", "events": ["click"], "writes": [] },
+    { "selector": "#status", "events": [], "writes": ["text"] }
+  ],
+  "components": 0,
+  "model": null
+}

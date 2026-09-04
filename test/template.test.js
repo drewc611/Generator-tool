@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { translate, parse } from "../plugins/output-react/template.js";
+import { translate } from "../plugins/output-react/template.js";
+import { parse } from "../plugins/dsp-ir/parse.js";
 
 const jsx = (html) => translate(html, { indent: 0 }).jsx;
 const flat = (html) => jsx(html).replace(/\s+/g, " ").trim();
@@ -77,7 +78,7 @@ test("static and bound styles merge into one style prop", () => {
 });
 
 test("ng-container and ng-template disappear, ng-content becomes children", () => {
-  assert.match(flat(`<ng-container *ngIf="e"><b>x</b></ng-container>`), /\{e && \( <> <b> x <\/b> <\/> \)\}/);
+  assert.match(flat(`<ng-container *ngIf="e"><b>x</b></ng-container>`), /\{e && \( <b> x <\/b> \)\}/);
   assert.match(flat(`<ng-content></ng-content>`), /\{children\}/);
 });
 

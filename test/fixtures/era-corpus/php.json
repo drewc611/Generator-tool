@@ -1,0 +1,7 @@
+{
+  "label": { "from": 1997, "to": 2006 },
+  "why": "a classic server page laid out with a borderless table",
+  "files": [
+    { "rel": "shop.php", "text": "<html><body><table border=\"0\" cellpadding=\"0\"><tr><td onclick=\"buy()\">Buy</td></tr></table></body></html>" }
+  ]
+}

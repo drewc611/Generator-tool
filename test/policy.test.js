@@ -95,6 +95,18 @@ test("freezing the policy does not stop it recording findings", () => {
   assert.equal(p.findings.length, 1, "the array is still pushable, only the binding is frozen");
 });
 
+test("every policy stop can say what would clear it", async () => {
+  const { Policy } = await import("../src/core/policy.js");
+  for (const rule of [
+    "no-credentials-in-source", "offline", "no-live-calls",
+    "live-call-outside-attested-domains", "no-billable-calls", "no-endpoints-in-components",
+  ]) {
+    const clears = Policy.clears(rule);
+    assert.ok(clears && clears.length > 20, `${rule} names its evidence`);
+  }
+  assert.equal(Policy.clears("not-a-rule"), null, "an unknown rule explains nothing rather than guessing");
+});
+
 test("an endpoint in a component is refused", () => {
   const paths = ["/api/v1/orders", "/api/v1/accounts/orders"];
   assert.throws(

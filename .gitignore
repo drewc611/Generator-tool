@@ -1,5 +1,7 @@
 node_modules/
 example/out/
+example/out-site/
+example/out-portal/
 out/
 *.log
 
@@ -10,3 +12,5 @@ example/explored/
 example/out-blackbox/
 example/conf-demo/
 test-results/
+desktop/node_modules/
+desktop/dist/

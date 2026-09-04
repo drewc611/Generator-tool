@@ -51,6 +51,7 @@ function render(findings) {
     "unlabelled-field": "Fields with no label",
     contrast: "Text below the contrast threshold",
     "tap-target": "Targets under 44px",
+    "focus-order": "Tab order that fights the reading order",
     "missing-state": "States the original never showed",
   };
 

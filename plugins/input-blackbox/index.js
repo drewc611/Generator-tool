@@ -1,5 +1,5 @@
-import { readdir, readFile, stat } from "node:fs/promises";
-import { join, extname, basename } from "node:path";
+import { readdir, readFile } from "node:fs/promises";
+import { join, extname } from "node:path";
 
 /**
  * Reads a legacy system from whatever artifacts exist when the source does not.
@@ -32,9 +32,11 @@ export default {
 
       for (const e of entries) {
         const p = join(dir, e);
-        if (!(await stat(p)).isFile()) continue;
+        // Reading and then handling the failure beats asking first: between a
+        // stat and a read the answer can change.
+        const text = await readFile(p, "utf8").catch(() => null);
+        if (text === null) continue;
         const ext = extname(e).toLowerCase();
-        const text = await readFile(p, "utf8").catch(() => "");
         policy.warnOnFixtureData(text.slice(0, 20000), e);
 
         if (ext === ".har") {

@@ -1,4 +1,4 @@
-import { buildIr, detectDialect } from "./ir.js";
+import { buildIr, detectDialect, DIALECTS } from "./ir.js";
 
 /**
  * Puts the IR on the context so any emitter can read it, and reports which
@@ -15,7 +15,9 @@ export default {
       if (!withTemplates.length) return log.debug("no templates to normalise");
 
       ctx.ir = withTemplates.map((screen) => {
-        const ir = buildIr(screen.template);
+        // A reader that knows what it read says so; sniffing is only for
+        // markup that arrived with no owner.
+        const ir = buildIr(screen.template, { dialect: DIALECTS[screen.dialect] });
         screen.ir = ir;
         return { selector: screen.selector, ...ir };
       });

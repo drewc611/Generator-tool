@@ -1,4 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
+import { jsString, guardHandler } from "../dsp-ir/emit.js";
 
 /**
  * The Svelte printer. It is the argument for the IR: this file is under two
@@ -19,7 +20,7 @@ function classAttribute(classes, out) {
 
   if (literal && !expressions.length) out.push(`class="${literal}"`);
   else if (literal || expressions.length) {
-    const parts = [...(literal ? [JSON.stringify(literal)] : []), ...expressions.map((e) => e.expression)];
+    const parts = [...(literal ? [jsString(literal)] : []), ...expressions.map((e) => e.expression)];
     out.push(`class={[${parts.join(", ")}].filter(Boolean).join(" ")}`);
   }
   // Svelte has a directive for exactly this, which is better than joining a
@@ -40,7 +41,7 @@ function styleAttribute(styles, out) {
   }
   const parts = [
     ...spreads.map((s) => `...${s.expression}`),
-    ...declarations.map((s) => `${camel(s.property)}: ${s.literal !== undefined ? JSON.stringify(s.literal) : s.expression}`),
+    ...declarations.map((s) => `${camel(s.property)}: ${s.literal !== undefined ? jsString(s.literal) : s.expression}`),
   ];
   out.push(`style={Object.entries({ ${parts.join(", ")} }).map(([k, v]) => \`\${k}:\${v}\`).join(";")}`);
 }
@@ -52,15 +53,27 @@ function attributes(node) {
   for (const attr of node.attrs) {
     if (attr.name === "key") continue;
     if (attr.kind === "flag") out.push(attr.name);
-    else if (attr.kind === "static") out.push(`${attr.name}=${JSON.stringify(attr.value)}`);
+    else if (attr.kind === "static") out.push(`${attr.name}=${jsString(attr.value)}`);
     else if (attr.kind === "bound") out.push(`${attr.name}={${attr.expression}}`);
     else if (attr.kind === "template") {
       out.push(`${attr.name}="${attr.parts.map((p) => (p.expression !== undefined ? `{${p.expression}}` : p.literal)).join("")}"`);
     }
   }
 
-  if (node.model) out.push(`bind:value={${setterFor(node.model)}}`);
-  for (const event of node.events) out.push(`on:${event.name}={${/\bevent\b/.test(event.handler) ? `(event) => ${event.handler}` : `() => ${event.handler}`}}`);
+  // Svelte spells the three input shapes differently: a checkbox binds its
+  // checked flag and a radio group binds through the shared model.
+  if (node.model) {
+    const target = setterFor(node.model);
+    if (node.modelKind === "checkbox") out.push(`bind:checked={${target}}`);
+    else if (node.modelKind === "radio") out.push(`bind:group={${target}}`);
+    else out.push(`bind:value={${target}}`);
+  }
+  for (const event of node.events) {
+    let handler = guardHandler(event.name, event.handler, event.modifiers);
+    // A statement list from an inline handler needs the block form of an arrow.
+    if (/;/.test(handler) && !/^\{/.test(handler)) handler = `{ ${handler.replace(/[;\s]+$/, "")}; }`;
+    out.push(`on:${event.name}={${/\bevent\b/.test(handler) ? `(event) => ${handler}` : `() => ${handler}`}}`);
+  }
   styleAttribute(node.styles, out);
   return out;
 }
@@ -81,8 +94,12 @@ function print(node, depth) {
       return body ? indent + body : "";
     }
 
-    case "slot":
-      return `${indent}<slot />`;
+    case "slot": {
+      const name = node.name ? ` name="${node.name}"` : "";
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 1)).filter(Boolean);
+      if (!fallback.length) return `${indent}<slot${name} />`;
+      return [`${indent}<slot${name}>`, ...fallback, `${indent}</slot>`].join("\n");
+    }
 
     case "html":
       return `${indent}{@html ${node.expression}}`;
@@ -98,11 +115,23 @@ function print(node, depth) {
     case "each": {
       const head = node.index ? `${node.item}, ${node.index}` : node.item;
       const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
+      if (node.object) {
+        return `${indent}{#each Object.entries(${node.list}) as [${node.index}, ${node.item}] (${node.index})}\n${inner}\n${indent}{/each}`;
+      }
       return `${indent}{#each ${node.list} as ${head} (${node.key})}\n${inner}\n${indent}{/each}`;
     }
 
     case "element": {
       if (!node.tag) return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
+      // Svelte renders a dynamic component through svelte:component.
+      if (node.tagExpression) {
+        const shed = { ...node, attrs: node.attrs.filter((a) => a.name !== "is") };
+        const props = attributes(shed);
+        const open = `<svelte:component this={${node.tagExpression}}${props.length ? " " + props.join(" ") : ""}`;
+        const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+        if (!children.length) return `${indent}${open} />`;
+        return [`${indent}${open}>`, ...children, `${indent}</svelte:component>`].join("\n");
+      }
       const props = attributes(node);
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
       const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);

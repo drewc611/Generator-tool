@@ -169,3 +169,76 @@ export function rolesFromVariables(variables) {
   }
   return Object.keys(color).length ? { color, evidence } : null;
 }
+
+/**
+ * The spacing scale, measured at last. Gaps between recorded element boxes,
+ * vertical to the next thing below and horizontal to the next thing beside,
+ * clustered within two pixels. Spacing was the one token that stayed a
+ * default because nothing measured said what the scale was meant to be; a
+ * recording that carries positions finally says what it rendered as.
+ *
+ * The emitted components index seven rungs, so a measurement with fewer
+ * fills the top of the ladder from the defaults and the evidence says how
+ * many rungs are real.
+ */
+export function measureSpacing(exploration, defaults) {
+  const gaps = [];
+  for (const screen of exploration?.screens ?? []) {
+    const boxes = (screen.elements ?? [])
+      .map((e) => e.box)
+      .filter((b) => b && typeof b.x === "number" && typeof b.y === "number" && b.w > 0 && b.h > 0);
+
+    const byY = [...boxes].sort((a, b) => a.y - b.y);
+    for (let i = 0; i < byY.length; i += 1) {
+      for (let j = i + 1; j < byY.length; j += 1) {
+        const a = byY[i];
+        const c = byY[j];
+        const overlapX = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
+        const gap = c.y - (a.y + a.h);
+        if (overlapX > 0 && gap > 0 && gap <= 64) { gaps.push(Math.round(gap)); break; }
+      }
+    }
+    const byX = [...boxes].sort((a, b) => a.x - b.x);
+    for (let i = 0; i < byX.length; i += 1) {
+      for (let j = i + 1; j < byX.length; j += 1) {
+        const a = byX[i];
+        const c = byX[j];
+        const overlapY = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+        const gap = c.x - (a.x + a.w);
+        if (overlapY > 0 && gap > 0 && gap <= 64) { gaps.push(Math.round(gap)); break; }
+      }
+    }
+  }
+  if (gaps.length < 4) return null;
+
+  const buckets = new Map();
+  for (const gap of gaps) {
+    const near = [...buckets.keys()].find((k) => Math.abs(k - gap) <= 2);
+    if (near !== undefined) {
+      const bucket = buckets.get(near);
+      bucket.n += 1;
+      bucket.sum += gap;
+    } else buckets.set(gap, { n: 1, sum: gap });
+  }
+  // A rung needs two observations to count as rhythm rather than accident;
+  // two rungs of real rhythm already beat seven of default.
+  const measured = [...buckets.values()]
+    .filter((b) => b.n >= 2)
+    .map((b) => Math.round(b.sum / b.n))
+    .sort((a, b) => a - b)
+    .slice(0, 7);
+  if (measured.length < 2) return null;
+
+  const scale = [...measured];
+  for (const rung of defaults) {
+    if (scale.length >= 7) break;
+    if (rung > scale[scale.length - 1]) scale.push(rung);
+  }
+  while (scale.length < 7) scale.push(scale[scale.length - 1] * 2);
+
+  return {
+    scale,
+    evidence: `spacing from ${gaps.length} gap(s) between recorded elements, ${measured.length} rung(s) measured` +
+      (measured.length < 7 ? ", the rest defaulted above them" : ""),
+  };
+}

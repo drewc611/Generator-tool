@@ -1,0 +1,33 @@
+{
+  "name": "portamp-desktop",
+  "productName": "portamp",
+  "version": "0.1.0",
+  "description": "The portamp console as a desktop app: pick a legacy app, run the pipeline, read the run.",
+  "type": "module",
+  "main": "main.js",
+  "license": "MIT",
+  "author": "portamp",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "dev.portamp.console",
+    "productName": "portamp",
+    "files": [
+      "main.js",
+      "preload.cjs",
+      "icon.png",
+      { "from": "..", "to": "portamp", "filter": ["src/**", "plugins/**", "docs/**", "package.json", "LICENSE"] }
+    ],
+    "directories": { "output": "dist" },
+    "mac": { "target": ["dmg", "zip"], "category": "public.app-category.developer-tools" },
+    "win": { "target": ["nsis", "zip"] },
+    "linux": { "target": ["AppImage"], "category": "Development" },
+    "nsis": { "oneClick": true, "deleteAppDataOnUninstall": true }
+  }
+}

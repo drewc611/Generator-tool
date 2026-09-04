@@ -1,7 +1,7 @@
 {
   "name": "portamp",
-  "version": "0.1.0",
-  "description": "Port a legacy front end to React without losing the look or the API contract. Tiny core, plugins do the work.",
+  "version": "2.3.0",
+  "description": "A tiny plugin host that ports legacy front ends. Reads Angular, AngularJS, Vue, Knockout, Backbone, jQuery or a running app with no source; recognises what it is; emits React, Vue, Svelte, Angular, Lit or a custom element, with the proofs beside them.",
   "type": "module",
   "bin": {
     "portamp": "src/cli.js"
@@ -22,20 +22,30 @@
   },
   "scripts": {
     "demo": "node src/cli.js run --src example/legacy --shots example/screenshots --out example/out",
+    "demo-site": "node src/cli.js run --src example/legacy-site --out example/out-site --site true",
+    "demo-portal": "node src/cli.js run --src example/legacy-portal --out example/out-portal --site true",
     "plugins": "node src/cli.js plugins",
     "test": "node --test test/*.test.js",
     "record": "node src/cli.js run --allow-live --only input-record"
   },
   "keywords": [
-    "angular",
-    "react",
-    "migration",
     "port",
-    "codemod",
-    "plugins"
+    "migration",
+    "legacy",
+    "angular",
+    "angularjs",
+    "vue",
+    "svelte",
+    "react",
+    "lit",
+    "jquery",
+    "knockout",
+    "modernize",
+    "plugin-host"
   ],
   "dependencies": {},
-  "license": "MIT",
+  "license": "UNLICENSED",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/drewc611/portamp.git"
@@ -46,6 +56,10 @@
   "homepage": "https://github.com/drewc611/portamp#readme",
   "optionalDependencies": {
     "playwright": "^1.47.0",
+    "typescript": "^5.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
     "typescript": "^7.0.2"
   }
 }

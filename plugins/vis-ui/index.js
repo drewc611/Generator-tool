@@ -3,11 +3,10 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, extname, join, resolve, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import { pascal } from "../dsp-ir/emit.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-const pascal = (sel) =>
-  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 const normalise = (text) => String(text).toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -103,8 +102,116 @@ export function buildRun(ctx, self = null) {
     notes: ctx.plan?.notes ?? [],
     improvements: ctx.improvements ?? [],
     files: ctx.written ?? [],
+    provenance: ctx.provenance ?? {},
     tokens: ctx.tokens ?? null,
+    // What the other vis plugins measured, riding the same sidecar: coverage
+    // from vis-coverage and the equivalence verdicts, both of which run
+    // earlier in this stage. The console shows them instead of re-deriving.
+    coverage: ctx.coverage ?? null,
+    parity: ctx.report?.parity ?? [],
   };
+}
+
+/**
+ * The page the compare pane renders: the emitted element, live, in the state
+ * the query names. Loading and error go through the element's own set();
+ * the empty state is the element with nothing, which is the point of having
+ * one. Values are escaped into the page; the state name is checked against a
+ * list rather than echoed.
+ */
+export function previewPage(tag, rel, state) {
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const wanted = ["empty", "loading", "error", "rows"].includes(state) ? state : "empty";
+  return `<!doctype html>
+<meta charset="utf-8">
+<title>preview: ${esc(tag)}</title>
+<style>body { margin: 0; padding: 12px; background: #fff; font-family: system-ui, sans-serif; }
+.invented { margin: 0 0 10px; padding: 3px 8px; font-size: 11px; color: #7c5a12; background: #fdf3dd; border: 1px solid #edd9a3; }</style>
+${wanted === "rows" ? '<p class="invented">invented rows — this data came from nowhere near the legacy system</p>' : ""}
+<${esc(tag)} id="el"></${esc(tag)}>
+<script type="module">
+  import "/elements/${encodeURIComponent(rel.split("/").pop())}";
+  const el = document.getElementById("el");
+  const state = ${JSON.stringify(wanted)};
+  // Real pixels from the real element. Empty, loading and error carry no
+  // data on purpose; the rows state uses rows invented here and labeled
+  // above, exactly as the emitted stories do, so the body state is visible
+  // without a byte of customer data reaching the pane.
+  if (state === "loading") el.set({ loading: true });
+  if (state === "error") el.set({ error: new Error("preview: a request failed") });
+  if (state === "rows") el.set({ loading: false, error: null, data: [
+    { id: 1, name: "Example row one", value: "example" },
+    { id: 2, name: "Example row two", value: "example" },
+  ] });
+</script>
+`;
+}
+
+/**
+ * A run report, rendered where the run is already being read. Everything is
+ * escaped first and the markdown that survives is the handful of shapes the
+ * reports actually use: headings, tables, fences, lists, bold and code.
+ */
+export function reportPage(name, markdown) {
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const inline = (s) => s
+    .replace(/`([^`]+)`/g, (m, c) => `<code>${c}</code>`)
+    .replace(/\*\*([^*]+)\*\*/g, (m, b) => `<strong>${b}</strong>`);
+  const lines = esc(markdown).split("\n");
+  const out = [];
+  let inFence = false;
+  let inList = false;
+  const closeList = () => { if (inList) { out.push("</ul>"); inList = false; } };
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (/^```/.test(line)) { closeList(); out.push(inFence ? "</pre>" : "<pre>"); inFence = !inFence; continue; }
+    if (inFence) { out.push(line); continue; }
+    const heading = /^(#{1,4})\s+(.*)$/.exec(line);
+    if (heading) { closeList(); out.push(`<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`); continue; }
+    if (/^\|/.test(line)) {
+      closeList();
+      if (/^\|[\s\-|:]+\|$/.test(line)) continue;
+      const cells = line.split("|").slice(1, -1).map((c) => `<td>${inline(c.trim())}</td>`).join("");
+      const open = !/^\|/.test(lines[i - 1] ?? "") ? "<table>" : "";
+      const close = !/^\|/.test(lines[i + 1] ?? "") ? "</table>" : "";
+      out.push(`${open}<tr>${cells}</tr>${close}`);
+      continue;
+    }
+    if (/^[-*]\s+/.test(line)) {
+      if (!inList) { out.push("<ul>"); inList = true; }
+      out.push(`<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`);
+      continue;
+    }
+    closeList();
+    if (line.trim() === "" || line.trim() === "---") { out.push(""); continue; }
+    out.push(`<p>${inline(line)}</p>`);
+  }
+  closeList();
+  if (inFence) out.push("</pre>");
+  return `<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(name)} — portamp</title>
+<style>
+  body { margin: 0; padding: 18px 22px; background: #101013; color: #d7d7de;
+         font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  main { max-width: 88ch; margin: 0 auto; }
+  h1, h2, h3, h4 { color: #f0a830; letter-spacing: .4px; }
+  h1 { font-size: 16px; } h2 { font-size: 13px; margin-top: 26px; }
+  a { color: #7df3b0; }
+  code { color: #7dd3fc; background: #04120b; padding: 0 3px; }
+  pre { background: #04120b; border: 1px solid #0d3a24; padding: 10px 12px; overflow-x: auto; color: #7df3b0; }
+  table { border-collapse: collapse; margin: 8px 0; }
+  td { border: 1px solid #2b2b31; padding: 3px 9px; }
+  tr:nth-child(odd) td { background: #071008; }
+  .crumb { color: #5d5d68; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 14px; }
+  .crumb a { color: #8b8b96; }
+</style>
+<main>
+<p class="crumb"><a href="/">← console</a> · ${esc(name)}</p>
+${out.join("\n")}
+</main>
+`;
 }
 
 /** Never serve anything outside the directory that was opened. */
@@ -128,6 +235,34 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
     try {
       if (url.pathname === "/") return send(200, TYPES[".html"], shell);
 
+      // The console is installable. These are the app's own files, served from
+      // beside app.html; nothing here touches the run or the customer system.
+      if (url.pathname === "/manifest.webmanifest")
+        return send(200, "application/manifest+json", await readFile(join(here, "manifest.webmanifest")));
+      // TYPES[".js"] is text/plain on purpose, for /source. A worker script
+      // is the one .js this server must declare as executable.
+      if (url.pathname === "/sw.js")
+        return send(200, "text/javascript; charset=utf-8", await readFile(join(here, "sw.js")));
+      if (url.pathname === "/icon.svg" || url.pathname === "/favicon.ico")
+        return send(200, "image/svg+xml", await readFile(join(here, "icon.svg")));
+      // The console's pure logic, the same file the test suite imports.
+      if (url.pathname === "/lib.js")
+        return send(200, "text/javascript; charset=utf-8", await readFile(join(here, "lib.js")));
+
+      // For anything pairing with this server: is it up, and which run does
+      // it hold. Counts and a timestamp only; nothing from the run's content.
+      if (url.pathname === "/healthz") {
+        const held = await readFile(runPath, "utf8").then((t) => JSON.parse(t)).catch(() => null);
+        return send(200, TYPES[".json"], JSON.stringify({
+          ok: true,
+          ranAt: held?.ranAt ?? null,
+          screens: held?.screens?.length ?? 0,
+          files: held?.files?.length ?? 0,
+        }));
+      }
+      if (/^\/icons\/icon-(180|192|512)\.png$/.test(url.pathname))
+        return send(200, "image/png", await readFile(join(here, "icons", url.pathname.slice(7))));
+
       // The one thing the UI may cause: running the tool again. It still does
       // not edit a file, and the pipeline remains the only thing that writes.
       if (url.pathname === "/rerun" && req.method === "POST") {
@@ -141,7 +276,39 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
           return send(200, TYPES[".json"], JSON.stringify({ ok: false, error: err.message, ms: Date.now() - started }));
         }
       }
-      if (url.pathname === "/run.json") return send(200, TYPES[".json"], await readFile(runPath, "utf8"));
+      // The page polls this every few seconds; the timestamp is the version,
+      // so an unchanged run costs a 304 instead of the whole document.
+      if (url.pathname === "/run.json") {
+        const body = await readFile(runPath, "utf8");
+        const tag = `"${/"ranAt"\s*:\s*"([^"]+)"/.exec(body)?.[1] ?? String(body.length)}"`;
+        if (req.headers["if-none-match"] === tag) {
+          res.writeHead(304, { ETag: tag, "Cache-Control": "no-cache" });
+          return res.end();
+        }
+        res.writeHead(200, { "Content-Type": TYPES[".json"], ETag: tag, "Cache-Control": "no-cache" });
+        return res.end(body);
+      }
+
+      // The run's own markdown reports, listed and rendered where the run is
+      // already being read. Only root level .md files the run wrote qualify;
+      // the written list is the whitelist, not the directory.
+      if (url.pathname === "/reports.json") {
+        const held = await readFile(runPath, "utf8").then((t) => JSON.parse(t)).catch(() => ({ files: [] }));
+        return send(200, TYPES[".json"], JSON.stringify((held.files ?? []).filter((f) => /\.md$/i.test(f) && !f.includes("/"))));
+      }
+      if (url.pathname === "/report") {
+        const name = decodeURIComponent(url.searchParams.get("name") ?? "");
+        const held = await readFile(runPath, "utf8").then((t) => JSON.parse(t)).catch(() => ({ files: [] }));
+        const allowed = (held.files ?? []).includes(name) && /\.md$/i.test(name) && !name.includes("/");
+        if (!allowed) return send(403, TYPES[".json"], '{"error":"only markdown reports this run wrote are served"}');
+        const file = within(outDir, name);
+        if (!file) return send(403, TYPES[".json"], '{"error":"outside the output directory"}');
+        return send(200, TYPES[".html"], reportPage(name, await readFile(file, "utf8")));
+      }
+      if (url.pathname === "/history.json") {
+        const raw = await readFile(join(outDir, ".portamp", "history.jsonl"), "utf8").catch(() => "");
+        return send(200, TYPES[".json"], JSON.stringify(raw.split("\n").filter(Boolean).map((line) => JSON.parse(line))));
+      }
 
       if (url.pathname.startsWith("/shots/")) {
         const file = within(shotsDir, decodeURIComponent(url.pathname.slice(7)));
@@ -157,6 +324,33 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         const file = within(outDir, decodeURIComponent(url.searchParams.get("path") ?? ""));
         if (!file) return send(403, TYPES[".json"], '{"error":"outside the output directory"}');
         return send(200, TYPES[".js"], await readFile(file, "utf8"));
+      }
+
+      // The custom element target needs no build, which makes it the one
+      // target the compare pane can render as pixels. Only files directly in
+      // src/elements/ are served executable, under a path shaped URL so the
+      // element's own relative imports (./runtime.js) resolve; /source stays
+      // text/plain.
+      const elementFile = /^\/elements\/([\w-]+(?:\.lit)?\.js)$/.exec(url.pathname);
+      if (elementFile) {
+        if (/\.lit\.js$/.test(elementFile[1])) {
+          return send(403, TYPES[".json"], '{"error":"the lit element needs its dependency; preview uses the dependency free one"}');
+        }
+        const file = within(outDir, `src/elements/${elementFile[1]}`);
+        if (!file) return send(403, TYPES[".json"], '{"error":"outside the output directory"}');
+        return send(200, "text/javascript; charset=utf-8", await readFile(file, "utf8"));
+      }
+
+      if (url.pathname === "/preview") {
+        const rel = decodeURIComponent(url.searchParams.get("path") ?? "");
+        const file = within(outDir, rel);
+        if (!file || !/^src\/elements\/[\w-]+\.js$/.test(rel)) {
+          return send(403, TYPES[".json"], '{"error":"only emitted elements can be previewed"}');
+        }
+        const source = await readFile(file, "utf8");
+        const tag = /customElements\.define\(\s*["']([\w-]+)["']/.exec(source)?.[1];
+        if (!tag) return send(404, TYPES[".json"], '{"error":"the file defines no custom element"}');
+        return send(200, TYPES[".html"], previewPage(tag, rel, url.searchParams.get("state") ?? "empty"));
       }
 
       send(404, TYPES[".json"], '{"error":"not found"}');
@@ -204,7 +398,7 @@ export default {
 
   commands: {
     ui: {
-      describe: "serve the last run on 127.0.0.1",
+      describe: "serve the last run on 127.0.0.1; --watch reruns on change",
       async run({ config, log, args, runPipeline }) {
         const runPath = join(config.out, ".portamp", "run.json");
         const already = await readFile(runPath, "utf8").then(() => true).catch(() => false);
@@ -224,6 +418,40 @@ export default {
         });
         if (!openBrowser(address)) log.info("could not open a browser, open that address yourself");
 
+        // --watch closes the loop the console's poll already listens for:
+        // a source edit reruns the pipeline, the run's timestamp moves, and
+        // every open console refreshes itself. The same debounce and the
+        // same one-at-a-time rule as the watch command.
+        if (args.watch) {
+          const { watch } = await import("node:fs");
+          let running = false;
+          let queued = false;
+          let timer = null;
+          const runOnce = async (what) => {
+            if (running) { queued = true; return; }
+            running = true;
+            try {
+              const ctx = await runPipeline();
+              log.info(`${new Date().toLocaleTimeString()}  ${what}: ${ctx.written.length} file(s), ${ctx.report.unverified.length} unverified`);
+            } catch (err) {
+              log.error(`${what}: ${err.message}`);
+            }
+            running = false;
+            if (queued) { queued = false; runOnce("queued change"); }
+          };
+          let changed = new Set();
+          watch(config.src, { recursive: true }, (_event, filename) => {
+            if (filename) changed.add(String(filename));
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+              const what = [...changed].slice(0, 3).join(", ") + (changed.size > 3 ? ` +${changed.size - 3}` : "");
+              changed = new Set();
+              runOnce(what || "changed");
+            }, 200);
+          });
+          log.info(`watching ${config.src}; the console refreshes itself after each rerun`);
+        }
+
         // Ctrl c closes the socket and leaves nothing behind; the browser was
         // spawned detached and unreferenced.
         const stop = () => server.close(() => process.exit(0));
@@ -237,6 +465,8 @@ export default {
     on("verify", async (ctx) => {
       const run = buildRun(ctx, "vis-ui");
       const target = join(ctx.config.out, ".portamp", "run.json");
+      // A dry run leaves no trace on disk, this sidecar included.
+      if (ctx.config.dryRun) return log.debug("dry run; run.json not written");
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, JSON.stringify(run, null, 2) + "\n", "utf8");
       log.info(

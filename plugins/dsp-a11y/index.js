@@ -9,8 +9,59 @@
  *   a11y: { gate: true }
  */
 
+import { parse as parseMarkup } from "../dsp-ir/parse.js";
+
 const AA_NORMAL = 4.5;
-const AA_LARGE = 3;
+
+/**
+ * The structure of each screen's markup, checked where structure is checkable
+ * statically: a heading ladder that skips rungs, and an aria reference whose
+ * id is nowhere in the same screen. Both are candidates, not verdicts; an id
+ * can live in another screen's markup, and the finding says so.
+ */
+export function checkStructure(screens) {
+  const findings = [];
+  for (const screen of screens) {
+    if (!screen.template) continue;
+    const headings = [];
+    const ids = new Set();
+    const refs = [];
+    const walk = (node) => {
+      if (node.type !== "element") return;
+      const level = /^h([1-6])$/i.exec(node.tag ?? "")?.[1];
+      if (level) headings.push(Number(level));
+      for (const attr of node.attrs ?? []) {
+        if (attr.name === "id" && attr.value && !/\{\{/.test(attr.value)) ids.add(attr.value.trim());
+        if (/^aria-(labelledby|describedby)$/i.test(attr.name) && attr.value && !/\{\{/.test(attr.value)) {
+          refs.push({ attr: attr.name, value: attr.value, tag: node.tag });
+        }
+      }
+      (node.children ?? []).forEach(walk);
+    };
+    parseMarkup(screen.template).forEach(walk);
+
+    for (let i = 1; i < headings.length; i += 1) {
+      if (headings[i] > headings[i - 1] + 1) {
+        findings.push({
+          screen: screen.selector,
+          kind: "heading-skip",
+          evidence: `${screen.selector}: an h${headings[i - 1]} is followed by an h${headings[i]}, skipping h${headings[i - 1] + 1}. A screen reader's outline jumps the same way.`,
+        });
+      }
+    }
+    for (const ref of refs) {
+      const missing = ref.value.split(/\s+/).filter((id) => id && !ids.has(id));
+      if (missing.length) {
+        findings.push({
+          screen: screen.selector,
+          kind: "dangling-aria",
+          evidence: `${screen.selector}: <${ref.tag} ${ref.attr}="${ref.value}"> points at ${missing.map((m) => `\`#${m}\``).join(", ")}, which is not in this screen's markup. If the id lives in another screen, the reference breaks when they are split.`,
+        });
+      }
+    }
+  }
+  return findings;
+}
 
 export function parse(color) {
   const text = String(color ?? "").trim();
@@ -90,6 +141,11 @@ export default {
   setup({ on, log }) {
     // After dsp-tokens, which is where the palette comes from.
     on("emit", async (ctx) => {
+      const structure = checkStructure(ctx.screens ?? []);
+      ctx.a11yStructure = structure;
+      for (const finding of structure) ctx.unverified(`Structure: ${finding.evidence}`);
+      if (structure.length) log.info(`${structure.length} structural finding(s) across the screens`);
+
       if (!ctx.tokens) return log.debug("no tokens to check");
 
       const findings = checkTokens(ctx.tokens);
@@ -128,6 +184,16 @@ export default {
               ]
             : ["Every pair checked clears AA at the size it is used.", "", "Checked: " + PAIRS.map((p) => `\`${p[0]} on ${p[1]}\``).join(", ") + "."]),
           "",
+          ...(structure.length
+            ? [
+                "## Structure, per screen",
+                "",
+                "Candidates, not verdicts: an id can live in markup this screen does not own.",
+                "",
+                ...structure.map((f) => `- ${f.evidence}`),
+                "",
+              ]
+            : []),
         ].join("\n")
       );
 
