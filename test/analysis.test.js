@@ -5,7 +5,7 @@ import test from "node:test";
 
 import { fieldsFromIr } from "../plugins/dsp-forms/index.js";
 import { renderSchema } from "../plugins/output-forms/index.js";
-import { grade, auditCopy, auditIr, auditSource } from "../plugins/dsp-cognitive/index.js";
+import { grade, auditCopy, auditIr, auditSource, auditLanguage, summarizeCopy } from "../plugins/dsp-cognitive/index.js";
 import { deriveDark } from "../plugins/dsp-uplift/index.js";
 import { ratio } from "../plugins/dsp-uplift/color.js";
 import { auditDates } from "../plugins/dsp-dates/index.js";
@@ -58,6 +58,38 @@ test("a control that is only an icon is the serious finding", () => {
   assert.equal(withLabel.filter((f) => f.kind === "icon-only-control").length, 0);
   assert.equal(without.filter((f) => f.kind === "icon-only-control").length, 1);
   assert.equal(without[0].severity, "high");
+});
+
+test("a link that names no destination is a finding; one that does is not", () => {
+  const vague = auditIr(buildIr(`<p><a href="/help">click here</a></p>`), "s");
+  const named = auditIr(buildIr(`<p><a href="/help">Delivery help</a></p>`), "s");
+  assert.equal(vague.filter((f) => f.kind === "vague-link").length, 1);
+  assert.equal(named.filter((f) => f.kind === "vague-link").length, 0);
+});
+
+test("the language audit counts what it sees and never grades tone", () => {
+  const wall = auditLanguage([{ key: "k", value: Array(90).fill("word").join(" ") }]);
+  assert.equal(wall.filter((f) => f.kind === "wall-of-text").length, 1);
+
+  const abbr = auditLanguage([
+    { key: "a", value: "Submit the RTAO form." }, { key: "b", value: "RTAO forms arrive Monday." }, { key: "c", value: "Late RTAO forms wait." },
+  ]);
+  assert.ok(abbr.some((f) => f.kind === "unexplained-abbreviation" && /RTAO appears 3/.test(f.evidence)));
+  const explained = auditLanguage([
+    { key: "a", value: "Return To Area Office (RTAO) forms. RTAO forms arrive Monday. Late RTAO forms wait." },
+  ]);
+  assert.ok(!explained.some((f) => f.kind === "unexplained-abbreviation"), "an expansion beside the letters counts");
+
+  const mixed = auditLanguage([], new Map([["a", ["Submit"]], ["b", ["Send"]], ["c", ["Go"]]]));
+  assert.ok(mixed.some((f) => f.kind === "inconsistent-actions" && f.evidence.includes('"Send"')));
+  assert.ok(!auditLanguage([], new Map([["a", ["Submit"]], ["b", ["Submit"]]])).some((f) => f.kind === "inconsistent-actions"));
+});
+
+test("the copy summary is a count and a median, said with its limits", () => {
+  const s = summarizeCopy([{ key: "a", value: "Save your work." }, { key: "b", value: "Print the label." }]);
+  assert.equal(s.strings, 2);
+  assert.ok(s.words >= 6);
+  assert.ok(typeof s.medianGrade === "number");
 });
 
 test("a session timer is found by what it does, not by a keyword list alone", () => {

@@ -52,12 +52,45 @@ export function auditCopy(entries) {
   return findings;
 }
 
+// Link text that names nothing. Each one is a fact: the words are these,
+// and they say where the link goes to nobody.
+const VAGUE_LINKS = new Set([
+  "click here", "here", "more", "read more", "learn more", "see more",
+  "this link", "link", "go", "details", "more info", "info", "click",
+]);
+
+/** The visible text of a node's direct and nested text children. */
+function textOfNode(node) {
+  if (!node) return "";
+  if (node.kind === "text") return (node.parts ?? []).map((p) => p.literal ?? "").join("");
+  return (node.children ?? []).map(textOfNode).join("");
+}
+
 export function auditIr(ir, selector) {
   const findings = [];
+  const actions = [];
   const walk = (node) => {
     if (!node) return;
     if (node.kind === "element") {
       const tag = String(node.tag ?? "").toLowerCase();
+      if (tag === "a") {
+        const text = textOfNode(node).replace(/\s+/g, " ").trim().toLowerCase();
+        if (VAGUE_LINKS.has(text)) {
+          findings.push({ kind: "vague-link", severity: "medium", where: `<${selector}>`, evidence: `a link reading "${text}". Out of context, and a screen reader lists links out of context, it points nowhere.` });
+        }
+      }
+      if (tag === "select") {
+        const options = (node.children ?? []).filter((c) => c.kind === "element" && String(c.tag).toLowerCase() === "option").length;
+        if (options > 15) {
+          findings.push({ kind: "long-list", severity: "low", where: `<${selector}>`, evidence: `a select with ${options} options is a scan of ${options} lines held in working memory; grouping or search costs less.` });
+        }
+      }
+      if (tag === "button" || ((node.attrs ?? []).some((a) => a.name.toLowerCase() === "type" && /submit/i.test(a.value ?? "")))) {
+        const label = tag === "button"
+          ? textOfNode(node).replace(/\s+/g, " ").trim()
+          : (node.attrs ?? []).find((a) => a.name.toLowerCase() === "value")?.value ?? "";
+        if (label) actions.push(label);
+      }
       if (tag === "button" || (tag === "a" && node.events.length)) {
         const hasText = (node.children ?? []).some((c) => c.kind === "text" && c.parts.some((p) => (p.literal ?? "").trim() || p.expression !== undefined));
         const labelled = (node.attrs ?? []).some((a) => /^(aria-label|title|aria-labelledby)$/i.test(a.name));
@@ -75,7 +108,60 @@ export function auditIr(ir, selector) {
     } else if (node.children) node.children.forEach(walk);
   };
   walk(ir.root);
+  findings.actions = actions;
   return findings;
+}
+
+/**
+ * The copy, read for the shapes that tax attention: a wall of text, an
+ * abbreviation nobody expanded, the same action wearing different names.
+ * Each finding is a count or a list, never an opinion about tone.
+ */
+export function auditLanguage(entries, actionsByScreen = new Map()) {
+  const findings = [];
+  const abbrs = new Map();
+  for (const entry of entries ?? []) {
+    const text = String(entry.value ?? "");
+    const words = text.split(/\s+/).filter(Boolean).length;
+    if (words > 80) {
+      findings.push({ kind: "wall-of-text", severity: "medium", where: entry.key, evidence: `${words} words in one block. A block this long is a commitment, and skimming it drops exactly the sentence that mattered.` });
+    }
+    for (const m of text.matchAll(/\b[A-Z]{3,}\b/g)) {
+      // An expansion beside the letters, either way round, counts as explained.
+      const near = text.slice(Math.max(0, m.index - 60), m.index + m[0].length + 60);
+      const explained = new RegExp(`\\(\\s*${m[0]}\\s*\\)|${m[0]}\\s*\\(`).test(near);
+      if (!explained) abbrs.set(m[0], (abbrs.get(m[0]) ?? 0) + 1);
+    }
+  }
+  for (const [abbr, count] of [...abbrs.entries()].sort((a, b) => b[1] - a[1])) {
+    if (count >= 3) {
+      findings.push({ kind: "unexplained-abbreviation", severity: "low", where: "the copy", evidence: `${abbr} appears ${count} time(s) and is never expanded. Whoever knows it saves a second; whoever does not is stuck.` });
+    }
+  }
+  // The same kind of action under different names is a vocabulary the person
+  // has to learn per screen. Reported when the names genuinely differ.
+  const submitLabels = new Map();
+  for (const [screen, labels] of actionsByScreen) {
+    for (const label of labels) {
+      const key = label.toLowerCase();
+      if (!submitLabels.has(key)) submitLabels.set(key, { label, on: [] });
+      submitLabels.get(key).on.push(screen);
+    }
+  }
+  if (submitLabels.size >= 3) {
+    const names = [...submitLabels.values()].map((x) => `"${x.label}"`).join(", ");
+    findings.push({ kind: "inconsistent-actions", severity: "low", where: "across screens", evidence: `the primary actions wear ${submitLabels.size} different names: ${names}. Each new name is a small relearning.` });
+  }
+  return findings;
+}
+
+/** The whole run's copy as two numbers: how much and how hard. */
+export function summarizeCopy(entries) {
+  const texts = (entries ?? []).map((e) => String(e.value ?? ""));
+  const words = texts.reduce((a, t) => a + t.split(/\s+/).filter(Boolean).length, 0);
+  const grades = texts.map((t) => grade(t)).filter((g) => g !== null).sort((a, b) => a - b);
+  const median = grades.length ? grades[Math.floor(grades.length / 2)] : null;
+  return { words, strings: texts.length, medianGrade: median };
 }
 
 export function auditSource(text, rel) {
@@ -100,26 +186,37 @@ export default {
   class: "dsp",
   setup({ on, log }) {
     on("plan", async (ctx) => {
-      const findings = [...auditCopy(ctx.i18n)];
-
+      const findings = [];
+      const actionsByScreen = new Map();
       for (const screen of ctx.screens.filter((s) => s.template)) {
         const ir = screen.ir ?? buildIr(screen.template, { dialect: DIALECTS[screen.dialect] });
-        findings.push(...auditIr(ir, screen.selector));
+        const found = auditIr(ir, screen.selector);
+        findings.push(...found);
+        if (found.actions?.length) actionsByScreen.set(screen.selector, found.actions);
       }
       for (const file of ctx.sources.files.filter((f) => /\.(html?|js|ts|css|scss)$/.test(f.rel) && !/\.min\./.test(f.rel))) {
         const text = await readFile(file.path, "utf8").catch(() => "");
         if (text) findings.push(...auditSource(text, file.rel));
       }
+      ctx.cognitive = findings;
+      ctx.cognitiveActions = actionsByScreen;
+    });
 
+    // The copy audits run at emit on purpose: the catalogue they read is
+    // assembled by another plan stage plugin, and plan order inside a stage
+    // is alphabetical, which is nobody's contract. At emit the catalogue is
+    // complete whatever the order.
+    on("emit", async (ctx) => {
+      const findings = [
+        ...(ctx.cognitive ?? []),
+        ...auditCopy(ctx.i18n),
+        ...auditLanguage(ctx.i18n, ctx.cognitiveActions ?? new Map()),
+      ];
       if (!findings.length) return log.debug("nothing measured worth raising");
       ctx.cognitive = findings;
       const high = findings.filter((f) => f.severity === "high").length;
       log.info(`${findings.length} finding(s), ${high} of them serious`);
-    });
-
-    on("emit", async (ctx) => {
-      if (!ctx.cognitive) return;
-      await ctx.write("COGNITIVE.md", render(ctx.cognitive));
+      await ctx.write("COGNITIVE.md", render(findings, summarizeCopy(ctx.i18n)));
     });
   },
 };
@@ -134,9 +231,14 @@ const EXPLAIN = {
   "session-timer": "A session that expires mid thought converts a pause into lost work.",
   "meta-refresh": "A page that reloads itself discards whatever the person was in the middle of.",
   "infinite-animation": "An animation with no end and no pause is the strongest signal on the screen, forever.",
+  "vague-link": "Link text is navigation for a screen reader and a scanning eye alike; words that name no destination make both start over.",
+  "long-list": "A list longer than working memory turns choosing into searching.",
+  "wall-of-text": "A block nobody can hold in one pass gets skimmed, and skimming drops sentences at random.",
+  "unexplained-abbreviation": "Letters that stand for something stand for nothing to whoever meets them first.",
+  "inconsistent-actions": "When the same action changes its name per screen, every screen starts with a small translation.",
 };
 
-function render(findings) {
+function render(findings, summary = null) {
   const bySeverity = { high: [], medium: [], low: [] };
   for (const f of findings) bySeverity[f.severity].push(f);
 
@@ -154,7 +256,9 @@ ADHD or dyslexia hardest, and everyone somewhat.
 Everything below was measured, not judged: a reading grade, a missing label,
 a timer's length. What is friendly is a judgment; what takes three reads is a
 number.
-${section("Serious", bySeverity.high)}${section("Worth fixing in the port", bySeverity.medium)}${section("Small, and cheap to fix while you are in there", bySeverity.low)}
+${summary && summary.strings ? `
+The copy, measured: ${summary.strings} string(s), ${summary.words} word(s), median reading grade ${summary.medianGrade ?? "n/a"}. The grade is Flesch Kincaid over interface copy, which it was not designed for; treat it as a ranking, not a verdict.
+` : ""}${section("Serious", bySeverity.high)}${section("Worth fixing in the port", bySeverity.medium)}${section("Small, and cheap to fix while you are in there", bySeverity.low)}
 ---
 
 A state this audit never saw is not certified. It read the catalogued copy,
