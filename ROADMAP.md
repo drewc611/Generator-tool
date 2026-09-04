@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Four hundred and seventy six features across forty five phases. The statuses are
+Four hundred and eighty features across forty six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1735,14 +1735,35 @@ an nginx server block that serves the prerendered static export, answers every r
 each writes nothing without its flag and nothing without a site model, and each names in a README what it needs (a folder of pages through --site, the static export through --export) rather than producing a config that only looks deployable.
 
 
+## Phase 46 · 7.1 · The port cleaned
+
+*A legacy front end carries debug output it forgot to strip and hooks it hung
+on the global object. A module port silences the first and has to contain the
+second. dsp-console and dsp-globals find both, and report rather than delete,
+because which log is load bearing and which global other code still reads is
+a person's call.*
+
+**477. dsp-console finds the debug output** 🔨
+every `console.<method>` call and every `debugger` statement left in the scripts, with the method and its line, and never the arguments, because a value logged may be one a port should not reprint; shipped to production they leak internal detail to anyone with a console open.
+
+**478. The console debt is grouped, not deleted** 🔨
+CONSOLE.md lists the calls per file so a person can strip them or gate them behind a debug flag, because a warn that a user relies on and a stray log look the same to a regex and only a person knows which is which.
+
+**479. dsp-globals finds what the app publishes** 🔨
+`window.NAME =` assignments, `$.fn.NAME` jQuery plugins, and column zero script scope `var` and `function` declarations, each the app reaching the global object in a way a module port isolates away; the name and line are kept, the value is not.
+
+**480. The globals must be contained, not lost** 🔨
+GLOBALS.md names each so the port can turn a window assignment into an export or a small namespace, keep the jQuery a plugin needs or drop it on purpose, and move a script scope global into a module, rather than silently losing a hook other code depended on.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 429 |
+| new in this branch | 433 |
 | planned | 3 |
-| total | 476 |
+| total | 480 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

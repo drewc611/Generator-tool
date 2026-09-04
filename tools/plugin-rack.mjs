@@ -68,6 +68,8 @@ const DOES = {
   "dsp-cookies": "the cookies the client sets and whether it asked, values withheld",
   "dsp-security": "the sharp edges: inline handlers, eval, innerHTML, tabnabbing, no CSP",
   "dsp-supplychain": "the third party code the page loads, and whether it carries an integrity hash",
+  "dsp-console": "the debug output left in the scripts, the console calls a port should strip",
+  "dsp-globals": "what the app puts on the global object, which a module port has to contain",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
   "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",

@@ -522,6 +522,15 @@ jobs:
           grep -q "try_files" home-out/nginx/nginx.conf || { echo "nginx has no SPA fallback"; exit 1; }
           rm -rf home-out
 
+      - name: the debug output and the global pollution are named, not deleted
+        run: |
+          node src/cli.js run --src test/fixtures/debt-site --out cln-out
+          grep -qE "console\.(log|debug|warn)" cln-out/CONSOLE.md || { echo "a console call was missed"; exit 1; }
+          grep -q "debugger" cln-out/CONSOLE.md || { echo "a debugger statement was missed"; exit 1; }
+          grep -qE "APP_CONFIG|trackEvent" cln-out/GLOBALS.md || { echo "a global assignment was missed"; exit 1; }
+          grep -q "wobble" cln-out/GLOBALS.md || { echo "the jQuery plugin was missed"; exit 1; }
+          rm -rf cln-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -533,6 +542,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "476" ]; then
-            echo "ROADMAP.md holds $count entries and claims 476"; exit 1
+          if [ "$count" != "480" ]; then
+            echo "ROADMAP.md holds $count entries and claims 480"; exit 1
           fi

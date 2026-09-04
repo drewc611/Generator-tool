@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and eleven in five classes, and the core has never learned
+Plugins that ship, a hundred and thirteen in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -88,7 +88,7 @@ dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
-         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts  dsp-security  dsp-supplychain
+         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts  dsp-security  dsp-supplychain  dsp-console  dsp-globals
 output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-html  output-storybook  output-tests  output-openapi
          output-msw  output-tailwind  output-design-tokens  output-forms
@@ -328,6 +328,17 @@ from the flattened redirect map, and falls a client route through to
 index.html. Both are gated by their flag and a site model, invent no build
 the port does not have, and carry the same redirect map every other host
 target does. test/home.test.js holds both.
+
+7.1 cleans the port. dsp-console finds every `console.<method>` call and every
+`debugger` left in the scripts, with the method and its line and never the
+arguments, because a value logged may be one a port should not reprint; shipped
+to production they leak internal detail. dsp-globals finds what the app hangs
+on the global object, `window.NAME =` assignments, `$.fn` jQuery plugins, and
+column zero script scope `var`/`function` declarations, each a hook a module
+port isolates away and must contain, or the port silently loses something other
+code read. Both report rather than delete, because which log is load bearing
+and which global is still read is a person's call. test/cleaned.test.js holds
+both.
 
 ## What is honestly incomplete
 
