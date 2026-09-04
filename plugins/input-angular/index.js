@@ -9,7 +9,8 @@ import { readWithRegex } from "./regex.js";
 const KEEP = new Set([
   ".ts", ".js", ".html", ".scss", ".css", ".vue",
   ".htm", ".shtml", ".php", ".asp", ".jsp", ".inc", ".txt", ".xml",
-  ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp", ".woff", ".woff2",
+  ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp",
+  ".woff", ".woff2", ".ttf", ".otf", ".eot",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;

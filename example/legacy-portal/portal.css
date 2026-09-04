@@ -1,5 +1,5 @@
 body { font-family: Georgia, serif; margin: 0; color: #1a1a1a; background: #f7f6f2; }
-.masthead { background: #1f3864; color: #ffffff; padding: 8px; }
+.masthead { background: #1f3864 url(wave.svg) repeat-x bottom; color: #ffffff; padding: 8px; }
 .agency { font-size: 20px; letter-spacing: 2px; margin-left: 12px; }
 .portal-nav { background: #dfe4ee; padding: 6px; }
 .portal-nav a { margin-right: 14px; }

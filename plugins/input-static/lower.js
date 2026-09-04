@@ -89,8 +89,10 @@ export function readHead(text) {
     og[m[1]] = m[2];
   }
 
+  // The cache busting query is part of the URL, never of the file on disk.
   const cssLinks = [...head.matchAll(/<link\b[^>]*\brel\s*=\s*["']stylesheet["'][^>]*\bhref\s*=\s*["']([^"']+)["']/gi)]
-    .map((m) => m[1]);
+    .map((m) => m[1].split(/[#?]/)[0])
+    .filter(Boolean);
 
   return { description: meta("description"), refresh, base, charset, og, cssLinks, ogImage: property("og:image") };
 }

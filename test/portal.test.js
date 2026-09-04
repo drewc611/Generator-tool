@@ -61,4 +61,8 @@ test("a service portal becomes a full stack React app", async (t) => {
   assert.ok(ctx.written.includes("tests/server.test.js"));
   const seal = await readFile(join(out, "public/seal.svg"));
   assert.deepEqual(seal, await readFile(join(ROOT, "example/legacy-portal/seal.svg")));
+  // wave.svg is referenced only from inside portal.css: the stylesheet
+  // dragged its own dependency through, or the masthead loses its wave.
+  const wave = await readFile(join(out, "public/wave.svg"));
+  assert.deepEqual(wave, await readFile(join(ROOT, "example/legacy-portal/wave.svg")));
 });

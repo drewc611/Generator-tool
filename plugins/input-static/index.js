@@ -249,13 +249,22 @@ export default {
         // Internal links become the routes they always meant. The route is
         // what the anchor navigates to; the router intercepts the click.
         const rewrite = (html, fromRel, base) =>
-          html.replace(/(<(?:a|area)\b[^>]*\bhref\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, href, after) => {
-            const [pathPart, tail = ""] = [href.split(/([#?].*)$/)[0], /([#?].*)$/.exec(href)?.[1]];
-            if (/^[a-z][\w+.-]*:|^\/\//i.test(pathPart) || !PAGE_EXT.test(pathPart)) return whole;
-            const target = resolveLink(fromRel, pathPart, base);
-            if (!relOf.has(target)) return whole;
-            return `${before}${routeOf(target)}${tail}${after}`;
-          });
+          html
+            .replace(/(<(?:a|area)\b[^>]*\bhref\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, href, after) => {
+              const [pathPart, tail = ""] = [href.split(/([#?].*)$/)[0], /([#?].*)$/.exec(href)?.[1]];
+              if (/^[a-z][\w+.-]*:|^\/\//i.test(pathPart) || !PAGE_EXT.test(pathPart)) return whole;
+              const target = resolveLink(fromRel, pathPart, base);
+              if (!relOf.has(target)) return whole;
+              return `${before}${routeOf(target)}${tail}${after}`;
+            })
+            // An asset spelled relative to the page breaks the moment the page
+            // is served at a route, so every local reference becomes the root
+            // absolute path the copied file answers at.
+            .replace(/(<(?:img|source|video|audio|embed)\b[^>]*\bsrc\s*=\s*["'])([^"']+)(["'])/gi, (whole, before, src, after) => {
+              const pathPart = src.split(/[#?]/)[0];
+              if (/^[a-z][\w+.-]*:|^\/\/|^data:/i.test(pathPart)) return whole;
+              return `${before}/${resolveLink(fromRel, pathPart, base)}${after}`;
+            });
         for (const page of kept) {
           page.screen.template = rewrite(page.screen.template, page.rel, page.head?.base);
         }

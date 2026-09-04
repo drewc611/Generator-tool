@@ -48,13 +48,13 @@ test("the head is read for what the port must carry", () => {
     <meta charset="ISO-8859-1">
     <base href="/deep/">
     <meta property="og:title" content="T">
-    <link rel="stylesheet" href="style.css"></head>`);
+    <link rel="stylesheet" href="style.css?v=3&cache=bust"></head>`);
   assert.equal(head.description, "d");
   assert.equal(head.refresh, "new.html");
   assert.equal(head.charset, "iso-8859-1");
   assert.equal(head.base, "/deep/");
   assert.deepEqual(head.og, { "og:title": "T" });
-  assert.deepEqual(head.cssLinks, ["style.css"]);
+  assert.deepEqual(head.cssLinks, ["style.css"], "the cache busting query never reaches the disk lookup");
 });
 
 test("framesets, layout tables, local assets and imagemaps are all seen for what they are", () => {
@@ -150,6 +150,7 @@ test("a folder of old pages becomes a React application architecture", async (t)
   assert.ok(!home.includes("<nav"), "the page lost its nav to the layout");
   assert.ok(!home.includes("<footer"), "the page lost its footer to the layout");
   assert.match(home, /href="\/news-1"/, "internal links became routes");
+  assert.match(home, /src="\/logo\.svg"/, "a relative asset became the root path the copy answers at");
 
   // Old addresses keep working in every spelling.
   const redirects = JSON.parse(await readFile(join(out, "redirects.json"), "utf8"));

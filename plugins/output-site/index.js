@@ -65,17 +65,32 @@ export default {
       }
       const byRel = new Map(ctx.sources.files.map((f) => [f.rel.replace(/^\.\//, ""), f]));
       const css = new Set();
+      const done = new Set();
       let copied = 0;
-      for (const [rel, from] of wanted) {
+      const copyOne = async (rel, from) => {
+        if (done.has(rel)) return;
+        done.add(rel);
         const file = byRel.get(rel);
         if (!file) {
           ctx.unverified(`${from} uses ${rel}, which is not in this run. The port references /${rel}; place the file under public/ by hand.`);
-          continue;
+          return;
         }
-        await ctx.write(`public/${rel}`, await readFile(file.path));
+        const bytes = await readFile(file.path);
+        await ctx.write(`public/${rel}`, bytes);
         copied += 1;
-        if (/\.css$/i.test(rel)) css.add(rel);
-      }
+        // A stylesheet drags its own dependencies: the fonts and images its
+        // url() references name, resolved the way the browser will resolve
+        // them against the copied sheet's address.
+        if (/\.css$/i.test(rel)) {
+          css.add(rel);
+          for (const m of bytes.toString("utf8").matchAll(/url\(\s*["']?([^"')]+?)["']?\s*\)/g)) {
+            const u = m[1].split(/[#?]/)[0];
+            if (!u || /^(data:|https?:|\/\/)/i.test(u)) continue;
+            await copyOne(u.startsWith("/") ? resolveLink("x", u) : resolveLink(rel, u), rel);
+          }
+        }
+      };
+      for (const [rel, from] of wanted) await copyOne(rel, from);
 
       await ctx.write("index.html", INDEX_HTML([...css]));
       if (!ctx.written.includes("package.json")) {
