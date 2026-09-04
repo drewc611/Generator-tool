@@ -473,6 +473,15 @@ jobs:
           grep -qiE "woff2|invisible|dropped" a-out/FONTS.md || { echo "a font gap was not named"; exit 1; }
           rm -rf a-out
 
+      - name: the modes the old app forgot are read, cookie values withheld
+        run: |
+          node src/cli.js run --src test/fixtures/modes-site --out mo-out
+          grep -q "not honoured" mo-out/MOTION.md || { echo "the unstilled motion was not flagged"; exit 1; }
+          grep -qiE "media print|hides chrome" mo-out/PRINT.md || { echo "the print styles were not read"; exit 1; }
+          grep -q "session_id" mo-out/COOKIES.md || { echo "a cookie was not named"; exit 1; }
+          if grep -qE "abc123|xyz789" mo-out/COOKIES.md; then echo "a cookie value was printed"; exit 1; fi
+          rm -rf mo-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -484,6 +493,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "454" ]; then
-            echo "ROADMAP.md holds $count entries and claims 454"; exit 1
+          if [ "$count" != "460" ]; then
+            echo "ROADMAP.md holds $count entries and claims 460"; exit 1
           fi

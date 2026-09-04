@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred in five classes, and the core has never learned
+Plugins that ship, a hundred and three in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -85,7 +85,7 @@ input    input-angular  input-angularjs  input-vue  input-knockout
          input-blackbox  input-polymer  input-riot  input-react
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
-         dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
+         dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
          dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts
@@ -266,6 +266,19 @@ the measurable gaps: no woff2, a face declared in eot, svg or ttf no target
 needs, and font-display left unset so text is invisible while the font loads.
 Whether a licence lets a face travel stays general-license's job.
 test/assets2.test.js holds both.
+
+6.2 finds three modes a page built before they mattered leaves out.
+dsp-motion counts the keyframes, animations, transitions and smooth scrolling
+a stylesheet declares and reports whether any `prefers-reduced-motion: reduce`
+block stills them, printing the one media query where none exists, because
+motion nobody can turn off is nausea or a seizure risk. dsp-print reads every
+`@media print` block with its balanced body and whether it hides the chrome,
+so a stylesheet that printed an invoice cleanly for a decade is carried across
+as identity rather than silently regressed. dsp-cookies names every
+`document.cookie`, js-cookie and jquery.cookie write and the consent mechanism
+in play, if any, because a tracking cookie set before consent is a violation
+the port would inherit; the cookie's value is never printed. test/modes.test.js
+holds all three.
 
 ## What is honestly incomplete
 

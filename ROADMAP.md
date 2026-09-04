@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and fifty four features across forty phases. The statuses are
+Four hundred and sixty features across forty one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-548 tests, on Node 18, 20 and 22, and on Windows in CI.
+552 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1629,14 +1629,39 @@ each `@font-face` is read for its formats and its font-display, hosted Google Fo
 a face with no woff2, one declared in eot, svg or ttf that no target needs, and font-display left unset so text is invisible while the font loads are each reported; whether a licence lets a face travel stays general-license's job, and this is about weight and the flash of invisible text.
 
 
+## Phase 41 · 6.2 · The modes the old app forgot
+
+*Three things a page built before they mattered leaves out: a way to still
+its motion, the print styles it once had, and a question before it set a
+cookie. dsp-motion, dsp-print and dsp-cookies find each and report it.*
+
+**455. dsp-motion counts the movement** 🔨
+the keyframes, animations, transitions and smooth scrolling a stylesheet declares are counted, and whether any `prefers-reduced-motion: reduce` block stills them is reported, because motion nobody can turn off is nausea or a seizure risk for the people who ask.
+
+**456. The reduced-motion fix is named** 🔨
+where no reduced-motion block exists MOTION.md prints the one media query that honours the request, because the fix is small and the omission is invisible until it hurts someone.
+
+**457. dsp-print reads the print styles** 🔨
+every `@media print` block is read with its balanced body, its rule count and whether it hides the chrome, and print stylesheet links are counted, so a feature that printed an invoice cleanly for a decade is carried across rather than silently regressed.
+
+**458. Print styles are identity, not invention** 🔨
+PRINT.md reports the rules to carry into the port's own stylesheet under the same query; the rules that hide the chrome and drop the background are the ones that make a page printable, and losing them is the regression the report exists to catch.
+
+**459. dsp-cookies names what the client set** 🔨
+every `document.cookie` write and every js-cookie or jquery.cookie call is read for its cookie name, and the consent mechanism in play, if any, is recognised across six of them, so a cookie set without a question is visible.
+
+**460. A cookie is a decision with a legal shadow** 🔨
+a tracking cookie set before consent is a violation the port would inherit, so each is reported as a decision to carry forward on purpose; the cookie's value is never printed, the same caution the secret gate keeps.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 407 |
+| new in this branch | 413 |
 | planned | 3 |
-| total | 454 |
+| total | 460 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
