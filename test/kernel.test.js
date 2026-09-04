@@ -96,9 +96,9 @@ test("discovery loads every plugin that ships", async () => {
     "input-openapi", "input-pdf", "input-polymer", "input-react", "input-record", "input-riot", "input-shots", "input-static", "input-underscore", "input-vue",
     "output-adr", "output-alpine", "output-angular", "output-astro", "output-cem", "output-ci", "output-curl",
     "output-design-tokens", "output-fixtures", "output-forms", "output-html", "output-i18n", "output-lit",
-    "output-migration", "output-msw", "output-next",
+    "output-migration", "output-msw", "output-next", "output-nuxt",
     "output-openapi", "output-postman", "output-preact", "output-qwik", "output-react", "output-readme", "output-remix", "output-site", "output-solid",
-    "output-storybook", "output-svelte", "output-tailwind",
+    "output-storybook", "output-svelte", "output-sveltekit", "output-tailwind",
     "output-tests", "output-vue", "vis-coverage", "vis-equivalence", "vis-parity", "vis-roundtrip", "vis-timeline", "vis-ui",
   ]);
   for (const p of k.plugins) assert.ok(CLASSES.includes(p.class), `${p.name} has a real class`);

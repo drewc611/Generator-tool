@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and three in five classes, and the core has never learned
+Plugins that ship, a hundred and five in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -95,7 +95,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-i18n  output-adr  output-migration  output-preact  output-solid
          output-alpine  output-cem  output-postman  output-curl
          output-fixtures  output-readme  output-ci  output-site
-         output-next  output-remix  output-astro  output-qwik
+         output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip
 general  general-policy  general-authorization  general-license
          general-doctor  general-scaffold  general-watch  general-history
@@ -279,6 +279,19 @@ as identity rather than silently regressed. dsp-cookies names every
 in play, if any, because a tracking cookie set before consent is a violation
 the port would inherit; the cookie's value is never printed. test/modes.test.js
 holds all three.
+
+6.3 gives Vue and Svelte the meta-frameworks React already had. output-nuxt
+arranges the site model as a Nuxt app: `app.vue` carries the lifted chrome,
+one file per route under `pages/` imports the emitted Vue component and rides
+its head through `useHead`, and the flattened redirect map lands in
+`nuxt.config.ts` as routeRules. output-sveltekit arranges it as a SvelteKit
+app: `+layout.svelte` carries the chrome, one `+page.svelte` per route imports
+the emitted Svelte and rides `<svelte:head>`, and the redirect map lands in
+`src/hooks.server.js`, where SvelteKit throws a 301 for a retired address
+because it has no config redirect table. Like output-next and output-remix,
+neither ports a component twice: the files under src/features are the single
+source, imported not copied, and each asks for --vue or --svelte when the
+components it arranges are not there. test/metaframeworks.test.js holds both.
 
 ## What is honestly incomplete
 

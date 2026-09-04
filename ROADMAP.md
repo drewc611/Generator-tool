@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and sixty features across forty one phases. The statuses are
+Four hundred and sixty four features across forty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-552 tests, on Node 18, 20 and 22, and on Windows in CI.
+555 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1654,14 +1654,34 @@ every `document.cookie` write and every js-cookie or jquery.cookie call is read 
 a tracking cookie set before consent is a violation the port would inherit, so each is reported as a decision to carry forward on purpose; the cookie's value is never printed, the same caution the secret gate keeps.
 
 
+## Phase 42 · 6.3 · The meta-frameworks for Vue and Svelte
+
+*output-next and output-remix arranged the site model for React. 6.3 does the
+same for the other two targets: Nuxt for the emitted Vue, SvelteKit for the
+emitted Svelte, each importing the components the run already produced and
+carrying the redirect map in its own host's spelling.*
+
+**461. output-nuxt arranges a Nuxt app** 🔨
+`app.vue` carries the lifted chrome, one file per route under `pages/` imports the Vue component the run emitted and rides its head data through `useHead`, and nothing is ported twice: the components under src/features are the single source.
+
+**462. Nuxt carries the redirect map as routeRules** 🔨
+the flattened redirect map lands in `nuxt.config.ts` as `routeRules` with a 301 per retired address, the same map every other target carries, and the run asks for --vue when the components the pages import are not there.
+
+**463. output-sveltekit arranges a SvelteKit app** 🔨
+`+layout.svelte` carries the chrome, one `+page.svelte` per route imports the Svelte component the run emitted and rides its head data through `<svelte:head>`, importing rather than copying so a fix lands once.
+
+**464. SvelteKit answers old addresses from the server hook** 🔨
+the redirect map lands in `src/hooks.server.js`, where SvelteKit throws a 301 for a retired address, because SvelteKit has no config redirect table and the hook is where that decision belongs; the run asks for --svelte when the components are not there.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 413 |
+| new in this branch | 417 |
 | planned | 3 |
-| total | 460 |
+| total | 464 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

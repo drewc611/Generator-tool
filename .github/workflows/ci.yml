@@ -482,6 +482,16 @@ jobs:
           if grep -qE "abc123|xyz789" mo-out/COOKIES.md; then echo "a cookie value was printed"; exit 1; fi
           rm -rf mo-out
 
+      - name: the meta-frameworks arrange Vue and Svelte, importing not copying
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out mf-out --site true --vue true --nuxt true --svelte true --sveltekit true
+          grep -q "src/features/About/About.vue" mf-out/nuxt/pages/about.vue || { echo "nuxt did not import the emitted Vue"; exit 1; }
+          grep -q "statusCode: 301" mf-out/nuxt/nuxt.config.ts || { echo "nuxt lost the redirect map"; exit 1; }
+          grep -q "src/features/About/About.svelte" mf-out/sveltekit/src/routes/about/+page.svelte || { echo "sveltekit did not import the emitted Svelte"; exit 1; }
+          node --check mf-out/sveltekit/src/hooks.server.js
+          grep -q "throw redirect(301" mf-out/sveltekit/src/hooks.server.js || { echo "sveltekit lost the redirect hook"; exit 1; }
+          rm -rf mf-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -493,6 +503,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "460" ]; then
-            echo "ROADMAP.md holds $count entries and claims 460"; exit 1
+          if [ "$count" != "464" ]; then
+            echo "ROADMAP.md holds $count entries and claims 464"; exit 1
           fi

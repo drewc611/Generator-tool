@@ -72,6 +72,8 @@ const DOES = {
   "output-astro": "each screen as an Astro island hydrating the emitted React component",
   "output-qwik": "the proven JSX as a Qwik component: handlers split with $, state as signals",
   "output-remix": "the site as route modules, retired addresses as loaders that 301",
+  "output-nuxt": "the site model as a Nuxt app, the emitted Vue imported not copied",
+  "output-sveltekit": "the site as SvelteKit routes, old addresses answered from the server hook",
   "dsp-state": "where state should live, argued from what each screen reads",
   "dsp-weight": "how much port each screen is, by a formula printed beside it",
   "dsp-archetype": "what kind of app this is, from its structure and its traffic",
