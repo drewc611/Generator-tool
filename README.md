@@ -123,6 +123,31 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ![The plugin rack: 125 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
+## Yes, there is a transformer in it
+
+Two of them, in fact, because the word means two things and both fit the rule
+that everything interesting lives in a plugin the core cannot name.
+
+`vis-transformer` is the neural network kind: a real self attention forward
+pass in pure JavaScript, no dependency. Token embeddings, sinusoidal positions,
+multi head scaled dot product attention, softmax, residual and layernorm, a
+feed forward block. The softmax, the layernorm and the attention are held to
+known answer values by test, the weights are seeded so two runs are byte
+identical, and it runs over a fixed declared sentence, so it makes no claim
+about your app. Run it with `--transformer true` and it draws its attention:
+
+![vis-transformer: four heads of self attention over a fixed sentence, drawn as heatmaps, every row summing to one](media/transformer.png)
+
+The weights are untrained here, which is exactly why the attention is near
+uniform. That is the honest picture of an untrained transformer, and it is the
+point: the blind core loaded a transformer the same way it loads every plugin,
+and still has no idea what one is.
+
+`output-codemod` is the other kind, a code transformer: it lifts CommonJS to ES
+modules, performing only the rewrites it can prove from the shape of the line
+and refusing the rest, a dynamic `require` left verbatim and named in
+CODEMOD.md rather than guessed. Run it with `--codemod true`.
+
 ## What a translation looks like
 
 The example's template, and what portamp emits for it:
