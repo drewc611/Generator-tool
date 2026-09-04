@@ -1,7 +1,6 @@
 import { toSvelte } from "./print.js";
+import { pascal } from "../dsp-ir/emit.js";
 
-const pascal = (sel) =>
-  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 const unique = (list) => [...new Set(list.filter(Boolean))];
 

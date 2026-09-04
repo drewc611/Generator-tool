@@ -1,4 +1,5 @@
 import { translate } from "../output-react/template.js";
+import { pascal } from "../dsp-ir/emit.js";
 
 /**
  * The Preact target. The JSX is the same JSX the React printer proves against
@@ -7,8 +8,6 @@ import { translate } from "../output-react/template.js";
  * which for a ported legacy tool is often the whole argument.
  */
 
-const pascal = (sel) =>
-  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 const unique = (list) => [...new Set(list)];
 

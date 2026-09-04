@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { lowerUnderscore } from "./lower.js";
+import { pascal } from "../dsp-ir/emit.js";
 
 /**
  * The reader input-backbone deferred to: underscore templates, found where
@@ -10,8 +11,6 @@ import { lowerUnderscore } from "./lower.js";
 
 const BLOCK = /<script\b[^>]*\btype\s*=\s*["']text\/(?:template|html)["'][^>]*>([\s\S]*?)<\/script\b[^>]*>/gi;
 
-const pascal = (s) =>
-  String(s).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 export function readTemplates(text, rel) {
   const found = [];

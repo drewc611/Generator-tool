@@ -1,8 +1,6 @@
 import { toHtml } from "./print.js";
-import { jsString } from "../dsp-ir/emit.js";
+import { jsString, pascal } from "../dsp-ir/emit.js";
 
-const pascal = (sel) =>
-  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 const unique = (list) => [...new Set(list.filter(Boolean))];

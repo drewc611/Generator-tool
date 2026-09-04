@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { lowerHandlebars } from "./lower.js";
+import { pascal } from "../dsp-ir/emit.js";
 
 /**
  * The handlebars reader. Templates arrive from .hbs and .handlebars files and
@@ -10,8 +11,6 @@ import { lowerHandlebars } from "./lower.js";
 
 const BLOCK = /<script\b[^>]*\btype\s*=\s*["']text\/x-handlebars(?:-template)?["'][^>]*>([\s\S]*?)<\/script\b[^>]*>/gi;
 
-const pascal = (s) =>
-  String(s).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 function screenOf(id, body, rel, notes, resolvePartial = null) {
   const note = (text) => { if (!notes.includes(text)) notes.push(text); };

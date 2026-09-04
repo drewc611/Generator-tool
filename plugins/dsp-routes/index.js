@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { flatten, readRoutes } from "./parse.js";
+import { pascal } from "../dsp-ir/emit.js";
 
 /**
  * Recovers the route table, because the address bar is half of an app's
@@ -14,8 +15,6 @@ import { flatten, readRoutes } from "./parse.js";
  * embedded in another or unreachable, and which of those it is matters.
  */
 
-const pascal = (sel) =>
-  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 export default {
   name: "dsp-routes",

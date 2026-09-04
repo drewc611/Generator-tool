@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
 import { lowerJinja } from "./lower.js";
+import { pascal } from "../dsp-ir/emit.js";
 
 /**
  * The jinja and Django template reader. A server rendered page is a screen
@@ -9,8 +10,6 @@ import { lowerJinja } from "./lower.js";
  * the same way a client template does.
  */
 
-const pascal = (s) =>
-  String(s).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 export default {
   name: "input-jinja",

@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
 import { flatten } from "../dsp-routes/parse.js";
+import { pascal } from "../dsp-ir/emit.js";
 import {
   stripServerBlocks, resolveSsi, lowerLegacyHtml, readHead,
   localAssets, imagemapLinks, readFrameset, layoutTables,
@@ -28,8 +29,6 @@ const OWNED = /\bng-[\w-]+=|\bv-(?:if|for|model|show|bind|on|html)\b|\bko-[\w-]+
 const PAGE_EXT = /\.(html?|shtml|php|asp|jsp)$/i;
 const SERVER_EXT = /\.(php|asp|jsp|shtml)$/i;
 
-const pascal = (s) =>
-  String(s).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 export function readPage(text, rel, { note = () => {}, resolveInclude = null } = {}) {
   let source = String(text ?? "");

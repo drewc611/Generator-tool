@@ -93,3 +93,9 @@ export function templateText(value) {
     .replace(/`/g, "\\`")
     .replace(/\$\{/g, "\\$\{")
 }
+
+/** kebab-or-snake to PascalCase, the one spelling of a component's name.
+ * Shared here because twenty plugins each carrying their own copy is how
+ * two of them end up disagreeing about what a screen is called. */
+export const pascal = (sel) =>
+  String(sel ?? "").split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");

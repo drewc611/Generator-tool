@@ -1,5 +1,5 @@
 import { buildIr } from "../dsp-ir/ir.js";
-import { jsString } from "../dsp-ir/emit.js";
+import { jsString, pascal } from "../dsp-ir/emit.js";
 
 /**
  * The Alpine target: the modernization path for the apps that were never
@@ -12,8 +12,6 @@ import { jsString } from "../dsp-ir/emit.js";
  * alpine.min.js and says to put it there.
  */
 
-const pascal = (sel) =>
-  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const pad = (depth) => "  ".repeat(depth);

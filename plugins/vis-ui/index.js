@@ -3,11 +3,10 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, extname, join, resolve, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import { pascal } from "../dsp-ir/emit.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-const pascal = (sel) =>
-  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 const normalise = (text) => String(text).toLowerCase().replace(/[^a-z0-9]/g, "");
 

@@ -1,4 +1,5 @@
 import { translate } from "../output-react/template.js";
+import { pascal } from "../dsp-ir/emit.js";
 
 /**
  * A custom elements manifest for the elements the run can emit. Editors and
@@ -8,8 +9,6 @@ import { translate } from "../output-react/template.js";
  * can only claim what the port actually has.
  */
 
-const pascal = (sel) =>
-  String(sel).split(/[-_\s]/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 
 export function manifestFor(screens) {
   const modules = [];

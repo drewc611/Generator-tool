@@ -23,7 +23,7 @@ test("no dependency was added", async () => {
   assert.deepEqual(pkg.dependencies, {});
   const source = await readFile(join(ROOT, "plugins/vis-ui/index.js"), "utf8");
   for (const line of source.split("\n").filter((l) => l.startsWith("import "))) {
-    assert.match(line, /from "node:|from "\.\//, `${line.trim()} is not a node builtin or a local file`);
+    assert.match(line, /from "node:|from "\./, `${line.trim()} is not a node builtin or a local file`);
   }
 });
 
