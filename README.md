@@ -60,8 +60,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 18295 lines of JavaScript |
-| Tests | 5268 lines, 465 cases |
+| Every line of the tool | 18,295 lines of JavaScript |
+| Tests | 5,268 lines, 465 cases |
 | Source on disk | src 44 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
