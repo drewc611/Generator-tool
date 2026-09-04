@@ -191,7 +191,8 @@ test("a folder of old pages becomes a React application architecture", async (t)
   const layout = await readFile(join(out, "src/app/Layout.jsx"), "utf8");
   assert.match(layout, /<nav className="menu">/);
   assert.match(layout, /<footer className="fine-print">/);
-  assert.match(layout, /<main>\{children\}<\/main>/);
+  assert.match(layout, /<main id="main" tabIndex=\{-1\}>\{children\}<\/main>/);
+  assert.match(layout, /Skip to content/, "the layout leads with a way past the chrome");
   const home = await readFile(join(out, "src/features/Home/Home.jsx"), "utf8");
   assert.ok(!home.includes("<nav"), "the page lost its nav to the layout");
   assert.ok(!home.includes("<footer"), "the page lost its footer to the layout");

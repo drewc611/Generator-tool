@@ -41,7 +41,7 @@ export default {
           // the redirect map, the nav model and the head table are routes and
           // titles, and a route may spell the same path an API answers. The
           // shell's code files stay gated like any component.
-          && !/^src\/app\/(redirects|nav|head|breadcrumbs)\.js$/.test(f)
+          && !/^src\/app\/(redirects|nav|head|breadcrumbs|search-index)\.js$/.test(f)
       );
       // The routes this run itself serves. A navigation attribute naming one
       // of these is a place to go, whatever an API thinks of the same string.
@@ -72,6 +72,18 @@ export default {
       // gaps exceed it. It only ever adds a gate; there is no flag that
       // relaxes one. The count is as it stood when this check ran; the late
       // reporters list, they do not add.
+      // The same shape for dead links: a ceiling only ever adds a gate.
+      const deadCeiling = ctx.config.maxDeadLinks ?? ctx.config["max-dead-links"];
+      if (deadCeiling !== undefined && deadCeiling !== null && deadCeiling !== false) {
+        const max = Number(deadCeiling);
+        if (!Number.isFinite(max)) throw new Error(`--max-dead-links needs a number, got "${deadCeiling}".`);
+        const dead = ctx.site?.deadLinks?.length ?? 0;
+        if (dead > max) {
+          throw new Error(`${dead} dead link(s) against a ceiling of ${max}. SITE.md names each one; fix them or raise the ceiling knowingly.`);
+        }
+        log.info(`${dead} dead link(s), under the ceiling of ${max}`);
+      }
+
       const ceiling = ctx.config.maxUnverified ?? ctx.config["max-unverified"];
       if (ceiling !== undefined && ceiling !== null && ceiling !== false) {
         const max = Number(ceiling);

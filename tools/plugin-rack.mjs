@@ -54,6 +54,7 @@ const DOES = {
   "dsp-css": "the stylesheet weighed: !important, ids, depth, repetition",
   "dsp-duplication": "screens that are nearly the same screen, proposed as one",
   "dsp-entropy": "strings random enough to be credentials, values withheld",
+  "dsp-era": "when the site was built, dated by seventeen signals with a spread",
   "dsp-state": "where state should live, argued from what each screen reads",
   "dsp-weight": "how much port each screen is, by a formula printed beside it",
   "dsp-archetype": "what kind of app this is, from its structure and its traffic",

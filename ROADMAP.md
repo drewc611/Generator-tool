@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Three hundred and sixty one features across twenty nine phases. The statuses are
+Three hundred and ninety eight features across thirty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-465 tests, on Node 18, 20 and 22, and on Windows in CI.
+477 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1094,7 +1094,7 @@ the inventory input-jquery already writes, matched to the site's pages so a hand
 **309. Breadcrumbs from the hierarchy** 🔨
 the nav model's nesting as a breadcrumb component, data only.
 
-**310. Scroll restoration** ▢
+**310. Scroll restoration** 🔨
 back means where you were; a new route means the top; the hash still wins.
 
 **311. Prefetch on intent** ▢
@@ -1121,8 +1121,8 @@ page.php?id=3 families read as parameterized routes the way filename pagination 
 **318. Per route code splitting** ▢
 lazy imports in App.jsx behind a flag, because eight pages do not need it and eight hundred do.
 
-**319. A service worker for the port** ▢
-offline for the ported site itself, opt in, with the same honesty the console's worker has.
+**319. A service worker for the port** 🔨
+offline for the ported site itself, opt in, with the same honesty the console's worker has: it caches exactly what the run wrote.
 
 **320. Anchor text audit** 🔨
 "click here" counted and named with its route, because link text is navigation for a screen reader.
@@ -1262,20 +1262,139 @@ strings, words and a median reading grade, stated with the caveat that the formu
 example/legacy-portal, a fictional postal service portal with the shapes of the real ones: tracking and lookup forms into the API map, a data table kept as data, nested services under their section in the nav model, legalese and walls caught by the language audit, and the whole thing ported to a running full stack React app under test. The same engine was smoke tested against a real government developer portal's public pages, which is what surfaced 355.
 
 
+## Phase 30 · The port grows senses
+
+*Thirty seven at once: a search engine, road manners, machine tongues, identity
+kept, evidence written down, and a server that speaks this decade's HTTP. All
+of it held by one suite that reads what one run actually wrote.*
+
+**362. A search engine inside the port** 🔨
+rank(), pure and dependency free, ships in match.js; the port answers questions about itself with no service behind it.
+
+**363. The index from the pages' own words** 🔨
+search-index.js built at emit from each page's rendered text, so the engine can only find what the site actually says.
+
+**364. An empty question gets an empty answer** 🔨
+rank guards the degenerate cases instead of padding them; a blank query returns nothing, stated.
+
+**365. Did you mean, measured** 🔨
+nearestRoutes by edit distance; a close route is offered, a far one is silence rather than a guess.
+
+**366. The port survives a subdirectory** 🔨
+a base href in the entry and stripBase in the router; the same build serves at / and at /repo/ untouched.
+
+**367. The scroll decision is pure** 🔨
+decideScroll(hash, saved) returns hash, saved or top; provable on the bench without a browser.
+
+**368. View transitions** 🔨
+document.startViewTransition wraps navigation when the browser has it and costs nothing when it does not.
+
+**369. A skip link and a main landmark** 🔨
+the first tab stop jumps past the chrome; main carries the id and takes focus.
+
+**370. Breadcrumbs performed** 🔨
+the nav model's nesting as a real component: nav labelled Breadcrumb, the last crumb aria-current.
+
+**371. Not found offers three ways out** 🔨
+the guess, the search box, and the map of everything that exists; an empty result says so.
+
+**372. feed.xml** 🔨
+RSS 2.0 written from the route table, one item per page.
+
+**373. llms.txt** 🔨
+the site described for the machines that read prose: every route with an excerpt of its own words.
+
+**374. humans.txt** 🔨
+provenance for people who view source; the words and the palette stay the original site's.
+
+**375. vercel.json** 🔨
+the redirect map in that host's own spelling, permanent flags carried.
+
+**376. netlify.toml** 🔨
+the same map in a fifth spelling, beside _redirects and the nginx block.
+
+**377. Reading time per route** 🔨
+readingMinutes in the head table, counted from the page's words rather than guessed.
+
+**378. A dark palette derived, not invented** 🔨
+theme-dark.css behind prefers-color-scheme; lightness flips, hue never moves, the one rule dsp-uplift already keeps.
+
+**379. Social cards from the page's own title** 🔨
+an SVG card per page that declared no og:image; a page that brought its own keeps it.
+
+**380. Print synthesized only when absent** 🔨
+a site with its own print stylesheet keeps it; one without gets a minimal print-port.css and the notes say which happened.
+
+**381. A security policy from evidence** 🔨
+_headers carries a CSP of 'self' plus exactly the hosts the pages were seen to reach for, nothing speculative.
+
+**382. SECURITY_HEADERS.md names the page** 🔨
+every allowed host stands beside the page that reached for it, so the policy can be argued with.
+
+**383. The site, weighed** 🔨
+SITE_STATS.md: bytes per route, the heaviest named, totals that add up.
+
+**384. The site, drawn** 🔨
+SITE_MAP.svg renders the link graph as a picture with no library and no build.
+
+**385. Every route carries its birth certificate** 🔨
+sourceSha256 in LEDGER.json: the hash of the legacy bytes each route was ported from.
+
+**386. A web app manifest, opt in** 🔨
+--pwa writes manifest.webmanifest named from the site's own title; off is off, and the suite asserts the absence too.
+
+**387. The era, read from the markup** 🔨
+dsp-era, the eighty fifth plugin: seventeen dated signals from frameset to grid, a verdict carried with how many agreed.
+
+**388. A site built across eras says so** 🔨
+disagreeing signals are reported as spread in ERA.md rather than averaged into a fiction.
+
+**389. Locale trees seen as facts** 🔨
+twin top level trees holding the same paths are counted and named; parameterizing the routes stays 308.
+
+**390. A ceiling for dead links** 🔨
+--max-dead-links N fails the run past the line, same shape as --max-unverified; a gate that only ever adds.
+
+**391. audit: the port against its ledger** 🔨
+every route has its component, every redirect resolves, the sitemap is complete; a hole exits 1 and names itself.
+
+**392. ETags** 🔨
+a hash per file served; an unchanged file costs a 304 and no bytes.
+
+**393. Cache headers with a memory** 🔨
+markup never rests, assets rest an hour; the split is the rule, not a config.
+
+**394. gzip where it pays** 🔨
+text past a kilobyte, only when the client asked for it.
+
+**395. /healthz** 🔨
+ok, plus which tree is serving, so a deploy can be checked by a machine.
+
+**396. The export outranks the raw tree** 🔨
+dist/ over export/ over source, and the server says its mode instead of leaving it to be guessed.
+
+**397. A clean goodbye** 🔨
+SIGINT closes the server instead of dropping its connections.
+
+**398. The export tests itself** 🔨
+export.test.js ships inside the port and proves the prerendered pages answer at their routes.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 280 |
-| planned | 37 |
-| total | 361 |
+| new in this branch | 319 |
+| planned | 35 |
+| total | 398 |
 
-The thirty seven open are open for stated reasons, not for lack of time: phases
+The thirty five open are open for stated reasons, not for lack of time: phases
 27 and 28 name what each one waits on, and npm publish stays the one command
-that belongs to a person, with docs/PUBLISHING.md waiting beside it. Four that
-were open closed earlier in this branch: focus order once the probe recorded
+that belongs to a person, with docs/PUBLISHING.md waiting beside it. Six that
+were open closed in this branch: focus order once the probe recorded
 positions, the calibration corpus at v0 with eight labelled miniatures, the
 compare pane preview the moment it was noticed that the dependency free
-element target never needed a build step, and the Vue reader once structural
-scanning produced byte identical output to the regexes it retired.
+element target never needed a build step, the Vue reader once structural
+scanning produced byte identical output to the regexes it retired, and scroll
+restoration and the port's service worker with phase 30.

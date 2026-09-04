@@ -15,6 +15,44 @@ export default {
   class: "general",
   setup() {},
   commands: {
+    audit: {
+      describe: "lint a written port: routes, components, redirects and sitemap agree",
+      async run({ config, log }) {
+        const { readFile } = await import("node:fs/promises");
+        const { join } = await import("node:path");
+        const out = config.out;
+        const problems = [];
+        let ledger;
+        try {
+          ledger = JSON.parse(await readFile(join(out, "LEDGER.json"), "utf8"));
+        } catch {
+          log.error(`${out} holds no LEDGER.json; audit reads the ledger a site run writes.`);
+          process.exitCode = 1;
+          return;
+        }
+        const routes = new Set(ledger.decisions.routes.map((r) => r.route));
+        for (const r of ledger.decisions.routes) {
+          const file = join(out, "src/features", r.component, `${r.component}.jsx`);
+          await readFile(file, "utf8").catch(() => problems.push(`route ${r.route} names component ${r.component}, and ${file} is not there`));
+        }
+        for (const r of ledger.decisions.redirects) {
+          if (r.to.startsWith("/") && !routes.has(r.to) && !ledger.decisions.redirects.some((x) => x.from === r.to)) {
+            problems.push(`redirect ${r.from} points at ${r.to}, which is neither a route nor another redirect`);
+          }
+        }
+        const sitemap = await readFile(join(out, "sitemap.xml"), "utf8").catch(() => "");
+        for (const route of routes) {
+          if (!sitemap.includes(`<loc>${route}</loc>`)) problems.push(`sitemap.xml misses ${route}`);
+        }
+        if (problems.length) {
+          for (const p of problems) log.error(p);
+          log.error(`${problems.length} inconsistency(ies); the port and its ledger disagree.`);
+          process.exitCode = 1;
+        } else {
+          log.info(`the port agrees with its ledger: ${routes.size} route(s), ${ledger.decisions.redirects.length} redirect(s), sitemap whole`);
+        }
+      },
+    },
     doctor: {
       describe: "what is installed, and what each gap turns off",
       async run({ config, log }) {

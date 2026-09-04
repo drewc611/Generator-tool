@@ -7,7 +7,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 84 plugins, and the literal output of
+lines of core, no runtime dependencies, 85 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 84 plugin(s)
+node src/cli.js plugins      # 85 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 465 tests, node --test, no framework
+npm test                     # 477 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -60,8 +60,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 18,295 lines of JavaScript |
-| Tests | 5,268 lines, 465 cases |
+| Every line of the tool | 18,956 lines of JavaScript |
+| Tests | 5,454 lines, 477 cases |
 | Source on disk | src 44 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 84 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 85 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -764,9 +764,9 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): three hundred and sixty one features in
-twenty nine phases, forty four shipped, two hundred and eighty new in the
-current branch, thirty seven planned, every status honest. Each open one names
+The whole picture is [ROADMAP.md](ROADMAP.md): three hundred and ninety eight features in
+thirty phases, forty four shipped, three hundred and nineteen new in the
+current branch, thirty five planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
 portamp is a proprietary product. All rights reserved — see [LICENSE](LICENSE).

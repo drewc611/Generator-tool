@@ -260,6 +260,28 @@ async function assembleSite(ctx, { kept, framesets, redirects, chrome, relOf, ro
     note(`${q.route} is linked with ${q.values.length} value(s) of ?${q.param}=. A parameterized route (${q.route}/:${q.param}) is the port's shape; the page still renders one template until a person splits it.`);
   }
 
+  // Two top level trees named like locales, holding the same paths, are one
+  // site in two languages. Read as a fact with a count; parameterizing the
+  // routes by locale is proposed, never performed.
+  const localeDirs = new Map();
+  for (const page of kept) {
+    const m = /^([a-z]{2}(?:-[a-z]{2})?)\//i.exec(page.rel.replace(/^\.\//, ""));
+    if (!m) continue;
+    const tail = page.rel.replace(/^\.\//, "").slice(m[1].length + 1);
+    if (!localeDirs.has(m[1])) localeDirs.set(m[1], new Set());
+    localeDirs.get(m[1]).add(tail);
+  }
+  let locales = { dirs: [], sharedPaths: 0 };
+  if (localeDirs.size >= 2) {
+    const dirs = [...localeDirs.keys()].sort();
+    const [first, ...rest] = dirs.map((d) => localeDirs.get(d));
+    const shared = [...first].filter((p) => rest.every((s) => s.has(p)));
+    if (shared.length) {
+      locales = { dirs, sharedPaths: shared.length };
+      note(`${dirs.join(", ")} hold ${shared.length} page(s) at the same paths and read as one site in ${dirs.length} language(s). A locale parameter (/:locale/...) is the port's shape; merging the trees means choosing a primary language, which is a person's call.`);
+    }
+  }
+
   ctx.site = {
     pages: kept.map((p) => ({
       rel: p.rel,
@@ -276,6 +298,7 @@ async function assembleSite(ctx, { kept, framesets, redirects, chrome, relOf, ro
       icons: p.head?.icons ?? [],
     })),
     queryRoutes,
+    locales,
     graph: {
       nodes: kept.map((p) => routeOf(p.rel)),
       edges: kept.flatMap((p) => p.links

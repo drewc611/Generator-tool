@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, eighty four in five classes, and the core has never learned
+Plugins that ship, eighty five in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -86,7 +86,7 @@ dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
-         dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy
+         dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
          dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight
 output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-html  output-storybook  output-tests  output-openapi
@@ -126,6 +126,18 @@ query string route families land as data and proposals; LEDGER.json records
 every decision machine readably; two runs over the same tree are asserted
 byte identical in CI; the IR round trips through emitted Angular losslessly;
 and a policy stop prints what evidence would clear it.
+
+2.1 gives the port senses: a dependency free search engine over the pages'
+own words, did you mean by edit distance, scroll memory, view transitions, a
+skip link, base path hosting, feeds and llms.txt and humans.txt and the
+redirect map in the deploy hosts' own spellings, reading time, a dark palette
+derived without moving hue, social cards drawn from titles, a CSP built from
+observed hosts with the page as evidence, the site weighed and drawn, a
+sha256 birth certificate per route in the ledger, an opt in service worker,
+dsp-era dating the markup by seventeen signals, a dead links ceiling, an
+`audit` command that checks a port against its ledger, and a server that
+speaks etags, 304s, cache rules, gzip and /healthz. test/thirtyseven.test.js
+reads one run and holds all of it.
 
 ## What is honestly incomplete
 
@@ -192,8 +204,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: three hundred and sixty one features in
-twenty nine phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: three hundred and ninety eight features in
+thirty phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.

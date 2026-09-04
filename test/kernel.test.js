@@ -86,7 +86,7 @@ test("discovery loads every plugin that ships", async () => {
   assert.deepEqual(names, [
     "dsp-a11y", "dsp-apimap", "dsp-apistyle", "dsp-archetype", "dsp-assets", "dsp-auth", "dsp-behavior",
     "dsp-boundaries", "dsp-cognitive", "dsp-css", "dsp-dates",
-    "dsp-deadcode", "dsp-diff", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-flags", "dsp-forms",
+    "dsp-deadcode", "dsp-diff", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-era", "dsp-flags", "dsp-forms",
     "dsp-i18n", "dsp-improve",
     "dsp-ir", "dsp-modernize", "dsp-perf", "dsp-permissions", "dsp-routes", "dsp-state", "dsp-tokens",
     "dsp-uplift", "dsp-weight",
