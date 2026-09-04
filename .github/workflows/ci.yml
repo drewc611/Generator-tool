@@ -560,6 +560,15 @@ jobs:
           grep -qiE "CSP|token|theme" paint-out/INLINE.md || { echo "the inline framing is missing"; exit 1; }
           rm -rf paint-out
 
+      - name: the tangled functions and the magic values are named
+        run: |
+          node src/cli.js run --src test/fixtures/shape-site --out shape-out
+          grep -q "process" shape-out/COMPLEXITY.md || { echo "the tangled function was missed"; exit 1; }
+          grep -qi "approximation" shape-out/COMPLEXITY.md || { echo "the numbers do not say they are approximate"; exit 1; }
+          grep -q "4999" shape-out/MAGIC.md || { echo "a magic threshold was missed"; exit 1; }
+          grep -q "PENDING_REVIEW" shape-out/MAGIC.md || { echo "a magic status string was missed"; exit 1; }
+          rm -rf shape-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -571,6 +580,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "492" ]; then
-            echo "ROADMAP.md holds $count entries and claims 492"; exit 1
+          if [ "$count" != "496" ]; then
+            echo "ROADMAP.md holds $count entries and claims 496"; exit 1
           fi

@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Four hundred and ninety two features across forty nine phases. The statuses are
+Four hundred and ninety six features across fifty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1816,15 +1816,29 @@ the elements carrying a `style` attribute, counted per tag, the `<style>` blocks
 **492. Lifting the inline out is a theming and a security win** 🔨
 INLINE.md names the totals per page so the port can move a style attribute into the design tokens it already emits and an inline block into a stylesheet or a module, closing a theming gap and a Content Security Policy gap at once.
 
+## Phase 50: the port's shape read
+
+**493. dsp-complexity finds the functions grown too tangled to port** 🔨
+each function whose body runs past forty lines, nests four deep, or carries ten branches is measured from the source text and named in COMPLEXITY.md, worst first, because a tangle carried across the port unchanged is a tangle nobody chose to keep.
+
+**494. The complexity numbers say plainly they are an approximation** 🔨
+length, nesting depth and a rough branch count are a text based reading, not a compiler's metric, and the report says so, so a person straightens the functions on the evidence rather than on a false precision.
+
+**495. dsp-magic finds the numbers and strings with no name** 🔨
+a threshold like `4999`, a rate like `0.075`, a status like `PENDING_REVIEW` buried in the logic is a value nobody can grep to change, and MAGIC.md names each per file so the port can lift it into a named constant, an enum, or a config key.
+
+**496. dsp-magic stays out of the secret gate's territory** 🔨
+it skips trivial numbers, array indexes and already named const assignments, and never captures a credential shaped string, because the magic it reports is a maintainability finding and the secret gate owns the other kind.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 445 |
+| new in this branch | 449 |
 | planned | 3 |
-| total | 492 |
+| total | 496 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
