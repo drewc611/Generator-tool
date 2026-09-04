@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { softmax, layerNorm, forward } from "../plugins/vis-transformer/index.js";
+import { softmax, layerNorm, forward, train, gradientCheck, crossEntropyLoss } from "../plugins/vis-transformer/index.js";
 import { transformCjsToEsm } from "../plugins/output-codemod/index.js";
 import { ROOT, runPipeline } from "./helpers.js";
 
@@ -32,6 +32,32 @@ test("softmax and layernorm match their known answers", () => {
   assert.ok(close(n[0], -1.22474));
   assert.ok(close(n[1], 0));
   assert.ok(close(n[2], 1.22474));
+});
+
+test("the backward pass is correct: analytic gradients match the numerical check", () => {
+  const { maxRelError, checked } = gradientCheck();
+  assert.ok(checked >= 8, "several parameters are checked");
+  assert.ok(maxRelError < 1e-3, `analytic and numerical gradients agree (max rel error ${maxRelError})`);
+});
+
+test("training learns the fixed task to completion, deterministically", () => {
+  const r = train();
+  assert.ok(r.finalLoss < r.initialLoss * 0.05, "the loss falls by more than twenty fold");
+  assert.equal(r.accuracy, 1, "every position's top logit is its target");
+  assert.deepEqual(r.predictions, r.targets, "the learned sequence is the target sequence");
+
+  const again = train();
+  assert.equal(
+    JSON.stringify(r.lossHistory),
+    JSON.stringify(again.lossHistory),
+    "two trainings are byte identical"
+  );
+});
+
+test("cross entropy rewards the confident right answer over the wrong one", () => {
+  const right = crossEntropyLoss([0, 0, 5], 2);
+  const wrong = crossEntropyLoss([0, 0, 5], 0);
+  assert.ok(right < wrong, "loss is lower when the mass is on the target");
 });
 
 test("the forward pass is deterministic: same config, byte identical logits", () => {

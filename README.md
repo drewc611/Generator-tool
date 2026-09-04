@@ -143,6 +143,19 @@ uniform. That is the honest picture of an untrained transformer, and it is the
 point: the blind core loaded a transformer the same way it loads every plugin,
 and still has no idea what one is.
 
+And then it learns. Run it with `--train true` and the backward pass, its
+gradients proven correct against a numerical check, drives gradient descent on
+a next token task until the loss falls from about two to a thousandth and every
+position's top logit is its target:
+
+![vis-transformer trained: the cross entropy loss falling to near zero over 800 steps and a table showing it predicts the legacy app into react exactly](media/training.png)
+
+It overfits one fixed sequence on purpose, so it is a proof the training loop is
+correct, not a general language model, and it says so. The gradient check, a max
+relative error under a thousandth between the analytic and numerical gradients,
+is what makes "it learned" a fact rather than a hope. Around twenty four hundred
+parameters, learning to continue `port` into `the legacy app into react`.
+
 `output-codemod` is the other kind, a code transformer: it lifts CommonJS to ES
 modules, performing only the rewrites it can prove from the shape of the line
 and refusing the rest, a dynamic `require` left verbatim and named in

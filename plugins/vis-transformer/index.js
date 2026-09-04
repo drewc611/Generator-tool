@@ -323,29 +323,333 @@ function render(result, config) {
   return parts.join("\n");
 }
 
+/**
+ * Training. Everything above runs the transformer forward; this makes it learn
+ * by gradient descent, with the gradients proven correct against a numerical
+ * check rather than trusted. A training loop with a wrong gradient descends
+ * toward the wrong answer while looking like it works, and that silent wrong
+ * answer is the failure this whole tool refuses, so the check is the point.
+ *
+ * The trainable model is a faithful minimal transformer block: an embedding, a
+ * single head of self attention (query, key, value projections, scaled dot
+ * product, softmax, weighted sum), a two layer perceptron with a ReLU, and an
+ * output projection to vocabulary logits. It leaves out the layer norm the
+ * forward pass demo carries, on purpose: the differentiable path is kept small
+ * so every gradient in it is exactly derived and exactly checkable. The task is
+ * next token prediction over one fixed sequence, overfit to completion, which
+ * proves the loop learns; it is a demonstration that the mechanism is correct,
+ * not a general language model.
+ */
+
+/** The fixed training sequence and its next token targets (null where there is no next token). */
+const TRAIN_INPUT = [0, 1, 2, 3, 4, 5];
+const TRAIN_TARGETS = [1, 2, 3, 4, 5, null];
+
+function zeros(rows, cols) {
+  const out = [];
+  for (let i = 0; i < rows; i++) out.push(new Array(cols).fill(0));
+  return out;
+}
+
+function colSums(A) {
+  const out = new Array(A[0].length).fill(0);
+  for (const row of A) for (let j = 0; j < row.length; j++) out[j] += row[j];
+  return out;
+}
+
+function argmaxIdx(vec) {
+  let best = 0;
+  for (let i = 1; i < vec.length; i++) if (vec[i] > vec[best]) best = i;
+  return best;
+}
+
+/** Cross entropy of the softmax of one logit vector against the target index. */
+export function crossEntropyLoss(logits, targetId) {
+  const p = softmax(logits);
+  return -Math.log(Math.max(p[targetId], 1e-12));
+}
+
+/** The trainable parameters, initialized from the same seeded stream the forward pass uses. */
+function trainParams(config) {
+  const w = seededWeights(config.seed, config);
+  return {
+    E: w.embedding,
+    Wq: w.Wq,
+    Wk: w.Wk,
+    Wv: w.Wv,
+    W1: w.W1,
+    b1: w.b1,
+    W2: w.W2,
+    b2: w.b2,
+    Wout: w.Wout,
+    bout: w.bout,
+  };
+}
+
+/** One forward pass of the trainable block, keeping the caches the backward pass needs. */
+function trainForward(params, tokenIds, config) {
+  const d = config.dModel;
+  const T = tokenIds.length;
+  const pos = positionalEncoding(T, d);
+  const x = tokenIds.map((id, i) => params.E[id].map((v, j) => v + pos[i][j]));
+  const Q = matMul(x, params.Wq);
+  const K = matMul(x, params.Wk);
+  const Vv = matMul(x, params.Wv);
+  const scale = 1 / Math.sqrt(d);
+  const S = matMul(Q, transpose(K));
+  const scores = S.map((row) => row.map((s) => s * scale));
+  const A = scores.map((row) => softmax(row));
+  const Ctx = matMul(A, Vv);
+  const afterAttn = addMatrix(x, Ctx);
+  const hpre = addBias(matMul(afterAttn, params.W1), params.b1);
+  const h = relu(hpre);
+  const m = addBias(matMul(h, params.W2), params.b2);
+  const afterMlp = addMatrix(afterAttn, m);
+  const z = addBias(matMul(afterMlp, params.Wout), params.bout);
+  return { x, Q, K, Vv, A, Ctx, afterAttn, hpre, h, m, afterMlp, z };
+}
+
+/** The loss over the next token targets and the analytic gradient of every parameter. */
+function lossAndGrads(params, tokenIds, targets, config) {
+  const d = config.dModel;
+  const c = trainForward(params, tokenIds, config);
+  const T = tokenIds.length;
+  const V = params.bout.length;
+  const positions = [];
+  for (let i = 0; i < T; i++) if (targets[i] != null) positions.push(i);
+  const N = positions.length;
+
+  let loss = 0;
+  const dz = zeros(T, V);
+  const probs = c.z.map((row) => softmax(row));
+  for (const i of positions) {
+    loss += -Math.log(Math.max(probs[i][targets[i]], 1e-12));
+    for (let j = 0; j < V; j++) dz[i][j] = (probs[i][j] - (j === targets[i] ? 1 : 0)) / N;
+  }
+  loss /= N;
+
+  const dWout = matMul(transpose(c.afterMlp), dz);
+  const dbout = colSums(dz);
+  const dafterMlp = matMul(dz, transpose(params.Wout));
+
+  // afterMlp = afterAttn + m, so the residual sends the gradient down both paths.
+  const dm = dafterMlp;
+  const dW2 = matMul(transpose(c.h), dm);
+  const db2 = colSums(dm);
+  const dh = matMul(dm, transpose(params.W2));
+  const dhpre = dh.map((row, i) => row.map((v, j) => (c.hpre[i][j] > 0 ? v : 0)));
+  const dW1 = matMul(transpose(c.afterAttn), dhpre);
+  const db1 = colSums(dhpre);
+  const dAfterAttn = addMatrix(dafterMlp, matMul(dhpre, transpose(params.W1)));
+
+  // afterAttn = x + Ctx, another residual.
+  const dCtx = dAfterAttn;
+  const dA = matMul(dCtx, transpose(c.Vv));
+  const dVv = matMul(transpose(c.A), dCtx);
+  const scale = 1 / Math.sqrt(d);
+  const dS = zeros(T, T);
+  for (let i = 0; i < T; i++) {
+    let dot = 0;
+    for (let k = 0; k < T; k++) dot += dA[i][k] * c.A[i][k];
+    for (let j = 0; j < T; j++) dS[i][j] = c.A[i][j] * (dA[i][j] - dot) * scale;
+  }
+  const dQ = matMul(dS, c.K);
+  const dK = matMul(transpose(dS), c.Q);
+
+  const dWq = matMul(transpose(c.x), dQ);
+  const dWk = matMul(transpose(c.x), dK);
+  const dWv = matMul(transpose(c.x), dVv);
+  let dxAttn = matMul(dQ, transpose(params.Wq));
+  dxAttn = addMatrix(dxAttn, matMul(dK, transpose(params.Wk)));
+  dxAttn = addMatrix(dxAttn, matMul(dVv, transpose(params.Wv)));
+  // x reaches the loss through the attention projections and through the x + Ctx residual.
+  const dx = addMatrix(dxAttn, dAfterAttn);
+
+  const dE = zeros(params.E.length, d);
+  tokenIds.forEach((id, i) => {
+    for (let j = 0; j < d; j++) dE[id][j] += dx[i][j];
+  });
+
+  return {
+    loss,
+    grads: { E: dE, Wq: dWq, Wk: dWk, Wv: dWv, W1: dW1, b1: db1, W2: dW2, b2: db2, Wout: dWout, bout: dbout },
+  };
+}
+
+function applyUpdate(param, grad, lr) {
+  if (Array.isArray(param[0])) {
+    for (let i = 0; i < param.length; i++)
+      for (let j = 0; j < param[i].length; j++) param[i][j] -= lr * grad[i][j];
+  } else {
+    for (let i = 0; i < param.length; i++) param[i] -= lr * grad[i];
+  }
+}
+
+const TRAIN_CONFIG = { ...DEFAULT_CONFIG, steps: 800, lr: 0.2 };
+
+/**
+ * Train the block by gradient descent on the fixed next token task. Returns the
+ * loss sampled over training, the initial and final loss, the accuracy (the
+ * fraction of positions whose top logit is the target), and the decoded
+ * predictions against the targets. Deterministic for a given config.
+ */
+export function train(config = {}) {
+  const cfg = { ...TRAIN_CONFIG, ...config };
+  const params = trainParams(cfg);
+  const tokenIds = TRAIN_INPUT;
+  const targets = TRAIN_TARGETS;
+  const every = Math.max(1, Math.floor(cfg.steps / 20));
+  const lossHistory = [];
+  let initialLoss = null;
+
+  for (let step = 0; step < cfg.steps; step++) {
+    const { loss, grads } = lossAndGrads(params, tokenIds, targets, cfg);
+    if (step === 0) initialLoss = loss;
+    if (step % every === 0) lossHistory.push({ step, loss });
+    for (const key of Object.keys(grads)) applyUpdate(params[key], grads[key], cfg.lr);
+  }
+
+  const c = trainForward(params, tokenIds, cfg);
+  const predictions = [];
+  const tgts = [];
+  let correct = 0;
+  for (let i = 0; i < tokenIds.length; i++) {
+    if (targets[i] == null) continue;
+    const pred = argmaxIdx(c.z[i]);
+    predictions.push(pred);
+    tgts.push(targets[i]);
+    if (pred === targets[i]) correct++;
+  }
+  const finalLoss = lossAndGrads(params, tokenIds, targets, cfg).loss;
+  lossHistory.push({ step: cfg.steps, loss: finalLoss });
+
+  return { lossHistory, initialLoss, finalLoss, accuracy: correct / tgts.length, predictions, targets: tgts };
+}
+
+/**
+ * Compare the analytic gradient of a sample of parameters to the numerical
+ * gradient (L(x + eps) - L(x - eps)) / 2eps. A small maximum relative error is
+ * the proof the backward pass is correct; a large one means the training is
+ * descending on a lie.
+ */
+export function gradientCheck(config = {}) {
+  const cfg = { ...TRAIN_CONFIG, ...config };
+  const params = trainParams(cfg);
+  const tokenIds = TRAIN_INPUT;
+  const targets = TRAIN_TARGETS;
+  const { grads } = lossAndGrads(params, tokenIds, targets, cfg);
+  const eps = 1e-4;
+  const specs = [
+    ["Wq", 1, 2],
+    ["Wk", 3, 0],
+    ["Wv", 4, 5],
+    ["W1", 0, 7],
+    ["W2", 6, 1],
+    ["Wout", 2, 3],
+    ["b1", 5],
+    ["b2", 4],
+    ["bout", 6],
+    ["E", 2, 9],
+  ];
+  let maxRelError = 0;
+  let checked = 0;
+  for (const spec of specs) {
+    const key = spec[0];
+    const isMatrix = Array.isArray(params[key][0]);
+    const analytic = isMatrix ? grads[key][spec[1]][spec[2]] : grads[key][spec[1]];
+    const read = () => (isMatrix ? params[key][spec[1]][spec[2]] : params[key][spec[1]]);
+    const write = (val) => {
+      if (isMatrix) params[key][spec[1]][spec[2]] = val;
+      else params[key][spec[1]] = val;
+    };
+    const saved = read();
+    write(saved + eps);
+    const lossPlus = lossAndGrads(params, tokenIds, targets, cfg).loss;
+    write(saved - eps);
+    const lossMinus = lossAndGrads(params, tokenIds, targets, cfg).loss;
+    write(saved);
+    const numeric = (lossPlus - lossMinus) / (2 * eps);
+    const rel = Math.abs(analytic - numeric) / Math.max(1e-8, Math.abs(analytic) + Math.abs(numeric));
+    if (rel > maxRelError) maxRelError = rel;
+    checked++;
+  }
+  return { maxRelError, checked };
+}
+
+function renderTraining(result) {
+  const decode = (ids) => ids.map((id) => VOCAB[id]).join(" ");
+  const curve = result.lossHistory.map((p) => `| ${p.step} | ${p.loss.toFixed(4)} |`).join("\n");
+  return [
+    "# The transformer, trained",
+    "",
+    "Everything in ATTENTION.md runs the transformer forward. This trains it: a",
+    "cross entropy loss, a backward pass whose gradients are proven against a",
+    "numerical check, and gradient descent over a fixed next token task. The",
+    "trainable model is a faithful minimal block: an embedding, one head of self",
+    "attention, a two layer perceptron with a ReLU, and an output projection. It",
+    "leaves out layer norm on purpose, so every gradient is exactly checkable.",
+    "",
+    "It overfits one fixed sequence to completion. That proves the loop learns; it",
+    "is a demonstration that the mechanism is correct, not a general language model.",
+    "",
+    "## The loss falling",
+    "",
+    "| step | loss |",
+    "| --- | --- |",
+    curve,
+    "",
+    `Initial loss ${result.initialLoss.toFixed(4)}, final loss ${result.finalLoss.toFixed(4)}. ` +
+      `Accuracy ${(result.accuracy * 100).toFixed(0)}% of ${result.targets.length} position(s).`,
+    "",
+    "## What it learned to predict",
+    "",
+    "| position | predicted next | target |",
+    "| --- | --- | --- |",
+    ...result.predictions.map((p, i) => `| ${i} | ${VOCAB[p]} | ${VOCAB[result.targets[i]]} |`),
+    "",
+    `Predicted sequence: \`${decode(result.predictions)}\` · target: \`${decode(result.targets)}\`.`,
+    "",
+  ].join("\n");
+}
+
 export default {
   name: "vis-transformer",
   version: "0.1.0",
   class: "vis",
   setup({ on, log }) {
     on("verify", async (ctx) => {
-      if (!ctx.config.transformer) return log.debug("not requested");
+      if (ctx.config.transformer) {
+        const config = { ...DEFAULT_CONFIG };
+        const result = forward(INPUT_TOKENS, config);
+        await ctx.write("ATTENTION.md", render(result, config));
+        ctx.unverified(
+          "ATTENTION.md is a transformer forward pass with fixed seeded weights over a " +
+            "fixed input sentence. It is untrained and predicts nothing about the port; it " +
+            "exists to show the plugin host loads even a transformer without the core knowing " +
+            "what it is."
+        );
+        log.info(
+          `transformer forward pass over ${result.tokens.length} token(s), ` +
+            `${result.attention.length} attention head(s) drawn`
+        );
+      }
 
-      const config = { ...DEFAULT_CONFIG };
-      const result = forward(INPUT_TOKENS, config);
-
-      await ctx.write("ATTENTION.md", render(result, config));
-
-      ctx.unverified(
-        "ATTENTION.md is a transformer forward pass with fixed seeded weights over a " +
-          "fixed input sentence. It is untrained and predicts nothing about the port; it " +
-          "exists to show the plugin host loads even a transformer without the core knowing " +
-          "what it is."
-      );
-      log.info(
-        `transformer forward pass over ${result.tokens.length} token(s), ` +
-          `${result.attention.length} attention head(s) drawn`
-      );
+      if (ctx.config.train) {
+        const check = gradientCheck();
+        const result = train();
+        await ctx.write("TRAINING.md", renderTraining(result));
+        ctx.unverified(
+          `TRAINING.md trains the transformer by gradient descent to ${(result.accuracy * 100).toFixed(0)}% ` +
+            `on a fixed next token task, the loss falling from ${result.initialLoss.toFixed(3)} to ` +
+            `${result.finalLoss.toFixed(3)}. The gradients are proven correct by a numerical check ` +
+            `(max relative error ${check.maxRelError.toExponential(1)}). It overfits one sequence on purpose; ` +
+            "it demonstrates the loop is correct, and is not a general language model."
+        );
+        log.info(
+          `transformer trained: gradient check max rel error ${check.maxRelError.toExponential(1)}, ` +
+            `accuracy ${(result.accuracy * 100).toFixed(0)}%`
+        );
+      }
     });
   },
 };

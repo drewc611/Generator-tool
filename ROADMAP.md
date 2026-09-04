@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and fourteen features across fifty four phases. The statuses are
+Five hundred and eighteen features across fifty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1892,15 +1892,29 @@ each retired address becomes a Front Door rule matching the path and issuing a 3
 **514. output-azure takes no credentials and names its gaps** 🔨
 the deploy script uses the user's own `az` login, no account key or connection string is ever emitted, and DNS, the certificate and the subscription's specifics are named in the README rather than guessed.
 
+## Phase 55: the transformer learns
+
+**515. vis-transformer trains by hand written backpropagation** 🔨
+a cross entropy loss, a backward pass through the differentiable block (embedding, one head of self attention with its residual, a two layer perceptron with a ReLU and its residual, an output projection), and gradient descent, all in plain arithmetic with no dependency, so the transformer that only ran forward now learns.
+
+**516. The gradients are proven correct by a numerical check** 🔨
+the analytic gradient of each sampled parameter is compared to the finite difference `(L(θ+ε) − L(θ−ε)) / 2ε` and the maximum relative error is held under a thousandth by test, because a training loop with a wrong gradient descends toward the wrong answer while looking like it works, and that silent wrong answer is the failure this tool refuses.
+
+**517. The trained model reaches the answer, and the run proves it** 🔨
+training overfits one fixed next token sequence to completion, the loss falls from about two to under a thousandth and every position's top logit becomes its target, deterministically from a seed, so TRAINING.md is a comparison that fails out loud rather than a claim; it learns to continue port into the legacy app into react.
+
+**518. The training says plainly what it is** 🔨
+it overfits one example on purpose to demonstrate the loop is correct, the trainable block leaves out layer norm so every gradient is exactly checkable, and the report states it is a proof of the mechanism and not a general language model, because the point is a result you can check rather than a number to trust.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 467 |
+| new in this branch | 471 |
 | planned | 3 |
-| total | 514 |
+| total | 518 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
