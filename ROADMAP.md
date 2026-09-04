@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and forty features across thirty seven phases. The statuses are
+Four hundred and forty four features across thirty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-534 tests, on Node 18, 20 and 22, and on Windows in CI.
+540 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1560,14 +1560,35 @@ each screen becomes an `.astro` page that imports the emitted React component an
 because the island imports the component rather than rewriting the screen into Astro's own dialect, no handler is dropped to a second translation and the port stays one source; the run notes that Astro's React integration is needed and says how to add it.
 
 
+## Phase 38 · 5.4 · What the old page told machines
+
+*A screenshot shows what a person sees. It does not show the title a search
+result prints, the canonical that resolves a duplicate, the language a screen
+reader announces, or the trackers loading in the head. A port that forgets
+these loses ranking, identity and a consent decision, all invisibly. dsp-seo
+and dsp-analytics read them and report them.*
+
+**441. dsp-seo reads the machine facing signals** 🔨
+per page: the title and its length, the meta description, the canonical link, the robots directive, the html lang, the viewport, the Open Graph and Twitter card counts, and the structured data types, read from the markup and never invented.
+
+**442. The SEO gaps are named** 🔨
+a missing or overlong title or description, no canonical, no lang, no viewport, no or several h1, and a skipped heading level are each reported as a gap the port should close on purpose; a page with no description is reported with none rather than given one nobody wrote.
+
+**443. dsp-analytics names the trackers** 🔨
+the tracking vendors the source loaded, recognised by signature across fifteen of them, from Google Analytics and Tag Manager to Facebook, Segment, Hotjar, Adobe, Matomo and the privacy friendly ones, with where each was seen.
+
+**444. Re-adding a tracker is a decision, not a default** 🔨
+none is carried into the output and each is reported as a consent decision a person makes on purpose, especially under a regime that may not have existed when the markup was written; the identifier a tag carries is shown by its prefix only, the same caution the secret gate keeps.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 393 |
+| new in this branch | 397 |
 | planned | 3 |
-| total | 440 |
+| total | 444 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

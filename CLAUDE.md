@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, ninety four in five classes, and the core has never learned
+Plugins that ship, ninety six in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -88,7 +88,7 @@ dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
-         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight
+         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics
 output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-html  output-storybook  output-tests  output-openapi
          output-msw  output-tailwind  output-design-tokens  output-forms
@@ -225,6 +225,18 @@ imports the React component the run already emitted and hydrates it with
 `client:load`, the honest Astro port of a screen with client state, so no
 handler is lost to a second translation and the port stays one source.
 test/targets4.test.js holds both.
+
+5.4 reads what a page told a machine rather than a person. dsp-seo audits
+every page for the signals a screenshot never shows: the title and its
+length, the meta description, the canonical, the robots directive, the html
+lang, the viewport, the Open Graph and Twitter card counts, and the
+structured data types, and names each gap (a missing or overlong title, no
+canonical, no lang, several h1, a skipped heading) as one the port should
+close on purpose, inventing none. dsp-analytics finds the tracking vendors
+the source loaded, fifteen recognised by signature, and treats re-adding any
+of them as a consent decision rather than a default; none is carried into
+the output, and the identifier a tag carries is shown by its prefix only,
+the caution the secret gate keeps. test/machines.test.js holds both.
 
 ## What is honestly incomplete
 

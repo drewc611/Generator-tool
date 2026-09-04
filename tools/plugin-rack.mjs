@@ -57,6 +57,8 @@ const DOES = {
   "dsp-era": "when the site was built, dated by seventeen signals with a spread",
   "dsp-components": "blocks two screens repeat, lifted into one shared component",
   "dsp-props": "blocks that share a shape but differ in words, proposed as one with props",
+  "dsp-seo": "the signals each page told a machine: title, canonical, cards, the gaps named",
+  "dsp-analytics": "the trackers the old front end loaded, named as a consent decision, ids withheld",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
   "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",
