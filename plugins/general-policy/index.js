@@ -37,10 +37,21 @@ export default {
       // one place endpoints belong, so it is exactly the tree not checked.
       const components = ctx.written.filter(
         (f) => (f.startsWith("src/features/") || f.startsWith("src/elements/") || f.startsWith("src/app/")) && /\.(jsx|tsx|vue|svelte|js)$/.test(f)
+          // The site shell's data modules hold destinations by construction:
+          // the redirect map, the nav model and the head table are routes and
+          // titles, and a route may spell the same path an API answers. The
+          // shell's code files stay gated like any component.
+          && !/^src\/app\/(redirects|nav|head)\.js$/.test(f)
       );
+      // The routes this run itself serves. A navigation attribute naming one
+      // of these is a place to go, whatever an API thinks of the same string.
+      const routes = [...new Set([
+        ...(ctx.site?.pages ?? []).map((p) => p.route),
+        ...(ctx.routes?.table ?? []).map((r) => r.path).filter(Boolean),
+      ])];
       for (const rel of components) {
         const text = await readFile(join(ctx.config.out, rel), "utf8").catch(() => "");
-        policy.assertNoEndpointLiteral(text, rel, paths);
+        policy.assertNoEndpointLiteral(text, rel, paths, routes);
       }
       log.info(`no endpoint in ${components.length} component(s), ${paths.length} path(s) checked`);
 

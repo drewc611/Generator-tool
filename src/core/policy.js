@@ -161,11 +161,28 @@ export class Policy {
    * not an endpoint, and refusing to port a documentation link would be the
    * gate getting in the way of correct work.
    */
-  assertNoEndpointLiteral(text, file, paths = []) {
-    const body = text ?? "";
+  assertNoEndpointLiteral(text, file, paths = [], routes = []) {
+    // Navigation to the run's own routes is not a call. A portal's filter
+    // form posts to the path its page lives at, so a link or the route
+    // table can spell the same string an API answers. Only a value the run
+    // itself serves as a route is masked, and only in a navigation
+    // position; an anchor pointing at any other endpoint, or the same path
+    // in a fetch, a client call or a bare string, still stops the run.
+    let body = String(text ?? "");
+    for (const route of routes) {
+      const safe = route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      body = body
+        .replace(new RegExp(`\\b(?:href|to)="${safe}"`, "g"), "")
+        .replace(new RegExp(`\\bpath: "${safe}",`, "g"), "");
+    }
     for (const path of paths) {
       if (!path || path.length < 2) continue;
-      if (body.includes(path)) {
+      // The path must begin and end where the path does: /apis inside
+      // another host's URL, a longer path, or a hostname is letters that
+      // happen to rhyme, not this app's endpoint.
+      const safe = path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const exact = new RegExp("(?<![\\w.\\-/])" + safe + "(?![\\w.-])");
+      if (exact.test(body)) {
         throw new PolicyViolation(
           `${file} contains the endpoint ${path}. Endpoints belong in src/api/endpoints.js, ` +
             `so that moving one is a single edit and no screen can disagree about it.`,

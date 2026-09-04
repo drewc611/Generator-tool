@@ -23,6 +23,7 @@
   "scripts": {
     "demo": "node src/cli.js run --src example/legacy --shots example/screenshots --out example/out",
     "demo-site": "node src/cli.js run --src example/legacy-site --out example/out-site --site true",
+    "demo-portal": "node src/cli.js run --src example/legacy-portal --out example/out-portal --site true",
     "plugins": "node src/cli.js plugins",
     "test": "node --test test/*.test.js",
     "record": "node src/cli.js run --allow-live --only input-record"

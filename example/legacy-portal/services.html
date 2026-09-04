@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Services</title>
+<meta name="description" content="What the counter does, online">
+<link rel="stylesheet" href="portal.css">
+</head>
+<body>
+<header class="masthead"><a href="index.html"><img src="seal.svg" alt="Meridian Postal Service seal" width="64"></a><span class="agency">MERIDIAN POSTAL SERVICE</span></header>
+<nav class="portal-nav"><a href="index.html">Home</a><a href="track.html">Track a Parcel</a><a href="services.html">Services</a><a href="zip.html">Route Codes</a><a href="help.html">Help</a></nav>
+<p class="crumbs"><a href="index.html">Home</a> &gt; Services</p>
+<h1>Services</h1>
+<ul>
+<li><a href="services/pickup.html">Schedule a pickup</a></li>
+<li><a href="services/forwarding.html">Mail forwarding</a></li>
+</ul>
+<form action="/cgi-bin/schedule" method="post">
+<label for="district">District</label>
+<select id="district" name="district">
+<option>Alder</option><option>Birch</option><option>Cedar</option><option>Dogwood</option>
+<option>Elm</option><option>Fir</option><option>Ginkgo</option><option>Hawthorn</option>
+<option>Ironwood</option><option>Juniper</option><option>Katsura</option><option>Larch</option>
+<option>Maple</option><option>Nutmeg</option><option>Oak</option><option>Pine</option>
+<option>Quince</option><option>Rowan</option><option>Spruce</option><option>Tamarack</option>
+</select>
+<input type="submit" value="Request">
+</form>
+<footer class="fine-print"><p>An official service of the fictional Republic of Meridia. <a href="help.html">Help</a></p></footer>
+</body>
+</html>

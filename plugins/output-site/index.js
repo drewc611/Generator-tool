@@ -79,8 +79,22 @@ export default {
 
       await ctx.write("index.html", INDEX_HTML([...css]));
       if (!ctx.written.includes("package.json")) {
-        await ctx.write("package.json", JSON.stringify({ name: "ported-site", private: true, type: "module" }, null, 2) + "\n");
+        await ctx.write("package.json", JSON.stringify({
+          name: "ported-site",
+          private: true,
+          type: "module",
+          scripts: { serve: "node serve.js", test: "node --test tests/*.test.js" },
+        }, null, 2) + "\n");
       }
+
+      // The port's own server: the other half of full stack. It serves the
+      // build when one exists, the redirect map as real 301s, the assets as
+      // bytes, and the API surface honestly: a fixture where one was emitted,
+      // and a 501 naming the endpoint map where none was, never invented data.
+      const hasEndpoints = ctx.written.includes("src/api/endpoints.js");
+      await ctx.write("serve.js", SERVE(hasEndpoints));
+      const apiSample = hasEndpoints ? ctx.api.calls.find((c) => c.path?.startsWith("/")) : null;
+      await ctx.write("tests/server.test.js", SERVER_TEST(site.redirects, apiSample));
       await ctx.write("tests/router.test.js", ROUTER_TEST(site.redirects));
       await ctx.write("SITE.md", siteReport(site, pages));
       await ctx.write("SITE_MAP.mmd", mermaidMap(site));
@@ -386,6 +400,150 @@ ${css.map((c) => `<link rel="stylesheet" href="/${c}">`).join("\n")}${css.length
 </html>
 `;
 
+const SERVE = (hasEndpoints) => `import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { extname, join, normalize, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import { matchPath } from "./src/app/match.js";
+${hasEndpoints ? 'import { endpoints } from "./src/api/endpoints.js";' : "const endpoints = {};"}
+
+/**
+ * The port's server. It serves your bundler's output when dist/ exists and
+ * the source tree when it does not, answers every old address with the real
+ * 301 the redirect map promised, and answers the API surface honestly: a
+ * fixture where the run emitted one, marked as invented, and a 501 naming
+ * src/api/endpoints.js where it did not. It never invents a response.
+ *
+ *   node serve.js            # 127.0.0.1:4173
+ *   PORT=8080 node serve.js
+ */
+// resolve() drops the trailing separator a directory URL carries, and the
+// containment check below depends on comparing clean absolute paths.
+const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)));
+const DIST = existsSync(join(ROOT, "dist", "index.html")) ? join(ROOT, "dist") : ROOT;
+const REDIRECTS = JSON.parse(await readFile(join(ROOT, "redirects.json"), "utf8"));
+const API = Object.values(endpoints);
+
+const MIME = {
+  ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript",
+  ".jsx": "text/javascript", ".css": "text/css", ".json": "application/json",
+  ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+  ".gif": "image/gif", ".ico": "image/x-icon", ".webp": "image/webp", ".txt": "text/plain",
+  ".woff": "font/woff", ".woff2": "font/woff2", ".map": "application/json",
+};
+
+// Every path is resolved and then checked against the root it must live in,
+// so a traversal cannot read past the port.
+const within = (base, rel) => {
+  const full = resolve(base, "." + normalize("/" + rel));
+  return full === base || full.startsWith(base + sep) ? full : null;
+};
+
+async function file(res, base, rel, headers = {}) {
+  const full = within(base, rel);
+  if (!full) return false;
+  // One read, no check first: a missing file and a directory both land in
+  // the catch, and checking before reading is the race the check invites.
+  const body = await readFile(full).catch(() => null);
+  if (body === null) return false;
+  res.writeHead(200, { "content-type": MIME[extname(full).toLowerCase()] ?? "application/octet-stream", ...headers });
+  res.end(body);
+  return true;
+}
+
+export function handler() {
+  return async (req, res) => {
+    try {
+      await respond(req, res);
+    } catch (error) {
+      // One bad request never takes the server with it.
+      if (!res.headersSent) res.writeHead(500, { "content-type": "text/plain" });
+      res.end("the server hit an error; the terminal has it");
+      console.error(error);
+    }
+  };
+}
+
+async function respond(req, res) {
+    const url = new URL(req.url, "http://localhost");
+    const path = decodeURIComponent(url.pathname);
+
+    const hit = REDIRECTS.find((r) => r.from === path);
+    if (hit) {
+      res.writeHead(301, { location: hit.to + url.search });
+      return res.end();
+    }
+
+    const api = API.find((e) => e.method === (req.method ?? "GET") && matchPath(e.path, path));
+    if (api) {
+      const name = (api.path.split("/").filter((s) => s && !s.startsWith(":")).at(-1) ?? "items").replace(/[^\\w-]/g, "-");
+      if (api.method === "GET" && await file(res, ROOT, join("fixtures", name + ".json"), { "x-portamp-fixture": "invented, from the run's fixtures" })) return;
+      res.writeHead(501, { "content-type": "application/json" });
+      return res.end(JSON.stringify({ error: "not implemented here", endpoint: api.path, see: "src/api/endpoints.js — point the client at the real service or run the emitted mocks" }));
+    }
+
+    if (await file(res, join(ROOT, "public"), path)) return;
+    if (await file(res, DIST, path)) return;
+    // No extension means a route; the app answers it from index.html.
+    if (!extname(path) && await file(res, DIST, "index.html")) return;
+    res.writeHead(404, { "content-type": "text/plain" });
+    res.end("not held by this port: " + path);
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const port = Number(process.env.PORT ?? 4173);
+  createServer(handler()).listen(port, "127.0.0.1", () => {
+    console.log(\`serving the port on http://127.0.0.1:\${port} (\${DIST === ROOT ? "source tree; run your bundler for a build, dist/ is picked up automatically" : "dist/"})\`);
+  });
+}
+`;
+
+const SERVER_TEST = (redirects, apiSample = null) => {
+  const sample = redirects.find((r) => r.from && r.to.startsWith("/"));
+  return `import test from "node:test";
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { handler } from "../serve.js";
+
+const serve = () => new Promise((ready) => {
+  const server = createServer(handler());
+  server.listen(0, "127.0.0.1", () => ready(server));
+});
+const get = (server, path) => fetch(\`http://127.0.0.1:\${server.address().port}\${path}\`, { redirect: "manual" });
+
+test("the server answers routes, redirects and honest API refusals", async () => {
+  const server = await serve();
+  try {
+    const home = await get(server, "/");
+    assert.equal(home.status, 200);
+    assert.match(await home.text(), /<div id="root">/);
+${sample ? `
+    const moved = await get(server, ${JSON.stringify(sample.from)});
+    assert.equal(moved.status, 301);
+    assert.equal(moved.headers.get("location"), ${JSON.stringify(sample.to)});
+` : ""}
+    const missing = await get(server, "/definitely-not-a-file.xyz");
+    assert.equal(missing.status, 404);
+${apiSample ? `
+    const api = await fetch(\`http://127.0.0.1:\${server.address().port}${apiSample.path}\`, { method: ${JSON.stringify(apiSample.method ?? "GET")} });
+    assert.ok(api.status === 501 || api.headers.get("x-portamp-fixture"), "the API surface answers with a fixture or an honest refusal, never invented data");
+` : ""}
+    // A traversal is folded back inside the root, so it can only ever see
+    // the port's own files: here the extensionless path lands on the shell.
+    const traversal = await get(server, "/..%2f..%2f..%2fetc%2fpasswd");
+    const body = await traversal.text();
+    assert.ok(!body.includes("root:"), "a traversal never reads past the port");
+    assert.match(body, /<div id="root">/, "the guarded path falls through to the app shell");
+  } finally {
+    // Kept alive connections outlive close(); both calls or the suite hangs.
+    server.closeAllConnections?.();
+    server.close();
+  }
+});
+`;
+};
+
 const ROUTER_TEST = (redirects) => {
   const sample = redirects.find((r) => r.from && r.to.startsWith("/"));
   return `import test from "node:test";
@@ -461,6 +619,15 @@ function siteReport(site, pages) {
     ...(site.pagination.length
       ? ["## Pagination, proposed", "", ...site.pagination.map((p) => `${p.pages.join(", ")} look like one screen paged by filename; a route like /${p.stem}/:page is the port's shape. Merging them means choosing the template, which is a person's call.`), ""]
       : []),
+    "## Running it",
+    "",
+    "`npm run serve` starts the port's own server on 127.0.0.1: the routes, the",
+    "301s from the redirect map, the assets, and the API surface answered",
+    "honestly (a fixture where one was emitted, a 501 naming the endpoint map",
+    "where none was). It serves `dist/` automatically once your bundler has",
+    "produced one. `npm test` runs the router and server suites that shipped",
+    "with the port.",
+    "",
     "## Still a person's",
     "",
     "- Wire form submissions to the generated client; actions moved to the API map.",

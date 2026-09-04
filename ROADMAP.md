@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Three hundred and forty nine features across twenty eight phases. The statuses are
+Three hundred and sixty one features across twenty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-445 tests, on Node 18, 20 and 22, and on Windows in CI.
+449 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1124,7 +1124,7 @@ lazy imports in App.jsx behind a flag, because eight pages do not need it and ei
 **319. A service worker for the port** ▢
 offline for the ported site itself, opt in, with the same honesty the console's worker has.
 
-**320. Anchor text audit** ▢
+**320. Anchor text audit** 🔨
 "click here" counted and named with its route, because link text is navigation for a screen reader.
 
 **321. The 404 report** ▢
@@ -1220,16 +1220,58 @@ debounce and cancellation patterns in the legacy code called out where the port 
 every decision the run made, machine readable, so a second run can be held to the first one's choices.
 
 
+## Phase 29 · Full stack, and language that reads
+
+*The port runs, the server refuses honestly, and the copy is measured the way
+a tired reader meets it.*
+
+**350. The port serves itself** 🔨
+serve.js, zero dependencies: routes, assets, and dist/ picked up automatically once a bundler has run; one bad request never takes the server down.
+
+**351. Old addresses answer 301** 🔨
+the redirect map is served, not just written: every retired path answers with the real redirect it promised, query string carried.
+
+**352. The API surface answers honestly** 🔨
+a GET with an emitted fixture serves it marked as invented; everything else answers 501 naming src/api/endpoints.js. The server never makes data up.
+
+**353. The server tests itself inside the port** 🔨
+tests/server.test.js ships with the port and proves the routes, the 301s, the refusal, and that a path traversal folds back inside the root.
+
+**354. The port has scripts** 🔨
+npm run serve and npm test in the emitted package.json, so the port works like a project the moment it lands.
+
+**355. Going is not calling** 🔨
+the endpoint gate distinguishes navigation from use: an href, a Link or the route table may spell a path an API answers, a fetch or a bare string may not, and a path inside a hostname was never that path.
+
+**356. Walls of text, measured** 🔨
+a block past eighty words is named with its count; skimming drops sentences at random and a wall guarantees skimming.
+
+**357. Abbreviations nobody expanded** 🔨
+letters that recur and are never explained are counted, with the expansion beside them accepted in either order.
+
+**358. The same action, many names** 🔨
+primary actions collected across screens; three or more different names for the act of submitting is reported as the vocabulary it makes people learn.
+
+**359. Lists longer than working memory** 🔨
+a select past fifteen static options is measured; choosing became searching.
+
+**360. The copy, summarized with its limits** 🔨
+strings, words and a median reading grade, stated with the caveat that the formula was built for prose and is used here to rank, not to grade.
+
+**361. The portal, proven** 🔨
+example/legacy-portal, a fictional postal service portal with the shapes of the real ones: tracking and lookup forms into the API map, a data table kept as data, nested services under their section in the nav model, legalese and walls caught by the language audit, and the whole thing ported to a running full stack React app under test. The same engine was smoke tested against a real government developer portal's public pages, which is what surfaced 355.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 254 |
-| planned | 51 |
-| total | 349 |
+| new in this branch | 267 |
+| planned | 50 |
+| total | 361 |
 
-The fifty one open are open for stated reasons, not for lack of time: phases
+The fifty open are open for stated reasons, not for lack of time: phases
 27 and 28 name what each one waits on, and npm publish stays the one command
 that belongs to a person, with docs/PUBLISHING.md waiting beside it. Four that
 were open closed earlier in this branch: focus order once the probe recorded

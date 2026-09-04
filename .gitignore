@@ -1,6 +1,7 @@
 node_modules/
 example/out/
 example/out-site/
+example/out-portal/
 out/
 *.log
 

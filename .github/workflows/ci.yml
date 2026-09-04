@@ -390,7 +390,8 @@ jobs:
           grep -q '<main>{children}</main>' site-out/src/app/Layout.jsx
           if grep -q '<nav' site-out/src/features/Home/Home.jsx; then echo "the page kept chrome the layout owns"; exit 1; fi
           cmp example/legacy-site/logo.svg site-out/public/logo.svg
-          node --test site-out/tests/router.test.js
+          node --check site-out/serve.js
+          cd site-out && node --test tests/router.test.js tests/server.test.js && cd ..
           rm -rf site-out
 
       - name: the ceiling gate fails a run over it, and only when asked
@@ -404,6 +405,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "349" ]; then
-            echo "ROADMAP.md holds $count entries and claims 349"; exit 1
+          if [ "$count" != "361" ]; then
+            echo "ROADMAP.md holds $count entries and claims 361"; exit 1
           fi

@@ -173,6 +173,14 @@ test("a folder of old pages becomes a React application architecture", async (t)
   assert.match(await readFile(join(out, "SITE_MAP.mmd"), "utf8"), /r_news_1 --> r_news_2/);
 
   // The emitted app is loadable: the matcher runs here, outside any browser.
+  // Full stack: the port carries its own server, its scripts, and the tests
+  // that hold both; the port's CI runs them where they land.
+  assert.ok(ctx.written.includes("serve.js"));
+  assert.ok(ctx.written.includes("tests/server.test.js"));
+  const pkg = JSON.parse(await readFile(join(out, "package.json"), "utf8"));
+  assert.equal(pkg.scripts.serve, "node serve.js");
+  assert.match(await readFile(join(out, "serve.js"), "utf8"), /501/, "the API surface refuses honestly instead of inventing");
+
   const { matchPath, resolveRedirect } = await import(join(out, "src/app/match.js"));
   assert.ok(matchPath("/products/widget", "/products/widget?from=old#top"));
   assert.deepEqual(matchPath("/news/:page", "/news/2").params, { page: "2" });

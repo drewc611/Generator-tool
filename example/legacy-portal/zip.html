@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Route Codes</title>
+<meta name="description" content="Find the code a district sorts by">
+<link rel="stylesheet" href="portal.css">
+</head>
+<body>
+<header class="masthead"><a href="index.html"><img src="seal.svg" alt="Meridian Postal Service seal" width="64"></a><span class="agency">MERIDIAN POSTAL SERVICE</span></header>
+<nav class="portal-nav"><a href="index.html">Home</a><a href="track.html">Track a Parcel</a><a href="services.html">Services</a><a href="zip.html">Route Codes</a><a href="help.html">Help</a></nav>
+<p class="crumbs"><a href="index.html">Home</a> &gt; Route Codes</p>
+<h1>Route code lookup</h1>
+<form action="/routes" method="get">
+<label for="street">Street</label>
+<input type="text" id="street" name="street">
+<label for="district">District</label>
+<input type="text" id="district" name="district">
+<input type="submit" value="Look up">
+</form>
+<p>Every delivery point in the Republic of Meridia belongs to exactly one sorting district, and every sorting district publishes exactly one route code, which is the five character string the sorting machines read first, and because the machines read it first the code must appear on the lowest line of the address block, printed without punctuation, without adjacent decoration, and without any other marking within one character width on either side, since a smudge or a stamp in that window is read as part of the code and sends the parcel to whichever district the damaged string happens to name, which is rarely the right one and never the fast one.</p>
+<footer class="fine-print"><p>An official service of the fictional Republic of Meridia. <a href="help.html">Help</a></p></footer>
+</body>
+</html>

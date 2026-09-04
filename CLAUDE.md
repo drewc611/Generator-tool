@@ -17,6 +17,7 @@ Target repo: github.com/drewc611/portamp
 node src/cli.js plugins      # list what loads
 npm run demo                 # full pipeline against example/legacy
 npm run demo-site            # a folder of old pages into a React app shell
+npm run demo-portal          # a service portal fixture through the same engine
 npm test                     # node --test, no framework
 node src/cli.js run -v       # timings per plugin
 node src/cli.js ui --watch   # the console, rerunning as the source changes
@@ -109,7 +110,11 @@ becomes a React application architecture: input-static assembles `ctx.site`
 output-site emits the shell around the ported components — a zero dependency
 history router with a pure matcher, a layout lifted from the chrome, per route
 head data, a navigation model, redirect maps in three spellings, copied
-assets, and tests for the router that run inside the port.
+assets, and tests for the router that run inside the port. The port is full
+stack: serve.js (zero dependencies) serves the app, answers every old address
+with its real 301, and answers the API surface honestly — a fixture where one
+was emitted, a 501 naming the endpoint map where none was — and the server's
+own suite ships beside it, wired to npm run serve and npm test.
 
 ## What is honestly incomplete
 
@@ -176,8 +181,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: three hundred and forty nine features in
-twenty eight phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: three hundred and sixty one features in
+twenty nine phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.

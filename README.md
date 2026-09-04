@@ -28,7 +28,7 @@ writes components instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 84 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 445 tests, node --test, no framework
+npm test                     # 449 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -243,6 +243,16 @@ was. What cannot be known is reported: dead links dangle where they dangled,
 orphan pages are named, `news-1.html`/`news-2.html` are proposed as one
 parameterized route rather than merged by guesswork, and `SITE_MAP.mmd` draws
 the whole graph so the gaps have a picture.
+
+And the port is full stack, not a folder of JSX: it lands with its own zero
+dependency server (`npm run serve`) that serves the app, answers every retired
+address with the real 301 the redirect map promised, and answers the API
+surface honestly — a fixture where the run emitted one, marked as invented,
+and a 501 naming `src/api/endpoints.js` where it did not — plus the router and
+server test suites, which run inside the port with `npm test`. The engine was
+proven against `example/legacy-portal`, a fictional postal service portal with
+the shapes of the real ones, and smoke tested against a real government
+developer portal's public pages.
 
 ## On your desk and in your pocket
 
@@ -754,9 +764,9 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): three hundred and forty nine features in
-twenty eight phases, forty four shipped, two hundred and fifty four new in the
-current branch, fifty one planned, every status honest. Each open one names
+The whole picture is [ROADMAP.md](ROADMAP.md): three hundred and sixty one features in
+twenty nine phases, forty four shipped, two hundred and sixty seven new in the
+current branch, fifty planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
 MIT. See [LICENSE](LICENSE).
