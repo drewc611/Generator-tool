@@ -668,6 +668,17 @@ jobs:
           if [ -f nosort-out/SORT.md ]; then echo "the sort task ran unrequested"; exit 1; fi
           rm -rf nosort-out
 
+      - name: the multi head model trains and reports whether the heads helped
+        run: |
+          node src/cli.js run --src test/fixtures/codemod-site --out mh-out --train-reverse-mh true
+          test -f mh-out/REVERSE_MULTIHEAD.md || { echo "no multi head report"; exit 1; }
+          grep -qiE "held out" mh-out/REVERSE_MULTIHEAD.md || { echo "the multi head report has no held out grade"; exit 1; }
+          grep -qiE "head" mh-out/REVERSE_MULTIHEAD.md || { echo "the multi head report does not name the heads"; exit 1; }
+          rm -rf mh-out
+          node src/cli.js run --src test/fixtures/codemod-site --out nomh-out
+          if [ -f nomh-out/REVERSE_MULTIHEAD.md ]; then echo "the multi head task ran unrequested"; exit 1; fi
+          rm -rf nomh-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -679,6 +690,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "529" ]; then
-            echo "ROADMAP.md holds $count entries and claims 529"; exit 1
+          if [ "$count" != "533" ]; then
+            echo "ROADMAP.md holds $count entries and claims 533"; exit 1
           fi

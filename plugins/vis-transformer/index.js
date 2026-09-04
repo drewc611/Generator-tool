@@ -909,6 +909,302 @@ function renderReverse(r) {
 }
 
 /**
+ * Multi head self attention, the trainable path grown to genuine heads. The
+ * single head block above projects to Q, K and V and attends once over the whole
+ * model dimension; this splits that same dModel into H heads, runs scaled dot
+ * product attention inside each head's own slice, concatenates the heads and
+ * mixes them with an output projection Wo. Wo is the piece the single head path
+ * left out (with one head spanning the whole dimension it is redundant), and it
+ * is drawn from the same seeded stream seededWeights already fills, so adding it
+ * disturbs no other weight's draw. Everything stays pure arithmetic on number
+ * arrays, deterministic, and dependency free, and the backward pass below is
+ * derived by hand and proven against a numerical check exactly as the single
+ * head one is.
+ */
+
+/** Trainable parameters for the multi head block: the single head set plus Wo. */
+function trainParamsMH(config) {
+  const w = seededWeights(config.seed, config);
+  return {
+    E: w.embedding,
+    Wq: w.Wq,
+    Wk: w.Wk,
+    Wv: w.Wv,
+    Wo: w.Wo,
+    W1: w.W1,
+    b1: w.b1,
+    W2: w.W2,
+    b2: w.b2,
+    Wout: w.Wout,
+    bout: w.bout,
+  };
+}
+
+/** How many heads a config asks for, defaulting to one when unset. */
+function headsOf(config) {
+  return config.heads && config.heads > 1 ? config.heads : 1;
+}
+
+/**
+ * One forward pass of the multi head block, keeping the caches the backward pass
+ * needs. Per head attention weights are held in A, one T by T matrix per head in
+ * head order, and Cat is the concatenation the output projection consumes.
+ */
+function trainForwardMH(params, tokenIds, config) {
+  const d = config.dModel;
+  const H = headsOf(config);
+  const dHead = d / H;
+  const T = tokenIds.length;
+  const pos = positionalEncoding(T, d);
+  const x = tokenIds.map((id, i) => params.E[id].map((v, j) => v + pos[i][j]));
+  const Q = matMul(x, params.Wq);
+  const K = matMul(x, params.Wk);
+  const Vv = matMul(x, params.Wv);
+  const scale = 1 / Math.sqrt(dHead);
+  const A = [];
+  const ctxHeads = [];
+  for (let h = 0; h < H; h++) {
+    const start = h * dHead;
+    const Qh = sliceCols(Q, start, dHead);
+    const Kh = sliceCols(K, start, dHead);
+    const Vvh = sliceCols(Vv, start, dHead);
+    const scores = matMul(Qh, transpose(Kh)).map((row) => row.map((s) => s * scale));
+    const Ah = scores.map((row) => softmax(row));
+    A.push(Ah);
+    ctxHeads.push(matMul(Ah, Vvh));
+  }
+  const Cat = concatCols(ctxHeads);
+  const attended = matMul(Cat, params.Wo);
+  const afterAttn = addMatrix(x, attended);
+  const hpre = addBias(matMul(afterAttn, params.W1), params.b1);
+  const h = relu(hpre);
+  const m = addBias(matMul(h, params.W2), params.b2);
+  const afterMlp = addMatrix(afterAttn, m);
+  const z = addBias(matMul(afterMlp, params.Wout), params.bout);
+  return { x, Q, K, Vv, A, Cat, attended, afterAttn, hpre, h, m, afterMlp, z };
+}
+
+/** The multi head loss and the analytic gradient of every parameter, Wo included. */
+function lossAndGradsMH(params, tokenIds, targets, config) {
+  const d = config.dModel;
+  const H = headsOf(config);
+  const dHead = d / H;
+  const scale = 1 / Math.sqrt(dHead);
+  const c = trainForwardMH(params, tokenIds, config);
+  const T = tokenIds.length;
+  const V = params.bout.length;
+  const positions = [];
+  for (let i = 0; i < T; i++) if (targets[i] != null) positions.push(i);
+  const N = positions.length;
+
+  let loss = 0;
+  const dz = zeros(T, V);
+  const probs = c.z.map((row) => softmax(row));
+  for (const i of positions) {
+    loss += -Math.log(Math.max(probs[i][targets[i]], 1e-12));
+    for (let j = 0; j < V; j++) dz[i][j] = (probs[i][j] - (j === targets[i] ? 1 : 0)) / N;
+  }
+  loss /= N;
+
+  const dWout = matMul(transpose(c.afterMlp), dz);
+  const dbout = colSums(dz);
+  const dafterMlp = matMul(dz, transpose(params.Wout));
+
+  // afterMlp = afterAttn + m, so the residual sends the gradient down both paths.
+  const dm = dafterMlp;
+  const dW2 = matMul(transpose(c.h), dm);
+  const db2 = colSums(dm);
+  const dh = matMul(dm, transpose(params.W2));
+  const dhpre = dh.map((row, i) => row.map((v, j) => (c.hpre[i][j] > 0 ? v : 0)));
+  const dW1 = matMul(transpose(c.afterAttn), dhpre);
+  const db1 = colSums(dhpre);
+  const dAfterAttn = addMatrix(dafterMlp, matMul(dhpre, transpose(params.W1)));
+
+  // afterAttn = x + attended, a residual, and attended = Cat . Wo.
+  const dAttended = dAfterAttn;
+  const dWo = matMul(transpose(c.Cat), dAttended);
+  const dCat = matMul(dAttended, transpose(params.Wo));
+
+  // Split the concatenated gradient back into per head slices, backprop each
+  // head through its own scaled dot product attention, and reassemble Q, K, V.
+  const dQheads = [];
+  const dKheads = [];
+  const dVheads = [];
+  for (let hd = 0; hd < H; hd++) {
+    const start = hd * dHead;
+    const Qh = sliceCols(c.Q, start, dHead);
+    const Kh = sliceCols(c.K, start, dHead);
+    const Vvh = sliceCols(c.Vv, start, dHead);
+    const Ah = c.A[hd];
+    const dCtxh = sliceCols(dCat, start, dHead);
+    const dAh = matMul(dCtxh, transpose(Vvh));
+    const dVvh = matMul(transpose(Ah), dCtxh);
+    const dS = zeros(T, T);
+    for (let i = 0; i < T; i++) {
+      let dot = 0;
+      for (let k = 0; k < T; k++) dot += dAh[i][k] * Ah[i][k];
+      for (let j = 0; j < T; j++) dS[i][j] = Ah[i][j] * (dAh[i][j] - dot) * scale;
+    }
+    dQheads.push(matMul(dS, Kh));
+    dKheads.push(matMul(transpose(dS), Qh));
+    dVheads.push(dVvh);
+  }
+  const dQ = concatCols(dQheads);
+  const dK = concatCols(dKheads);
+  const dVv = concatCols(dVheads);
+
+  const dWq = matMul(transpose(c.x), dQ);
+  const dWk = matMul(transpose(c.x), dK);
+  const dWv = matMul(transpose(c.x), dVv);
+  let dxAttn = matMul(dQ, transpose(params.Wq));
+  dxAttn = addMatrix(dxAttn, matMul(dK, transpose(params.Wk)));
+  dxAttn = addMatrix(dxAttn, matMul(dVv, transpose(params.Wv)));
+  // x reaches the loss through the attention projections and the x + attended residual.
+  const dx = addMatrix(dxAttn, dAfterAttn);
+
+  const dE = zeros(params.E.length, d);
+  tokenIds.forEach((id, i) => {
+    for (let j = 0; j < d; j++) dE[id][j] += dx[i][j];
+  });
+
+  return {
+    loss,
+    grads: {
+      E: dE, Wq: dWq, Wk: dWk, Wv: dWv, Wo: dWo,
+      W1: dW1, b1: db1, W2: dW2, b2: db2, Wout: dWout, bout: dbout,
+    },
+  };
+}
+
+const MULTIHEAD_CONFIG = { ...REVERSE_CONFIG, heads: 4 };
+
+/**
+ * The numerical gradient check the single head path carries, run against the
+ * multi head loss so the extra machinery (the head split, the concatenation and
+ * the output projection Wo) is proven and not trusted. Returns the maximum
+ * relative error over the sampled parameters; a small one is the proof the multi
+ * head backward pass descends on the real loss.
+ */
+export function multiHeadGradientCheck(config = {}) {
+  const cfg = { ...MULTIHEAD_CONFIG, ...config };
+  const params = trainParamsMH(cfg);
+  const { tokenIds, targets } = reverseExample(reverseDataset(cfg.seed).train[0]);
+  const { grads } = lossAndGradsMH(params, tokenIds, targets, cfg);
+  const eps = 1e-4;
+  const specs = [
+    ["Wq", 1, 2],
+    ["Wk", 3, 0],
+    ["Wv", 4, 5],
+    ["Wo", 2, 7],
+    ["Wo", 5, 10],
+    ["W1", 0, 7],
+    ["W2", 6, 1],
+    ["Wout", 2, 3],
+    ["b1", 5],
+    ["b2", 4],
+    ["bout", 3],
+    ["E", 2, 9],
+  ];
+  let maxRelError = 0;
+  let checked = 0;
+  for (const spec of specs) {
+    const key = spec[0];
+    const isMatrix = Array.isArray(params[key][0]);
+    const analytic = isMatrix ? grads[key][spec[1]][spec[2]] : grads[key][spec[1]];
+    const read = () => (isMatrix ? params[key][spec[1]][spec[2]] : params[key][spec[1]]);
+    const write = (val) => {
+      if (isMatrix) params[key][spec[1]][spec[2]] = val;
+      else params[key][spec[1]] = val;
+    };
+    const saved = read();
+    write(saved + eps);
+    const lossPlus = lossAndGradsMH(params, tokenIds, targets, cfg).loss;
+    write(saved - eps);
+    const lossMinus = lossAndGradsMH(params, tokenIds, targets, cfg).loss;
+    write(saved);
+    const numeric = (lossPlus - lossMinus) / (2 * eps);
+    const rel = Math.abs(analytic - numeric) / Math.max(1e-8, Math.abs(analytic) + Math.abs(numeric));
+    if (rel > maxRelError) maxRelError = rel;
+    checked++;
+  }
+  return { maxRelError, checked };
+}
+
+function reverseAccuracyMH(params, seqs, cfg) {
+  let correct = 0;
+  for (const seq of seqs) {
+    const { tokenIds, targets } = reverseExample(seq);
+    const c = trainForwardMH(params, tokenIds, cfg);
+    if (c.z.every((row, i) => argmaxIdx(row) === targets[i])) correct++;
+  }
+  return seqs.length ? correct / seqs.length : 0;
+}
+
+/**
+ * Train the reversal task with H heads (config.heads, default 4), the multi head
+ * counterpart of trainReverse. Returns the same shape trainReverse does so the
+ * held out accuracy can be compared head to head against the single head
+ * baseline. Deterministic for a given config.
+ */
+export function trainReverseMultiHead(config = {}) {
+  const cfg = { ...MULTIHEAD_CONFIG, ...config };
+  const params = trainParamsMH(cfg);
+  const { train: trainSet, heldOut } = reverseDataset(cfg.seed);
+  const every = Math.max(1, Math.floor(cfg.steps / 20));
+  const lossHistory = [];
+  let initialLoss = null;
+
+  for (let step = 0; step < cfg.steps; step++) {
+    const acc = zerosLike(params);
+    let loss = 0;
+    for (const seq of trainSet) {
+      const { tokenIds, targets } = reverseExample(seq);
+      const r = lossAndGradsMH(params, tokenIds, targets, cfg);
+      loss += r.loss;
+      accumulateGrads(acc, r.grads, 1 / trainSet.length);
+    }
+    loss /= trainSet.length;
+    if (step === 0) initialLoss = loss;
+    if (step % every === 0) lossHistory.push({ step, loss });
+    for (const key of Object.keys(acc)) applyUpdate(params[key], acc[key], cfg.lr);
+  }
+
+  const samplePredictions = heldOut.slice(0, 6).map((seq) => {
+    const c = trainForwardMH(params, seq, cfg);
+    return { input: seq.slice(), predicted: c.z.map((row) => argmaxIdx(row)), target: seq.slice().reverse() };
+  });
+
+  return {
+    V: REV_V,
+    L: REV_L,
+    heads: headsOf(cfg),
+    trainSize: trainSet.length,
+    heldOutSize: heldOut.length,
+    lossHistory,
+    initialLoss,
+    trainAccuracy: reverseAccuracyMH(params, trainSet, cfg),
+    heldOutAccuracy: reverseAccuracyMH(params, heldOut, cfg),
+    samplePredictions,
+  };
+}
+
+function renderReverseMH(r, check) {
+  const base = renderReverse(r);
+  const header = [
+    `# The transformer, taught an algorithm with ${r.heads} heads`,
+    "",
+    `This is the ${r.heads} head port of the reversal task. The trainable block now splits its ` +
+      `model dimension into ${r.heads} heads, ` +
+      "attends inside each, concatenates and mixes them with an output projection, and its extra gradients " +
+      `are proven against the same numerical check (max relative error ${check.maxRelError.toExponential(1)} over ` +
+      `${check.checked} parameters).`,
+    "",
+  ].join("\n");
+  // Replace the single head title line with the multi head header.
+  return header + base.split("\n").slice(1).join("\n");
+}
+
+/**
  * Sorting, the honest hard case. Reversal is a rule about positions that ignores
  * the tokens; sorting is a rule about the tokens that ignores their positions,
  * the output at position i being the i-th smallest of the input regardless of
@@ -1217,6 +1513,24 @@ export default {
         );
         log.info(
           `transformer reverse: train ${(r.trainAccuracy * 100).toFixed(0)}%, held out ${(r.heldOutAccuracy * 100).toFixed(0)}%`
+        );
+      }
+
+      if (ctx.config["train-reverse-mh"] || ctx.config.trainReverseMultiHead) {
+        const heads = Number(ctx.config.heads) > 1 ? Number(ctx.config.heads) : 4;
+        const check = multiHeadGradientCheck({ heads });
+        const r = trainReverseMultiHead({ heads });
+        await ctx.write("REVERSE_MULTIHEAD.md", renderReverseMH(r, check));
+        ctx.unverified(
+          `REVERSE_MULTIHEAD.md trains the transformer to reverse a ${r.L} token sequence with ${r.heads} ` +
+            `attention heads: ${(r.trainAccuracy * 100).toFixed(0)}% on the ${r.trainSize} training sequences and ` +
+            `${(r.heldOutAccuracy * 100).toFixed(0)}% on the ${r.heldOutSize} held out ones it never saw. The ` +
+            `multi head gradients are proven correct by a numerical check (max relative error ` +
+            `${check.maxRelError.toExponential(1)}).`
+        );
+        log.info(
+          `transformer reverse multi head (${r.heads} heads): gradient check ${check.maxRelError.toExponential(1)}, ` +
+            `train ${(r.trainAccuracy * 100).toFixed(0)}%, held out ${(r.heldOutAccuracy * 100).toFixed(0)}%`
         );
       }
 

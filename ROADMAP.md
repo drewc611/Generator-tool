@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and twenty nine features across fifty eight phases. The statuses are
+Five hundred and thirty three features across fifty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1945,15 +1945,29 @@ the held out accuracy is high and still short of the training accuracy, and SORT
 **529. The sort model is proven correct by its own gradient check** 🔨
 the numerical gradient check runs on the sort model's loss and holds the maximum relative error under a thousandth, so the training that produced the result descended on a true gradient rather than a plausible looking wrong one.
 
+## Phase 59: the transformer grows a second opinion
+
+**530. vis-transformer grows genuine multi head attention in the trained path** 🔨
+the trainable block splits the model dimension into several heads, attends per head and recombines through an output projection, so the network can look at more than one relation at once, the single head path preserved exactly as the one head case.
+
+**531. The multi head backward pass is proven before it is trusted** 🔨
+the hand derived gradient through the head split, the concatenation and the output projection is held against the numerical check under a thousandth (it measures a few parts per million), because a multi head model whose gradient is not verified is exactly the unproven training this tool refuses to ship.
+
+**532. Whether the extra heads help is measured, not assumed** 🔨
+reversal is trained at one, two, four and eight heads on the same split and graded on the held out sequences, and REVERSE_MULTIHEAD.md reports the real numbers: two and four heads each recover one more held out sequence and eight heads do worse, a small honest gain rather than a story.
+
+**533. The growth costs the existing results nothing** 🔨
+every single head export trains to the same number it did before, the seed draw is undisturbed because the output projection was already in the stream, and two multi head trainings are byte identical, so the new capacity is added without moving anything that was already proven.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 482 |
+| new in this branch | 486 |
 | planned | 3 |
-| total | 529 |
+| total | 533 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

@@ -17,6 +17,8 @@ import {
   trainReverse,
   trainSort,
   sortGradientCheck,
+  trainReverseMultiHead,
+  multiHeadGradientCheck,
 } from "../plugins/vis-transformer/index.js";
 import { transformCjsToEsm } from "../plugins/output-codemod/index.js";
 import { ROOT, runPipeline } from "./helpers.js";
@@ -94,6 +96,22 @@ test("sorting is learned and generalizes far above chance, gradients proven", ()
   const a = trainSort({ steps: 200 });
   const b = trainSort({ steps: 200 });
   assert.equal(JSON.stringify(a.lossHistory), JSON.stringify(b.lossHistory), "training is deterministic");
+});
+
+test("multi head attention is gradient checked and trains, deterministically", () => {
+  for (const heads of [2, 4]) {
+    const check = multiHeadGradientCheck({ heads });
+    assert.ok(check.maxRelError < 1e-3, `H=${heads} multi head backprop is correct (${check.maxRelError})`);
+  }
+
+  const r = trainReverseMultiHead({ heads: 4 });
+  assert.equal(r.heads, 4);
+  assert.ok(r.trainAccuracy >= 0.95, "it fits the training sequences with multiple heads");
+  assert.ok(r.heldOutAccuracy > 0.5, `held out ${r.heldOutAccuracy} is well above chance`);
+
+  const a = trainReverseMultiHead({ heads: 4, steps: 200 });
+  const b = trainReverseMultiHead({ heads: 4, steps: 200 });
+  assert.equal(JSON.stringify(a.lossHistory), JSON.stringify(b.lossHistory), "multi head training is deterministic");
 });
 
 test("modular addition is memorized, and the held out gap is reported honestly", () => {
