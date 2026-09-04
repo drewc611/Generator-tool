@@ -55,6 +55,7 @@ const DOES = {
   "dsp-duplication": "screens that are nearly the same screen, proposed as one",
   "dsp-entropy": "strings random enough to be credentials, values withheld",
   "dsp-era": "when the site was built, dated by seventeen signals with a spread",
+  "dsp-components": "blocks two screens repeat, lifted into one shared component",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
   "output-next": "the site model as a Next app directory, components imported not copied",
   "output-remix": "the site as route modules, retired addresses as loaders that 301",

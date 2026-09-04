@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, eighty eight in five classes, and the core has never learned
+Plugins that ship, eighty nine in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-angular  input-angularjs  input-vue  input-knockout
          input-openapi  input-pdf  input-explore  input-record  input-shots
          input-blackbox
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
-         dsp-a11y  dsp-cognitive  dsp-i18n  dsp-deadcode  dsp-dates
+         dsp-a11y  dsp-cognitive  dsp-components  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
@@ -180,6 +180,17 @@ against each ported screen's IR; the console keeps the previous run.json and
 compares the two; test/windows.test.js gates the platform assumptions; and
 dsp-tokens merges spacing across several recordings with the disagreement
 kept. test/frontier.test.js and test/windows.test.js hold it.
+
+5.0 makes the port stop repeating itself: dsp-components finds the blocks
+more than one screen carried verbatim, and with --components lifts each
+static one into a component screen the pages are rewritten to name. Because
+every target already resolves a tag naming another screen to that component,
+React, Vue, Svelte and the custom element all compose the shared component
+with nothing target specific added; a block that binds or interpolates is
+named in COMPONENTS.md and never lifted, because parameterizing it is a
+guess about what varies. Nested repeats collapse to the largest, the
+extraction is deterministic, and the catalog is written whether or not the
+flag is set. test/components.test.js holds it.
 
 ## What is honestly incomplete
 

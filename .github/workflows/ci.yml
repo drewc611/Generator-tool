@@ -406,6 +406,15 @@ jobs:
           diff -r det-a det-b
           rm -rf det-a det-b
 
+      - name: a repeated block lifts into one shared component every target composes
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out comp-out --site true --components true
+          test -d comp-out/src/features/PortJoinTheNewsletter || { echo "the shared component was not extracted"; exit 1; }
+          grep -q "PortJoinTheNewsletter" comp-out/src/features/About/About.jsx || { echo "the page did not compose the component"; exit 1; }
+          if grep -q "Join the newsletter" comp-out/src/features/About/About.jsx; then echo "the repeated markup is still inline"; exit 1; fi
+          node --check comp-out/serve.js
+          rm -rf comp-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -417,6 +426,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "420" ]; then
-            echo "ROADMAP.md holds $count entries and claims 420"; exit 1
+          if [ "$count" != "426" ]; then
+            echo "ROADMAP.md holds $count entries and claims 426"; exit 1
           fi

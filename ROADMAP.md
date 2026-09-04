@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and twenty features across thirty three phases. The statuses are
+Four hundred and twenty six features across thirty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-515 tests, on Node 18, 20 and 22, and on Windows in CI.
+521 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1466,20 +1466,49 @@ test/windows.test.js turns the platform assumptions into checks: every computed 
 several sessions merged with the disagreement kept: agreement measured, a disputed rung reported with its count, nothing averaged into a rung neither session found.
 
 
+## Phase 34 · 5.0 · The port stops repeating itself
+
+*A block of markup three pages carried verbatim becomes one shared component
+the pages compose from. Framework blind by construction: the extraction adds
+a component to the run and rewrites the pages to name it, and every target
+resolves that name for free.*
+
+**421. dsp-components finds the repeats** 🔨
+block level fragments that recur verbatim across two or more screens, found by counting each tag's opens and closes so a nested block never ends its parent early, grouped by their normalized form with every occurrence's real position kept.
+
+**422. Static is performed, dynamic is proposed** 🔨
+a repeat that binds, interpolates or handles reads screen local state a shared component would not have, so it is named in COMPONENTS.md and never lifted; only a block that recurs byte for byte and carries no dynamic markup is safe to perform, and parameterizing the rest stays a person's call.
+
+**423. --components lifts the safe blocks** 🔨
+each shared static block becomes a component screen added to the run, and every page that held it is rewritten to name it; because output-react already resolves a tag naming another screen to that component, React, Vue, Svelte and the custom element all compose the shared component with nothing target specific added.
+
+**424. Nested repeats collapse to the largest** 🔨
+a block that only ever appears inside a larger shared block is not an independent component; it is dropped so the report proposes the whole card, not the card and its paragraph, and the rewrite replaces the largest non overlapping regions only.
+
+**425. The extraction is deterministic** 🔨
+candidates are ranked largest first then by the fragment itself and named from their own words when they have any, so two runs over the same input write byte identical components and byte identical rewrites, held by the determinism gate.
+
+**426. COMPONENTS.md is the catalog** 🔨
+written whether or not the flag is set, because knowing the repeats exist is worth as much as removing them: every extractable block with the screens that share it, and every proposed one with why it could not be lifted.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 373 |
+| new in this branch | 379 |
 | planned | 3 |
-| total | 420 |
+| total | 426 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
 waiting beside it, and it appears twice; the calibration corpus grows only
 when apps somebody actually shipped can be labelled. Everything else is
 built.
+5.0 is the port that stops repeating itself: a block three pages carried
+verbatim becomes one shared component every target composes from, extracted
+framework blind and proposed where a binding would have to become a prop.
 3.1 closed nine more — the Next and Remix targets on the site model, the
 jQuery inventory landed per route, the store reader, recorded sessions
 replayed, the parity structure diff, the console comparing runs, the

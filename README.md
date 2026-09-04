@@ -7,7 +7,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 88 plugins, and the literal output of
+lines of core, no runtime dependencies, 89 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 88 plugin(s)
+node src/cli.js plugins      # 89 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 515 tests, node --test, no framework
+npm test                     # 521 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -60,8 +60,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 20,939 lines of JavaScript |
-| Tests | 6,179 lines, 515 cases |
+| Every line of the tool | 21,152 lines of JavaScript |
+| Tests | 6,300 lines, 521 cases |
 | Source on disk | src 44 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 88 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 89 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -273,6 +273,34 @@ search engine finds the document by its words. What cannot be decoded is
 counted, never faked: an encrypted file is refused by name, an exotic
 stream filter is skipped and said, and a glyph with no text mapping is a
 number in `DOCS.md`, not a lookalike character.
+
+## The port stops repeating itself
+
+Every emitter writes one component per screen, so a block three pages
+carried verbatim becomes three copies of the same code. `dsp-components`
+finds those repeats — block-level fragments that recur byte for byte across
+two or more screens, found by counting each tag's own opens and closes so a
+nested block never ends its parent early — and with `--components true`
+lifts each static one into a single shared component the pages compose from:
+
+```bash
+node src/cli.js run --src ./site --out ./port --site true --components true
+```
+
+The extraction is framework blind by construction, not by a special case.
+It adds the shared block to the run as a component and rewrites the pages to
+name it; every target already resolves a tag naming another screen to that
+component, so React, Vue, Svelte and the custom element all pick up
+`<PortJoinTheNewsletter />` with nothing target-specific added — the whole
+thesis of the tool, demonstrated by a feature that touched no printer.
+
+It performs only the safe case. A repeat that binds or interpolates reads
+screen-local state a shared component would not have, so parameterizing it
+is a guess about what varies; those are named in `COMPONENTS.md` and left
+for a person, exactly like every other proposal the tool declines to
+perform. Nested repeats collapse to the largest, two runs write byte-
+identical components, and the catalog is written flag or no flag, because
+knowing the repeats exist is worth as much as removing them.
 
 ## On your desk and in your pocket
 
@@ -804,8 +832,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): four hundred and twenty features in
-thirty three phases, forty four shipped, three hundred and seventy three new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): four hundred and twenty six features in
+thirty four phases, forty four shipped, three hundred and seventy nine new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
