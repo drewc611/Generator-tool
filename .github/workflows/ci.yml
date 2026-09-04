@@ -522,6 +522,18 @@ jobs:
           grep -q "try_files" home-out/nginx/nginx.conf || { echo "nginx has no SPA fallback"; exit 1; }
           rm -rf home-out
 
+      - name: the AWS deploy plan is emitted, carries the redirects, and takes no secrets
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out aws-out --site true --aws true
+          test -f aws-out/aws/main.tf || { echo "no terraform plan was written"; exit 1; }
+          node --check aws-out/aws/cloudfront-redirects.js || { echo "the CloudFront function does not parse"; exit 1; }
+          grep -qiE "cloudfront|s3" aws-out/aws/main.tf || { echo "the plan names no S3 or CloudFront"; exit 1; }
+          if grep -rniE "AKIA[0-9A-Z]{12,}|aws_secret_access_key\s*=\s*[\"'][^\"']" aws-out/aws; then echo "the plan leaked a credential"; exit 1; fi
+          rm -rf aws-out
+          node src/cli.js run --src test/fixtures/repeat-site --out noaws-out --site true
+          test -d noaws-out/aws && { echo "the aws plan ran unrequested"; exit 1; }
+          rm -rf noaws-out
+
       - name: the debug output and the global pollution are named, not deleted
         run: |
           node src/cli.js run --src test/fixtures/debt-site --out cln-out
@@ -602,6 +614,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "504" ]; then
-            echo "ROADMAP.md holds $count entries and claims 504"; exit 1
+          if [ "$count" != "508" ]; then
+            echo "ROADMAP.md holds $count entries and claims 508"; exit 1
           fi

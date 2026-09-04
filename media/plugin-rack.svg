@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 3122" width="1040" height="3122" role="img" aria-label="The 125 plugins portamp ships with, listed by class">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 3146" width="1040" height="3146" role="img" aria-label="The 126 plugins portamp ships with, listed by class">
 <defs><linearGradient id="chassis" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a42"/><stop offset="1" stop-color="#1b1b1f"/></linearGradient></defs>
-<rect x="0.5" y="0.5" width="1039" height="3121" rx="7" fill="url(#chassis)" stroke="#0e0e11"/>
-<rect x="2.5" y="2.5" width="1035" height="3117" rx="6" fill="none" stroke="#5a5a66" opacity="0.45"/>
+<rect x="0.5" y="0.5" width="1039" height="3145" rx="7" fill="url(#chassis)" stroke="#0e0e11"/>
+<rect x="2.5" y="2.5" width="1035" height="3141" rx="6" fill="none" stroke="#5a5a66" opacity="0.45"/>
 <rect x="10" y="10" width="1020" height="34" rx="3" fill="#0e0e11" stroke="#0e0e11"/>
 <path d="M11 43 L11 11 L1029 11" fill="none" stroke="#5a5a66" opacity="0.28"/>
 <text x="24" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" font-weight="bold" fill="#f0a830" text-anchor="start" letter-spacing="3">PLUGIN RACK</text>
-<text x="1016" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#8b8b96" text-anchor="end">125 loaded  ./plugins is scanned automatically</text>
-<rect x="16" y="54" width="1008" height="3052" rx="3" fill="#0a0a0d" stroke="#0e0e11"/>
-<path d="M17 3105 L17 55 L1023 55" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="1016" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#8b8b96" text-anchor="end">126 loaded  ./plugins is scanned automatically</text>
+<rect x="16" y="54" width="1008" height="3076" rx="3" fill="#0a0a0d" stroke="#0e0e11"/>
+<path d="M17 3129 L17 55 L1023 55" fill="none" stroke="#5a5a66" opacity="0.28"/>
 <text x="40" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" font-weight="bold" fill="#6a6a76" text-anchor="start" letter-spacing="1">CLASS</text>
 <text x="150" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" font-weight="bold" fill="#6a6a76" text-anchor="start" letter-spacing="1">NAME</text>
 <text x="330" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" font-weight="bold" fill="#6a6a76" text-anchor="start" letter-spacing="1">DOES</text>
@@ -357,222 +357,226 @@
 <rect x="26" y="1904" width="988" height="24" fill="#111116"/>
 <rect x="34" y="1909" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="1916" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="1916" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-cem</text>
-<text x="330" y="1916" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a custom elements manifest, so the elements exist to editors</text>
+<text x="150" y="1916" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-aws</text>
+<text x="330" y="1916" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the site as an AWS deploy plan: S3, CloudFront, the 301 map compiled to a function, no secrets taken</text>
 <rect x="34" y="1933" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="1940" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="1940" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-ci</text>
-<text x="330" y="1940" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a workflow for the port: parse checks and the endpoint rule, kept</text>
+<text x="150" y="1940" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-cem</text>
+<text x="330" y="1940" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a custom elements manifest, so the elements exist to editors</text>
 <rect x="26" y="1952" width="988" height="24" fill="#111116"/>
 <rect x="34" y="1957" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="1964" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="1964" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-codemod</text>
-<text x="330" y="1964" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a code transformer: CommonJS lifted to ES modules, only the forms it can prove, the rest refused</text>
+<text x="150" y="1964" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-ci</text>
+<text x="330" y="1964" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a workflow for the port: parse checks and the endpoint rule, kept</text>
 <rect x="34" y="1981" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="1988" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="1988" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-curl</text>
-<text x="330" y="1988" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a smoke script, written and never run, GETs only</text>
+<text x="150" y="1988" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-codemod</text>
+<text x="330" y="1988" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a code transformer: CommonJS lifted to ES modules, only the forms it can prove, the rest refused</text>
 <rect x="26" y="2000" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2005" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2012" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2012" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-cypress</text>
-<text x="330" y="2012" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">an end to end suite that walks every route and asserts the redirects land</text>
+<text x="150" y="2012" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-curl</text>
+<text x="330" y="2012" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a smoke script, written and never run, GETs only</text>
 <rect x="34" y="2029" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2036" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2036" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-design-tokens</text>
-<text x="330" y="2036" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the design in the W3C tokens format, measured and proposed apart</text>
+<text x="150" y="2036" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-cypress</text>
+<text x="330" y="2036" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">an end to end suite that walks every route and asserts the redirects land</text>
 <rect x="26" y="2048" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2053" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2060" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2060" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-dockerfile</text>
-<text x="330" y="2060" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the port in a container: the zero dependency serve.js wrapped, nothing to install</text>
+<text x="150" y="2060" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-design-tokens</text>
+<text x="330" y="2060" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the design in the W3C tokens format, measured and proposed apart</text>
 <rect x="34" y="2077" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2084" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2084" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-fixtures</text>
-<text x="330" y="2084" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">response fixtures with types and no captured values</text>
+<text x="150" y="2084" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-dockerfile</text>
+<text x="330" y="2084" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the port in a container: the zero dependency serve.js wrapped, nothing to install</text>
 <rect x="26" y="2096" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2101" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-forms</text>
-<text x="330" y="2108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">each schema as code, with a validator speaking the app's own words</text>
+<text x="150" y="2108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-fixtures</text>
+<text x="330" y="2108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">response fixtures with types and no captured values</text>
 <rect x="34" y="2125" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-html</text>
-<text x="330" y="2132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a custom element, depending on nothing at all</text>
+<text x="150" y="2132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-forms</text>
+<text x="330" y="2132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">each schema as code, with a validator speaking the app's own words</text>
 <rect x="26" y="2144" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2149" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-i18n</text>
-<text x="330" y="2156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the catalogue as ICU messages, split sentences made whole</text>
+<text x="150" y="2156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-html</text>
+<text x="330" y="2156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a custom element, depending on nothing at all</text>
 <rect x="34" y="2173" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-lit</text>
-<text x="330" y="2180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the custom element with a rendering library, for teams that want one</text>
+<text x="150" y="2180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-i18n</text>
+<text x="330" y="2180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the catalogue as ICU messages, split sentences made whole</text>
 <rect x="26" y="2192" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2197" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-migration</text>
-<text x="330" y="2204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the cutover one route at a time, ordered by proof</text>
+<text x="150" y="2204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-lit</text>
+<text x="330" y="2204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the custom element with a rendering library, for teams that want one</text>
 <rect x="34" y="2221" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-msw</text>
-<text x="330" y="2228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">something for the port to talk to, carrying nobody's data</text>
+<text x="150" y="2228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-migration</text>
+<text x="330" y="2228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the cutover one route at a time, ordered by proof</text>
 <rect x="26" y="2240" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2245" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-next</text>
-<text x="330" y="2252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the site model as a Next app directory, components imported not copied</text>
+<text x="150" y="2252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-msw</text>
+<text x="330" y="2252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">something for the port to talk to, carrying nobody's data</text>
 <rect x="34" y="2269" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-nginx</text>
-<text x="330" y="2276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">an nginx server block that serves the export and answers every old address with its 301</text>
+<text x="150" y="2276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-next</text>
+<text x="330" y="2276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the site model as a Next app directory, components imported not copied</text>
 <rect x="26" y="2288" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2293" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-nuxt</text>
-<text x="330" y="2300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the site model as a Nuxt app, the emitted Vue imported not copied</text>
+<text x="150" y="2300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-nginx</text>
+<text x="330" y="2300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">an nginx server block that serves the export and answers every old address with its 301</text>
 <rect x="34" y="2317" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-openapi</text>
-<text x="330" y="2324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the requests the port makes, and no response it never saw</text>
+<text x="150" y="2324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-nuxt</text>
+<text x="330" y="2324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the site model as a Nuxt app, the emitted Vue imported not copied</text>
 <rect x="26" y="2336" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2341" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-postman</text>
-<text x="330" y="2348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the requests as a collection; responses deliberately absent</text>
+<text x="150" y="2348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-openapi</text>
+<text x="330" y="2348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the requests the port makes, and no response it never saw</text>
 <rect x="34" y="2365" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-preact</text>
-<text x="330" y="2372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the same proven JSX, a tenth the runtime</text>
+<text x="150" y="2372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-postman</text>
+<text x="330" y="2372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the requests as a collection; responses deliberately absent</text>
 <rect x="26" y="2384" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2389" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-qwik</text>
-<text x="330" y="2396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the proven JSX as a Qwik component: handlers split with $, state as signals</text>
+<text x="150" y="2396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-preact</text>
+<text x="330" y="2396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the same proven JSX, a tenth the runtime</text>
 <rect x="34" y="2413" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-react</text>
-<text x="330" y="2420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a component per screen, every state, and the translated body</text>
+<text x="150" y="2420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-qwik</text>
+<text x="330" y="2420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the proven JSX as a Qwik component: handlers split with $, state as signals</text>
 <rect x="26" y="2432" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2437" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2444" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2444" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-readme</text>
-<text x="330" y="2444" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the index of everything the run wrote, honest numbers beside it</text>
+<text x="150" y="2444" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-react</text>
+<text x="330" y="2444" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a component per screen, every state, and the translated body</text>
 <rect x="34" y="2461" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2468" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2468" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-remix</text>
-<text x="330" y="2468" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the site as route modules, retired addresses as loaders that 301</text>
+<text x="150" y="2468" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-readme</text>
+<text x="330" y="2468" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the index of everything the run wrote, honest numbers beside it</text>
 <rect x="26" y="2480" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2485" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2492" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2492" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-site</text>
-<text x="330" y="2492" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a folder of old pages as a React app: router, layout, redirects, the maps</text>
+<text x="150" y="2492" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-remix</text>
+<text x="330" y="2492" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the site as route modules, retired addresses as loaders that 301</text>
 <rect x="34" y="2509" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2516" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2516" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-solid</text>
-<text x="330" y="2516" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">props as props.x and signals as x(), because Solid punishes spelling</text>
+<text x="150" y="2516" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-site</text>
+<text x="330" y="2516" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a folder of old pages as a React app: router, layout, redirects, the maps</text>
 <rect x="26" y="2528" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2533" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2540" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2540" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-storybook</text>
-<text x="330" y="2540" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a story per component, one per state</text>
+<text x="150" y="2540" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-solid</text>
+<text x="330" y="2540" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">props as props.x and signals as x(), because Solid punishes spelling</text>
 <rect x="34" y="2557" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2564" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2564" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-svelte</text>
-<text x="330" y="2564" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the second target on the IR</text>
+<text x="150" y="2564" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-storybook</text>
+<text x="330" y="2564" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a story per component, one per state</text>
 <rect x="26" y="2576" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2581" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2588" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2588" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-sveltekit</text>
-<text x="330" y="2588" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the site as SvelteKit routes, old addresses answered from the server hook</text>
+<text x="150" y="2588" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-svelte</text>
+<text x="330" y="2588" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the second target on the IR</text>
 <rect x="34" y="2605" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2612" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2612" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-tailwind</text>
-<text x="330" y="2612" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the measured tokens as a tailwind config, under extend</text>
+<text x="150" y="2612" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-sveltekit</text>
+<text x="330" y="2612" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the site as SvelteKit routes, old addresses answered from the server hook</text>
 <rect x="26" y="2624" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2629" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2636" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2636" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-tests</text>
-<text x="330" y="2636" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a conformance suite, written from what the original did</text>
+<text x="150" y="2636" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-tailwind</text>
+<text x="330" y="2636" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the measured tokens as a tailwind config, under extend</text>
 <rect x="34" y="2653" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2660" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2660" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-types</text>
-<text x="330" y="2660" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">TypeScript prop interfaces per screen and the endpoint paths as a union</text>
+<text x="150" y="2660" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-tests</text>
+<text x="330" y="2660" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a conformance suite, written from what the original did</text>
 <rect x="26" y="2672" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2677" width="7" height="7" rx="1.5" fill="#f0a830"/>
 <text x="50" y="2684" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
-<text x="150" y="2684" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-vue</text>
-<text x="330" y="2684" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the third target on the IR</text>
-<rect x="34" y="2701" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
-<text x="50" y="2708" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
-<text x="150" y="2708" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-coverage</text>
-<text x="330" y="2708" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">how much of the old app the port covers, measured per screen</text>
+<text x="150" y="2684" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-types</text>
+<text x="330" y="2684" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">TypeScript prop interfaces per screen and the endpoint paths as a union</text>
+<rect x="34" y="2701" width="7" height="7" rx="1.5" fill="#f0a830"/>
+<text x="50" y="2708" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#f0a830" text-anchor="start">output</text>
+<text x="150" y="2708" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">output-vue</text>
+<text x="330" y="2708" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the third target on the IR</text>
 <rect x="26" y="2720" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2725" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
 <text x="50" y="2732" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
-<text x="150" y="2732" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-equivalence</text>
-<text x="330" y="2732" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">runs the conformance suite and folds the verdict back in</text>
+<text x="150" y="2732" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-coverage</text>
+<text x="330" y="2732" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">how much of the old app the port covers, measured per screen</text>
 <rect x="34" y="2749" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
 <text x="50" y="2756" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
-<text x="150" y="2756" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-graph</text>
-<text x="330" y="2756" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the port's shape drawn: screens, what composes what, which endpoints each calls</text>
+<text x="150" y="2756" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-equivalence</text>
+<text x="330" y="2756" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">runs the conformance suite and folds the verdict back in</text>
 <rect x="26" y="2768" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2773" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
 <text x="50" y="2780" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
-<text x="150" y="2780" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-parity</text>
-<text x="330" y="2780" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">what matched, what did not, and what was never checked</text>
+<text x="150" y="2780" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-graph</text>
+<text x="330" y="2780" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the port's shape drawn: screens, what composes what, which endpoints each calls</text>
 <rect x="34" y="2797" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
 <text x="50" y="2804" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
-<text x="150" y="2804" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-roundtrip</text>
-<text x="330" y="2804" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the emitted React read back and held against the structure it came from</text>
+<text x="150" y="2804" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-parity</text>
+<text x="330" y="2804" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">what matched, what did not, and what was never checked</text>
 <rect x="26" y="2816" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2821" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
 <text x="50" y="2828" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
-<text x="150" y="2828" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-timeline</text>
-<text x="330" y="2828" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the exploration replayed step by step, records generalised away</text>
+<text x="150" y="2828" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-roundtrip</text>
+<text x="330" y="2828" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the emitted React read back and held against the structure it came from</text>
 <rect x="34" y="2845" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
 <text x="50" y="2852" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
-<text x="150" y="2852" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-transformer</text>
-<text x="330" y="2852" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a real transformer forward pass in pure JS, seeded and deterministic, its attention drawn</text>
+<text x="150" y="2852" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-timeline</text>
+<text x="330" y="2852" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the exploration replayed step by step, records generalised away</text>
 <rect x="26" y="2864" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2869" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
 <text x="50" y="2876" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
-<text x="150" y="2876" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-ui</text>
-<text x="330" y="2876" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the console: rack, wipe, endpoints, and the unverified list</text>
-<rect x="34" y="2893" width="7" height="7" rx="1.5" fill="#fb7185"/>
-<text x="50" y="2900" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="2900" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-authorization</text>
-<text x="330" y="2900" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">no source path runs without an attestation on disk</text>
+<text x="150" y="2876" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-transformer</text>
+<text x="330" y="2876" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a real transformer forward pass in pure JS, seeded and deterministic, its attention drawn</text>
+<rect x="34" y="2893" width="7" height="7" rx="1.5" fill="#c4b5fd"/>
+<text x="50" y="2900" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#c4b5fd" text-anchor="start">vis</text>
+<text x="150" y="2900" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">vis-ui</text>
+<text x="330" y="2900" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the console: rack, wipe, endpoints, and the unverified list</text>
 <rect x="26" y="2912" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2917" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="2924" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="2924" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-doctor</text>
-<text x="330" y="2924" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">what is installed, and what each gap turns off</text>
+<text x="150" y="2924" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-authorization</text>
+<text x="330" y="2924" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">no source path runs without an attestation on disk</text>
 <rect x="34" y="2941" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="2948" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="2948" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-history</text>
-<text x="330" y="2948" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the run over time, counts only, so trends have a table</text>
+<text x="150" y="2948" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-doctor</text>
+<text x="330" y="2948" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">what is installed, and what each gap turns off</text>
 <rect x="26" y="2960" width="988" height="24" fill="#111116"/>
 <rect x="34" y="2965" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="2972" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="2972" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-license</text>
-<text x="330" y="2972" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">fonts and icon sets whose licence does not travel</text>
+<text x="150" y="2972" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-history</text>
+<text x="330" y="2972" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the run over time, counts only, so trends have a table</text>
 <rect x="34" y="2989" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="2996" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="2996" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-policy</text>
-<text x="330" y="2996" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">secrets, live calls, billable calls, endpoints in components</text>
+<text x="150" y="2996" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-license</text>
+<text x="330" y="2996" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">fonts and icon sets whose licence does not travel</text>
 <rect x="26" y="3008" width="988" height="24" fill="#111116"/>
 <rect x="34" y="3013" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="3020" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="3020" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-scaffold</text>
-<text x="330" y="3020" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">portamp new-plugin, with the contract already in the header</text>
+<text x="150" y="3020" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-policy</text>
+<text x="330" y="3020" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">secrets, live calls, billable calls, endpoints in components</text>
 <rect x="34" y="3037" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="3044" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="3044" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-size</text>
-<text x="330" y="3044" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the port weighed by kind, with --max-kb the budget the run enforces</text>
+<text x="150" y="3044" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-scaffold</text>
+<text x="330" y="3044" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">portamp new-plugin, with the contract already in the header</text>
 <rect x="26" y="3056" width="988" height="24" fill="#111116"/>
 <rect x="34" y="3061" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="3068" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="3068" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-watch</text>
-<text x="330" y="3068" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">rerun the pipeline when the source tree changes</text>
+<text x="150" y="3068" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-size</text>
+<text x="330" y="3068" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the port weighed by kind, with --max-kb the budget the run enforces</text>
+<rect x="34" y="3085" width="7" height="7" rx="1.5" fill="#fb7185"/>
+<text x="50" y="3092" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
+<text x="150" y="3092" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-watch</text>
+<text x="330" y="3092" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">rerun the pipeline when the source tree changes</text>
 </svg>

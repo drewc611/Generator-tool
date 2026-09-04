@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and four features across fifty two phases. The statuses are
+Five hundred and eight features across fifty three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1858,15 +1858,29 @@ a mechanical rewrite of CommonJS to ES modules, performing the default require, 
 **504. The codemod refuses what it cannot prove, out loud** 🔨
 a dynamic `require`, an inline `require`, a multi line `module.exports` or a duplicate export is left verbatim and named in CODEMOD.md as a construct a person must lift by hand, because a wrong rewrite that looks right is exactly the failure this tool exists to avoid.
 
+## Phase 53: the port knows the cloud
+
+**505. output-aws turns the site model into an AWS deploy plan** 🔨
+the prerendered static export becomes an S3 bucket behind a CloudFront distribution, emitted as a Terraform configuration the user reviews and applies, so the port that already serves itself now knows how to host itself on somebody's account.
+
+**506. The redirect map is compiled to a CloudFront function** 🔨
+every retired address the run flattened becomes an entry in a frozen lookup table inside a viewer request function that answers a real 301, because a static host that forgets the old URLs breaks every link the port promised to keep.
+
+**507. The deploy plan takes no credentials, and says so** 🔨
+the deploy script uses the user's own `aws` CLI configuration and reads the bucket and distribution from the environment, portamp emits a plan and applies nothing and never touches a key, because taking a credential is exactly what the secret gate refuses.
+
+**508. output-aws names what a plan cannot know** 🔨
+DNS, certificates and the account's own specifics are named in the plan's README as the user's to fill in rather than guessed, because an infrastructure value invented to look complete is the failure this tool exists to avoid.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 457 |
+| new in this branch | 461 |
 | planned | 3 |
-| total | 504 |
+| total | 508 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
