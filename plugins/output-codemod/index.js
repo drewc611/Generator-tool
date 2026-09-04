@@ -24,6 +24,7 @@ const DEFAULT_IMPORT = /^(\s*)const\s+([A-Za-z_$][\w$]*)\s*=\s*require\(\s*(['"]
 const NAMED_IMPORT = /^(\s*)const\s*\{\s*([^{}]+?)\s*\}\s*=\s*require\(\s*(['"])([^'"]+)\3\s*\)\s*;?\s*$/;
 const NAMED_EXPORT = /^(\s*)(?:module\.)?exports\.([A-Za-z_$][\w$]*)\s*=\s*(.+?)\s*;?\s*$/;
 const DEFAULT_EXPORT = /^(\s*)module\.exports\s*=\s*(.+?)\s*;?\s*$/;
+const BARE_IDENT = /^[A-Za-z_$][\w$]*$/;
 
 // A right hand side is safe to lift as a default export only when it stands
 // whole on the line: a bare identifier, a balanced object literal, or a
@@ -59,13 +60,21 @@ export function transformCjsToEsm(source) {
     m = line.match(NAMED_EXPORT);
     if (m) {
       const name = m[2];
+      const rhs = m[3];
       if (exported.has(name)) {
         refusals.push({ kind: "duplicate-export", detail: name, line: at });
         return line;
       }
       exported.add(name);
       changes.push({ kind: "named-export", detail: name });
-      return `${m[1]}export const ${name} = ${m[3]};`;
+      // A right hand side that is a bare identifier is an existing binding, so
+      // it is re-exported rather than declared again: `export const x = x`
+      // would redeclare x and is a syntax error when x is already a require
+      // now lifted to an import. Only a genuine expression becomes a new const.
+      if (BARE_IDENT.test(rhs)) {
+        return rhs === name ? `${m[1]}export { ${name} };` : `${m[1]}export { ${rhs} as ${name} };`;
+      }
+      return `${m[1]}export const ${name} = ${rhs};`;
     }
 
     m = line.match(DEFAULT_EXPORT);

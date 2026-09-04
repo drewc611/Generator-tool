@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import { writeFileSync, rmSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
@@ -48,13 +51,40 @@ test("the codemod lifts the provable forms and refuses the dynamic require", () 
   );
   assert.match(code, /import total from "\.\/total\.js"/);
   assert.match(code, /import \{ format \} from "\.\/util\.js"/);
-  assert.match(code, /export const total = total/);
+  // A bare identifier export re-exports the existing binding; it must not be
+  // `export const total = total`, which would redeclare the imported `total`.
+  assert.match(code, /export \{ total \}/);
+  assert.doesNotMatch(code, /export const total = total/, "no redeclaration of an imported binding");
   assert.ok(changes.length >= 3, "the three provable forms are rewritten");
   assert.ok(
     refusals.some((r) => r.kind === "dynamic-require"),
     "the computed require is refused, not guessed"
   );
   assert.match(code, /require\(config\.name\)/, "the refused line is left verbatim");
+});
+
+test("a fully provable module transforms to source node parses as ES modules", () => {
+  const { code, refusals } = transformCjsToEsm(
+    `const total = require("./total.js");\n` +
+      `const { format } = require("./util.js");\n` +
+      `function subtotal(items) { return items.length; }\n` +
+      `exports.subtotal = subtotal;\n` +
+      `exports.total = total;\n` +
+      `module.exports.format = format;`
+  );
+  assert.equal(refusals.length, 0, "every form here is provable");
+  // A fresh unique directory, not a predictable name in the shared temp dir,
+  // so nothing else can read or race the file.
+  const dir = mkdtempSync(join(tmpdir(), "codemod-"));
+  const file = join(dir, "out.mjs");
+  writeFileSync(file, code);
+  try {
+    // node --check parses the file as ES modules (the .mjs extension) and exits
+    // non zero on any syntax error, so a redeclaration would fail this outright.
+    execFileSync(process.execPath, ["--check", file], { stdio: "pipe" });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("a run writes ATTENTION.md and codemod output only when asked", async () => {

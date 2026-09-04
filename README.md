@@ -10,9 +10,9 @@ about where the plugin classes come from. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 125 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 584 passing, 585 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer](media/test-run.png)
+![node --test running the portamp suite: 585 passing, 586 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 584
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 585
 assertions pass across 64 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing. CI reruns the same
 suite on Node 18, 20 and 22 and on Windows, and asserts the same screen written
@@ -36,7 +36,7 @@ writes components instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 125 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 585 tests, node --test, no framework
+npm test                     # 586 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -69,7 +69,7 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | --- | --- |
 | Core | **718 lines** across four files |
 | Every line of the tool | 26,921 lines of JavaScript |
-| Tests | 7,550 lines, 585 cases |
+| Tests | 7,566 lines, 586 cases |
 | Source on disk | src 44 KB, plugins 2.0 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
