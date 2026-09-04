@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
 
 import {
@@ -181,7 +182,8 @@ test("a folder of old pages becomes a React application architecture", async (t)
   assert.equal(pkg.scripts.serve, "node serve.js");
   assert.match(await readFile(join(out, "serve.js"), "utf8"), /501/, "the API surface refuses honestly instead of inventing");
 
-  const { matchPath, resolveRedirect } = await import(join(out, "src/app/match.js"));
+  // A file URL, because a bare Windows path reads as a protocol named c:.
+  const { matchPath, resolveRedirect } = await import(pathToFileURL(join(out, "src/app/match.js")).href);
   assert.ok(matchPath("/products/widget", "/products/widget?from=old#top"));
   assert.deepEqual(matchPath("/news/:page", "/news/2").params, { page: "2" });
   const map = Object.fromEntries(redirects.filter((r) => r.to.startsWith("/")).map((r) => [r.from, r.to]));
