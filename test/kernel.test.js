@@ -88,7 +88,7 @@ test("discovery loads every plugin that ships", async () => {
     "dsp-boundaries", "dsp-cognitive", "dsp-components", "dsp-cookies", "dsp-css", "dsp-dates",
     "dsp-deadcode", "dsp-diff", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-era", "dsp-flags", "dsp-fonts", "dsp-forms",
     "dsp-i18n", "dsp-images", "dsp-improve",
-    "dsp-ir", "dsp-modernize", "dsp-motion", "dsp-perf", "dsp-permissions", "dsp-print", "dsp-props", "dsp-routes", "dsp-seo", "dsp-state", "dsp-tokens",
+    "dsp-ir", "dsp-modernize", "dsp-motion", "dsp-perf", "dsp-permissions", "dsp-print", "dsp-props", "dsp-routes", "dsp-security", "dsp-seo", "dsp-state", "dsp-supplychain", "dsp-tokens",
     "dsp-uplift", "dsp-weight",
     "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-scaffold", "general-size", "general-watch",
     "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",

@@ -66,6 +66,8 @@ const DOES = {
   "dsp-motion": "the animations and transitions, and whether reduced-motion is ever honoured",
   "dsp-print": "the print stylesheet the port must not lose, carried as identity not reinvented",
   "dsp-cookies": "the cookies the client sets and whether it asked, values withheld",
+  "dsp-security": "the sharp edges: inline handlers, eval, innerHTML, tabnabbing, no CSP",
+  "dsp-supplychain": "the third party code the page loads, and whether it carries an integrity hash",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
   "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",

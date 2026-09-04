@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and seven in five classes, and the core has never learned
+Plugins that ship, a hundred and nine in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -88,7 +88,7 @@ dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
-         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts
+         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts  dsp-security  dsp-supplychain
 output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-html  output-storybook  output-tests  output-openapi
          output-msw  output-tailwind  output-design-tokens  output-forms
@@ -304,6 +304,18 @@ Mermaid flowchart in GRAPH.md, a solid arrow where one screen's template names
 another and a dotted one where an endpoint call was recorded from a screen's
 own file, both the run's own facts and neither invented. test/finale.test.js
 holds both.
+
+6.5 defends the port. dsp-security reads the sharp edges a legacy front end
+carries into its markup and scripts: inline event handlers a CSP would forbid,
+eval, a direct innerHTML or dangerouslySetInnerHTML write, document.write, a
+target=_blank link with no rel=noopener, and a full page shipping no Content
+Security Policy. A finding carries only its kind and a structural detail, an
+attribute name or an href, never the evaluated string or user data, the
+caution the secret gate keeps; each is proposed a fix and none performed.
+dsp-supplychain inventories every external `<script>` and stylesheet loaded
+from a host the team does not control, with whether it carries a Subresource
+Integrity hash, and flags the unpinned ones a swapped remote file could run
+under. test/defense.test.js holds both.
 
 ## What is honestly incomplete
 

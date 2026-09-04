@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and sixty eight features across forty three phases. The statuses are
+Four hundred and seventy two features across forty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-558 tests, on Node 18, 20 and 22, and on Windows in CI.
+561 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1693,14 +1693,35 @@ every screen, a solid arrow where one screen's template names another (the same 
 a composition edge is a tag that exists in a template and an endpoint edge is a call the reader attributed to a screen; a call it could not place is in the endpoint map, not invented onto an arrow, the same measure don't guess contract every plugin keeps.
 
 
+## Phase 44 · 6.5 · The port defended
+
+*A migration is a chance to close the holes the old markup carried, but only
+if someone can see them. dsp-security names the sharp edges in the source and
+dsp-supplychain names the third party code it trusts, both proposing the fix
+and performing none, because how an app handles events or trusts a dependency
+is a decision with consequences.*
+
+**469. dsp-security names the sharp edges** 🔨
+inline event handlers a CSP would forbid, eval, a direct innerHTML or dangerouslySetInnerHTML write, document.write, a target=_blank link with no rel=noopener, and a full page shipping no Content Security Policy, each read from the markup and the scripts.
+
+**470. Security findings withhold their values** 🔨
+a finding carries only its kind and a structural detail, an attribute name or an href, never the user data or the evaluated string, the same caution the secret gate keeps; each kind is proposed a concrete fix and none is performed.
+
+**471. dsp-supplychain inventories the third party code** 🔨
+every external `<script>` and stylesheet loaded from a host the team does not control, with its host and whether it carries a Subresource Integrity hash, de-duplicated across pages with the safe spelling winning.
+
+**472. A dependency without a hash is flagged** 🔨
+a CDN script with no integrity can be swapped under the app and run unchallenged, so SUPPLYCHAIN.md names each unpinned dependency and proposes self hosting or an integrity attribute with crossorigin; adopting either is a decision about how the port trusts its dependencies, made on purpose.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 421 |
+| new in this branch | 425 |
 | planned | 3 |
-| total | 468 |
+| total | 472 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
