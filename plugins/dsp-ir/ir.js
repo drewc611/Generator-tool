@@ -701,8 +701,10 @@ function buildElement(node, d, ctx, sw = null) {
     }
 
     if (name.toLowerCase() === "class") { staticClass = value ?? ""; continue; }
-    if (name.toLowerCase() === "style" && value) {
-      for (const e of styleEntries(value)) styles.push({ kind: "declaration", property: e.property, literal: e.value });
+    if (name.toLowerCase() === "style") {
+      // An empty style attribute is consumed too: passed through as a plain
+      // attribute it reaches react as a string prop, which throws.
+      if (value) for (const e of styleEntries(value)) styles.push({ kind: "declaration", property: e.property, literal: e.value });
       continue;
     }
     // Plain HTML had events before any framework did. An inline onclick is

@@ -13,7 +13,13 @@ const PROP = {
   autocomplete: "autoComplete", autofocus: "autoFocus", srcset: "srcSet",
   novalidate: "noValidate", enctype: "encType", usemap: "useMap", cellpadding: "cellPadding",
   cellspacing: "cellSpacing", frameborder: "frameBorder", contenteditable: "contentEditable",
-  spellcheck: "spellCheck", crossorigin: "crossOrigin",
+  spellcheck: "spellCheck", crossorigin: "crossOrigin", "accept-charset": "acceptCharset",
+  // SVG presentation attributes, which react spells camelCased.
+  "stroke-width": "strokeWidth", "stroke-linecap": "strokeLinecap", "stroke-linejoin": "strokeLinejoin",
+  "stroke-miterlimit": "strokeMiterlimit", "stroke-dasharray": "strokeDasharray",
+  "stroke-dashoffset": "strokeDashoffset", "stroke-opacity": "strokeOpacity",
+  "fill-rule": "fillRule", "clip-rule": "clipRule", "fill-opacity": "fillOpacity",
+  "stop-color": "stopColor", "stop-opacity": "stopOpacity",
 };
 
 const camel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());

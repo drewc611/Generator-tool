@@ -406,6 +406,7 @@ import { existsSync } from "node:fs";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { matchPath } from "./src/app/match.js";
+import { HEAD } from "./src/app/head.js";
 ${hasEndpoints ? 'import { endpoints } from "./src/api/endpoints.js";' : "const endpoints = {};"}
 
 /**
@@ -475,7 +476,12 @@ async function respond(req, res) {
       return res.end();
     }
 
-    const api = API.find((e) => e.method === (req.method ?? "GET") && matchPath(e.path, path));
+    // A path the app itself serves as a page goes to the app: a portal's
+    // filter form posts to the address its page lives at, and navigating
+    // there must never answer with the form's endpoint. Any other method,
+    // or any path that is not a route, still reaches the API surface.
+    const isPage = (req.method ?? "GET") === "GET" && HEAD[path.replace(/\\/+$/, "") || "/"] !== undefined;
+    const api = !isPage && API.find((e) => e.method === (req.method ?? "GET") && matchPath(e.path, path));
     if (api) {
       const name = (api.path.split("/").filter((s) => s && !s.startsWith(":")).at(-1) ?? "items").replace(/[^\\w-]/g, "-");
       if (api.method === "GET" && await file(res, ROOT, join("fixtures", name + ".json"), { "x-portamp-fixture": "invented, from the run's fixtures" })) return;
