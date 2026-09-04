@@ -90,3 +90,22 @@ account on every test run.
 - Emit skeletons with every state present. An empty state that renders nothing is
   the most common thing a port forgets.
 - Write no secrets, no customer data, and no URLs into components.
+
+## Your own plugins, beside the tool
+
+Discovery reads two directories the same way: the tool's builtin `plugins/`
+and a `plugins/` directory in the working directory the run starts from. A
+project can carry its own plugins under version control with no registration
+file, no configuration and no fork of the tool: a directory with an
+`index.js` that exports the contract above loads on the next run, exactly
+like a builtin. The core never learns the difference, which is the point.
+
+Two rules keep that honest. A project plugin cannot replace a builtin: a
+duplicate name is refused rather than silently winning. And every rule in
+this document binds a project plugin the same way, policy object included;
+where the plugins came from was never a policy boundary.
+
+`portamp new-plugin <class>-<subject>` scaffolds the whole kit in the
+working directory: the plugin with the contract in its header, a test, docs
+in the plugin's own README, and a fixture directory for the test to run
+against.

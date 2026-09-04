@@ -107,12 +107,34 @@ export default {
 
     on("emit", async (ctx) => {
       if (!ctx.routes) return;
-      await ctx.write("ROUTES.md", render(ctx.routes, ctx.screens.length));
+      // Guards are carried as metadata, never reimplemented: the shell gets
+      // the names and the routes they stand on, and a person wires each one
+      // to the port's own auth, because what a guard checked is a product
+      // decision the source only names.
+      const guarded = (ctx.routes.table ?? []).filter((r) => r.guards?.length);
+      if (guarded.length) {
+        await ctx.write("src/app/route-guards.js", GUARDS_JS(guarded));
+        ctx.unverified(
+          `${guarded.length} route(s) declare guards (${[...new Set(guarded.flatMap((r) => r.guards.flatMap((g) => g.names)))].join(", ")}). ` +
+          "They are carried as metadata in src/app/route-guards.js; what each one checks is not reinvented, wire them to the port's auth by hand."
+        );
+      }
+      await ctx.write("ROUTES.md", render(ctx.routes, ctx.screens.length, guarded));
     });
   },
 };
 
-function render({ table, hashRouting }, screenCount) {
+const GUARDS_JS = (rows) => `/**
+ * The guards the legacy route table declared, carried as metadata. Nothing
+ * here reimplements what a guard checked; the shell honors the names and a
+ * person wires each one to the port's own auth.
+ */
+export const ROUTE_GUARDS = {
+${rows.map((r) => `  ${JSON.stringify(r.fullPath)}: ${JSON.stringify(r.guards)},`).join("\n")}
+};
+`;
+
+function render({ table, hashRouting }, screenCount, guarded = []) {
   const rows = table.map((r) => {
     const target = r.redirectTo != null
       ? `redirect → \`${r.redirectTo}\``
@@ -143,6 +165,14 @@ The scripts change \`location.hash\` themselves or listen for \`hashchange\`.
 Those routes are made of code, not declarations, so this file cannot list them;
 walk the handlers, or drive the app with input-explore and read what the address
 bar does.
+` : ""}${guarded.length ? `
+## Guards
+
+Carried as metadata in \`src/app/route-guards.js\`, never reimplemented: the
+source names what stands in front of each route, and what the guard checks
+is a product decision this file only reports.
+
+${guarded.map((r) => `- \`${r.fullPath}\` behind ${r.guards.map((g) => `${g.kind}: ${g.names.join(", ") || "(inline)"}`).join("; ")}`).join("\n")}
 ` : ""}
 Declared routes: ${table.length}. Screens in this run: ${screenCount}. The
 mismatches, if any, are in PORT_NOTES.md, because each one is a decision and

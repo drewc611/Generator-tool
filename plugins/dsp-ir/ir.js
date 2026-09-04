@@ -264,8 +264,12 @@ export function buildIr(html, { dialect } = {}) {
   const locals = new Set();
   const lists = new Set();
 
+  // The line the converter is currently standing on, so a note can say where
+  // it came from. The parser stamped every node; convert() moves the cursor.
+  const where = { line: null };
   const note = (text) => {
-    if (!notes.includes(text)) notes.push(text);
+    const said = where.line ? `line ${where.line}: ${text}` : text;
+    if (!notes.includes(said)) notes.push(said);
   };
 
   const expr = (raw) => {
@@ -307,7 +311,7 @@ export function buildIr(html, { dialect } = {}) {
   // A named <ng-template #ref> is content waiting for a reference. Harvested
   // before conversion so an else branch can resolve to it wherever it sits.
   const templates = harvestTemplates(tree);
-  const clean = convertList(tree, d, { expr, note, models, locals, lists, templates }, null);
+  const clean = convertList(tree, d, { expr, note, models, locals, lists, templates, where }, null);
   const root = clean.length === 1 ? clean[0] : { kind: "fragment", children: clean };
 
   const modelRoots = new Set([...models].map((m) => m.split(".")[0]));
@@ -405,6 +409,7 @@ function convertList(nodes, d, ctx, sw) {
 }
 
 function convert(node, d, ctx) {
+  if (node.line && ctx.where) ctx.where.line = node.line;
   if (node.type === "comment") return { kind: "comment", text: node.text };
   if (node.type === "text") {
     const parts = interpolate(node.text, ctx.expr);
@@ -525,7 +530,7 @@ function convert(node, d, ctx) {
   // repeated row tests each row. The condition moves inside the loop, where
   // its row exists; outside it would reference a name nothing defines.
   if (structural.when !== undefined && structural.each !== undefined && d.name === "angularjs" && out.kind === "each") {
-    out.children = [{ kind: "when", test: ctx.expr(String(structural.when)), children: out.children }];
+    out.children = [{ kind: "when", test: ctx.expr(String(structural.when)), line: node.line ?? null, children: out.children }];
     return out;
   }
 
@@ -549,7 +554,7 @@ function convert(node, d, ctx) {
     if (thenRef && !thenBody) {
       ctx.note(`<${node.tag}> renders \`then ${thenRef[1]}\`, and no <ng-template #${thenRef[1]}> is in this markup. The element's own content is used.`);
     }
-    out = { kind: "when", test, children: thenBody ?? [out] };
+    out = { kind: "when", test, line: node.line ?? null, children: thenBody ?? [out] };
 
     if (elseRef) {
       const elseBody = resolve(elseRef[1]);
@@ -786,6 +791,7 @@ function buildElement(node, d, ctx, sw = null) {
     tag: TRANSPARENT.has(tag) ? null : tagOf(node.tag),
     tagExpression,
     void: VOID.has(tag),
+    line: node.line ?? null,
     attrs, classes, styles, events, model, modelKind,
     modelModifiers,
     children: textParts ? [{ kind: "text", parts: textParts }]

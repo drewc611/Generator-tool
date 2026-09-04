@@ -143,6 +143,7 @@ function attributes(node, ctx) {
 
 function print(node, depth, ctx) {
   if (!node) return "";
+  if (node.line && ctx.where) ctx.where.line = node.line;
   const indent = pad(depth);
 
   switch (node.kind) {
@@ -253,7 +254,18 @@ function withKey(inner, key) {
 export function translate(html, { indent = 3, dialect, components = null } = {}) {
   const ir = buildIr(html, { dialect });
   const notes = [...ir.notes];
-  const ctx = { components, used: new Set(), note: (t) => { if (!notes.includes(t)) notes.push(t); } };
+  // The grammar stamped the nodes; the printer keeps a cursor so its own
+  // notes say the line too, the same spelling the reader's notes use.
+  const where = { line: null };
+  const ctx = {
+    components,
+    used: new Set(),
+    where,
+    note: (t) => {
+      const said = where.line ? `line ${where.line}: ${t}` : t;
+      if (!notes.includes(said)) notes.push(said);
+    },
+  };
   const jsx = print(ir.root, indent, ctx) || `${pad(indent)}<></>`;
   return { jsx, notes, models: ir.models, reads: ir.reads, collections: ir.collections, ir, components: [...ctx.used] };
 }

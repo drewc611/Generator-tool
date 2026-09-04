@@ -41,6 +41,10 @@ function attributes(node) {
       const option = own?.kind === "static" ? jsString(own.value) : own?.kind === "bound" ? `(${own.expression})` : null;
       if (option) out.push(`.checked=\${this.${leaf} === ${option}}`, `@change=\${() => { this.${leaf} = ${option}; }}`);
       else out.push(`@change=\${(e) => { this.${leaf} = e.target.value; }}`);
+    } else if (node.modelKind === "select-multiple") {
+      // A multiple select holds an array; the selected options are read from
+      // the event, and each option below says whether it is in the model.
+      out.push(`@change=\${(e) => { this.${leaf} = [...e.target.selectedOptions].map((o) => o.value); }}`);
     } else {
       out.push(`.value=\${this.${leaf}}`, `@input=\${(e) => { this.${leaf} = e.target.value; }}`);
     }
@@ -55,7 +59,7 @@ function attributes(node) {
   return out;
 }
 
-function print(node, depth) {
+function print(node, depth, scope = null) {
   if (!node) return "";
   const indent = pad(depth);
   switch (node.kind) {
@@ -66,25 +70,34 @@ function print(node, depth) {
     }
     case "slot": {
       const name = node.name ? ` name="${node.name.replace(/"/g, "&quot;")}"` : "";
-      const fallback = (node.children ?? []).map((c) => print(c, depth + 1)).filter(Boolean);
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 1, scope)).filter(Boolean);
       if (!fallback.length) return `${indent}<slot${name}></slot>`;
       return [`${indent}<slot${name}>`, ...fallback, `${indent}</slot>`].join("\n");
     }
     case "html": return `${indent}\${unsafeHTML(${node.expression})}`;
-    case "fragment": return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
+    case "fragment": return node.children.map((c) => print(c, depth, scope)).filter(Boolean).join("\n");
     case "when": {
-      const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
+      const inner = node.children.map((c) => print(c, depth + 1, scope)).filter(Boolean).join("\n");
       return `${indent}\${(${node.test}) ? html\`\n${inner}\n${indent}\` : nothing}`;
     }
     case "each": {
-      const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
+      const inner = node.children.map((c) => print(c, depth + 1, scope)).filter(Boolean).join("\n");
       return `${indent}\${repeat(${node.list} ?? [], (${node.item}) => ${node.key}, (${node.item}${node.index ? `, ${node.index}` : ""}) => html\`\n${inner}\n${indent}\`)}`;
     }
     case "element": {
-      if (!node.tag) return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
+      if (!node.tag) return node.children.map((c) => print(c, depth, scope)).filter(Boolean).join("\n");
       const props = attributes(node);
+      // Inside a multiple select, an option with a literal value says
+      // whether it is in the model, so the element renders its state.
+      if (scope?.selectModel && node.tag === "option") {
+        const value = node.attrs.find((a) => a.name.toLowerCase() === "value" && a.kind === "static");
+        if (value) props.push(`?selected=\${(this.${scope.selectModel} ?? []).includes(${jsString(value.value)})}`);
+      }
+      const inner = node.modelKind === "select-multiple" && node.model
+        ? { selectModel: node.model.split(".").pop().replace(/[^\w$]/g, "") }
+        : scope;
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = node.children.map((c) => print(c, depth + 1, inner)).filter(Boolean);
       if (!children.length) return `${indent}${open}></${node.tag}>`;
       return [`${indent}${open}>`, ...children, `${indent}</${node.tag}>`].join("\n");
     }

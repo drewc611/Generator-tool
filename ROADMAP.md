@@ -7,7 +7,7 @@ is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-483 tests, on Node 18, 20 and 22, and on Windows in CI.
+504 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1150,35 +1150,35 @@ one command that belongs to a person; docs/PUBLISHING.md waits beside it.
 **326. Real labelled apps in the corpus** ▢
 the archetype numbers mean more when the labels come from apps somebody shipped.
 
-**327. A grammar for the template dialects** ▢
-structural scanners with positions, so every note can say the line it came from.
+**327. A grammar for the template dialects** 🔨
+the parser stamps every node with its line, the converter keeps a cursor, and the byte identical gates never noticed: positions are carried, not printed.
 
-**328. Source positions in every note** ▢
-file and line on unverified items, once the grammar carries them.
+**328. Source positions in every note** 🔨
+reader and printer notes alike begin with the line they came from; the file was already named, so a note now says exactly where.
 
 **329. The IR round trips** 🔨
 emit angular from the IR, read it back, assert the same IR; the strongest honesty test the middle can have.
 
-**330. Slots across all nine targets** ▢
-named slots with fallbacks proven byte identical everywhere, not just where they land today.
+**330. Slots across all nine targets** 🔨
+a named slot with its fallback, spelled in Angular and in Vue, prints byte identical in every target; the one with no slot mechanism names the gap instead of inventing one.
 
-**331. Two way binding in lit** ▢
-the lit target catches up to checkbox, radio and multiple select.
+**331. Two way binding in lit** 🔨
+the lit target catches up: a multiple select reads its selected options and every literal option renders its membership in the model.
 
 **332. A store reader** ▢
 Vuex and NgRx shapes read as state evidence, mapped to the state report.
 
-**333. WebSocket calls in the API map** ▢
-subscriptions read from source the way requests are, described and never invented.
+**333. WebSocket calls in the API map** 🔨
+subscriptions read from source the way requests are: raw sockets, the rxjs wrapper and socket.io, described in API_CHANNELS.md with nothing about the messages invented.
 
-**334. GraphQL operations read** ▢
-queries in source become typed calls in the map; the schema stays unclaimed without evidence.
+**334. GraphQL operations read** 🔨
+queries and mutations in source become named operations in src/api/operations.js, with the endpoint carried only when the source names it; the schema stays unclaimed.
 
-**335. Auth flows described** ▢
-login, refresh and logout as a sequence diagram from the interceptors and calls that prove it.
+**335. Auth flows described** 🔨
+AUTH_FLOW.mmd draws only arrows the source proves — the token read, the header it rides in, the login call, the 401 reaction — each with the file that proves it, and no evidence means no diagram.
 
-**336. Route guards carried** ▢
-canActivate and friends read as route metadata the shell can honor, without inventing the auth they check.
+**336. Route guards carried** 🔨
+canActivate and friends, and Vue's beforeEnter, read as route metadata in src/app/route-guards.js; what each guard checks is never reinvented, and the note says to wire them by hand.
 
 **337. Recorded interactions replayed** ▢
 input-record's sessions replayed against the port, drift reported per step.
@@ -1192,11 +1192,11 @@ structure diff beside the pixel wipe, because a moved div explains a changed pix
 **340. The console compares runs** ▢
 two run.json files side by side: what changed, what got worse, which notes closed.
 
-**341. A plugin author kit** ▢
-a scaffolded plugin with its test, docs and a fixture, one command, no framework knowledge required.
+**341. A plugin author kit** 🔨
+new-plugin scaffolds the whole kit: the plugin with the contract in its header, its test, docs in its own README, and a fixture directory the test runs against.
 
-**342. Third party plugin discovery** ▢
-a project directory of plugins loads the way builtin ones do, documented with the same contract.
+**342. Third party plugin discovery** 🔨
+a project's plugins/ directory loads the way builtin ones do, documented in PLUGIN-API.md; a name clash never replaces a builtin and the refusal is said, not silent.
 
 **343. Windows paths in every plugin** ▢
 the suite already runs on Windows in CI; an audit closes the file URL and separator gaps it does not cover.
@@ -1207,14 +1207,14 @@ a policy stop prints what evidence would clear it, not just what rule fired.
 **345. Deterministic runs asserted** 🔨
 two runs over the same tree byte identical, gated in CI, temp paths and timestamps excepted.
 
-**346. The improve report ranks by cost** ▢
-findings ordered by the size of the fix, measured from the emitted code that would change.
+**346. The improve report ranks by cost** 🔨
+findings ordered by the size of the emitted component each fix would touch, measured from the file on disk; a screen the run never emitted is listed last, unranked.
 
 **347. Tokens from more than one recording** ▢
 several sessions merged with agreement measured, disagreement reported as a range.
 
-**348. The behavior report names races** ▢
-debounce and cancellation patterns in the legacy code called out where the port must keep them.
+**348. The behavior report names races** 🔨
+debounce, cancellation and teardown patterns named where they stand in RACES.md: each one is a bug somebody already fought, and the port keeps the pattern or reintroduces the bug.
 
 **349. A migration ledger** 🔨
 every decision the run made, machine readable, so a second run can be held to the first one's choices.
@@ -1437,13 +1437,16 @@ whether a port ships, from the evidence it wrote about itself: the files in orde
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 343 |
-| planned | 24 |
+| new in this branch | 355 |
+| planned | 12 |
 | total | 411 |
 
-The twenty four open are open for stated reasons, not for lack of time:
-phases 27 and 28 name what each one waits on, and npm publish stays the one
+The twelve open are open for stated reasons, not for lack of time: phases
+27 and 28 name what each one waits on, and npm publish stays the one
 command that belongs to a person, with docs/PUBLISHING.md waiting beside it.
+3.0 closed twelve more in one batch — the grammar with its positions, slots
+everywhere, lit's models, channels, GraphQL, auth flows, guards, races, the
+ranked improve report, and the author kit with project plugin discovery.
 Seventeen that were open closed in this branch: focus order once the probe
 recorded positions, the calibration corpus at v0, the compare pane preview,
 the Vue reader once structural scanning matched the regexes it retired byte

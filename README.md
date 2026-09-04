@@ -28,7 +28,7 @@ writes components instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 86 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 494 tests, node --test, no framework
+npm test                     # 504 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -60,8 +60,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 19,886 lines of JavaScript |
-| Tests | 5,743 lines, 494 cases |
+| Every line of the tool | 20,210 lines of JavaScript |
+| Tests | 5,954 lines, 504 cases |
 | Source on disk | src 44 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -805,8 +805,8 @@ The plugin classes are the point. Everything below is a directory and an
 **Still open**
 
 The whole picture is [ROADMAP.md](ROADMAP.md): four hundred and eleven features in
-thirty two phases, forty four shipped, three hundred and forty three new in the
-current branch, twenty four planned, every status honest. Each open one names
+thirty two phases, forty four shipped, three hundred and fifty five new in the
+current branch, twelve planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
 portamp is a proprietary product. All rights reserved — see [LICENSE](LICENSE).

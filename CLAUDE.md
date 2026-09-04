@@ -154,6 +154,19 @@ file by name, counts glyphs it cannot map rather than faking them, and with
 copied in as the document of record. DOCS.md says what was read; a tech data
 sheet lands as a routed React page the port's own search engine can find.
 
+3.0 is the exact read: the grammar stamps every node with its line and both
+the reader's and the printers' notes begin with where they came from; named
+slots with fallbacks hold byte identical across the targets from both
+dialects; lit's multiple select holds an array honestly; WebSocket channels
+and GraphQL operations are read from source into the API surface with the
+schema unclaimed; AUTH_FLOW.mmd draws only arrows the source proves; route
+guards land as metadata in src/app/route-guards.js and are never
+reinvented; RACES.md names the debounces and cancellations the port must
+keep; the improve report ranks findings by the emitted lines each fix
+would touch; and new-plugin scaffolds the whole author kit, with a
+project's own plugins/ directory loading beside the builtins and a name
+clash refused out loud. test/exact.test.js holds all of it.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.

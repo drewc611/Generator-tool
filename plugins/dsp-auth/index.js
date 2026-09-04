@@ -43,12 +43,19 @@ export default {
       const files = ctx.sources.files.filter((f) => /\.(js|ts|jsx|tsx|vue)$/i.test(f.rel) && !/\.min\.|\.spec\.|\.test\./.test(f.rel));
       const schemes = [];
       const storage = [];
+      const relogin = [];
       for (const file of files) {
         const text = await readFile(file.path, "utf8").catch(() => "");
         if (!text) continue;
         const result = readAuth(text, file.rel);
         schemes.push(...result.found);
         storage.push(...result.storage);
+        // A file that names 401 and either retries or navigates is the app
+        // reacting to an expired session; evidence for the flow, not proof
+        // of a refresh protocol.
+        if (/\b401\b/.test(text) && /(retry|refresh|logout|login|navigate)/i.test(text)) {
+          relogin.push(file.rel);
+        }
       }
       if (!schemes.length && !storage.length) {
         if (ctx.api.interceptors.length) {
@@ -58,7 +65,7 @@ export default {
         }
         return log.debug("no auth signs");
       }
-      ctx.auth = { schemes, storage, interceptors: ctx.api.interceptors };
+      ctx.auth = { schemes, storage, relogin, interceptors: ctx.api.interceptors };
       log.info(`${[...new Set(schemes.map((s) => s.kind))].join(", ") || "no scheme"}${storage.length ? `, token storage in ${[...new Set(storage.map((s) => s.where))].join(" and ")}` : ""}`);
     });
 
@@ -98,7 +105,39 @@ export default {
           ""
         );
       }
+      // The flow as a sequence, drawn only from what the source proved:
+      // every arrow names its evidence, and an arrow with none is not drawn.
+      const flow = authFlow(ctx.auth, ctx.api.calls);
+      if (flow) {
+        await ctx.write("AUTH_FLOW.mmd", flow);
+        lines.push("## The flow, as evidenced", "", "```mermaid", flow.trim(), "```", "", "An arrow with no evidence is not drawn; a real login flow may hold more steps than the source shows.", "");
+      }
       await ctx.write("AUTH.md", lines.join("\n"));
     });
   },
 };
+
+/** A sequence diagram where every arrow carries the file that proves it. */
+export function authFlow({ schemes, storage, relogin, interceptors }, calls = []) {
+  const arrows = [];
+  const store = storage[0];
+  if (store) {
+    arrows.push(`  App->>Store: read${store.key ? ` \`${store.key}\`` : " the token"} from ${store.where.split(" ")[0]} (${store.file})`);
+  }
+  const scheme = schemes.find((s) => /bearer|basic|api-key/.test(s.kind));
+  if (scheme) {
+    const via = interceptors.length ? ` via ${interceptors[0].className ?? interceptors[0].file}` : "";
+    arrows.push(`  App->>API: request carrying ${scheme.means}${via} (${scheme.file})`);
+  }
+  const cookie = schemes.find((s) => s.kind === "cookie");
+  if (cookie) arrows.push(`  App->>API: request with credentials included (${cookie.file})`);
+  const csrf = schemes.find((s) => s.kind === "csrf");
+  if (csrf) arrows.push(`  App->>API: CSRF token header beside the session (${csrf.file})`);
+  const login = calls.find((c) => /log-?in|auth|session|token/i.test(c.path ?? "") && c.method === "POST");
+  if (login) arrows.push(`  App->>API: ${login.method} ${login.path} (${login.file})`);
+  for (const file of relogin.slice(0, 1)) {
+    arrows.push(`  API-->>App: 401, and the app reacts (${file})`);
+  }
+  if (!arrows.length) return null;
+  return `sequenceDiagram\n  participant App as the port\n${storage.length ? "  participant Store as token storage\n" : ""}  participant API as the service\n${arrows.join("\n")}\n`;
+}
