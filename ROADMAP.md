@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Four hundred and eighty eight features across forty eight phases. The statuses are
+Four hundred and ninety two features across forty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1796,14 +1796,35 @@ each input, select and textarea that has no `<label for>`, no aria-label or aria
 LABELS.md lists each control by file and line so a person can add the label, the aria-label or the wrapping element, because which name a control should carry is copy a screen wrote for sighted users and a tool cannot invent it.
 
 
+## Phase 49 · 8.0 · The port's first paint
+
+*A browser stops building the page while it fetches and runs a blocking
+resource, and a legacy page carries style and script inline where it can be
+neither themed nor allowed by a strict policy. dsp-render-blocking and
+dsp-inline name both, because a port is the moment to unblock the paint and
+lift the inline out.*
+
+**489. dsp-render-blocking finds what delays first paint** 🔨
+a synchronous script in the head with neither async nor defer, a stylesheet the head blocks on, and a CSS `@import` that serializes the fetch, each read from the markup with its source and line and the parser it stalls.
+
+**490. Each blocker is proposed the unblock** 🔨
+RENDER.md names a head script that should take async or defer or move to the end of the body, a stylesheet that could be inlined critical or loaded without blocking, and an @import that should be a link or a bundler concat, because the fix is known and the port is the moment to make it.
+
+**491. dsp-inline inventories the inline style and script** 🔨
+the elements carrying a `style` attribute, counted per tag, the `<style>` blocks, and the inline `<script>` blocks with no src, each read as a count and never a captured body or value, because an inline style cannot be themed and inline style and script are what a strict CSP forbids.
+
+**492. Lifting the inline out is a theming and a security win** 🔨
+INLINE.md names the totals per page so the port can move a style attribute into the design tokens it already emits and an inline block into a stylesheet or a module, closing a theming gap and a Content Security Policy gap at once.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 441 |
+| new in this branch | 445 |
 | planned | 3 |
-| total | 488 |
+| total | 492 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

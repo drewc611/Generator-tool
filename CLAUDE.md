@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and seventeen in five classes, and the core has never learned
+Plugins that ship, a hundred and nineteen in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -88,7 +88,7 @@ dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-flags  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
          dsp-diff  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
-         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts  dsp-security  dsp-supplychain  dsp-console  dsp-globals  dsp-landmarks  dsp-labels
+         dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts  dsp-security  dsp-supplychain  dsp-console  dsp-globals  dsp-landmarks  dsp-labels  dsp-render-blocking  dsp-inline
 output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-html  output-storybook  output-tests  output-openapi
          output-msw  output-tailwind  output-design-tokens  output-forms
@@ -363,6 +363,17 @@ wrapping label, because a control announced only as edit text is one nobody
 relying on it can fill, and a placeholder disappears on focus and is not a
 label. Both report by file and line rather than rename, because a landmark and
 a label are copy a person adds on purpose. test/accessible.test.js holds both.
+
+8.0 reads what stands between the port and its first paint. dsp-render-blocking
+finds a synchronous script in the head with neither async nor defer, a
+stylesheet the head blocks on, and a CSS `@import` that serializes the fetch,
+each with the parser it stalls and the unblock it should take. dsp-inline
+counts the elements carrying a `style` attribute (per tag), the `<style>`
+blocks, and the inline `<script>` blocks with no src, never a captured body or
+value, because an inline style cannot be themed with the design tokens the port
+emits and inline style and script are exactly what a strict Content Security
+Policy forbids, so lifting them out closes a theming gap and a security gap at
+once. test/paint.test.js holds both.
 
 ## What is honestly incomplete
 

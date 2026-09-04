@@ -552,6 +552,14 @@ jobs:
           grep -qi "placeholder" a11-out/LABELS.md || { echo "the placeholder note is missing"; exit 1; }
           rm -rf a11-out
 
+      - name: what blocks first paint and what is inline are named
+        run: |
+          node src/cli.js run --src test/fixtures/paint-site --out paint-out
+          grep -q "analytics.js" paint-out/RENDER.md || { echo "a blocking script was missed"; exit 1; }
+          grep -qi "import" paint-out/RENDER.md || { echo "the css import was missed"; exit 1; }
+          grep -qiE "CSP|token|theme" paint-out/INLINE.md || { echo "the inline framing is missing"; exit 1; }
+          rm -rf paint-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -563,6 +571,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "488" ]; then
-            echo "ROADMAP.md holds $count entries and claims 488"; exit 1
+          if [ "$count" != "492" ]; then
+            echo "ROADMAP.md holds $count entries and claims 492"; exit 1
           fi

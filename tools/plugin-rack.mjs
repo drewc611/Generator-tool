@@ -72,6 +72,8 @@ const DOES = {
   "dsp-globals": "what the app puts on the global object, which a module port has to contain",
   "dsp-landmarks": "the ARIA landmark structure of each page, the regions a screen reader jumps between",
   "dsp-labels": "form controls a page left with no accessible name, which a placeholder does not give",
+  "dsp-render-blocking": "what delays first paint: sync head scripts, blocking stylesheets, css @import",
+  "dsp-inline": "the inline style and script a port should extract, for theming and for a strict CSP",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
   "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",
