@@ -7,7 +7,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 109 plugins, and the literal output of
+lines of core, no runtime dependencies, 111 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 109 plugin(s)
+node src/cli.js plugins      # 111 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 559 tests, node --test, no framework
+npm test                     # 562 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -60,8 +60,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 23,613 lines of JavaScript |
-| Tests | 7,031 lines, 559 cases |
+| Every line of the tool | 23,883 lines of JavaScript |
+| Tests | 7,093 lines, 562 cases |
 | Source on disk | src 44 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 109 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 111 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 

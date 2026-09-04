@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Four hundred and seventy two features across forty four phases. The statuses are
+Four hundred and seventy six features across forty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-561 tests, on Node 18, 20 and 22, and on Windows in CI.
+564 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1714,14 +1714,35 @@ every external `<script>` and stylesheet loaded from a host the team does not co
 a CDN script with no integrity can be swapped under the app and run unchallenged, so SUPPLYCHAIN.md names each unpinned dependency and proposes self hosting or an integrity attribute with crossorigin; adopting either is a decision about how the port trusts its dependencies, made on purpose.
 
 
+## Phase 45 · 7.0 · The port's home
+
+*The site engine already writes a full application and a zero dependency
+serve.js beside it. 7.0 gives that port somewhere to run: a container that
+wraps the server, and an nginx block that serves the static export with the
+same 301s the app enforces. Both compose what the run produced and invent no
+build the port does not have.*
+
+**473. output-dockerfile containerizes the port** 🔨
+a Dockerfile that wraps the zero dependency serve.js, with no npm install because the port has no runtime dependencies and no build, an EXPOSE and a PORT env matching serve.js's default, and a HEALTHCHECK hitting the /healthz the server already answers; a .dockerignore, a compose file and a deploy README ride beside it.
+
+**474. The image serves exactly what serve.js serves** 🔨
+the container runs `node serve.js`, so what it answers is what `npm run serve` answers, redirects and all; the plugin invents no bundler or framework the port does not use, and the Dockerfile says where the absent npm install would have gone.
+
+**475. output-nginx serves the export with its 301s** 🔨
+an nginx server block that serves the prerendered static export, answers every retired address with a `return 301` from the flattened redirect map, and falls a client route through to index.html, the same map every other host target carries and no redirect invented.
+
+**476. The deployment targets are gated and honest** 🔨
+each writes nothing without its flag and nothing without a site model, and each names in a README what it needs (a folder of pages through --site, the static export through --export) rather than producing a config that only looks deployable.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 425 |
+| new in this branch | 429 |
 | planned | 3 |
-| total | 472 |
+| total | 476 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

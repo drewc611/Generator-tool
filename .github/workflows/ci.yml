@@ -513,6 +513,15 @@ jobs:
           grep -qi "integrity" def-out/SUPPLYCHAIN.md || { echo "SRI was not reported"; exit 1; }
           rm -rf def-out
 
+      - name: the port deploys as a container and behind nginx, redirects carried
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out home-out --site true --dockerfile true --nginx true
+          grep -q "serve.js" home-out/Dockerfile || { echo "the Dockerfile does not run serve.js"; exit 1; }
+          if grep -qE "^\s*RUN\s+npm\s+(ci|install)" home-out/Dockerfile; then echo "the image invented an install the port does not need"; exit 1; fi
+          test "$(grep -c 'return 301' home-out/nginx/nginx.conf)" -ge 1 || { echo "nginx lost the redirect map"; exit 1; }
+          grep -q "try_files" home-out/nginx/nginx.conf || { echo "nginx has no SPA fallback"; exit 1; }
+          rm -rf home-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -524,6 +533,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "472" ]; then
-            echo "ROADMAP.md holds $count entries and claims 472"; exit 1
+          if [ "$count" != "476" ]; then
+            echo "ROADMAP.md holds $count entries and claims 476"; exit 1
           fi

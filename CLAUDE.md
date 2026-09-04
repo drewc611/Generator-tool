@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and nine in five classes, and the core has never learned
+Plugins that ship, a hundred and eleven in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -95,7 +95,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-i18n  output-adr  output-migration  output-preact  output-solid
          output-alpine  output-cem  output-postman  output-curl
          output-fixtures  output-readme  output-ci  output-site
-         output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit
+         output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit  output-dockerfile  output-nginx
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph
 general  general-policy  general-authorization  general-license  general-size
          general-doctor  general-scaffold  general-watch  general-history
@@ -316,6 +316,18 @@ dsp-supplychain inventories every external `<script>` and stylesheet loaded
 from a host the team does not control, with whether it carries a Subresource
 Integrity hash, and flags the unpinned ones a swapped remote file could run
 under. test/defense.test.js holds both.
+
+7.0 gives the port somewhere to run. The site engine already writes a full
+application and a zero dependency serve.js beside it; output-dockerfile wraps
+that server in an image with no npm install (the port has no dependencies and
+no build), an EXPOSE and a PORT env matching serve.js, and a HEALTHCHECK
+hitting the /healthz the server answers, so the container serves exactly what
+`npm run serve` serves. output-nginx writes a server block that serves the
+prerendered static export, answers every retired address with a return 301
+from the flattened redirect map, and falls a client route through to
+index.html. Both are gated by their flag and a site model, invent no build
+the port does not have, and carry the same redirect map every other host
+target does. test/home.test.js holds both.
 
 ## What is honestly incomplete
 
