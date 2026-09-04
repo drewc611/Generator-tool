@@ -679,6 +679,19 @@ jobs:
           if [ -f nomh-out/REVERSE_MULTIHEAD.md ]; then echo "the multi head task ran unrequested"; exit 1; fi
           rm -rf nomh-out
 
+      - name: the cloud architect refuses to reach the network without live authorization
+        run: |
+          # A billable live call to an external model must be refused by default,
+          # never made silently. --architect without --allow-live must fail the run.
+          if node src/cli.js run --src test/fixtures/codemod-site --out arch-out --architect true; then
+            echo "general-architect reached the network without --allow-live"; exit 1
+          fi
+          test -f arch-out/ARCHITECTURE.md && { echo "it wrote a proposal it was not authorized to fetch"; exit 1; }
+          rm -rf arch-out
+          node src/cli.js run --src test/fixtures/codemod-site --out noarch-out
+          test -f noarch-out/ARCHITECTURE.md && { echo "the architect ran unrequested"; exit 1; }
+          rm -rf noarch-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -690,6 +703,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "533" ]; then
-            echo "ROADMAP.md holds $count entries and claims 533"; exit 1
+          if [ "$count" != "537" ]; then
+            echo "ROADMAP.md holds $count entries and claims 537"; exit 1
           fi

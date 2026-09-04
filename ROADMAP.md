@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and thirty three features across fifty nine phases. The statuses are
+Five hundred and thirty seven features across sixty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1959,15 +1959,29 @@ reversal is trained at one, two, four and eight heads on the same split and grad
 **533. The growth costs the existing results nothing** 🔨
 every single head export trains to the same number it did before, the seed draw is undisturbed because the output projection was already in the stream, and two multi head trainings are byte identical, so the new capacity is added without moving anything that was already proven.
 
+## Phase 60: a real model advises on the cloud
+
+**534. general-architect asks a genuine LLM to design the cloud, not the toy transformer** 🔨
+portamp's own transformer is a two thousand parameter demonstration that cannot design a system, so this plugin asks a real frontier model through the Anthropic Messages API with a plain fetch and no dependency, and is honest in the report that the answer is the external model's, never the tool's own.
+
+**535. The call is gated live and billable, and takes no secret** 🔨
+the request leaves the machine and charges an account, so it runs only under `--allow-live` and `--allow-billable` with an attestation, refusing by default like every live plugin; the API key is read from the environment at call time and never read from source, printed, or written anywhere.
+
+**536. The proposal is built from the run's own facts and marked unverified** 🔨
+the prompt carries the endpoints the app calls, the routes it serves and the archetype dsp read, and ARCHITECTURE.md wraps the answer in a header stating plainly it is a proposal a human architect must prove, because a confidently wrong design adopted as fact is exactly the failure this tool refuses.
+
+**537. It is testable without a network or a key** 🔨
+the model call is an injectable function, so the prompt building, the response parsing and the honest wrapper are held by unit tests with no live call, and CI proves the plugin refuses cleanly when live authorization is absent rather than reaching the network.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 486 |
+| new in this branch | 490 |
 | planned | 3 |
-| total | 533 |
+| total | 537 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
