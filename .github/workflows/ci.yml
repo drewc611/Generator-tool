@@ -394,6 +394,18 @@ jobs:
           cd site-out && node --test tests/router.test.js tests/server.test.js && cd ..
           rm -rf site-out
 
+      - name: the export is hostable html, the ledger parses, and two runs agree byte for byte
+        run: |
+          node src/cli.js run --src example/legacy-site --out det-a --site true --export true
+          node src/cli.js run --src example/legacy-site --out det-b --site true --export true
+          grep -q "<title>About Acme</title>" det-a/export/about/index.html
+          grep -q "url=/products" det-a/export/old-shop.html
+          node -e 'const l=JSON.parse(require("fs").readFileSync("det-a/LEDGER.json","utf8")); if (!l.decisions.routes.length) throw new Error("an empty ledger records nothing")'
+          node -e 'require("fs").readFileSync("det-a/sitemap.xml","utf8").includes("<loc>/about</loc>") || process.exit(1)'
+          rm -rf det-a/.portamp det-b/.portamp det-a/HISTORY.md det-b/HISTORY.md
+          diff -r det-a det-b
+          rm -rf det-a det-b
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then

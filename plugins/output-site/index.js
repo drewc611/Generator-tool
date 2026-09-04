@@ -34,11 +34,22 @@ export default {
       const imports = pages.map((p) => `import ${p.className} from "../features/${p.className}/${p.className}.jsx";`);
       const routes = pages.map((p) => `  { path: ${jsString(p.route)}, component: ${p.className} },`);
 
+      // The redirect map is linted before anything is written from it: a
+      // chain flattens to its end so no visitor hops twice, and a cycle is
+      // a defect that fails the run while the fix is one file away.
+      const { flat, cycles } = flattenRedirects(site.redirects);
+      if (cycles.length) {
+        throw new Error(`the redirect map loops: ${cycles.join("; ")}. A cycle sends every visitor nowhere; fix the pages that point at each other and rerun.`);
+      }
+      site.redirects = flat;
+
       await ctx.write("src/app/match.js", MATCH);
       await ctx.write("src/app/router.js", ROUTER);
       await ctx.write("src/app/redirects.js", REDIRECTS_JS(site.redirects));
       await ctx.write("src/app/head.js", HEAD_JS(pages));
-      await ctx.write("src/app/nav.js", NAV_JS(navModel(site, pages)));
+      const nav = navModel(site, pages);
+      await ctx.write("src/app/nav.js", NAV_JS(nav));
+      await ctx.write("src/app/breadcrumbs.js", BREADCRUMBS_JS(trailsOf(nav, pages)));
       await ctx.write("src/app/Layout.jsx", layoutFile(site.chrome, ctx));
       await ctx.write("src/app/ErrorBoundary.jsx", ERROR_BOUNDARY);
       await ctx.write("src/app/NotFound.jsx", NOT_FOUND);
@@ -58,7 +69,7 @@ export default {
       // expects; one it does not hold is a named gap.
       const wanted = new Map();
       for (const p of pages) {
-        for (const a of [...(p.assets ?? []), ...(p.cssLinks ?? [])]) {
+        for (const a of [...(p.assets ?? []), ...(p.cssLinks ?? []), ...(p.printLinks ?? []), ...(p.icons ?? []).map((i) => i.href)]) {
           const resolved = resolveLink(p.rel, a);
           if (!wanted.has(resolved)) wanted.set(resolved, p.rel);
         }
@@ -66,6 +77,7 @@ export default {
       const byRel = new Map(ctx.sources.files.map((f) => [f.rel.replace(/^\.\//, ""), f]));
       const css = new Set();
       const done = new Set();
+      const copiedBytes = new Map();
       let copied = 0;
       const copyOne = async (rel, from) => {
         if (done.has(rel)) return;
@@ -77,6 +89,7 @@ export default {
         }
         const bytes = await readFile(file.path);
         await ctx.write(`public/${rel}`, bytes);
+        copiedBytes.set(rel, bytes);
         copied += 1;
         // A stylesheet drags its own dependencies: the fonts and images its
         // url() references name, resolved the way the browser will resolve
@@ -92,7 +105,19 @@ export default {
       };
       for (const [rel, from] of wanted) await copyOne(rel, from);
 
-      await ctx.write("index.html", INDEX_HTML([...css]));
+      const printCss = [...new Set(pages.flatMap((p) => (p.printLinks ?? []).map((a) => resolveLink(p.rel, a))))];
+      const icons = dedupeIcons(pages, resolveLink);
+      await ctx.write("index.html", INDEX_HTML([...css].filter((c) => !printCss.includes(c)), printCss, icons));
+
+      // The addresses, spoken to machines: a sitemap of every route and a
+      // robots file that carries the original's disallow lines when the run
+      // holds them, and invents no policy when it does not.
+      await ctx.write("sitemap.xml", SITEMAP(pages));
+      const oldRobots = ctx.sources.files.find((f) => /(^|\/)robots\.txt$/.test(f.rel));
+      const disallow = oldRobots
+        ? (await readFile(oldRobots.path, "utf8").catch(() => "")).split("\n").filter((l) => /^\s*(Disallow|Allow|User-agent)\s*:/i.test(l))
+        : [];
+      await ctx.write("robots.txt", (disallow.length ? disallow.join("\n") : "User-agent: *\nAllow: /") + "\nSitemap: /sitemap.xml\n");
       if (!ctx.written.includes("package.json")) {
         await ctx.write("package.json", JSON.stringify({
           name: "ported-site",
@@ -114,6 +139,46 @@ export default {
       await ctx.write("SITE.md", siteReport(site, pages));
       await ctx.write("SITE_MAP.mmd", mermaidMap(site));
       await ctx.write("SITE_MAP.md", "# Site map\n\n```mermaid\n" + mermaidMap(site) + "```\n");
+
+      // The ledger: every decision this run made about the site, machine
+      // readable and deterministically ordered, so a second run can be held
+      // to the first one's choices and a diff between runs means something.
+      await ctx.write("LEDGER.json", JSON.stringify({
+        tool: "portamp",
+        decisions: {
+          routes: pages.map((p) => ({ route: p.route, component: p.className, from: p.rel })),
+          redirects: site.redirects,
+          chromeLifted: site.chrome.map((c) => ({ tag: c.tag, on: [...c.on].sort() })),
+          actionsLifted: ctx.api.calls.filter((c) => c.path?.startsWith("/")).map((c) => ({ method: c.method, path: c.path, from: c.file })).sort((a, b) => a.path.localeCompare(b.path)),
+          paginationProposed: site.pagination,
+          queryRoutesProposed: site.queryRoutes ?? [],
+          deadLinks: site.deadLinks,
+          framesReplaced: site.frames.map((f) => ({ rel: f.rel, content: f.main })),
+          orphans: site.graph.nodes.filter((n) => n !== "/" && !site.graph.edges.some(([, to]) => to === n)).sort(),
+        },
+      }, null, 2) + "\n");
+
+      // Static export: the whole site prerendered to real HTML, one file per
+      // route, hostable anywhere with no build and no runtime. The chrome
+      // wraps every page exactly as the layout does, the head carries what
+      // the old page said, and a retired address becomes the meta refresh
+      // stub static hosts have always understood.
+      let exported = 0;
+      if (ctx.config.export) {
+        for (const p of pages) {
+          const file = p.route === "/" ? "export/index.html" : `export${p.route}/index.html`;
+          const template = ctx.screens.find((s) => s.selector === p.selector)?.template ?? "";
+          await ctx.write(file, EXPORT_PAGE({ page: p, template, chrome: site.chrome, css: [...css], printCss, icons }));
+          exported += 1;
+        }
+        for (const r of site.redirects.filter((x) => x.to.startsWith("/"))) {
+          const file = /\.[a-z0-9]+$/i.test(r.from) ? `export${r.from}` : `export${r.from}/index.html`;
+          if (!ctx.written.includes(file)) await ctx.write(file, REDIRECT_STUB(r.to));
+        }
+        for (const [rel, bytes] of copiedBytes) await ctx.write(`export/${rel}`, bytes);
+        await ctx.write("export/sitemap.xml", SITEMAP(pages));
+        log.info(`static export: ${exported} page(s) prerendered, hostable with no build`);
+      }
 
       log.info(`app shell: ${pages.length} route(s), ${site.redirects.length} redirect(s), ${copied} asset(s) copied`);
     });
@@ -170,6 +235,98 @@ function navModel(site, pages) {
   }
   return items;
 }
+
+/** Chains flattened to their end; a cycle comes back named instead of hung. */
+export function flattenRedirects(redirects) {
+  const map = new Map(redirects.filter((r) => r.to.startsWith("/")).map((r) => [r.from, r.to]));
+  const cycles = [];
+  const flat = [];
+  for (const r of redirects) {
+    let to = r.to;
+    const seen = new Set([r.from]);
+    while (map.has(to)) {
+      if (seen.has(to)) { cycles.push(`${r.from} → ${to} → …`); to = null; break; }
+      seen.add(to);
+      to = map.get(to);
+    }
+    if (to !== null && to !== r.from) flat.push({ ...r, to });
+  }
+  return { flat, cycles: [...new Set(cycles)] };
+}
+
+/** Every route's trail: home, the section it hangs under, itself. */
+function trailsOf(items, pages) {
+  const labelOf = new Map(items.map((i) => [i.route, i.label]));
+  for (const i of items) for (const c of i.children) labelOf.set(c.route, c.label);
+  const trails = {};
+  for (const p of pages) {
+    if (p.route === "/") continue;
+    const trail = [{ label: "Home", route: "/" }];
+    const parent = items.find((i) => i.route !== "/" && p.route.startsWith(i.route + "/"));
+    if (parent) trail.push({ label: parent.label, route: parent.route });
+    trail.push({ label: labelOf.get(p.route) ?? p.title ?? p.route, route: p.route });
+    trails[p.route] = trail;
+  }
+  return trails;
+}
+
+const dedupeIcons = (pages, resolve) => {
+  const seen = new Map();
+  for (const p of pages) for (const i of p.icons ?? []) {
+    const href = "/" + resolve(p.rel, i.href);
+    if (!seen.has(href)) seen.set(href, { rel: i.rel, href });
+  }
+  return [...seen.values()];
+};
+
+const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const SITEMAP = (pages) => `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${pages.map((p) => `  <url><loc>${esc(p.route)}</loc></url>`).join("\n")}
+</urlset>
+`;
+
+const BREADCRUMBS_JS = (trails) => `/**
+ * Where each route sits, as data: home, its section, itself. A breadcrumb
+ * component renders this; the hierarchy came from the chrome and the paths,
+ * not from guesswork.
+ */
+export const TRAILS = ${JSON.stringify(trails, null, 2)};
+`;
+
+const REDIRECT_STUB = (to) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url=${esc(to)}">
+<link rel="canonical" href="${esc(to)}">
+<title>Moved</title>
+</head>
+<body>
+<p>This page moved to <a href="${esc(to)}">${esc(to)}</a>.</p>
+</body>
+</html>
+`;
+
+const EXPORT_PAGE = ({ page, template, chrome, css, printCss, icons }) => {
+  const before = chrome.filter((c) => c.tag !== "footer").map((c) => c.html).join("\n");
+  const after = chrome.filter((c) => c.tag === "footer").map((c) => c.html).join("\n");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(page.title ?? page.route)}</title>
+${page.description ? `<meta name="description" content="${esc(page.description)}">\n` : ""}${page.canonical ? `<link rel="canonical" href="${esc(page.canonical)}">\n` : ""}${Object.entries(page.og ?? {}).map(([k, v]) => `<meta property="${esc(k)}" content="${esc(v)}">`).join("\n")}${Object.keys(page.og ?? {}).length ? "\n" : ""}${icons.map((i) => `<link rel="${esc(i.rel)}" href="${esc(i.href)}">`).join("\n")}${icons.length ? "\n" : ""}${css.map((c) => `<link rel="stylesheet" href="/${esc(c)}">`).join("\n")}${css.length ? "\n" : ""}${printCss.map((c) => `<link rel="stylesheet" href="/${esc(c)}" media="print">`).join("\n")}${printCss.length ? "\n" : ""}</head>
+<body>
+${before}${before ? "\n" : ""}<main>
+${template}
+</main>
+${after}${after ? "\n" : ""}</body>
+</html>
+`;
+};
 
 const MATCH = `/**
  * The matcher, pure on purpose: the emitted tests import this file and hold
@@ -269,7 +426,7 @@ const HEAD_JS = (pages) => `/**
  * again on every navigation or lose them.
  */
 export const HEAD = {
-${pages.map((p) => `  ${jsString(p.route)}: { title: ${jsString(p.title ?? "")}, description: ${jsString(p.description ?? "")}, og: ${JSON.stringify(p.og ?? {})} },`).join("\n")}
+${pages.map((p) => `  ${jsString(p.route)}: { title: ${jsString(p.title ?? "")}, description: ${jsString(p.description ?? "")}, canonical: ${p.canonical ? jsString(p.canonical) : "null"}, og: ${JSON.stringify(p.og ?? {})} },`).join("\n")}
 };
 
 const setMeta = (attr, key, value) => {
@@ -289,6 +446,18 @@ export function applyHead(route) {
   if (head.title) document.title = head.title;
   setMeta("name", "description", head.description);
   for (const [property, content] of Object.entries(head.og)) setMeta("property", property, content);
+  // The canonical address is identity; it changes per route or comes off.
+  let canon = document.head.querySelector('link[rel="canonical"]');
+  if (head.canonical) {
+    if (!canon) {
+      canon = document.createElement("link");
+      canon.setAttribute("rel", "canonical");
+      document.head.appendChild(canon);
+    }
+    canon.setAttribute("href", head.canonical);
+  } else if (canon) {
+    canon.remove();
+  }
 }
 `;
 
@@ -400,13 +569,13 @@ import App from "./app/App.jsx";
 createRoot(document.getElementById("root")).render(<App />);
 `;
 
-const INDEX_HTML = (css) => `<!DOCTYPE html>
+const INDEX_HTML = (css, printCss = [], icons = []) => `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ported site</title>
-${css.map((c) => `<link rel="stylesheet" href="/${c}">`).join("\n")}${css.length ? "\n" : ""}<!-- resolve react and react-dom with your bundler or an import map; no address is written here on purpose -->
+${icons.map((i) => `<link rel="${esc(i.rel)}" href="${esc(i.href)}">`).join("\n")}${icons.length ? "\n" : ""}${css.map((c) => `<link rel="stylesheet" href="/${c}">`).join("\n")}${css.length ? "\n" : ""}${printCss.map((c) => `<link rel="stylesheet" href="/${c}" media="print">`).join("\n")}${printCss.length ? "\n" : ""}<!-- resolve react and react-dom with your bundler or an import map; no address is written here on purpose -->
 </head>
 <body>
 <div id="root"></div>

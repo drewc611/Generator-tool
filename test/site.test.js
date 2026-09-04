@@ -6,8 +6,9 @@ import test from "node:test";
 
 import {
   stripServerBlocks, resolveSsi, lowerLegacyHtml, readHead, readFrameset, layoutTables,
-  localAssets, imagemapLinks,
+  localAssets, imagemapLinks, readHtaccess,
 } from "../plugins/input-static/lower.js";
+import { flattenRedirects } from "../plugins/output-site/index.js";
 import { readPage, resolveLink, routeFor, sharedChrome } from "../plugins/input-static/index.js";
 import { buildIr, DIALECTS } from "../plugins/dsp-ir/ir.js";
 import { translate } from "../plugins/output-react/template.js";
@@ -64,6 +65,36 @@ test("framesets, layout tables, local assets and imagemaps are all seen for what
   assert.equal(layoutTables(`<table><tr><th>h</th></tr><tr><td>1</td><td>2</td><td>3</td><td>4</td></tr></table>`), 0);
   assert.deepEqual(localAssets(`<img src="a.png"><img src="https://cdn.example/b.png">`), ["a.png"]);
   assert.deepEqual(imagemapLinks(`<map><area href="zone.html" alt="The zone"></map>`), [{ href: "zone.html", label: "The zone" }]);
+});
+
+test(".htaccess plain lines are evidence and regex rules are counted, not guessed", () => {
+  const notes = [];
+  const found = readHtaccess([
+    "# comment",
+    "Redirect 301 /old.html /new.html",
+    "RewriteRule ^catalog$ /products [R=301,L]",
+    "RewriteCond %{HTTP_HOST} ^www\\.",
+    "RewriteRule ^(.*)$ https://x.example/$1 [R=301,L]",
+  ].join("\n"), (n) => notes.push(n));
+  assert.deepEqual(found, [
+    { from: "/old.html", to: "/new.html", kind: "htaccess" },
+    { from: "/catalog", to: "/products", kind: "htaccess" },
+  ]);
+  assert.match(notes[0], /2 \.htaccess rule\(s\)/);
+});
+
+test("redirect chains flatten to their end and a cycle comes back named", () => {
+  const { flat, cycles } = flattenRedirects([
+    { from: "/a", to: "/b", kind: "x" },
+    { from: "/b", to: "/c", kind: "x" },
+  ]);
+  assert.deepEqual(flat.map((r) => `${r.from}>${r.to}`), ["/a>/c", "/b>/c"]);
+  assert.deepEqual(cycles, []);
+  const looped = flattenRedirects([
+    { from: "/x", to: "/y", kind: "x" },
+    { from: "/y", to: "/x", kind: "x" },
+  ]);
+  assert.ok(looped.cycles.length >= 1);
 });
 
 /* ------------------------------------------------------ reading a page */
@@ -206,6 +237,62 @@ test("a folder of old pages becomes a React application architecture", async (t)
   const map = Object.fromEntries(redirects.filter((r) => r.to.startsWith("/")).map((r) => [r.from, r.to]));
   assert.equal(resolveRedirect(map, "/moved"), "/about");
   assert.equal(JSON.parse(await readFile(join(out, "package.json"), "utf8")).type, "module");
+});
+
+test("2.0: the port carries its addresses for machines and its identity for people", async (t) => {
+  const { ctx, out, error, cleanup } = await runPipeline({ src: join(ROOT, "example/legacy-site"), site: true });
+  t.after(cleanup);
+  assert.equal(error, null);
+
+  // .htaccess evidence, flattened through the extension drop it pointed at.
+  const redirects = JSON.parse(await readFile(join(out, "redirects.json"), "utf8"));
+  assert.ok(redirects.some((r) => r.from === "/old-shop.html" && r.to === "/products" && r.kind === "htaccess"), "the chain ended at the route, not at another redirect");
+  assert.ok(redirects.some((r) => r.from === "/catalog" && r.to === "/products"));
+
+  // Machines get the map; the original's robots policy is carried, not invented.
+  assert.match(await readFile(join(out, "sitemap.xml"), "utf8"), /<loc>\/products\/widget<\/loc>/);
+  const robots = await readFile(join(out, "robots.txt"), "utf8");
+  assert.match(robots, /Disallow: \/cgi-bin\//);
+  assert.match(robots, /Sitemap: \/sitemap\.xml/);
+
+  // Identity: canonical per route, the favicon family, the print stylesheet.
+  assert.match(await readFile(join(out, "src/app/head.js"), "utf8"), /canonical: "https:\/\/acme\.example\/"/);
+  const index = await readFile(join(out, "index.html"), "utf8");
+  assert.match(index, /rel="icon" href="\/favicon\.ico"/);
+  assert.match(index, /href="\/print\.css" media="print"/);
+
+  // The trail each route stands on, and the query family proposed not merged.
+  const crumbs = await readFile(join(out, "src/app/breadcrumbs.js"), "utf8");
+  assert.match(crumbs, /"\/products\/widget"/);
+  const ledger = JSON.parse(await readFile(join(out, "LEDGER.json"), "utf8"));
+  assert.deepEqual(ledger.decisions.queryRoutesProposed, [{ route: "/story", param: "id", values: ["1", "2", "3"] }]);
+  assert.ok(ledger.decisions.routes.length >= 8);
+  assert.ok(ledger.decisions.chromeLifted.some((c) => c.tag === "nav"));
+  assert.ok(ctx.written.includes("LEDGER.json"));
+
+  // No export tree without the flag; the decision to prerender is the user's.
+  assert.ok(!ctx.written.some((f) => f.startsWith("export/")));
+});
+
+test("2.0: --export prerenders every route to HTML a shelf can serve", async (t) => {
+  const { ctx, out, error, cleanup } = await runPipeline({ src: join(ROOT, "example/legacy-site"), site: true, export: true });
+  t.after(cleanup);
+  assert.equal(error, null);
+
+  const about = await readFile(join(out, "export/about/index.html"), "utf8");
+  assert.match(about, /<title>About Acme<\/title>/);
+  assert.match(about, /<nav class="menu">/, "the chrome wraps the prerendered page");
+  assert.match(about, /<main>/);
+  assert.match(about, /href="\/products"/, "links are routes, and the export serves them as directories");
+
+  const stub = await readFile(join(out, "export/old-shop.html"), "utf8");
+  assert.match(stub, /url=\/products/, "a retired address is a meta refresh stub pointing at the flattened end");
+  const framesStub = await readFile(join(out, "export/frames/index.html"), "utf8");
+  assert.match(framesStub, /url=\/about/, "the frameset's address forwards to its content frame");
+
+  const logo = await readFile(join(out, "export/logo.svg"));
+  assert.deepEqual(logo, await readFile(join(ROOT, "example/legacy-site/logo.svg")), "assets ship inside the export too");
+  assert.ok(ctx.written.includes("export/sitemap.xml"));
 });
 
 test("without --site the chrome stays a proposal and no shell is written", async (t) => {

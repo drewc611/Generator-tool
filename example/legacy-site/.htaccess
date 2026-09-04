@@ -1,0 +1,5 @@
+# The shed's own server config, kept since 2004.
+Redirect 301 /old-shop.html /products.html
+RewriteRule ^catalog$ /products [R=301,L]
+RewriteCond %{HTTP_HOST} ^www\.
+RewriteRule ^(.*)$ https://acme.example/$1 [R=301,L]

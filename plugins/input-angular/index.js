@@ -26,7 +26,9 @@ async function walk(dir, root, out = []) {
     if (s.isDirectory()) await walk(p, root, out);
     // rel always uses forward slashes, whatever the platform, so every
     // plugin that reads it can split on one separator.
-    else if (KEEP.has(extname(e))) out.push({ path: p, rel: relative(root, p).split(sep).join("/") });
+    // .htaccess has no extension to keep; the server's own redirect
+    // declarations are exactly the evidence the site engine reads.
+    else if (KEEP.has(extname(e)) || e === ".htaccess") out.push({ path: p, rel: relative(root, p).split(sep).join("/") });
   }
   return out;
 }

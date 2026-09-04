@@ -263,6 +263,8 @@ async function main() {
   } catch (err) {
     if (err instanceof PolicyViolation) {
       log.error(err.message);
+      const clears = Policy.clears(err.rule);
+      if (clears) log.error(`to clear it: ${clears}`);
       process.exitCode = 2;
       return;
     }

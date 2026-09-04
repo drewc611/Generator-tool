@@ -161,6 +161,19 @@ export class Policy {
    * not an endpoint, and refusing to port a documentation link would be the
    * gate getting in the way of correct work.
    */
+  /** What evidence would clear each stop. A gate that only says no teaches
+   * nobody; the rule stays exactly as hard, and the way through is named. */
+  static clears(rule) {
+    return {
+      "no-credentials-in-source": "rotate the credential, move it to an env var or secret store, remove it from the source, and rerun. The value was never printed.",
+      "offline": "this run was started with --offline, which outranks everything. Drop the flag, or keep it and accept that nothing live is reached.",
+      "no-live-calls": "pass --allow-live true and provide portamp.authorization.json naming who owns the system.",
+      "live-call-outside-attested-domains": "add the domain to portamp.authorization.json's domains list, if the owner it names actually owns that host.",
+      "no-billable-calls": "pass --allow-billable true once the metered cost is accepted.",
+      "no-endpoints-in-components": "move the path into src/api/endpoints.js and call it through the generated client; a component keeps a name, never an address.",
+    }[rule] ?? null;
+  }
+
   assertNoEndpointLiteral(text, file, paths = [], routes = []) {
     // Navigation to the run's own routes is not a call. A portal's filter
     // form posts to the path its page lives at, so a link or the route

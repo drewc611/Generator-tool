@@ -90,11 +90,23 @@ export function readHead(text) {
   }
 
   // The cache busting query is part of the URL, never of the file on disk.
-  const cssLinks = [...head.matchAll(/<link\b[^>]*\brel\s*=\s*["']stylesheet["'][^>]*\bhref\s*=\s*["']([^"']+)["']/gi)]
-    .map((m) => m[1].split(/[#?]/)[0])
-    .filter(Boolean);
+  // A print stylesheet is still a stylesheet; its media rides along so the
+  // port keeps serving the paper version somebody once cared enough to write.
+  const cssLinks = [];
+  const printLinks = [];
+  for (const m of head.matchAll(/<link\b[^>]*\brel\s*=\s*["']stylesheet["'][^>]*>/gi)) {
+    const href = /\bhref\s*=\s*["']([^"']+)["']/i.exec(m[0])?.[1]?.split(/[#?]/)[0];
+    if (!href) continue;
+    (/\bmedia\s*=\s*["']print["']/i.test(m[0]) ? printLinks : cssLinks).push(href);
+  }
 
-  return { description: meta("description"), refresh, base, charset, og, cssLinks, ogImage: property("og:image") };
+  // The canonical address and the icons are identity, and identity is
+  // exactly what a port must not lose.
+  const canonical = /<link\b[^>]*\brel\s*=\s*["']canonical["'][^>]*\bhref\s*=\s*["']([^"']+)["']/i.exec(head)?.[1] ?? null;
+  const icons = [...head.matchAll(/<link\b[^>]*\brel\s*=\s*["'](icon|shortcut icon|apple-touch-icon)["'][^>]*\bhref\s*=\s*["']([^"']+)["']/gi)]
+    .map((m) => ({ rel: m[1] === "shortcut icon" ? "icon" : m[1], href: m[2].split(/[#?]/)[0] }));
+
+  return { description: meta("description"), refresh, base, charset, og, cssLinks, printLinks, canonical, icons, ogImage: property("og:image") };
 }
 
 /** Local files the page renders or links as assets: images, css, media. */
@@ -127,6 +139,42 @@ export function readFrameset(text) {
     name: /name\s*=\s*["']([^"']*)["']/i.exec(m[0])?.[1] ?? null,
   }));
   return { frames, main: frames.find((f) => /main|content|body/i.test(f.name ?? ""))?.src ?? frames.at(-1)?.src ?? null };
+}
+
+/**
+ * The server's own redirect declarations, read from .htaccess. Plain
+ * Redirect lines and RewriteRules whose pattern is a literal path are
+ * evidence; anything with a real regex or a condition is counted and left
+ * to a person, because guessing at mod_rewrite is how ports invent URLs.
+ */
+export function readHtaccess(text, note = () => {}) {
+  const redirects = [];
+  let complex = 0;
+  for (const raw of String(text ?? "").split("\n")) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    const plain = /^Redirect(?:\s+(301|302|permanent|temp))?\s+(\S+)\s+(\S+)/i.exec(line);
+    if (plain) {
+      redirects.push({ from: plain[2], to: plain[3], kind: "htaccess" });
+      continue;
+    }
+    const rule = /^RewriteRule\s+(\S+)\s+(\S+)(?:\s+\[([^\]]*)\])?/i.exec(line);
+    if (rule) {
+      const pattern = rule[1].replace(/^\^/, "").replace(/\$$/, "");
+      const literal = !/[.*+?()[\]{}|\\]/.test(pattern);
+      if (literal && /R(?:=30[12])?/i.test(rule[3] ?? "")) {
+        redirects.push({ from: "/" + pattern.replace(/^\//, ""), to: rule[2], kind: "htaccess" });
+      } else {
+        complex += 1;
+      }
+      continue;
+    }
+    if (/^(RewriteCond|RedirectMatch)/i.test(line)) complex += 1;
+  }
+  if (complex) {
+    note(`${complex} .htaccess rule(s) use patterns or conditions this reader does not evaluate. They are counted, not guessed at; port them by hand from the file.`);
+  }
+  return redirects;
 }
 
 /** Tables without a single th, used as scaffolding rather than data. */

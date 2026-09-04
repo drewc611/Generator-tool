@@ -4,7 +4,7 @@ import { flatten } from "../dsp-routes/parse.js";
 import { pascal } from "../dsp-ir/emit.js";
 import {
   stripServerBlocks, resolveSsi, lowerLegacyHtml, readHead,
-  localAssets, imagemapLinks, readFrameset, layoutTables,
+  localAssets, imagemapLinks, readFrameset, layoutTables, readHtaccess,
 } from "./lower.js";
 
 /**
@@ -281,6 +281,13 @@ export default {
           if (old !== routeOf(page.rel)) redirects.push({ from: old, to: routeOf(page.rel), kind: "extension dropped" });
         }
 
+        // The server's own .htaccess spoke redirects first; what it declared
+        // in plain lines joins the map with its origin named.
+        for (const f of ctx.sources.files.filter((f) => /(^|\/)\.htaccess$/.test(f.rel))) {
+          const text = await readFile(f.path, "utf8").catch(() => "");
+          for (const r of readHtaccess(text, note)) redirects.push(r);
+        }
+
         // A frameset's address was really its content frame's address. When
         // the frame's page is in the run, the frameset's route redirects to
         // it; when it is not, the gap stays named in the frames report.
@@ -306,6 +313,32 @@ export default {
           note(`${family.pages.length} page(s) (${family.pages.join(", ")}) look like one screen paged by filename. A parameterized route (/${family.stem}/:page) is the port's shape; merging them means choosing the template, which is a person's call.`);
         }
 
+        // page.php?id=3 is the query string era's parameterized route. Links
+        // to the same page under different values of one parameter are read
+        // as a family the way filename pagination is: proposed, never merged.
+        const routeSet = new Set(kept.map((p) => routeOf(p.rel)));
+        const queryFamilies = new Map();
+        for (const page of kept) {
+          for (const m of page.screen.template.matchAll(/<a\b[^>]*\bhref\s*=\s*["']([^"'?#]+)\?([\w]+)=([^"'&#]+)["']/gi)) {
+            if (/^[a-z][\w+.-]*:|^\/\//i.test(m[1])) continue;
+            // The scan runs after link rewriting, so an internal href is
+            // already the route it navigates to; a stray relative one still
+            // resolves through the page it sat on.
+            const route = m[1].startsWith("/") ? m[1] : routeOf(resolveLink(page.rel, m[1], page.head?.base));
+            if (!routeSet.has(route)) continue;
+            const key = `${route}?${m[2]}`;
+            queryFamilies.set(key, (queryFamilies.get(key) ?? new Set()).add(m[3]));
+          }
+        }
+        const queryRoutes = [...queryFamilies.entries()].filter(([, values]) => values.size >= 2)
+          .map(([key, values]) => {
+            const [route, param] = key.split("?");
+            return { route, param, values: [...values] };
+          });
+        for (const q of queryRoutes) {
+          note(`${q.route} is linked with ${q.values.length} value(s) of ?${q.param}=. A parameterized route (${q.route}/:${q.param}) is the port's shape; the page still renders one template until a person splits it.`);
+        }
+
         ctx.site = {
           pages: kept.map((p) => ({
             rel: p.rel,
@@ -315,9 +348,13 @@ export default {
             title: p.screen.title,
             description: p.head?.description ?? null,
             og: p.head?.og ?? {},
+            canonical: p.head?.canonical ?? null,
             assets: p.assets ?? [],
             cssLinks: p.head?.cssLinks ?? [],
+            printLinks: p.head?.printLinks ?? [],
+            icons: p.head?.icons ?? [],
           })),
+          queryRoutes,
           graph: {
             nodes: kept.map((p) => routeOf(p.rel)),
             edges: kept.flatMap((p) => p.links

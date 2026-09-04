@@ -116,6 +116,17 @@ with its real 301, and answers the API surface honestly — a fixture where one
 was emitted, a 501 naming the endpoint map where none was — and the server's
 own suite ships beside it, wired to npm run serve and npm test.
 
+2.0 adds the accountable half: `--export true` prerenders every route to
+plain HTML hostable with no build (chrome wrapped, heads carried, retired
+addresses as meta refresh stubs); redirect chains flatten and a cycle fails
+the run; .htaccess plain lines join the map as evidence; sitemap.xml and
+robots.txt speak to machines with the original's disallow lines carried;
+canonical, icons and print stylesheets survive as identity; breadcrumbs and
+query string route families land as data and proposals; LEDGER.json records
+every decision machine readably; two runs over the same tree are asserted
+byte identical in CI; the IR round trips through emitted Angular losslessly;
+and a policy stop prints what evidence would clear it.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.

@@ -7,7 +7,7 @@ is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-449 tests, on Node 18, 20 and 22, and on Windows in CI.
+462 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -1070,13 +1070,13 @@ the same site model as an app directory: layout.tsx from the chrome, one page pe
 **301. A Remix target** ▢
 routes as route modules, the redirect map as loaders that 301.
 
-**302. Static export mode** ▢
+**302. Static export mode** 🔨
 one HTML file per route, prerendered from the model, for sites that never needed hydration at all.
 
-**303. .htaccess read for redirects** ▢
+**303. .htaccess read for redirects** 🔨
 RewriteRule and Redirect lines join the redirect map with their evidence.
 
-**304. sitemap.xml and robots.txt** ▢
+**304. sitemap.xml and robots.txt** 🔨
 written from the route table; disallowed paths carried from the original when one exists.
 
 **305. Asset hashing** ▢
@@ -1091,7 +1091,7 @@ the inventory input-jquery already writes, matched to the site's pages so a hand
 **308. i18n routes** ▢
 /en/ and /de/ trees recognised as one site in two languages, the route table parameterized by locale.
 
-**309. Breadcrumbs from the hierarchy** ▢
+**309. Breadcrumbs from the hierarchy** 🔨
 the nav model's nesting as a breadcrumb component, data only.
 
 **310. Scroll restoration** ▢
@@ -1100,22 +1100,22 @@ back means where you were; a new route means the top; the hash still wins.
 **311. Prefetch on intent** ▢
 hovering a link warms its route module, measured before it is claimed.
 
-**312. Canonical URLs carried** ▢
+**312. Canonical URLs carried** 🔨
 rel=canonical read per page and reapplied per route.
 
 **313. RSS and Atom feeds read** ▢
 a feed in the tree names the pages that are entries, which is pagination evidence too.
 
-**314. Print stylesheets carried** ▢
+**314. Print stylesheets carried** 🔨
 media=print links survive into the shell instead of being dropped.
 
-**315. The favicon family** ▢
+**315. The favicon family** 🔨
 the icons the pages declared, copied and linked from the entry.
 
-**316. Redirect lint** ▢
+**316. Redirect lint** 🔨
 chains flattened, cycles failed, and a redirect into a dead link named for what it is.
 
-**317. Query string routes** ▢
+**317. Query string routes** 🔨
 page.php?id=3 families read as parameterized routes the way filename pagination already is.
 
 **318. Per route code splitting** ▢
@@ -1156,7 +1156,7 @@ structural scanners with positions, so every note can say the line it came from.
 **328. Source positions in every note** ▢
 file and line on unverified items, once the grammar carries them.
 
-**329. The IR round trips** ▢
+**329. The IR round trips** 🔨
 emit angular from the IR, read it back, assert the same IR; the strongest honesty test the middle can have.
 
 **330. Slots across all nine targets** ▢
@@ -1201,10 +1201,10 @@ a project directory of plugins loads the way builtin ones do, documented with th
 **343. Windows paths in every plugin** ▢
 the suite already runs on Windows in CI; an audit closes the file URL and separator gaps it does not cover.
 
-**344. The CLI explains a failure** ▢
+**344. The CLI explains a failure** 🔨
 a policy stop prints what evidence would clear it, not just what rule fired.
 
-**345. Deterministic runs asserted** ▢
+**345. Deterministic runs asserted** 🔨
 two runs over the same tree byte identical, gated in CI, temp paths and timestamps excepted.
 
 **346. The improve report ranks by cost** ▢
@@ -1216,7 +1216,7 @@ several sessions merged with agreement measured, disagreement reported as a rang
 **348. The behavior report names races** ▢
 debounce and cancellation patterns in the legacy code called out where the port must keep them.
 
-**349. A migration ledger** ▢
+**349. A migration ledger** 🔨
 every decision the run made, machine readable, so a second run can be held to the first one's choices.
 
 
@@ -1267,11 +1267,11 @@ example/legacy-portal, a fictional postal service portal with the shapes of the 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 267 |
-| planned | 50 |
+| new in this branch | 280 |
+| planned | 37 |
 | total | 361 |
 
-The fifty open are open for stated reasons, not for lack of time: phases
+The thirty seven open are open for stated reasons, not for lack of time: phases
 27 and 28 name what each one waits on, and npm publish stays the one command
 that belongs to a person, with docs/PUBLISHING.md waiting beside it. Four that
 were open closed earlier in this branch: focus order once the probe recorded

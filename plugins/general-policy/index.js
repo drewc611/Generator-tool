@@ -41,7 +41,7 @@ export default {
           // the redirect map, the nav model and the head table are routes and
           // titles, and a route may spell the same path an API answers. The
           // shell's code files stay gated like any component.
-          && !/^src\/app\/(redirects|nav|head)\.js$/.test(f)
+          && !/^src\/app\/(redirects|nav|head|breadcrumbs)\.js$/.test(f)
       );
       // The routes this run itself serves. A navigation attribute naming one
       // of these is a place to go, whatever an API thinks of the same string.
