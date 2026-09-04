@@ -48,6 +48,7 @@ const DOES = {
   "output-fixtures": "response fixtures with types and no captured values",
   "output-readme": "the index of everything the run wrote, honest numbers beside it",
   "output-ci": "a workflow for the port: parse checks and the endpoint rule, kept",
+  "output-site": "a folder of old pages as a React app: router, layout, redirects, the maps",
   "dsp-assets": "what the tree holds against what the code points at",
   "dsp-auth": "the auth scheme and where the token lives; values never printed",
   "dsp-css": "the stylesheet weighed: !important, ids, depth, repetition",

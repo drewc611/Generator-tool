@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Two hundred and forty nine features across twenty two phases. The statuses are
+Three hundred and forty nine features across twenty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-430 tests, on Node 18, 20 and 22, and on Windows in CI.
+445 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -890,20 +890,350 @@ a skip link for the keyboard, a live region on the readout so a finished run ann
 a print stylesheet flattens the chassis into the run report it always was; the transport, the wipe and the lamps stay on screen where they belong.
 
 
+## Phase 23 · Reading the old web
+
+*Pages from the font era, read for exactly what they said.*
+
+**250. Server blocks stripped and counted** 🔨
+`<?php ?>`, `<? ?>` and `<% %>` are removed; what each one printed is a gap the note names, never a guess.
+
+**251. Server pages are pages** 🔨
+.php, .asp and .jsp files read as the HTML the server sent, with the plain .html ownership test untouched so ERB and underscore templates still go to their own readers.
+
+**252. SSI includes, resolved as served** 🔨
+`<!--#include virtual|file -->` resolves from the run's own tree, recursively with a depth guard; one the run does not hold is a named gap where it stood.
+
+**253. The seven font sizes, exact** 🔨
+`<font color size face>` lowers to a styled span using the pixel sizes browsers actually used; `<center>` becomes the centered block it meant.
+
+**254. Motion dropped on purpose** 🔨
+`<marquee>` and `<blink>` keep their text as a plain span; the note says the motion was a product decision then and putting it back is one now.
+
+**255. The head, read for the port** 🔨
+description, og properties, base href, charset and stylesheet links per page, because a single page app has to say them again or lose them.
+
+**256. Meta refresh is a redirect** 🔨
+a page that exists to bounce joins the redirect map instead of the screens, its target resolved the way the browser would have.
+
+**257. The bytes as they were meant** 🔨
+a page declaring iso-8859-1 or windows-1252 is re-decoded from its bytes, so the port does not inherit mojibake as content.
+
+**258. Framesets read as layout** 🔨
+each frame is a page of its own; the frameset's route points at its content frame, and the frame layout is the shell's to replace.
+
+**259. Layout tables named** 🔨
+a table with no header cell and enough plain cells reads as scaffolding, proposed for grid; the table stays until a person makes the cut.
+
+**260. Imagemaps are navigation** 🔨
+`<area>` hrefs with their alt text join the link graph, because somebody drew that menu on a picture on purpose.
+
+**261. The asset inventory per page** 🔨
+images, media and stylesheets a page renders from its own tree, collected with query strings and fragments shed.
+
+**262. Links resolve like a browser** 🔨
+relative paths, `..`, and `<base href>` resolve against the page's directory; a base pointing off the tree is refused and dead link detection judges the rest.
+
+**263. Old addresses have routes** 🔨
+extension dropped, index collapsed to its directory: every page's path maps to the route the site will serve it at.
+
+
+## Phase 24 · The site assembled
+
+*A folder of pages becomes one application model, honestly.*
+
+**264. ctx.site, the contract** 🔨
+pages with routes and heads, the link graph, the chrome, the redirects, pagination, frames and dead links — one model between the reader and the shell.
+
+**265. Duplicate pages are one page** 🔨
+byte identical bodies keep one screen; every other address redirects to it, and the note names the pair.
+
+**266. Chrome lifted, not proposed** 🔨
+with --site true the nav, header and footer blocks shared verbatim leave the pages and become the layout; without it the proposal note stands as before.
+
+**267. Internal links become routes** 🔨
+anchors and areas pointing at pages in the run are rewritten to the routes those pages got; everything else is left exactly alone.
+
+**268. Every old address keeps working** 🔨
+each page's .html path redirects to its route, because the address bar is half of the contract.
+
+**269. Pagination proposed as a parameter** 🔨
+news-1, news-2 read as one screen paged by filename; the parameterized route is proposed and the merge stays a person's call.
+
+**270. The link graph with its truth** 🔨
+nodes, edges, orphans reachable by address only, and dead links that dangle in the port exactly as they dangled on the old site.
+
+**271. Form actions leave the markup** 🔨
+an endpoint in a component is the exact thing the endpoint gate stops, so the action moves to the API map in every mode and the note names the wiring left.
+
+**272. GET forms keep their spelling** 🔨
+fields that travelled as a query string are reported so the port keeps that contract.
+
+**273. The scan knows the old web** 🔨
+the walk keeps .htm, .shtml, .php, .asp, .jsp, .inc and the asset formats, so includes and images are in the run instead of silently absent.
+
+**274. The secret gate stays text wide** 🔨
+binary formats skip the credential scan because decoded bytes invent matches; every text format, however obscure, still goes through the gate.
+
+**275. Inline events are events** 🔨
+onclick and its whole family become IR events with the `return` spellings stripped, so a 1998 button and a v-on button reach every target the same way.
+
+**276. javascript: was never a location** 🔨
+an href that ran code becomes the click handler it was, and the fake location is dropped.
+
+**277. Presentation attributes keep their meaning** 🔨
+bgcolor, align and valign carry their exact CSS into the IR; nothing else about the element changes.
+
+**278. Statement lists survive the arrow** 🔨
+a multi statement inline handler reaches react and svelte wrapped as a block instead of a syntax error.
+
+
+## Phase 25 · The app shell
+
+*output-site: the architecture around the components.*
+
+**279. output-site, behind --site true** 🔨
+the eighty fourth plugin; the core still does not know its name.
+
+**280. A router with no dependency** 🔨
+pushState, one document level click listener, nothing else; a folder of pages does not need a routing library.
+
+**281. The matcher is pure and alone** 🔨
+matchPath lives in its own module with no imports, so the emitted tests hold it to account without a browser in the room.
+
+**282. Redirects resolve with a cycle guard** 🔨
+a chain follows to its end; a cycle resolves to where it entered and is a data bug to fix, not a hang.
+
+**283. Clicks intercepted honestly** 🔨
+same origin, left button, no modifier, no target, no download — everything else passes by untouched.
+
+**284. The hash still scrolls** 🔨
+navigation with a fragment scrolls to its element, because in page anchors predate every framework.
+
+**285. App.jsx, routes to components** 🔨
+one route per page importing the component the run wrote, redirects resolved first, NotFound for the rest.
+
+**286. The layout is where the bytes went** 🔨
+Layout.jsx renders the lifted chrome around a semantic `<main>{children}</main>`.
+
+**287. A page that throws takes its route** 🔨
+ErrorBoundary holds the shell up, says so, and offers to try again.
+
+**288. NotFound offers the map** 🔨
+the route nobody claimed lists the navigation model instead of a dead end.
+
+**289. The head reapplied per route** 🔨
+title, description and og properties set on every navigation, created when missing, because a single page app forgets them otherwise.
+
+**290. The navigation model, extracted** 🔨
+nav.js holds the chrome's own links with pages nested under them by route, so a menu renders data instead of guesswork.
+
+**291. The redirect map in three spellings** 🔨
+redirects.json is the data; _redirects and the nginx block in SITE.md say the same thing to hosts that read those.
+
+**292. Assets travel as bytes** 🔨
+what a page renders is copied under public/ at the path the rewritten page expects; one the run does not hold is a named gap.
+
+**293. An entry with no address** 🔨
+index.html carries the stylesheets and the mount point; react's location is the bundler's business and no CDN URL is written on purpose.
+
+**294. The port can be loaded** 🔨
+a minimal package.json with type module is written when nothing else wrote one, so the emitted modules run under plain node.
+
+
+## Phase 26 · Proof the shell holds
+
+*The site engine is only real if a run proves it.*
+
+**295. The emitted router tests itself** 🔨
+tests/router.test.js lands in the port and runs under node --test: matching, parameters, query and hash, redirect chains, and the site's own map.
+
+**296. SITE.md, the assembly report** 🔨
+routes with their components and origins, redirects with the server spellings, orphans, dead links, frames and the pagination proposals.
+
+**297. The site map as a graph** 🔨
+SITE_MAP.mmd draws the pages, the links between them and the redirects into them, in mermaid where the diff shows changes.
+
+**298. A route without a component is said** 🔨
+verify reports every route whose component no target emitted, while the gap is cheap.
+
+**299. The legacy site fixture, end to end** 🔨
+example/legacy-site holds a frameset, a meta refresh, SSI, a form, a font era page, pagination and a dead link; npm run demo-site ports it, test/site.test.js asserts the whole architecture, and CI checks the emitted app parses and its tests pass.
+
+
+## Phase 27 · The site engine grows
+
+*Planned: from an app shell to a product port.*
+
+**300. A Next.js target** ▢
+the same site model as an app directory: layout.tsx from the chrome, one page per route, redirects in next.config.
+
+**301. A Remix target** ▢
+routes as route modules, the redirect map as loaders that 301.
+
+**302. Static export mode** ▢
+one HTML file per route, prerendered from the model, for sites that never needed hydration at all.
+
+**303. .htaccess read for redirects** ▢
+RewriteRule and Redirect lines join the redirect map with their evidence.
+
+**304. sitemap.xml and robots.txt** ▢
+written from the route table; disallowed paths carried from the original when one exists.
+
+**305. Asset hashing** ▢
+content hashed filenames with the references rewritten, behind a flag because URLs are a contract.
+
+**306. Layout tables performed** ▢
+the proposed grid conversion executed behind a flag, with the table kept beside it for the diff.
+
+**307. jQuery behavior hydrated** ▢
+the inventory input-jquery already writes, matched to the site's pages so a handler lands on the route that owned its selector.
+
+**308. i18n routes** ▢
+/en/ and /de/ trees recognised as one site in two languages, the route table parameterized by locale.
+
+**309. Breadcrumbs from the hierarchy** ▢
+the nav model's nesting as a breadcrumb component, data only.
+
+**310. Scroll restoration** ▢
+back means where you were; a new route means the top; the hash still wins.
+
+**311. Prefetch on intent** ▢
+hovering a link warms its route module, measured before it is claimed.
+
+**312. Canonical URLs carried** ▢
+rel=canonical read per page and reapplied per route.
+
+**313. RSS and Atom feeds read** ▢
+a feed in the tree names the pages that are entries, which is pagination evidence too.
+
+**314. Print stylesheets carried** ▢
+media=print links survive into the shell instead of being dropped.
+
+**315. The favicon family** ▢
+the icons the pages declared, copied and linked from the entry.
+
+**316. Redirect lint** ▢
+chains flattened, cycles failed, and a redirect into a dead link named for what it is.
+
+**317. Query string routes** ▢
+page.php?id=3 families read as parameterized routes the way filename pagination already is.
+
+**318. Per route code splitting** ▢
+lazy imports in App.jsx behind a flag, because eight pages do not need it and eight hundred do.
+
+**319. A service worker for the port** ▢
+offline for the ported site itself, opt in, with the same honesty the console's worker has.
+
+**320. Anchor text audit** ▢
+"click here" counted and named with its route, because link text is navigation for a screen reader.
+
+**321. The 404 report** ▢
+server logs, when attested, matched against the redirect map so the map covers what people actually ask for.
+
+**322. Float layouts proposed to flex** ▢
+the css reader names float scaffolding the way tables are named now; performing it stays a person's call.
+
+**323. Frames as split view** ▢
+a frameset whose frames scrolled together proposed as a split layout, evidence from the frame names.
+
+**324. The old web corpus** ▢
+labelled miniatures for php, ssi, frames and font era pages join the calibration corpus so the readers' confidence is measured.
+
+
+## Phase 28 · Deeper honesty, wider reach
+
+*Planned: the long list, still in the order it pays off.*
+
+**325. npm publish** ▢
+one command that belongs to a person; docs/PUBLISHING.md waits beside it.
+
+**326. Real labelled apps in the corpus** ▢
+the archetype numbers mean more when the labels come from apps somebody shipped.
+
+**327. A grammar for the template dialects** ▢
+structural scanners with positions, so every note can say the line it came from.
+
+**328. Source positions in every note** ▢
+file and line on unverified items, once the grammar carries them.
+
+**329. The IR round trips** ▢
+emit angular from the IR, read it back, assert the same IR; the strongest honesty test the middle can have.
+
+**330. Slots across all nine targets** ▢
+named slots with fallbacks proven byte identical everywhere, not just where they land today.
+
+**331. Two way binding in lit** ▢
+the lit target catches up to checkbox, radio and multiple select.
+
+**332. A store reader** ▢
+Vuex and NgRx shapes read as state evidence, mapped to the state report.
+
+**333. WebSocket calls in the API map** ▢
+subscriptions read from source the way requests are, described and never invented.
+
+**334. GraphQL operations read** ▢
+queries in source become typed calls in the map; the schema stays unclaimed without evidence.
+
+**335. Auth flows described** ▢
+login, refresh and logout as a sequence diagram from the interceptors and calls that prove it.
+
+**336. Route guards carried** ▢
+canActivate and friends read as route metadata the shell can honor, without inventing the auth they check.
+
+**337. Recorded interactions replayed** ▢
+input-record's sessions replayed against the port, drift reported per step.
+
+**338. The parity pane diffs the DOM** ▢
+structure diff beside the pixel wipe, because a moved div explains a changed pixel.
+
+**339. Accessibility gates, opt in** ▢
+--max-a11y N fails a run whose measured findings exceed the line, same shape as --max-unverified.
+
+**340. The console compares runs** ▢
+two run.json files side by side: what changed, what got worse, which notes closed.
+
+**341. A plugin author kit** ▢
+a scaffolded plugin with its test, docs and a fixture, one command, no framework knowledge required.
+
+**342. Third party plugin discovery** ▢
+a project directory of plugins loads the way builtin ones do, documented with the same contract.
+
+**343. Windows paths in every plugin** ▢
+the suite already runs on Windows in CI; an audit closes the file URL and separator gaps it does not cover.
+
+**344. The CLI explains a failure** ▢
+a policy stop prints what evidence would clear it, not just what rule fired.
+
+**345. Deterministic runs asserted** ▢
+two runs over the same tree byte identical, gated in CI, temp paths and timestamps excepted.
+
+**346. The improve report ranks by cost** ▢
+findings ordered by the size of the fix, measured from the emitted code that would change.
+
+**347. Tokens from more than one recording** ▢
+several sessions merged with agreement measured, disagreement reported as a range.
+
+**348. The behavior report names races** ▢
+debounce and cancellation patterns in the legacy code called out where the port must keep them.
+
+**349. A migration ledger** ▢
+every decision the run made, machine readable, so a second run can be held to the first one's choices.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 204 |
-| planned | 1 |
-| total | 249 |
+| new in this branch | 254 |
+| planned | 51 |
+| total | 349 |
 
-The one still open is open for a stated reason, not for lack of time: npm
-publish is one command that belongs to a person, with docs/PUBLISHING.md
-waiting beside it. Four that were open closed in this branch: focus order once
-the probe recorded positions, the calibration corpus at v0 with eight labelled
-miniatures, the compare pane preview the moment it was noticed that the
-dependency free element target never needed a build step, and the Vue reader
-once structural scanning produced byte identical output to the regexes it
-retired.
+The fifty one open are open for stated reasons, not for lack of time: phases
+27 and 28 name what each one waits on, and npm publish stays the one command
+that belongs to a person, with docs/PUBLISHING.md waiting beside it. Four that
+were open closed earlier in this branch: focus order once the probe recorded
+positions, the calibration corpus at v0 with eight labelled miniatures, the
+compare pane preview the moment it was noticed that the dependency free
+element target never needed a build step, and the Vue reader once structural
+scanning produced byte identical output to the regexes it retired.

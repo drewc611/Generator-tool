@@ -51,6 +51,9 @@ ctx.screens         [{ selector, file, inputs, outputs, usesTwoWay, rxjs }]
 ctx.api.calls       [{ method, path, file, name, headers, body }]
 ctx.api.interceptors [{ file }]
 ctx.plan.components []
+ctx.site            with --site true: { pages, graph, chrome, redirects,
+                    pagination, frames, deadLinks }, written by input-static
+                    and read by output-site
 ctx.written         relative paths written so far
 
 await ctx.write(relPath, contents)   writes under config.out, records the path

@@ -381,6 +381,18 @@ jobs:
           grep -q "role=\"status\"" sprint-out/src/solid/*.jsx || true
           rm -rf sprint-out
 
+      - name: a folder of old pages becomes a React app, and the emitted app holds up
+        run: |
+          node src/cli.js run --src example/legacy-site --out site-out --site true
+          for f in site-out/src/app/match.js site-out/src/app/router.js site-out/src/app/head.js site-out/src/app/nav.js site-out/src/app/redirects.js; do node --check "$f"; done
+          node -e 'JSON.parse(require("fs").readFileSync("site-out/redirects.json","utf8"))'
+          node -e 'const r=JSON.parse(require("fs").readFileSync("site-out/redirects.json","utf8")); if (!r.some(x=>x.from==="/moved"&&x.to==="/about")) throw new Error("the meta refresh did not become a redirect")'
+          grep -q '<main>{children}</main>' site-out/src/app/Layout.jsx
+          if grep -q '<nav' site-out/src/features/Home/Home.jsx; then echo "the page kept chrome the layout owns"; exit 1; fi
+          cmp example/legacy-site/logo.svg site-out/public/logo.svg
+          node --test site-out/tests/router.test.js
+          rm -rf site-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -392,6 +404,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "249" ]; then
-            echo "ROADMAP.md holds $count entries and claims 249"; exit 1
+          if [ "$count" != "349" ]; then
+            echo "ROADMAP.md holds $count entries and claims 349"; exit 1
           fi

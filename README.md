@@ -7,7 +7,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 595
-lines of core, no runtime dependencies, 83 plugins, and the literal output of
+lines of core, no runtime dependencies, 84 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ## Why it looks like that
@@ -26,9 +26,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 83 plugin(s)
+node src/cli.js plugins      # 84 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 430 tests, node --test, no framework
+npm test                     # 445 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -113,7 +113,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 83 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 84 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
@@ -211,6 +211,38 @@ And it writes this decade back out: React, Vue, Svelte, modern Angular with
 the block syntax, Lit, or a custom element that depends on nothing, plus the
 proofs beside them: a conformance suite, mocks that carry nobody's data, a
 spec that admits what it never saw, stories for every state of every target.
+
+## A folder of old pages becomes an application
+
+The oldest front end there is: a directory of .html files, some .php, an
+.shtml with server side includes, a frameset, a page that still opens with
+`<font color="red">`. There was never a framework to read. There is still an
+application in there, and `--site true` builds it:
+
+```bash
+npm run demo-site      # example/legacy-site → example/out-site
+```
+
+Every page becomes a routed React component. The nav and footer the pages
+repeated verbatim leave them and become the layout, once. Internal links are
+rewritten to routes and one document level click listener makes plain anchors
+navigate; the router is emitted with the port, has no dependency, and its pure
+matcher ships with its own tests that run inside the port. Every old address
+keeps working: `/about.html` redirects to `/about`, a meta refresh page joins
+the redirect map instead of the screens, and the map is written three ways —
+`redirects.json`, `_redirects`, and an nginx block. Titles, descriptions and
+og tags are reapplied per route because a single page app forgets them.
+Stylesheets and images travel as bytes into `public/`.
+
+The old web's spellings are read for what they meant: `<font>` becomes a
+styled span with the seven sizes browsers actually used, `onclick` and
+`javascript:` hrefs become the handlers they always were, PHP and ASP blocks
+are stripped and counted as named gaps, SSI includes resolve from the tree
+the way the server resolved them, and a frameset is read as the layout it
+was. What cannot be known is reported: dead links dangle where they dangled,
+orphan pages are named, `news-1.html`/`news-2.html` are proposed as one
+parameterized route rather than merged by guesswork, and `SITE_MAP.mmd` draws
+the whole graph so the gaps have a picture.
 
 ## On your desk and in your pocket
 
@@ -722,9 +754,9 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): two hundred and forty nine features in twenty
-two phases, forty four shipped, two hundred and four new in the current
-branch, one planned, every status honest. The one still open is npm publish,
-which is a command that belongs to a person.
+The whole picture is [ROADMAP.md](ROADMAP.md): three hundred and forty nine features in
+twenty eight phases, forty four shipped, two hundred and fifty four new in the
+current branch, fifty one planned, every status honest. Each open one names
+what it waits on; npm publish stays a command that belongs to a person.
 
 MIT. See [LICENSE](LICENSE).
