@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and thirty seven features across sixty phases. The statuses are
+Five hundred and forty one features across sixty one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1973,15 +1973,29 @@ the prompt carries the endpoints the app calls, the routes it serves and the arc
 **537. It is testable without a network or a key** 🔨
 the model call is an injectable function, so the prompt building, the response parsing and the honest wrapper are held by unit tests with no live call, and CI proves the plugin refuses cleanly when live authorization is absent rather than reaching the network.
 
+## Phase 61: a system of agents reasons over the port
+
+**538. general-agents retrieves from the port's own reports, the R in RAG** 🔨
+the reports this run wrote are the retrieval corpus, and a small BM25 style ranker over their paragraphs, dependency free and deterministic, pulls the passages relevant to a question, so the agents reason over the port's own analysis rather than a guess and the retrieval is the tool's own words.
+
+**539. Specialised agents each review their slice through a real model** 🔨
+an architect, a security reviewer, a cost analyst and a reliability engineer each run as a call to an external large language model with their own role prompt and their own retrieved context, and a synthesiser agent reconciles their answers into one recommendation, a genuine multi agent pass and not the toy transformer.
+
+**540. The report is auditable and marked unverified** 🔨
+AGENTS.md shows which report fed each agent so the retrieval can be checked, and states plainly that every architecture, risk, cost and failure mode is a proposal from an external model for a person to prove, because a confidently wrong review adopted as fact is the failure this tool refuses.
+
+**541. The agents obey the live gate and take no secret, and are tested without a network** 🔨
+the calls are billable and live, refused by default like every live plugin, the key is read from the environment at call time and never stored, and the retrieval, the prompts and the honest wrapper are held by unit tests with an injected corpus and model, CI proving the refusal.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 490 |
+| new in this branch | 494 |
 | planned | 3 |
-| total | 537 |
+| total | 541 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

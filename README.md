@@ -192,26 +192,65 @@ modules, performing only the rewrites it can prove from the shape of the line
 and refusing the rest, a dynamic `require` left verbatim and named in
 CODEMOD.md rather than guessed. Run it with `--codemod true`.
 
-## Deploy the port to any of the three clouds
+## Deploy the port to any of six clouds
 
 The site engine already writes a full application and a zero dependency server.
-Three output targets turn that same site model into infrastructure as code for
-the major clouds, each a deterministic plan the user reviews and applies with
-their own credentials. None of them takes a secret; taking a credential is what
-the secret gate refuses.
+Six output targets turn that same site model into infrastructure as code, each a
+deterministic plan the user reviews and applies with their own credentials. None
+of them takes a secret; taking a credential is what the secret gate refuses.
 
-| cloud | hosting | edge | the 301 map becomes | you apply with | flag |
-| --- | --- | --- | --- | --- | --- |
-| AWS | S3 | CloudFront | a CloudFront function | the `aws` CLI | `--aws true` |
-| Google Cloud | Cloud Storage | Cloud CDN + HTTPS LB | URL map redirect rules | `gcloud` / `gsutil` | `--gcp true` |
-| Azure | Storage static site | Front Door | Front Door rules | the `az` CLI | `--azure true` |
+| target | hosting | the 301 map becomes | you apply with | flag |
+| --- | --- | --- | --- | --- |
+| AWS | S3 + CloudFront | a CloudFront function | the `aws` CLI | `--aws true` |
+| Google Cloud | Cloud Storage + Cloud CDN | URL map redirect rules | `gcloud` / `gsutil` | `--gcp true` |
+| Azure | Storage static site + Front Door | Front Door rules | the `az` CLI | `--azure true` |
+| Cloudflare | Pages | a `_redirects` file | `wrangler` | `--cloudflare true` |
+| Vercel | Vercel | `vercel.json` redirects | the `vercel` CLI | `--vercel true` |
+| Netlify | Netlify | a `_redirects` file | the `netlify` CLI | `--netlify true` |
 
-Each emits Terraform, a deploy script that reads your own configured
+Each emits the host's own config, a deploy script that reads your own configured
 credentials from the environment, the flattened redirect map so every retired
 address keeps answering, and a README that names DNS, the certificate and the
 account's own specifics as yours to fill in rather than guessing them. It knows
 how to architect the hosting because the rules are written and tested, not
 learned.
+
+## Ask a real model for the architecture, securely
+
+The six targets above are rules portamp wrote. When the design question is
+harder than rules, `general-architect` asks a genuine frontier model through the
+Anthropic API to propose an architecture for the app the run just read, built
+from its real endpoints and routes. It is honest about what it is: the answer is
+the external model's, not portamp's own transformer, and `ARCHITECTURE.md` marks
+every word of it unverified, a proposal a human architect must prove.
+
+It never asks you to hand over a key. The key lives only in your own
+environment; portamp reads it at the moment of the call and never prints, stores
+or commits it. The call is a live, billable one, so it is refused by default and
+runs only when you open both gates and attest who you are calling:
+
+```bash
+export ANTHROPIC_API_KEY=...           # stays in your shell; portamp never sees it leave
+node src/cli.js run --src ./app --out ./port \
+  --architect true --allow-live true --allow-billable true \
+  --architect-ask "Design this for 50k daily users on AWS, and note the GCP and Azure differences."
+```
+
+Without `--allow-live` the run refuses rather than reaching the network, the
+same refusal every live plugin gives. portamp's own transformer cannot design a
+system and does not pretend to; this is the honest bridge to a model that can.
+
+When one opinion is not enough, `general-agents` runs a small system of agents
+over the port's own reports. It is retrieval augmented: a dependency free BM25
+style ranker pulls the passages relevant to a question from the reports the run
+already wrote (that is the retrieval, over the tool's own words, no vector
+database), and hands each to a specialised agent, an architect, a security
+reviewer, a cost analyst and a reliability engineer, each a call to a real
+model with its own role. A synthesiser agent reconciles them into one
+recommendation. `AGENTS.md` shows which report fed each agent, so the retrieval
+is auditable, and marks the whole thing unverified. Same gates, same key
+handling as above; run it with `--agents true --allow-live true --allow-billable
+true`.
 
 ## What a translation looks like
 

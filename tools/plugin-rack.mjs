@@ -148,6 +148,7 @@ const DOES = {
   "general-scaffold": "portamp new-plugin, with the contract already in the header",
   "general-watch": "rerun the pipeline when the source tree changes",
   "general-policy": "secrets, live calls, billable calls, endpoints in components",
+  "general-agents": "a multi agent, retrieval augmented reasoning pass over the port's own reports, via a real external LLM",
   "general-architect": "a cloud architecture proposal from a real external LLM, gated live and billable, marked unverified",
   "general-authorization": "no source path runs without an attestation on disk",
   "general-license": "fonts and icon sets whose licence does not travel",
