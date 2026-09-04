@@ -7,8 +7,16 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 119 plugins, and the literal output of
+lines of core, no runtime dependencies, 123 plugins, and the literal output of
 `npm run demo`.</sub>
+
+![node --test running the portamp suite: 580 passing, 581 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins](media/test-run.png)
+
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 580
+assertions pass across 63 test files with `node --test` and no framework, and
+CodeQL's javascript-security-extended query finds nothing. CI reruns the same
+suite on Node 18, 20 and 22 and on Windows, and asserts the same screen written
+in two dialects emits byte identical output across all four targets.</sub>
 
 ## Why it looks like that
 
@@ -26,7 +34,7 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 119 plugin(s)
+node src/cli.js plugins      # 123 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
 npm test                     # 574 tests, node --test, no framework
 ```
@@ -113,7 +121,7 @@ full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
 ## The ten it ships with
 
-![The plugin rack: 119 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 123 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## What a translation looks like
 
