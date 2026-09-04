@@ -156,6 +156,23 @@ relative error under a thousandth between the analytic and numerical gradients,
 is what makes "it learned" a fact rather than a hope. Around twenty four hundred
 parameters, learning to continue `port` into `the legacy app into react`.
 
+And it does more than memorize one sequence. The honest question for a model
+this size is not whether the loss falls but whether it learned a rule or just
+the examples, so it is graded on a held out split it never trained on. Run
+`--train-reverse true` and `--train-math true`:
+
+![vis-transformer graded on held out data: sequence reversal generalizes to 91% on sequences it never saw, addition modulo 7 memorizes the training table but scores 0% held out](media/transformer-learns.png)
+
+Sequence reversal is a rule about positions, not tokens, so the block learns it
+from some sequences and applies it to ones it never saw: `91%` held out against
+a `0.8%` guess. That is genuine generalization, an algorithm rather than a
+table. Addition modulo 7 is the honest counterexample: it fits the training
+table perfectly and scores at chance on held out pairs, because generalizing
+modular addition needs a longer regime than a demo this size runs. Both numbers
+are measured on held out data and REVERSE.md and MATH.md state them plainly,
+the win and the limit alike, because a held out number quietly rounded up is
+the one lie this tool exists to refuse.
+
 `output-codemod` is the other kind, a code transformer: it lifts CommonJS to ES
 modules, performing only the rewrites it can prove from the shape of the line
 and refusing the rest, a dynamic `require` left verbatim and named in

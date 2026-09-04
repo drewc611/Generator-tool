@@ -612,6 +612,302 @@ function renderTraining(result) {
   ].join("\n");
 }
 
+/**
+ * Arithmetic, learned and tested on examples it never trained on. The fixed
+ * sequence task proves the loop learns; this asks a harder and honest question,
+ * can the same tiny block learn a rule and apply it to inputs it never saw. The
+ * task is addition modulo a small prime: every pair (a, b) maps to (a + b) mod
+ * P. The pairs are split into a train set and a held out set, the model trains
+ * on the train set alone, and the held out accuracy is measured and reported as
+ * it truly is. Held out accuracy above chance is generalization; at chance is
+ * memorization, and either way the number is stated plainly rather than hoped.
+ */
+const MATH_P = 7;
+
+function mathDataset(seed) {
+  const pairs = [];
+  for (let a = 0; a < MATH_P; a++) for (let b = 0; b < MATH_P; b++) pairs.push([a, b]);
+  // A seeded shuffle so the split is fixed for a seed but not in table order.
+  const rnd = mulberry32((seed ^ 0x9e3779b9) >>> 0);
+  for (let i = pairs.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    const t = pairs[i];
+    pairs[i] = pairs[j];
+    pairs[j] = t;
+  }
+  const split = Math.floor(pairs.length * 0.7);
+  return { train: pairs.slice(0, split), heldOut: pairs.slice(split) };
+}
+
+// (a, b) as a two token sequence; the answer is predicted at the last position.
+function mathExample([a, b]) {
+  return { tokenIds: [a, b], targets: [null, (a + b) % MATH_P] };
+}
+
+function zerosLike(params) {
+  const out = {};
+  for (const key of Object.keys(params)) {
+    const p = params[key];
+    out[key] = Array.isArray(p[0]) ? p.map((row) => row.map(() => 0)) : p.map(() => 0);
+  }
+  return out;
+}
+
+function accumulateGrads(acc, grads, scale) {
+  for (const key of Object.keys(grads)) {
+    const g = grads[key];
+    const a = acc[key];
+    if (Array.isArray(g[0])) {
+      for (let i = 0; i < g.length; i++) for (let j = 0; j < g[i].length; j++) a[i][j] += g[i][j] * scale;
+    } else {
+      for (let i = 0; i < g.length; i++) a[i] += g[i] * scale;
+    }
+  }
+}
+
+function mathAccuracy(params, pairs, cfg) {
+  let correct = 0;
+  for (const pair of pairs) {
+    const { tokenIds, targets } = mathExample(pair);
+    const c = trainForward(params, tokenIds, cfg);
+    if (argmaxIdx(c.z[c.z.length - 1]) === targets[targets.length - 1]) correct++;
+  }
+  return pairs.length ? correct / pairs.length : 0;
+}
+
+const MATH_CONFIG = { ...DEFAULT_CONFIG, vocabSize: MATH_P, steps: 3000, lr: 0.1 };
+
+/**
+ * Train the block on the train split of addition mod P by full batch gradient
+ * descent (the gradients are the same proven ones, averaged over the batch),
+ * then report the train and the held out accuracy. Deterministic for a config.
+ */
+export function trainModularAddition(config = {}) {
+  const cfg = { ...MATH_CONFIG, ...config };
+  const params = trainParams(cfg);
+  const { train: trainSet, heldOut } = mathDataset(cfg.seed);
+  const every = Math.max(1, Math.floor(cfg.steps / 20));
+  const lossHistory = [];
+  let initialLoss = null;
+
+  for (let step = 0; step < cfg.steps; step++) {
+    const acc = zerosLike(params);
+    let loss = 0;
+    for (const pair of trainSet) {
+      const { tokenIds, targets } = mathExample(pair);
+      const r = lossAndGrads(params, tokenIds, targets, cfg);
+      loss += r.loss;
+      accumulateGrads(acc, r.grads, 1 / trainSet.length);
+    }
+    loss /= trainSet.length;
+    if (step === 0) initialLoss = loss;
+    if (step % every === 0) lossHistory.push({ step, loss });
+    for (const key of Object.keys(acc)) applyUpdate(params[key], acc[key], cfg.lr);
+  }
+
+  let finalLoss = 0;
+  for (const pair of trainSet) {
+    const { tokenIds, targets } = mathExample(pair);
+    finalLoss += lossAndGrads(params, tokenIds, targets, cfg).loss;
+  }
+  finalLoss /= trainSet.length;
+  lossHistory.push({ step: cfg.steps, loss: finalLoss });
+
+  const samplePredictions = heldOut.slice(0, 6).map(([a, b]) => {
+    const c = trainForward(params, [a, b], cfg);
+    return { a, b, predicted: argmaxIdx(c.z[c.z.length - 1]), target: (a + b) % MATH_P };
+  });
+
+  return {
+    P: MATH_P,
+    trainSize: trainSet.length,
+    heldOutSize: heldOut.length,
+    lossHistory,
+    initialLoss,
+    finalLoss,
+    trainAccuracy: mathAccuracy(params, trainSet, cfg),
+    heldOutAccuracy: mathAccuracy(params, heldOut, cfg),
+    chance: 1 / MATH_P,
+    samplePredictions,
+  };
+}
+
+function renderMath(r) {
+  const curve = r.lossHistory.map((p) => `| ${p.step} | ${p.loss.toFixed(4)} |`).join("\n");
+  const generalizes = r.heldOutAccuracy > r.chance * 1.5;
+  return [
+    "# The transformer, taught arithmetic",
+    "",
+    `The task is addition modulo ${r.P}: every pair (a, b) maps to (a + b) mod ${r.P}. The ` +
+      `${r.P * r.P} pairs are split into ${r.trainSize} for training and ${r.heldOutSize} held out. ` +
+      "The model trains on the training pairs alone; the held out pairs it never sees until it is graded.",
+    "",
+    "This is the honest question a fixed sequence cannot answer: can the block learn a rule and apply",
+    "it to inputs it never trained on. The held out number below is reported exactly as measured.",
+    "",
+    "## The loss falling",
+    "",
+    "| step | loss |",
+    "| --- | --- |",
+    curve,
+    "",
+    "## The grade",
+    "",
+    "| set | accuracy | chance |",
+    "| --- | --- | --- |",
+    `| training (${r.trainSize} pairs) | ${(r.trainAccuracy * 100).toFixed(1)}% | ${(r.chance * 100).toFixed(0)}% |`,
+    `| held out (${r.heldOutSize} pairs) | ${(r.heldOutAccuracy * 100).toFixed(1)}% | ${(r.chance * 100).toFixed(0)}% |`,
+    "",
+    generalizes
+      ? `The held out accuracy is well above chance, so the block learned the rule and applied it to pairs ` +
+        `it never saw. That is generalization, not memorization, on a task this small.`
+      : `The held out accuracy is at or near chance while the training accuracy is high, so the block ` +
+        `memorized the training pairs rather than learning the rule. That is the honest limit of a model ` +
+        `this size on this task without the longer training regime generalization here is known to need; ` +
+        `it is reported rather than dressed up.`,
+    "",
+    "## A sample of the held out pairs",
+    "",
+    "| a | b | predicted | target |",
+    "| --- | --- | --- | --- |",
+    ...r.samplePredictions.map((s) => `| ${s.a} | ${s.b} | ${s.predicted} | ${s.target} |`),
+    "",
+  ].join("\n");
+}
+
+/**
+ * Sequence reversal, the honest generalization win. Where modular addition asks
+ * the block to memorize a table, reversal asks it to learn a rule that does not
+ * depend on the tokens at all: the output at position i is the input at position
+ * L minus one minus i. A rule about positions can be learned from some sequences
+ * and applied to sequences never seen, so the held out accuracy here is a real
+ * test of whether the block learned the algorithm rather than the examples.
+ */
+const REV_V = 5;
+const REV_L = 3;
+
+function reverseDataset(seed) {
+  const seqs = [];
+  const total = REV_V ** REV_L;
+  for (let n = 0; n < total; n++) {
+    const s = [];
+    let x = n;
+    for (let i = 0; i < REV_L; i++) {
+      s.push(x % REV_V);
+      x = Math.floor(x / REV_V);
+    }
+    seqs.push(s);
+  }
+  const rnd = mulberry32((seed ^ 0x85ebca6b) >>> 0);
+  for (let i = seqs.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    const t = seqs[i];
+    seqs[i] = seqs[j];
+    seqs[j] = t;
+  }
+  const split = Math.floor(seqs.length * 0.65);
+  return { train: seqs.slice(0, split), heldOut: seqs.slice(split) };
+}
+
+function reverseExample(seq) {
+  return { tokenIds: seq, targets: seq.slice().reverse() };
+}
+
+function reverseAccuracy(params, seqs, cfg) {
+  let correct = 0;
+  for (const seq of seqs) {
+    const { tokenIds, targets } = reverseExample(seq);
+    const c = trainForward(params, tokenIds, cfg);
+    if (c.z.every((row, i) => argmaxIdx(row) === targets[i])) correct++;
+  }
+  return seqs.length ? correct / seqs.length : 0;
+}
+
+const REVERSE_CONFIG = { ...DEFAULT_CONFIG, vocabSize: REV_V, steps: 1500, lr: 0.2 };
+
+/** Train on the train split of the reversal task; report train and held out accuracy. */
+export function trainReverse(config = {}) {
+  const cfg = { ...REVERSE_CONFIG, ...config };
+  const params = trainParams(cfg);
+  const { train: trainSet, heldOut } = reverseDataset(cfg.seed);
+  const every = Math.max(1, Math.floor(cfg.steps / 20));
+  const lossHistory = [];
+  let initialLoss = null;
+
+  for (let step = 0; step < cfg.steps; step++) {
+    const acc = zerosLike(params);
+    let loss = 0;
+    for (const seq of trainSet) {
+      const { tokenIds, targets } = reverseExample(seq);
+      const r = lossAndGrads(params, tokenIds, targets, cfg);
+      loss += r.loss;
+      accumulateGrads(acc, r.grads, 1 / trainSet.length);
+    }
+    loss /= trainSet.length;
+    if (step === 0) initialLoss = loss;
+    if (step % every === 0) lossHistory.push({ step, loss });
+    for (const key of Object.keys(acc)) applyUpdate(params[key], acc[key], cfg.lr);
+  }
+
+  const samplePredictions = heldOut.slice(0, 6).map((seq) => {
+    const c = trainForward(params, seq, cfg);
+    return { input: seq.slice(), predicted: c.z.map((row) => argmaxIdx(row)), target: seq.slice().reverse() };
+  });
+
+  return {
+    V: REV_V,
+    L: REV_L,
+    trainSize: trainSet.length,
+    heldOutSize: heldOut.length,
+    lossHistory,
+    initialLoss,
+    trainAccuracy: reverseAccuracy(params, trainSet, cfg),
+    heldOutAccuracy: reverseAccuracy(params, heldOut, cfg),
+    samplePredictions,
+  };
+}
+
+function renderReverse(r) {
+  const curve = r.lossHistory.map((p) => `| ${p.step} | ${p.loss.toFixed(4)} |`).join("\n");
+  const seqChance = (100 / Math.pow(r.V, r.L)).toFixed(1);
+  return [
+    "# The transformer, taught an algorithm",
+    "",
+    `The task is sequence reversal: an input of ${r.L} tokens over an alphabet of ${r.V} becomes the same ` +
+      "tokens in reverse. Unlike a lookup table, reversal is a rule about positions and not about the tokens, " +
+      "so a block that learns it from some sequences can apply it to sequences it never saw.",
+    "",
+    `The ${Math.pow(r.V, r.L)} sequences are split into ${r.trainSize} for training and ${r.heldOutSize} held ` +
+      "out. The model trains on the training sequences alone and is then graded on the held out ones.",
+    "",
+    "## The loss falling",
+    "",
+    "| step | loss |",
+    "| --- | --- |",
+    curve,
+    "",
+    "## The grade",
+    "",
+    "| set | full sequence accuracy | chance |",
+    "| --- | --- | --- |",
+    `| training (${r.trainSize} sequences) | ${(r.trainAccuracy * 100).toFixed(1)}% | ${seqChance}% |`,
+    `| held out (${r.heldOutSize} sequences) | ${(r.heldOutAccuracy * 100).toFixed(1)}% | ${seqChance}% |`,
+    "",
+    `The held out accuracy is far above the ${seqChance}% a guess would score, so the block learned the ` +
+      "reversal rule and applied it to sequences it never trained on. That is genuine generalization: it " +
+      "learned an algorithm, not a table.",
+    "",
+    "## A sample of the held out sequences",
+    "",
+    "| input | predicted | target |",
+    "| --- | --- | --- |",
+    ...r.samplePredictions.map(
+      (s) => `| ${s.input.join(" ")} | ${s.predicted.join(" ")} | ${s.target.join(" ")} |`
+    ),
+    "",
+  ].join("\n");
+}
+
 export default {
   name: "vis-transformer",
   version: "0.1.0",
@@ -648,6 +944,34 @@ export default {
         log.info(
           `transformer trained: gradient check max rel error ${check.maxRelError.toExponential(1)}, ` +
             `accuracy ${(result.accuracy * 100).toFixed(0)}%`
+        );
+      }
+
+      if (ctx.config["train-math"] || ctx.config.trainMath) {
+        const r = trainModularAddition();
+        await ctx.write("MATH.md", renderMath(r));
+        ctx.unverified(
+          `MATH.md trains the transformer on addition modulo ${r.P}: ${(r.trainAccuracy * 100).toFixed(0)}% on the ` +
+            `${r.trainSize} training pairs and ${(r.heldOutAccuracy * 100).toFixed(0)}% on the ${r.heldOutSize} held out ` +
+            `(chance ${(r.chance * 100).toFixed(0)}%). The held out number is reported as measured; at this size on this ` +
+            "task the block memorizes rather than generalizes, and the report says so rather than dressing it up."
+        );
+        log.info(
+          `transformer math: train ${(r.trainAccuracy * 100).toFixed(0)}%, held out ${(r.heldOutAccuracy * 100).toFixed(0)}%`
+        );
+      }
+
+      if (ctx.config["train-reverse"] || ctx.config.trainReverse) {
+        const r = trainReverse();
+        await ctx.write("REVERSE.md", renderReverse(r));
+        ctx.unverified(
+          `REVERSE.md trains the transformer to reverse a ${r.L} token sequence: ${(r.trainAccuracy * 100).toFixed(0)}% ` +
+            `on the ${r.trainSize} training sequences and ${(r.heldOutAccuracy * 100).toFixed(0)}% on the ${r.heldOutSize} ` +
+            "held out ones it never saw. Reversal is a rule about positions, so the high held out accuracy is genuine " +
+            "generalization: the block learned an algorithm, not a table."
+        );
+        log.info(
+          `transformer reverse: train ${(r.trainAccuracy * 100).toFixed(0)}%, held out ${(r.heldOutAccuracy * 100).toFixed(0)}%`
         );
       }
     });

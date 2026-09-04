@@ -6,7 +6,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { softmax, layerNorm, forward, train, gradientCheck, crossEntropyLoss } from "../plugins/vis-transformer/index.js";
+import {
+  softmax,
+  layerNorm,
+  forward,
+  train,
+  gradientCheck,
+  crossEntropyLoss,
+  trainModularAddition,
+  trainReverse,
+} from "../plugins/vis-transformer/index.js";
 import { transformCjsToEsm } from "../plugins/output-codemod/index.js";
 import { ROOT, runPipeline } from "./helpers.js";
 
@@ -52,6 +61,31 @@ test("training learns the fixed task to completion, deterministically", () => {
     JSON.stringify(again.lossHistory),
     "two trainings are byte identical"
   );
+});
+
+test("reversal is learned as a rule and generalizes to sequences it never saw", () => {
+  const r = trainReverse({ steps: 600 });
+  assert.ok(r.trainAccuracy >= 0.95, "it fits the training sequences");
+  const chance = 1 / Math.pow(r.V, r.L);
+  assert.ok(r.heldOutAccuracy > 0.5, `held out accuracy ${r.heldOutAccuracy} is far above chance ${chance}`);
+  const sample = r.samplePredictions[0];
+  assert.deepEqual(sample.predicted, sample.target, "a held out sequence is reversed correctly");
+
+  const again = trainReverse({ steps: 200 });
+  const once = trainReverse({ steps: 200 });
+  assert.equal(JSON.stringify(again.lossHistory), JSON.stringify(once.lossHistory), "training is deterministic");
+});
+
+test("modular addition is memorized, and the held out gap is reported honestly", () => {
+  const r = trainModularAddition({ steps: 1500 });
+  assert.ok(r.trainAccuracy >= 0.9, "it fits the training table");
+  assert.ok(
+    Number.isFinite(r.heldOutAccuracy) && r.heldOutAccuracy >= 0 && r.heldOutAccuracy <= 1,
+    "the held out accuracy is a real measured number"
+  );
+  // At this size the block memorizes rather than generalizes; the point of the
+  // test is that the honest gap between train and held out is measured, not hidden.
+  assert.ok(r.heldOutAccuracy <= r.trainAccuracy, "held out never beats train here");
 });
 
 test("cross entropy rewards the confident right answer over the wrong one", () => {

@@ -644,6 +644,19 @@ jobs:
           test -f notrain-out/TRAINING.md && { echo "training ran unrequested"; exit 1; }
           rm -rf notrain-out
 
+      - name: the transformer memorizes arithmetic and generalizes an algorithm, honestly
+        run: |
+          node src/cli.js run --src test/fixtures/codemod-site --out math-out --train-math true --train-reverse true
+          test -f math-out/MATH.md || { echo "no math report"; exit 1; }
+          test -f math-out/REVERSE.md || { echo "no reverse report"; exit 1; }
+          grep -qiE "memoriz" math-out/MATH.md || { echo "the math report does not state the memorization honestly"; exit 1; }
+          grep -qiE "generaliz" math-out/REVERSE.md || { echo "the reverse report does not claim generalization"; exit 1; }
+          grep -qiE "held out" math-out/REVERSE.md || { echo "the reverse report has no held out grade"; exit 1; }
+          rm -rf math-out
+          node src/cli.js run --src test/fixtures/codemod-site --out nomath-out
+          if [ -f nomath-out/MATH.md ] || [ -f nomath-out/REVERSE.md ]; then echo "a math task ran unrequested"; exit 1; fi
+          rm -rf nomath-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -655,6 +668,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "521" ]; then
-            echo "ROADMAP.md holds $count entries and claims 521"; exit 1
+          if [ "$count" != "525" ]; then
+            echo "ROADMAP.md holds $count entries and claims 525"; exit 1
           fi

@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and twenty one features across fifty six phases. The statuses are
+Five hundred and twenty five features across fifty seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1917,15 +1917,29 @@ the export becomes a Vercel deployment whose `vercel.json` carries each retired 
 **521. output-netlify emits a Netlify deploy plan** 🔨
 the export becomes a Netlify site whose native `_redirects` file forces each 301 and whose `netlify.toml` publishes the export, applied with the user's own `netlify login`, so the port knows the big three clouds and the three static hosts alike, and each takes no credential.
 
+## Phase 57: the transformer learns arithmetic and an algorithm
+
+**522. vis-transformer learns addition, and the honest gap is measured** 🔨
+the same trainable block learns addition modulo a small prime on a training split of the pairs and is graded on a held out split it never saw, reusing the proven backward pass over a full batch; MATH.md reports both accuracies as measured.
+
+**523. The arithmetic result is reported as memorization, not dressed up** 🔨
+at this size the block reaches the training pairs and not the held out ones, so the report states plainly that it memorized the table rather than learning the rule, because a held out number quietly rounded up is exactly the lie the whole tool refuses.
+
+**524. vis-transformer learns sequence reversal as a rule** 🔨
+reversal is a rule about positions and not about the tokens, so the block trains on some sequences and is graded on sequences it never saw, and REVERSE.md carries the loss curve, the train and held out accuracy, and a sample of reversed held out inputs.
+
+**525. The reversal result is genuine generalization, and the run proves it** 🔨
+the held out full sequence accuracy lands far above the fraction a guess would score, so the block learned the algorithm rather than the examples, and the claim is a measured comparison in the report and a test rather than a hope.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 474 |
+| new in this branch | 478 |
 | planned | 3 |
-| total | 521 |
+| total | 525 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
