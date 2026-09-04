@@ -387,7 +387,7 @@ jobs:
           for f in site-out/src/app/match.js site-out/src/app/router.js site-out/src/app/head.js site-out/src/app/nav.js site-out/src/app/redirects.js; do node --check "$f"; done
           node -e 'JSON.parse(require("fs").readFileSync("site-out/redirects.json","utf8"))'
           node -e 'const r=JSON.parse(require("fs").readFileSync("site-out/redirects.json","utf8")); if (!r.some(x=>x.from==="/moved"&&x.to==="/about")) throw new Error("the meta refresh did not become a redirect")'
-          grep -q '<main>{children}</main>' site-out/src/app/Layout.jsx
+          grep -q '<main id="main" tabIndex={-1}>{children}</main>' site-out/src/app/Layout.jsx
           if grep -q '<nav' site-out/src/features/Home/Home.jsx; then echo "the page kept chrome the layout owns"; exit 1; fi
           cmp example/legacy-site/logo.svg site-out/public/logo.svg
           node --check site-out/serve.js
