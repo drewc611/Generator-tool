@@ -173,6 +173,20 @@ are measured on held out data and REVERSE.md and MATH.md state them plainly,
 the win and the limit alike, because a held out number quietly rounded up is
 the one lie this tool exists to refuse.
 
+Sorting is the harder rule, because it must preserve how many of each duplicate
+a sequence carries rather than move fixed positions. Run `--train-sort true` and
+the block fits the training sequences completely and sorts held out ones it
+never saw:
+
+![vis-transformer learning to reverse and to sort: two loss curves falling to near zero, and held out accuracy of 89% for reversal and 96% for sort, each hundreds of times above the chance a guess would score](media/generalization.png)
+
+Sort reaches `96%` held out against a `0.39%` guess, so the block learned to
+sort sequences it never trained on rather than memorize the table, its
+gradients checked to under a thousandth like every other path. It is still a
+roughly twenty four hundred parameter one block model, not a general reasoner,
+but reversal and sort are two algorithms it genuinely learned and applied to
+inputs it had never seen.
+
 `output-codemod` is the other kind, a code transformer: it lifts CommonJS to ES
 modules, performing only the rewrites it can prove from the shape of the line
 and refusing the rest, a dynamic `require` left verbatim and named in
