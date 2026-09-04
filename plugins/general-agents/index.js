@@ -204,6 +204,8 @@ export default {
         ctx.config.agentsAsk ??
         "Propose a production cloud architecture for this application, and review it for security, cost and reliability.";
       const model = ctx.config["agents-model"] ?? ctx.config.agentsModel ?? DEFAULT_MODEL;
+      // With --web-search the agents ground their answers in current sources the model cites.
+      const webSearch = Boolean(ctx.config["web-search"] ?? ctx.config.webSearch);
       const caller = ctx.config.agentsClient ?? callAnthropic;
       const corpus = ctx.config.agentsCorpus ?? (await readReportCorpus(ctx));
 
@@ -216,12 +218,12 @@ export default {
           AGENTS.map(async (agent) => {
             const context = retrieve(corpus, `${question} ${agent.focus}`, 6);
             const { system, user } = buildAgentPrompt({ agent, question, context });
-            const answer = await caller({ apiKey, model, system, user });
+            const answer = await caller({ apiKey, model, system, user, webSearch });
             return { key: agent.key, title: agent.title, answer, context };
           })
         );
         const synth = buildSynthesisPrompt({ question, answers: agents });
-        synthesis = await caller({ apiKey, model, system: synth.system, user: synth.user });
+        synthesis = await caller({ apiKey, model, system: synth.system, user: synth.user, webSearch });
       } catch (err) {
         ctx.unverified(
           `general-agents called ${model} and a call failed (${err.message}). No agent report was written; the run ` +

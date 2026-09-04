@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and forty one features across sixty one phases. The statuses are
+Five hundred and forty five features across sixty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -1987,15 +1987,29 @@ AGENTS.md shows which report fed each agent so the retrieval can be checked, and
 **541. The agents obey the live gate and take no secret, and are tested without a network** 🔨
 the calls are billable and live, refused by default like every live plugin, the key is read from the environment at call time and never stored, and the retrieval, the prompts and the honest wrapper are held by unit tests with an injected corpus and model, CI proving the refusal.
 
+## Phase 62: the agents ground their answers in current sources
+
+**542. The architect and the agents can search the web, through the model's own tool** 🔨
+with `--web-search` the request offers the model its built in web search tool rather than any scraper portamp wrote, so an answer about a service released after the model's training is current, and the network is reached only through the one gated, billable call that was already authorized.
+
+**543. A grounded answer carries the sources it cites** 🔨
+the citations the model returns are collected, deduplicated and appended to the report as a Sources list of real links, so the reader can open what the model read and check it, which is the difference between a grounded answer and a confident one.
+
+**544. The server side search loop is handled and bounded** 🔨
+the model pauses the turn to run the search server side, so the call resumes the turn a bounded number of times until it ends rather than dropping the partial answer, and the whole loop is driven in a plain fetch with no dependency.
+
+**545. Grounding stays off by default and is tested without a network** 🔨
+web search is opt in and adds no tool unless asked, and the tool offer, the paused turn resume and the cited Sources list are all held by unit tests with an injected fetch, so the behaviour is proven without a key or a live call.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 494 |
+| new in this branch | 498 |
 | planned | 3 |
-| total | 541 |
+| total | 545 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

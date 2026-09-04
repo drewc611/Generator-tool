@@ -72,35 +72,85 @@ export function buildArchitectPrompt({ ask, api, site, archetype } = {}) {
  * can be tested without a network or a key; it defaults to the global fetch.
  * The key is passed in, never read here from anywhere persistent.
  */
-export async function callAnthropic({ apiKey, model, system, user, maxTokens = 16000, fetchImpl } = {}) {
+/**
+ * Pull the cited sources out of a response's content blocks. When the model
+ * grounds an answer with the web search tool, each text block it wrote from a
+ * source carries a citations array; this collects the urls and titles so the
+ * report can list them and the reader can check the model's work.
+ */
+export function extractCitations(content) {
+  const out = [];
+  const seen = new Set();
+  for (const b of content ?? []) {
+    if (!b || b.type !== "text" || !Array.isArray(b.citations)) continue;
+    for (const c of b.citations) {
+      const url = c && c.url;
+      if (!url || seen.has(url)) continue;
+      seen.add(url);
+      out.push({ url, title: (c.title || url).toString() });
+    }
+  }
+  return out;
+}
+
+/**
+ * Post to the Anthropic Messages API with a plain fetch and return the text.
+ * With webSearch on, the model's own web search tool is offered so the answer
+ * is grounded in current sources it cites, not only its training; the server
+ * runs the search and may pause the turn to do it, so this resumes the turn a
+ * bounded number of times until the model finishes, then appends the cited
+ * sources. fetchImpl is injectable so the whole path is testable without a
+ * network or a key. The key is passed in, never read here from anywhere.
+ */
+export async function callAnthropic({
+  apiKey,
+  model,
+  system,
+  user,
+  maxTokens = 16000,
+  fetchImpl,
+  webSearch = false,
+  maxSearchUses = 5,
+} = {}) {
   const doFetch = fetchImpl || globalThis.fetch;
   if (typeof doFetch !== "function") throw new Error("no fetch available in this runtime");
-  const res = await doFetch(ENDPOINT, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: model || DEFAULT_MODEL,
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: "user", content: user }],
-    }),
-  });
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    // The body can echo request detail; keep it short and never assume it is safe to store.
-    throw new Error(`Anthropic API returned ${res.status} ${res.statusText} ${detail.slice(0, 200)}`.trim());
+  const tools = webSearch ? [{ type: "web_search_20260209", name: "web_search", max_uses: maxSearchUses }] : undefined;
+  const messages = [{ role: "user", content: user }];
+  const textParts = [];
+  const citations = [];
+
+  // The web search tool runs server side; the model can pause the turn to run
+  // it and resume. Loop a bounded number of times, resending the assistant
+  // content each pause so the server continues, and stop when the turn ends.
+  for (let step = 0; step < 6; step++) {
+    const body = { model: model || DEFAULT_MODEL, max_tokens: maxTokens, system, messages };
+    if (tools) body.tools = tools;
+    const res = await doFetch(ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      // The body can echo request detail; keep it short and never assume it is safe to store.
+      throw new Error(`Anthropic API returned ${res.status} ${res.statusText} ${detail.slice(0, 200)}`.trim());
+    }
+    const data = await res.json();
+    const content = data.content ?? [];
+    for (const b of content) if (b && b.type === "text" && typeof b.text === "string") textParts.push(b.text);
+    for (const c of extractCitations(content)) if (!citations.some((x) => x.url === c.url)) citations.push(c);
+    if (data.stop_reason === "pause_turn") {
+      messages.push({ role: "assistant", content });
+      continue;
+    }
+    break;
   }
-  const data = await res.json();
-  const text = (data.content ?? [])
-    .filter((b) => b && b.type === "text" && typeof b.text === "string")
-    .map((b) => b.text)
-    .join("\n")
-    .trim();
+
+  let text = textParts.join("\n").trim();
   if (!text) throw new Error("the model returned no text");
+  if (webSearch && citations.length) {
+    text += "\n\n## Sources\n" + citations.map((c) => `- [${c.title}](${c.url})`).join("\n");
+  }
   return text;
 }
 
@@ -156,6 +206,8 @@ export default {
 
       const ask = ctx.config["architect-ask"] ?? ctx.config.architectAsk ?? null;
       const model = ctx.config["architect-model"] ?? ctx.config.architectModel ?? DEFAULT_MODEL;
+      // With --web-search the model grounds the answer in current sources it cites.
+      const webSearch = Boolean(ctx.config["web-search"] ?? ctx.config.webSearch);
       const { system, user } = buildArchitectPrompt({ ask, api: ctx.api, site: ctx.site, archetype: ctx.archetype });
 
       // Injectable so the plugin is testable with no network or key; the real
@@ -164,7 +216,7 @@ export default {
 
       let answer;
       try {
-        answer = await caller({ apiKey, model, system, user });
+        answer = await caller({ apiKey, model, system, user, webSearch });
       } catch (err) {
         ctx.unverified(
           `general-architect called ${model} and the call failed (${err.message}). No architecture was written; ` +
