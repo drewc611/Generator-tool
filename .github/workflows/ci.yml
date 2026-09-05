@@ -889,9 +889,19 @@ jobs:
           node src/cli.js run --src mx-src --out mx-out --max-security 99 || { echo "a real ceiling failed a page under it"; exit 1; }
           rm -rf mx-src mx-out mx-err.txt
 
+      - name: --max-perf fails a heavy page at zero and passes it under a real ceiling
+        run: |
+          mkdir -p mp-src
+          printf '%s\n' '<html><head><script src="a.js"></script></head><body><img src="hero.jpg"></body></html>' > mp-src/page.html
+          if node src/cli.js run --src mp-src --out mp-out --max-perf 0 2>mp-err.txt; then echo "a ceiling of zero did not fail the heavy page"; exit 1; fi
+          grep -q "performance item(s) against a ceiling of 0" mp-err.txt || { echo "the failure did not name the ceiling"; exit 1; }
+          rm -rf mp-out
+          node src/cli.js run --src mp-src --out mp-out --max-perf 99 || { echo "a real ceiling failed a page under it"; exit 1; }
+          rm -rf mp-src mp-out mp-err.txt
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "569" ]; then
-            echo "ROADMAP.md holds $count entries and claims 569"; exit 1
+          if [ "$count" != "570" ]; then
+            echo "ROADMAP.md holds $count entries and claims 570"; exit 1
           fi

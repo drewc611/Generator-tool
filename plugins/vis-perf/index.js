@@ -25,7 +25,7 @@ const fontGap = (face) =>
   face.formats.some((f) => ["eot", "svg", "ttf"].includes(f)) ||
   !face.display;
 
-function collect(ctx) {
+export function collect(ctx) {
   const rows = [];
 
   const perf = ctx.perf;
@@ -57,6 +57,15 @@ function collect(ctx) {
 }
 
 const kb = (bytes) => Math.round((bytes / 1024) * 10) / 10;
+
+/**
+ * The scorecard's headline number, reckoned from what the analyzers left at
+ * plan. The port's size is not in it, because a byte is not a defect.
+ * general-policy's --max-perf ceiling imports this rather than reading the
+ * scorecard, so the gate agrees with the report and does not depend on which
+ * verify handler ran first.
+ */
+export const perfTotal = (ctx) => collect(ctx).filter((r) => r.present).reduce((n, r) => n + r.count, 0);
 
 export default {
   name: "vis-perf",

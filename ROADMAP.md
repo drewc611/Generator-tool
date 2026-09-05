@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and sixty nine features across eighty five phases. The statuses are
+Five hundred and seventy features across eighty six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-731 tests, on Node 18, 20 and 22, and on Windows in CI.
+735 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2119,15 +2119,20 @@ docs/PUBLISHING.md ends with a step a person does by eye: run npm pack --dry-run
 **569. --max-security turns the security scorecard into a ceiling the run enforces** 🔨
 the scorecards report; the repository's honest pattern is that a report can become an opt in ceiling, the same shape as --max-unverified, --max-kb and --max-a11y, that fails the run and prints what would clear it, and only ever adds a gate. --max-security N fails the run when the security scorecard's flagged count exceeds N, naming SECURITY_SCORECARD.md as where each concern is listed, and refuses a ceiling that is not a number out loud. The gate lives in general-policy beside the other ceilings and reckons the total through vis-security's own exported function from what the analyzers left at plan, so it agrees with the scorecard to the item and does not depend on which verify handler ran first, since the kernel runs same stage handlers in discovery order and general-policy fires before vis-security. With no flag nothing is enforced and the scorecard still reports. test/security-ceiling.test.js holds it, including the reckoning, the fail, the pass, the opt in, and the refusal; a CI step runs a leaky page under a ceiling of zero and expects the failure.
 
+## Phase 86: weight and first paint, capped
+
+**570. --max-perf turns the performance scorecard into a ceiling the run enforces** 🔨
+the ceiling set was asymmetric: accessibility and security had budgets and performance did not. --max-perf N fails the run when the performance scorecard's flagged count exceeds N, naming PERFORMANCE.md as where each concern is listed, refuses a ceiling that is not a number out loud, and only ever adds a gate. It lives in general-policy beside the other ceilings and reckons the total through vis-perf's own exported perfTotal from what the analyzers left at plan, so it agrees with the scorecard to the item and does not depend on verify handler order. The port's size is never in the count, because a byte is not a defect and --max-kb already budgets it. With no flag nothing is enforced and the scorecard still reports. test/perf-ceiling.test.js holds it, including that a megabyte of size adds nothing to the count; a CI step runs a heavy page under a ceiling of zero and expects the failure, then under 99 and expects the pass.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 522 |
+| new in this branch | 523 |
 | planned | 3 |
-| total | 569 |
+| total | 570 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

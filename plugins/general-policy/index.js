@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { securityTotal } from "../vis-security/index.js";
+import { perfTotal } from "../vis-perf/index.js";
 
 /**
  * Two gates, at the two moments they can still do something.
@@ -110,6 +111,21 @@ export default {
           throw new Error(`${found} security item(s) against a ceiling of ${max}. SECURITY_SCORECARD.md names each concern; fix them or raise the ceiling knowingly.`);
         }
         log.info(`${found} security item(s), under the ceiling of ${max}`);
+      }
+
+      // And once more for weight and first paint: the performance scorecard's
+      // count, capped, reckoned the same way through vis-perf's own function.
+      // The port's size is not in the count; a byte is not a defect, and
+      // --max-kb already budgets it.
+      const perfCeiling = ctx.config.maxPerf ?? ctx.config["max-perf"];
+      if (perfCeiling !== undefined && perfCeiling !== null && perfCeiling !== false) {
+        const max = Number(perfCeiling);
+        if (!Number.isFinite(max)) throw new Error(`--max-perf needs a number, got "${perfCeiling}".`);
+        const found = perfTotal(ctx);
+        if (found > max) {
+          throw new Error(`${found} performance item(s) against a ceiling of ${max}. PERFORMANCE.md names each concern; fix them or raise the ceiling knowingly.`);
+        }
+        log.info(`${found} performance item(s), under the ceiling of ${max}`);
       }
 
       const ceiling = ctx.config.maxUnverified ?? ctx.config["max-unverified"];
