@@ -34,7 +34,7 @@ test("steps are chosen by name, the network step is skipped unless named, and a 
   ];
   const lines = [];
   const r = runSteps(steps, { log: (l) => lines.push(l) });
-  assert.deepEqual(r, { ran: 3, failed: ["a false step"] });
+  assert.deepEqual(r, { ran: 4, failed: ["a false step"] });
   assert.ok(lines.some((l) => /^ok\s+a true step/.test(l)) && lines.some((l) => /^FAIL\s+a false step/.test(l)) && lines.some((l) => /boom/.test(l)));
   assert.ok(!lines.some((l) => /after/.test(l)), "the first failure stops the run");
   assert.deepEqual(runSteps(steps, { only: ["install"], log: () => {} }), { ran: 1, failed: ["install the optional reader"] });
