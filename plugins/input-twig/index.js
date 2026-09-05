@@ -37,6 +37,9 @@ export function twigToJinja(source, note = () => {}) {
         .replace(/\bis\s+(?:empty|null)\b/g, "== null")
         .replace(/\bis\s+not\s+same\s+as\s*\(/g, "!== (")
         .replace(/\bis\s+same\s+as\s*\(/g, "=== (")
+        .replace(/\bis\s+not\s+even\b/g, "% 2 != 0").replace(/\bis\s+even\b/g, "% 2 == 0")
+        .replace(/\bis\s+not\s+odd\b/g, "% 2 == 0").replace(/\bis\s+odd\b/g, "% 2 != 0")
+        .replace(/\bis\s+not\s+divisible\s*by\s*\(([^)]*)\)/g, "% ($1) != 0").replace(/\bis\s+divisible\s*by\s*\(([^)]*)\)/g, "% ($1) == 0")
         .replace(/\s~\s/g, " + ")
         .replace(/\|\s*(?:e|escape|raw)\b(?:\([^)]*\))?/g, "")
         .replace(/\|\s*(?:trans|t)\b/g, "")
@@ -49,7 +52,12 @@ export function twigToJinja(source, note = () => {}) {
     if (/\b(path|url|asset)\s*\(/.test(expr)) note(`\`{{ ${expr.trim().slice(0, 50)} }}\` names a route or asset the server resolved by name. The call is kept as written; the address belongs in the port's endpoint map.`);
     return `{{${a} ${rewriteExpr(expr)} ${b}}}`;
   });
-  text = text.replace(/\{%(-?)\s*(if|elif|for)\s+([\s\S]*?)\s*(-?)%\}/g, (m, a, tag, expr, b) => `{%${a} ${tag} ${rewriteExpr(expr)} ${b}%}`);
+  text = text.replace(/\{%(-?)\s*(if|elif|for)\s+([\s\S]*?)\s*(-?)%\}/g, (m, a, tag, expr, b) => {
+    // A test of a runtime type or class is the server's to make; it is left as written and named.
+    const typed = /\bis\s+(?:not\s+)?(iterable|numeric|scalar|map|constant|type|instanceof)\b/.exec(expr);
+    if (typed) note(`\`{% ${tag} ${expr.trim().slice(0, 30)} %}\` tests \`is ${typed[1]}\`, a runtime type the client cannot know; the test is left as written for a person.`);
+    return `{%${a} ${tag} ${rewriteExpr(expr)} ${b}%}`;
+  });
   // Twig's for iterates `key, value in map` like jinja, and `for x in 1..n` is a range jinja spells range().
   text = text.replace(/\{%(-?)\s*for\s+([\w$]+)\s+in\s+(\S+)\.\.(\S+)\s*(-?)%\}/g, (m, a, v, lo, hi, b) => { note(`{% for ${v} in ${lo}..${hi} %} loops over a range; the port repeats over a list it must be given.`); return `{%${a} for ${v} in [] ${b}%}`; });
   // Twig only tags with no jinja equivalent are left for the jinja lowering to name.

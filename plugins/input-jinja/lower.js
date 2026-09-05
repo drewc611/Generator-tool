@@ -57,7 +57,7 @@ function bindSets(source, note) {
   let text = source;
   const depthAt = (at) => {
     let d = 0;
-    for (const m of text.slice(0, at).matchAll(/\{%-?\s*(end)?(if|for|block|macro|call|set)\b([^%]*)%\}/g)) {
+    for (const m of text.slice(0, at).matchAll(/\{%-?\s*(end)?(if|for|block|macro|call|set)\b([\s\S]*?)-?%\}/g)) {
       if (m[2] === "set" && !/=/.test(m[3]) && !m[1]) d += 1;
       else if (m[2] === "set") { if (m[1]) d -= 1; }
       else d += m[1] ? -1 : 1;

@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and twenty seven features across one hundred and forty two phases. The statuses are
+Six hundred and twenty eight features across one hundred and forty three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2436,14 +2436,19 @@ Pebble is Twig's grammar in Java with a handful of spellings of its own, and its
 **627. input-volt reads Volt, Phalcon's engine, with its framework helpers as the elements they render and the calls the port must supply** 🔨
 Volt is jinja's grammar with Twig's tests and PHP framework helpers, and its .volt files never reached a reader. `{{ content() }}` is where a controller drops the view into its layout, so the one layout that renders it is composed around every view that is not itself a layout or a partial, and more than one is named, because Phalcon picks per controller and the run cannot see that. `{{ partial('x') }}` inlines a file, named when it passes parameters or is not held; `{{ link_to('route', 'Text') }}` is the anchor it renders with its route as a call to `url`, the reverse router the port must supply, and `url()` and `static_url()` are kept as that call; `tag.textField`, `tag.select`, `tag.textArea` and their siblings are the fields they render with their models, a field named through an expression dropped and named rather than guessed, and `tag.select` emitted with no options and named; `{% do %}` and an early `{% break %}`, `{% continue %}` or `{% return %}` are named; `{% cache %}` is transparent; `{{ flash.output() }}` is named; `{% elseif %}` is elif. Volt is the eighteenth dialect the byte identity gate holds. test/volt.test.js holds it.
 
+## Phase 143: the seventeenth review pass
+
+**628. The Pebble and Volt readers read again, and the Twig front and the set scope with them** 🔨
+A review pass over the two new readers, each finding fixed with the input that exposed it. Pebble counts `loop.index` from zero where Twig and jinja count from one, so every striped table flipped; it is the dialect's own index. `contains` was rewritten inside a string literal and `equals` matched the `.equals(` method; the operator is read outside strings with its right operand in the string part that follows, and the method is left alone. `is even`, `is odd` and `is divisible by` moved into the Twig front so Volt has them too, and a test of a runtime type is named there for every dialect riding the front. The `%` those tests emit into a tag body broke the set scope scan, so a set inside such a condition was bound globally; the scan reads tags whole. Volt's `{% set a = 1, b = 2 %}` bound one name to a comma expression; each is its own set. `{% for x in xs if cond %}` reached the loop as its list; the condition is the loop's first child, closed before the loop's end. Volt spells every helper in snake_case as well as camelCase, and `submit_button`, `image`, `form`, `end_form`, the asset includes and the rest of the tag helpers were interpolations of calls nothing defines; each is the element it renders, removed and named, or named as a helper this reader does not render, and `tag` is no input. A helper's `'key': value` pairs were dropped; they are the attributes they set, a `value` named as the initial model. A partial cycle was cut by depth with the wrong reason; the chain is known and the cycle named. A macro's `{% return %}` was stripped as an early exit; it is the macro's value. And the layout was picked by a name heuristic when several rendered `content()`, with the skipped ones claimed composed; Phalcon's hierarchy is knowable from the tree, views/index.volt around everything and layouts/<controller>.volt around that controller's views first, and a file rendering `content()` outside that rule is named as applied by configuration the run cannot see. test/pebble.test.js and test/volt.test.js hold it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 580 |
+| new in this branch | 581 |
 | planned | 3 |
-| total | 627 |
+| total | 628 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

@@ -9,8 +9,8 @@ import { twigToJinja } from "../input-twig/index.js";
 /**
  * Pebble, the Java template engine modelled on Twig: the same tags and the
  * same tests, with a handful of spellings of its own. `equals` is ==,
- * `contains` asks a collection or a string, `is even` and `is odd` are the
- * remainders they test, `?:` falls back the way || does, `{% parallel %}`,
+ * `contains` asks a collection or a string, `loop.index` counts from zero
+ * where Twig's counts from one, `?:` falls back the way || does, `{% parallel %}`,
  * `{% cache %}` and `{% autoescape %}` wrap a block the port renders once,
  * `{% flush %}` writes the buffer, `{% filter %}` applies a filter to a
  * block, and `{% embed %}` includes a template while overriding its blocks.
@@ -29,21 +29,24 @@ export function pebbleToTwig(source, note = () => {}) {
   text = text.replace(/\{%-?\s*(?:parallel|endparallel|cache\b[^%]*|endcache|autoescape\b[^%]*|endautoescape|flush)\s*-?%\}/g, "");
   text = text.replace(/\{%-?\s*filter\s+([\w|() ,"']+?)\s*-?%\}([\s\S]*?)\{%-?\s*endfilter\s*-?%\}/g, (m, filter, body) => { note(`\`{% filter ${filter.trim().split(/[\s(|]/)[0]} %}\` applied a filter to a whole block; the block stands unfiltered and the filter is named.`); return body; });
   text = text.replace(/\{%-?\s*embed\s+(["'][^"']+["'])[^%]*-?%\}([\s\S]*?)\{%-?\s*endembed\s*-?%\}/g, (m, name) => { note(`\`{% embed ${name} %}\` included a template while overriding its blocks; the template is included as it stands and the overrides are named, not applied.`); return `{% include ${name} %}`; });
-  // `a contains "x"` reads its right operand whole, string or name, before the string split hides it.
-  const contains = (expr) => expr.replace(/([\w.$\]\)]+)\s+contains\s+("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[\w.$\[\]]+)/g, "($1).includes($2)");
-  const rewriteExpr = (expr) => contains(expr).split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/).map((part, i) => {
-    if (i % 2) return part;
-    return part
-      .replace(/\bequals\b/g, "==")
-      .replace(/\bis\s+not\s+even\b/g, "% 2 != 0").replace(/\bis\s+even\b/g, "% 2 == 0")
-      .replace(/\bis\s+not\s+odd\b/g, "% 2 == 0").replace(/\bis\s+odd\b/g, "% 2 != 0")
-      .replace(/\s\?:\s/g, " || ");
-  }).join("");
+  // Rewrites run outside strings. `a contains "x"` has its right operand in the string part that follows, so the
+  // operator is closed there; `equals` the operator is not `.equals(` the method.
+  const rewriteExpr = (expr) => {
+    const parts = expr.split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/);
+    for (let i = 0; i < parts.length; i += 2) {
+      parts[i] = parts[i]
+        .replace(/(?<!\.)\bequals\b/g, "==")
+        .replace(/([\w.$\]\)]+)\s+contains\s+([\w.$\[\]]+)/g, "($1).includes($2)")
+        .replace(/\s\?:\s/g, " || ");
+      const open = /([\w.$\]\)]+)\s+contains\s*$/.exec(parts[i]);
+      if (open && parts[i + 1] !== undefined) { parts[i] = parts[i].slice(0, open.index) + `(${open[1]}).includes(`; parts[i + 1] += ")"; }
+    }
+    return parts.join("");
+  };
+  // Pebble counts loop.index from zero where Twig and jinja count from one.
+  text = text.replace(/\bloop\.index\b(?!0)/g, "loop.index0").replace(/\bloop\.revindex\b(?!0)/g, "loop.revindex0");
   text = text.replace(/\{\{(-?)\s*([\s\S]*?)\s*(-?)\}\}/g, (m, a, expr, b) => `{{${a} ${rewriteExpr(expr)} ${b}}}`);
-  text = text.replace(/\{%(-?)\s*(if|elseif|elif|for|set)\s+([\s\S]*?)\s*(-?)%\}/g, (m, a, tag, expr, b) => {
-    if (/\bis\s+(?:iterable|map|not\s+iterable|not\s+map)\b/.test(expr)) note(`\`{% ${tag} ${expr.trim().slice(0, 30)} %}\` tests a runtime type the client cannot know; the test is left as written for a person.`);
-    return `{%${a} ${tag} ${rewriteExpr(expr)} ${b}%}`;
-  });
+  text = text.replace(/\{%(-?)\s*(if|elseif|elif|for|set)\s+([\s\S]*?)\s*(-?)%\}/g, (m, a, tag, expr, b) => `{%${a} ${tag} ${rewriteExpr(expr)} ${b}%}`);
   return text;
 }
 
