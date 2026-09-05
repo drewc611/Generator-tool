@@ -817,9 +817,18 @@ jobs:
           grep -q "no captions track" me-out/MEDIA.md || { echo "the uncaptioned video was not flagged"; exit 1; }
           rm -rf me-src me-out
 
+      - name: the tables reader names an uncaptioned data table
+        run: |
+          mkdir -p ta-src
+          printf '%s\n' '<table><tr><th scope="col">Q</th></tr><tr><td>1</td></tr></table>' > ta-src/page.html
+          node src/cli.js run --src ta-src --out ta-out
+          test -f ta-out/TABLES.md || { echo "no tables report"; exit 1; }
+          grep -q "no caption" ta-out/TABLES.md || { echo "the uncaptioned table was not flagged"; exit 1; }
+          rm -rf ta-src ta-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "560" ]; then
-            echo "ROADMAP.md holds $count entries and claims 560"; exit 1
+          if [ "$count" != "561" ]; then
+            echo "ROADMAP.md holds $count entries and claims 561"; exit 1
           fi

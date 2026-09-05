@@ -71,6 +71,7 @@ const DOES = {
   "dsp-fonts": "how the old app loaded its type: formats to drop, a display strategy to add",
   "dsp-focus": "the focus habits the port inherits: positive tabindex, autofocus, accesskey, programmatic focus",
   "dsp-media": "the video and audio embedded, the captions track missing, controls and autoplay named; src withheld",
+  "dsp-tables": "the tables drawn, and whether a screen reader can read them: caption, headers, scope; cells withheld",
   "dsp-motion": "the animations and transitions, and whether reduced-motion is ever honoured",
   "dsp-observers": "the IntersectionObserver, ResizeObserver, MutationObserver and PerformanceObserver the port must disconnect, and which never got one",
   "dsp-print": "the print stylesheet the port must not lose, carried as identity not reinvented",

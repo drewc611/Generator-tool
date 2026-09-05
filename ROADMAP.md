@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and sixty features across seventy six phases. The statuses are
+Five hundred and sixty one features across seventy seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-685 tests, on Node 18, 20 and 22, and on Windows in CI.
+691 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2074,15 +2074,20 @@ where a landmark says what a screen reader can reach and a label says what a con
 **560. dsp-media names the video and audio the port embeds** 🔨
 a media element is the one place accessibility is not contrast or a label but a second track: a video with speech and no captions is unusable to anyone who cannot hear it, a track a screenshot never shows and a pixel diff never catches. dsp-media finds every <video> and <audio>, records which of controls, autoplay, loop, muted and a captions track are present, and names the gaps: a video with no captions track (the WCAG failure), a media element with neither controls nor autoplay (nothing starts it), and an autoplay (which browsers block with sound and a port keeps on purpose, not by default). It reads the markup and the attribute names only and never records a src, which can carry a signed URL, the caution the secret gate keeps. It counts and changes nothing; captions are content a person writes. test/media.test.js holds it and a CI step names a page's uncaptioned video.
 
+## Phase 77: the grid a screen reader must be able to read
+
+**561. dsp-tables names the tables the port draws and whether a reader can read them** 🔨
+a data table is a grid of relationships a sighted user reads from the layout and a screen reader recovers only from the markup: a caption that names it, a th that marks a header, and a scope that ties a cell to its header. Strip those and the table is a flat wall of numbers, and the old web also built layout out of tables a reader announces as data unless they say role=presentation. dsp-tables finds each table, balanced across nested ones, records whether it has a caption, header cells, scope and a presentational role, and names the gap: a data table with no caption, headers with no scope, or a table with no headers and no presentational role. It reads structure only and never records a cell's content. It counts and changes nothing; whether a table was layout or data, and what its caption should say, is the port owner's call. test/tables.test.js holds it and a CI step names a page's uncaptioned data table.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 513 |
+| new in this branch | 514 |
 | planned | 3 |
-| total | 560 |
+| total | 561 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
