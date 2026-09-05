@@ -171,6 +171,7 @@ const DOES = {
   "output-migration": "the cutover one route at a time, ordered by proof",
   "output-forms": "each schema as code, with a validator speaking the app's own words",
   "vis-parity": "what matched, what did not, and what was never checked",
+  "vis-readers": "which reader claimed each file the scan kept, and the markup no reader did",
   "vis-roundtrip": "the emitted React read back and held against the structure it came from",
   "vis-ui": "the console: rack, wipe, endpoints, and the unverified list",
   "vis-timeline": "the exploration replayed step by step, records generalised away",

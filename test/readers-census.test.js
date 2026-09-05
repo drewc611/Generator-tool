@@ -1,0 +1,39 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import test from "node:test";
+
+import { census } from "../plugins/vis-readers/index.js";
+import { ROOT, runPipeline } from "./helpers.js";
+
+/**
+ * Which reader claimed each file, and which markup no reader did: the census
+ * of files beside the census of screens.
+ */
+
+test("every file lands in exactly one row, and the unread row is markup only", () => {
+  const files = ["a.html", "b.blade.php", "c.js", "d.css", "e.png", "f.hbs", "g.json"].map((rel) => ({ rel }));
+  const screens = [{ file: "a.html", readBy: "static" }, { file: "./b.blade.php", readBy: "blade" }];
+  const c = census(files, screens);
+  assert.deepEqual(c.screens.map((s) => `${s.file}:${s.reader}`), ["a.html:static", "b.blade.php:blade"]);
+  assert.deepEqual(c.unread, ["f.hbs"], "a template no reader claimed is the finding; a script is not");
+  assert.deepEqual(c.scripts, ["c.js"]); assert.deepEqual(c.styles, ["d.css"]); assert.deepEqual(c.assets, ["e.png", "g.json"]);
+  assert.equal(c.screens.length + c.unread.length + c.scripts.length + c.styles.length + c.assets.length, files.length);
+  assert.deepEqual(c.byReader, [["blade", 1], ["static", 1]]);
+});
+
+test("a run writes READERS.md with the reader per screen file and names the markup nobody claimed", async () => {
+  const run = await runPipeline({ src: join(ROOT, "test/fixtures/ember") });
+  try {
+    assert.equal(run.error, null);
+    assert.ok(run.ctx.written.includes("READERS.md"));
+    const c = run.ctx.readers;
+    assert.ok(c.byReader.some(([r]) => r === "ember") && c.byReader.some(([r]) => r === "handlebars"), "both readers are credited");
+    assert.equal(c.screens.length + c.unread.length + c.scripts.length + c.styles.length + c.assets.length, c.total);
+    const md = await readFile(join(run.out, "READERS.md"), "utf8");
+    assert.match(md, /by ember/);
+    assert.match(md, /user-card\.js/, "the class beside the template is a script the analyzers scanned, not unread");
+  } finally {
+    await run.cleanup();
+  }
+});

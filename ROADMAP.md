@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and eighty seven features across one hundred and three phases. The statuses are
+Five hundred and eighty eight features across one hundred and four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-806 tests, on Node 18, 20 and 22, and on Windows in CI.
+808 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2227,14 +2227,20 @@ the contract's account of the tool stopped at 8.0 while the code reached 9.49, t
 Blade is Laravel's template language, directives that begin with @ and PHP expressions in braces, and a view is composed from a layout it extends, sections it fills and partials it includes. input-blade composes first, the way the compiler does: @extends pulls the layout, each @section fills the @yield it names with @parent splicing the default back and an inline @section a value, a held @include is inlined by its dotted view name and a missing one named, and a layout other views extend is chrome rather than a screen. Then it lowers: @if, @elseif, @else, @unless, @isset, @empty, @auth, @guest, @can, @cannot and @error as conditionals with the chain negated the way the engine evaluates it, @foreach and @forelse as a loop with the @empty branch as the empty state and the key value form kept, @switch and @case as the equalities they test, {{ }} as interpolation and {!! !!} as bound html, and a PHP expression as the JS it names: $a->b to a.b, empty() and isset() and count() to their checks, string functions to their methods, concatenation to +, $loop->index and iteration and first to the dialect's index. The variables a view reads are its inputs, because the controller supplied them, with auth, can and errors named as inputs where a directive read them. @php, @csrf and @method, route() and asset() and __() helpers, @for and @while, @json and an @include with data are named rather than approximated. A .blade.php file is read by this reader alone; the static page reader steps aside for it. test/blade.test.js holds it.
 
 
+## Phase 104: what the run did not even look at
+
+**588. vis-readers accounts for every file the scan kept: the reader that claimed it, or nobody** 🔨
+thirty four readers each take the files they recognise, and a legacy tree carries pages, templates and scripts none of them knows. COVERAGE.md counts screens; vis-readers counts files, so the question of what the run did not even look at has an answer instead of an assumption. At verify, when the readers have done what they will do, every file the scan kept lands in exactly one of five rows: read as a screen, with the reader credited by name and a count per reader; a script the analyzers scanned that produced no screen, which is what a script that is not a component should do; a style; an asset or data file; or markup no reader claimed, the row a port owner reads first, named in the notes so a page the port has nothing from is a visible gap and not a silent one. Whether each unclaimed file is a page the port needs, and which reader should learn its shape, is a person's call. test/readers-census.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 540 |
+| new in this branch | 541 |
 | planned | 3 |
-| total | 587 |
+| total | 588 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

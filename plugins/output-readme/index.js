@@ -82,6 +82,7 @@ const DESCRIBES = [
   [/^PRINT\.md$/, "the print stylesheets carried across as identity"],
   [/^PROPS\.md$/, "blocks that share a skeleton, with the slots that vary proposed as props"],
   [/^RACES\.md$/, "the debounces and cancellations the port must keep"],
+  [/^READERS\.md$/, "which reader claimed each file the scan kept, and the markup no reader did"],
   [/^RENDER\.md$/, "what blocks first paint: sync head scripts, blocking stylesheets, css imports"],
   [/^REPORT\.md$/, "the scaffold's own report on the plugin it generated"],
   [/^REVERSE\.md$/, "the transformer demonstration learning to reverse a sequence, step by step"],
