@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and four features across one hundred and twenty phases. The statuses are
+Six hundred and five features across one hundred and twenty one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2323,14 +2323,19 @@ Smarty was the template engine of a generation of PHP applications, and its gram
 **604. The Smarty reader and the shared lowering reviewed, ten defects fixed with the inputs that exposed them** 🔨
 The review cadence held for the seventh time, and this pass reached the jinja lowering three dialects share and the readInputs every reader shares. The ternary a condition inside an attribute folds into was spliced in raw, so a double quote in its test ended the attribute; it goes through attrSafe like every other test. A filter inside such a branch ({{ t|truncate(5) }}) became a JavaScript bitwise or, so the filter is dropped and named and the value goes in unformatted. A > inside an earlier {% if a > 1 %} in the same attribute read as a tag close and the second chain fell back to a container inside the attribute; template spans are set aside before the markup is scanned. readInputs stripped a filter's arguments with its name, so a variable passed to a filter ({{ items | filter:search }}) was no longer an input; only the name goes, and track by is never a name. In the Smarty reader, PHP functions called in expressions (isset, empty, count, in_array, strlen, implode, str_replace) carried into the port as calls nothing defines, so the ones with an exact equivalent are rewritten, a formatter (number_format, date, sprintf) keeps its value unformatted and is named, and any other is kept and named as something the port must supply. A numeric key ($list.0) became list.0, a syntax error; it is the index it means. |replace replaced the first occurrence where Smarty replaces every one. nl2br, strip_tags, wordwrap, indent and spacify changed a value and were dropped in silence; they are named with the other formatters. An {assign} inside a branch or a loop was substituted as if it were the only one, a wrong value that looks right; inside a branch or loop it is carried as a set and named. A layout in a subdirectory was composed into its children and still ported as a screen, because the skip matched the whole path where the resolver matched a suffix; both match the same way. Each fix carries the input that exposed it in test/smarty.test.js.
 
+## Phase 121: a screen named like an element
+
+**605. A screen whose name is an HTML element's is never what an element of that name refers to** 🔨
+The Smarty fixture's partial is nav.tpl, and a partial is also a screen of its own, so the run held a screen called nav. Every target resolves a tag naming another screen in the run to that ported component, which is how a shared component composes with nothing target specific added; here it made every <nav> element in every screen a reference to the nav partial, in React by the components map, in Vue and Svelte by the tag rewrite and in the graph by the composition edge, and CI caught it where the suite had not, because the suite checked the lowered template and not the React the partial was composed into. An element is never a reference to a screen named like it. dsp-ir now carries the one list of HTML and SVG element names, and every place a selector is taken for a tag, the IR's known set, output-react's components map, output-vue's and output-svelte's rewrite and vis-graph's edges, skips a selector on that list; the screen is still ported under its own name and a note says nothing composes it by that name. The hygiene gate holds the list to one home, and the Smarty run test now reads the React and not only the template.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 557 |
+| new in this branch | 558 |
 | planned | 3 |
-| total | 604 |
+| total | 605 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

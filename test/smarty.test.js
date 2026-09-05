@@ -88,6 +88,9 @@ test("a run composes the template into the layout it extends, ports it, reads th
     assert.ok(by("nav"), "the include is also a screen of its own");
     const jsx = await readFile(join(run.out, "src/features/Product/Product.jsx"), "utf8");
     assert.doesNotMatch(jsx, /ng-|\{if |\{foreach |\{\/|\{\$[a-z]+\./);
+    assert.match(jsx, /<nav>/, "the nav partial is named like an element; <nav> stays an element");
+    assert.doesNotMatch(jsx, /<Nav\b|import Nav/);
+    assert.ok(run.ctx.report.unverified.some((n) => /<nav> is a screen named like an HTML element/.test(n)));
     for (const re of [/layout other templates extend/, /\|number_format formatted/, /iterates by index/, /named its key/, /\$smarty\.get is context/, /html_options.*function plugin/, /passed active/, /folded into the ternary/]) {
       assert.ok(run.ctx.report.unverified.some((n) => re.test(n)), `named: ${re}`);
     }

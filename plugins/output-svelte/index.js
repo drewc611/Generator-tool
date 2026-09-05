@@ -1,3 +1,4 @@
+import { isElementName } from "../dsp-ir/ir.js";
 import { toSvelte } from "./print.js";
 import { pascal, unique } from "../dsp-ir/emit.js";
 
@@ -39,6 +40,7 @@ export default {
         if (result?.markup) {
           for (const other of ctx.screens) {
             if (other === screen) continue;
+            if (isElementName(other.selector)) continue;
             const tag = new RegExp(`(</?)${other.selector}(?=[\\s>/])`, "g");
             if (tag.test(result.markup)) {
               const otherName = pascal(other.selector) || "Screen";

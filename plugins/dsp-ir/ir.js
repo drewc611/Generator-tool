@@ -25,6 +25,10 @@ import { jsString } from "./emit.js";
 // `slot` never means anything else in an Angular template and `ng-content`
 // never appears in a Vue one, so these do not need the dialect to be known.
 const SLOT = new Set(["ng-content", "slot"]);
+// A screen may be named like an element (a partial called nav.tpl); an
+// element is never a reference to it, or every <nav> would become the screen.
+export const HTML_ELEMENTS = new Set(["a", "abbr", "address", "area", "article", "aside", "audio", "b", "base", "bdi", "bdo", "blockquote", "body", "br", "button", "canvas", "caption", "cite", "code", "col", "colgroup", "data", "datalist", "dd", "del", "details", "dfn", "dialog", "div", "dl", "dt", "em", "embed", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "iframe", "img", "input", "ins", "kbd", "label", "legend", "li", "link", "main", "map", "mark", "menu", "meta", "meter", "nav", "noscript", "object", "ol", "optgroup", "option", "output", "p", "picture", "pre", "progress", "q", "rp", "rt", "ruby", "s", "samp", "script", "search", "section", "select", "slot", "small", "source", "span", "strong", "style", "sub", "summary", "sup", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "title", "tr", "track", "u", "ul", "var", "video", "wbr", "svg", "path", "g", "circle", "rect", "line", "polygon", "polyline", "text", "use", "defs", "symbol"]);
+export const isElementName = (name) => HTML_ELEMENTS.has(String(name).toLowerCase());
 const TRANSPARENT = new Set(["ng-container", "ng-template", "template"]);
 
 export const DIALECTS = {
@@ -264,7 +268,7 @@ export function buildIr(html, { dialect, components = [] } = {}) {
   const d = dialect ?? detectDialect(html);
   // The run's own screens by tag, so an event wired on one is read as its output
   // even when its name has no hyphen. The IR learns the names, not the frameworks.
-  const known = new Set([...components].map((c) => String(c).toLowerCase()));
+  const known = new Set([...components].map((c) => String(c).toLowerCase()).filter((c) => !HTML_ELEMENTS.has(c)));
   const notes = [];
   const models = new Set();
   const reads = new Set();

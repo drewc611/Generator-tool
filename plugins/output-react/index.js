@@ -1,4 +1,5 @@
 import { translate } from "./template.js";
+import { isElementName } from "../dsp-ir/ir.js";
 import { pascal, unique } from "../dsp-ir/emit.js";
 
 
@@ -23,8 +24,11 @@ export default {
       // unknown element. A screen cannot resolve to itself: a self reference
       // is recursion, and deciding that is not a translation.
       const components = new Map(
-        ctx.screens.map((screen) => [screen.selector.toLowerCase(), { name: pascal(screen.selector) || "Screen" }])
+        ctx.screens.filter((screen) => !isElementName(screen.selector)).map((screen) => [screen.selector.toLowerCase(), { name: pascal(screen.selector) || "Screen" }])
       );
+      for (const screen of ctx.screens.filter((s) => isElementName(s.selector))) {
+        ctx.unverified(`<${screen.selector}> is a screen named like an HTML element; <${screen.selector}> elements stay elements and nothing composes the screen by that name.`);
+      }
 
       for (const s of ctx.screens) {
         const Name = pascal(s.selector) || "Screen";

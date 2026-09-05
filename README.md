@@ -68,7 +68,7 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 37,298 lines of JavaScript in src and plugins |
+| Every line of the tool | 38,459 lines of JavaScript in src and plugins |
 | Tests | 12,257 lines, 869 cases across 113 files |
 | Source on disk | src 27 KB, plugins 1.7 MB |
 | Runtime dependencies | **none** |
@@ -79,7 +79,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and four features, and every
+The core grew from 527 lines to 718 across six hundred and five features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -1007,8 +1007,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and four features in
-one hundred and twenty phases, forty four shipped, five hundred and fifty seven new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and five features in
+one hundred and twenty one phases, forty four shipped, five hundred and fifty eight new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

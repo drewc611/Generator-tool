@@ -1,3 +1,4 @@
+import { isElementName } from "../dsp-ir/ir.js";
 import { pascal } from "../dsp-ir/emit.js";
 
 /**
@@ -25,7 +26,7 @@ export function buildGraph(screens, calls) {
     if (screen.template) {
       for (const other of screens) {
         if (other === screen) continue;
-        if (new RegExp(`<${other.selector}(?=[\\s>/])`, "i").test(screen.template)) {
+        if (!isElementName(other.selector) && new RegExp(`<${other.selector}(?=[\\s>/])`, "i").test(screen.template)) {
           composition.push([screen.selector, other.selector]);
         }
       }

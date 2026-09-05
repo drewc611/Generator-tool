@@ -1,3 +1,4 @@
+import { isElementName } from "../dsp-ir/ir.js";
 import { toVue } from "./print.js";
 import { jsString, pascal, unique } from "../dsp-ir/emit.js";
 
@@ -32,7 +33,7 @@ export default {
         // Vue the kebab tag resolves the moment its component is imported,
         // so resolving a reference costs exactly one import line.
         const referenced = ctx.screens
-          .filter((other) => other !== screen && result?.markup && new RegExp(`<${other.selector}[\\s>/]`).test(result.markup))
+          .filter((other) => other !== screen && !isElementName(other.selector) && result?.markup && new RegExp(`<${other.selector}[\\s>/]`).test(result.markup))
           .map((other) => pascal(other.selector) || "Screen");
 
         await ctx.write(`src/features/${name}/${name}.vue`, COMPONENT({ name, props, emits, result, collection, screen, referenced: unique(referenced) }));
