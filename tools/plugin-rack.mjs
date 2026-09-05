@@ -99,6 +99,7 @@ const DOES = {
   "dsp-inline": "the inline style and script a port should extract, for theming and for a strict CSP",
   "input-pdf": "a tech document read from its own text operators, nothing invented",
   "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
+  "input-mithril": "mithril components: hyperscript m() trees walked as the runtime would and printed onto the dialect, attrs as inputs, callbacks as outputs",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",
   "input-svelte": "svelte components, {#each}/{#if} blocks and on:/bind:, lowered onto the dialect",
   "input-react": "React read back onto the dialect, so the tool can read what it writes",

@@ -954,9 +954,17 @@ jobs:
           grep -q "not assessed" dp-out/DEPENDENCIES.md || { echo "an unknown library was not marked not assessed"; exit 1; }
           rm -rf dp-out
 
+      - name: the mithril reader walks hyperscript onto React, with the child event wired
+        run: |
+          node src/cli.js run --src test/fixtures/mithril --out mi-out
+          test -f mi-out/src/features/OrderList/OrderList.jsx || { echo "the Mithril component was not ported"; exit 1; }
+          grep -q "onClear={() => onClear(order)}" mi-out/src/features/OrderList/OrderList.jsx || { echo "the child component's event was not wired"; exit 1; }
+          grep -q "ng-" mi-out/src/features/OrderList/OrderList.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          rm -rf mi-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "576" ]; then
-            echo "ROADMAP.md holds $count entries and claims 576"; exit 1
+          if [ "$count" != "577" ]; then
+            echo "ROADMAP.md holds $count entries and claims 577"; exit 1
           fi

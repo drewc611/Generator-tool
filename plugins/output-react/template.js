@@ -252,7 +252,7 @@ function withKey(inner, key) {
 }
 
 export function translate(html, { indent = 3, dialect, components = null } = {}) {
-  const ir = buildIr(html, { dialect });
+  const ir = buildIr(html, { dialect, components: components ? [...components.keys()] : [] });
   const notes = [...ir.notes];
   // The grammar stamped the nodes; the printer keeps a cursor so its own
   // notes say the line too, the same spelling the reader's notes use.

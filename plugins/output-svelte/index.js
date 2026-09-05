@@ -23,7 +23,7 @@ export default {
       let emitted = 0;
       for (const screen of ctx.screens) {
         const name = pascal(screen.selector) || "Screen";
-        const result = screen.template ? toSvelte(screen.template) : null;
+        const result = screen.template ? toSvelte(screen.template, { components: ctx.screens.map((s) => s.selector) }) : null;
         const collection = result?.collections[0] ?? "data";
         const props = unique([
           ...screen.inputs,

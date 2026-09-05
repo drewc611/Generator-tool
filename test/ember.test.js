@@ -60,7 +60,7 @@ test("tags: modifiers, @args, bound attributes, built ins, child components and 
   assert.match(template, /<input ng-model="q" placeholder="Search">/, "<Input @value> is a model on a real input");
   assert.match(template, /<user-badge ng-attr-user="\{\{ sel \}\}" ng-pick="pick\(\)"><\/user-badge>/, "a child component's args and callbacks");
   assert.match(template, /<a ng-click="onClose\(\)">x<\/a>/);
-  assert.deepEqual(outputs, ["onClose"], "an @onX wired as a handler is this component's output");
+  assert.deepEqual(outputs, ["close"], "an @onX wired as a handler is this component's output, named as the event");
   assert.match(template, /<ng-transclude><\/ng-transclude>/, "yield is the projection");
   assert.doesNotMatch(template, /\{\{on|\{\{action|@value|<Input|<UserBadge/);
 });
@@ -70,7 +70,7 @@ test("members: template @args and class this.args are inputs; this.args.onX call
   const source = 'get loading() { return this.args.users == null; } pick(u) { this.args.onPick?.(u); } save() { this.args.onSave(this.q); }';
   const m = readMembers(template, source);
   assert.deepEqual(m.inputs.sort(), ["title", "users"]);
-  assert.deepEqual(m.outputs.sort(), ["onPick", "onSave"]);
+  assert.deepEqual(m.outputs.sort(), ["pick", "save"]);
 });
 
 test("a run reads the Ember component once, the plain handlebars template once, and never the same file twice", async () => {
@@ -81,7 +81,7 @@ test("a run reads the Ember component once, the plain handlebars template once, 
     assert.equal(card.length, 1, "exactly one reader claimed user-card.hbs");
     assert.equal(card[0].readBy, "ember");
     assert.deepEqual(card[0].inputs.sort(), ["title", "users"]);
-    assert.deepEqual(card[0].outputs.sort(), ["onPick", "onSave"]);
+    assert.deepEqual(card[0].outputs.sort(), ["pick", "save"]);
     assert.equal(card[0].usesTwoWay, true);
     assert.match(card[0].template, /ng-repeat="user in users track by \$index"/);
     assert.ok(run.ctx.api.calls.some((c) => c.path === "/api/users"), "the class's fetch reached the API surface");

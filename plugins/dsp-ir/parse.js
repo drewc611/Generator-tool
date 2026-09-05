@@ -111,6 +111,9 @@ export function splitPipes(expression) {
 
 /** Entries of an object literal, or null when it is not one. */
 export function objectLiteralEntries(code) {
+  // A ternary or a call is not an object, and reading one as key: value
+  // pairs turns `late ? 'late' : ''` into a class named `late ? 'late'`.
+  if (!/^\{[\s\S]*\}$/.test(code.trim())) return null;
   const inner = code.trim().replace(/^\{/, "").replace(/\}$/, "");
   const parts = [];
   let depth = 0;

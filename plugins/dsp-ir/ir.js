@@ -256,8 +256,11 @@ function rootIdentifiers(code) {
   return found;
 }
 
-export function buildIr(html, { dialect } = {}) {
+export function buildIr(html, { dialect, components = [] } = {}) {
   const d = dialect ?? detectDialect(html);
+  // The run's own screens by tag, so an event wired on one is read as its output
+  // even when its name has no hyphen. The IR learns the names, not the frameworks.
+  const known = new Set([...components].map((c) => String(c).toLowerCase()));
   const notes = [];
   const models = new Set();
   const reads = new Set();
@@ -311,7 +314,7 @@ export function buildIr(html, { dialect } = {}) {
   // A named <ng-template #ref> is content waiting for a reference. Harvested
   // before conversion so an else branch can resolve to it wherever it sits.
   const templates = harvestTemplates(tree);
-  const clean = convertList(tree, d, { expr, note, models, locals, lists, templates, where }, null);
+  const clean = convertList(tree, d, { expr, note, models, locals, lists, templates, where, known }, null);
   const root = clean.length === 1 ? clean[0] : { kind: "fragment", children: clean };
 
   const modelRoots = new Set([...models].map((m) => m.split(".")[0]));
@@ -718,6 +721,16 @@ function buildElement(node, d, ctx, sw = null) {
       if (value) for (const e of styleEntries(value)) styles.push({ kind: "declaration", property: e.property, literal: e.value });
       continue;
     }
+    // Every directive spelling is claimed above, so an ng-<name> still here on
+    // a custom tag is the child component's own output wired at this call
+    // site: <user-badge ng-pick="choose(u)"> means the child's pick callback.
+    // The dialect's fixed event list is for elements, whose events are known.
+    const childEvent = d.name === "angularjs" && (node.tag.includes("-") || ctx.known.has(node.tag.toLowerCase())) ? /^(?:data-)?ng-([a-z][\w-]*)$/.exec(name) : null;
+    if (childEvent && value) {
+      events.push({ name: childEvent[1], handler: ctx.expr(value), modifiers: [] });
+      continue;
+    }
+
     // Plain HTML had events before any framework did. An inline onclick is
     // an event in every dialect, and a javascript: href was never a location,
     // so both become the handler they always were.

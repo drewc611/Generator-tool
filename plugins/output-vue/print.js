@@ -172,7 +172,7 @@ function withDirective(node, directive) {
   return { ...node, directives: [directive] };
 }
 
-export function toVue(html, { dialect } = {}) {
-  const ir = buildIr(html, { dialect });
+export function toVue(html, { dialect, components = [] } = {}) {
+  const ir = buildIr(html, { dialect, components });
   return { markup: print(ir.root, 2) || "    <!-- nothing to render -->", ...ir };
 }

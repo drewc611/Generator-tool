@@ -150,8 +150,8 @@ function print(node, depth, ctx) {
   }
 }
 
-export function toSolid(html, { dialect } = {}) {
-  const ir = buildIr(html, { dialect });
+export function toSolid(html, { dialect, components = [] } = {}) {
+  const ir = buildIr(html, { dialect, components });
   const rewrite = new Map();
   for (const m of ir.models) {
     const leaf = m.split(".")[0];
@@ -174,7 +174,7 @@ export default {
       let emitted = 0;
       for (const screen of ctx.screens) {
         const Name = pascal(screen.selector) || "Screen";
-        const result = screen.template ? toSolid(screen.template) : null;
+        const result = screen.template ? toSolid(screen.template, { components: ctx.screens.map((s) => s.selector) }) : null;
         const collection = result?.collections[0] ?? "data";
         const props = unique([...screen.inputs, ...(result?.reads ?? []), "loading", "error", "onRetry"]);
         await ctx.write(`src/solid/${Name}.jsx`, COMPONENT({ Name, props, screen, result, collection }));

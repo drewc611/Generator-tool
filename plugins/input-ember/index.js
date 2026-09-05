@@ -102,6 +102,10 @@ function handlerCall(code, note) {
 }
 
 /** Rewrite the inside of one element tag: modifiers, @args, bound attributes. */
+// The arg is @onPick; the output it names is pick, the spelling every reader
+// and every printer agree on, so the React prop comes out as onPick once.
+const asOutput = (name) => name.replace(/^on/, "").replace(/^./, (c) => c.toLowerCase());
+
 function lowerTag(tag, note, outputs) {
   let m = /^<([A-Za-z][\w:.-]*)([\s\S]*?)(\/?)>$/.exec(tag);
   if (!m) return tag;
@@ -117,7 +121,7 @@ function lowerTag(tag, note, outputs) {
   attrs = attrs.replace(/\{\{on\s+["'](\w+)["']\s+([\s\S]*?)\}\}/g, (_, ev, handler) => {
     if (!EVENTS.has(ev)) note(`\`{{on "${ev}"}}\` is an event the dialect has no attribute for; it was lowered as ng-${ev} and needs a hand check.`);
     const h = handler.trim();
-    if (/^@on\w+$/.test(h)) outputs.add(plain(h));
+    if (/^@on\w+$/.test(h)) outputs.add(asOutput(plain(h)));
     return ` ng-${ev}="${attrSafe(handlerCall(h, note))}"`;
   });
   attrs = attrs.replace(/\{\{action\s+["'](\w+)["']([^}]*)\}\}/g, (_, fn, rest) => {
@@ -239,9 +243,10 @@ export function readMembers(template, source) {
   for (const m of template.matchAll(/\{\{[^}]*?@(\w+)/g)) inputs.add(m[1]);
   // `@x={{...}}` on a child tag is the child's arg: remove any input that only appears that way.
   for (const m of template.matchAll(/\s@(\w+)=\{\{/g)) { if (!new RegExp(`\\{\\{[^}]*?@${m[1]}(?![\\w=])`).test(template)) inputs.delete(m[1]); }
-  for (const m of (source ?? "").matchAll(/this\.args\.(\w+)\s*\??\.?\(/g)) outputs.add(m[1]);
-  for (const m of (source ?? "").matchAll(/this\.args\.(\w+)/g)) if (!outputs.has(m[1])) inputs.add(m[1]);
-  for (const o of outputs) inputs.delete(o);
+  const called = new Set();
+  for (const m of (source ?? "").matchAll(/this\.args\.(\w+)\s*\??\.?\(/g)) called.add(m[1]);
+  for (const m of (source ?? "").matchAll(/this\.args\.(\w+)/g)) if (!called.has(m[1])) inputs.add(m[1]);
+  for (const c of called) { inputs.delete(c); outputs.add(asOutput(c)); }
   return { inputs: [...inputs], outputs: [...outputs] };
 }
 

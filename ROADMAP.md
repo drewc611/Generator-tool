@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy six features across ninety two phases. The statuses are
+Five hundred and seventy seven features across ninety three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-765 tests, on Node 18, 20 and 22, and on Windows in CI.
+771 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2161,14 +2161,20 @@ a legacy front end reads process.env.API_URL, import.meta.env.VITE_KEY, an Angul
 a legacy front end stands on libraries a manifest declares, a script tag loads by a path that carries a version (jquery-1.8.3.min.js, a cdnjs path, an @version on a CDN), or a vendored copy states in its first line banner, and every one of those is a version somebody chose. dsp-deps reads the root package.json and bower.json (a nested manifest belongs to another package and is left alone), every page's script tags, and the banner line of every script, merges the witnesses of one version into one row with its evidence, and assesses each against a short table of what the projects published about themselves: the day AngularJS, Bootstrap 2, 3 and 4, Vue 2 and each Angular major from 12 to 19 left support, the release that ended jQuery 1 and 2, the day moment declared itself finished, the last release of Prototype and MooTools. A version newer than every dated major the table holds is said to be exactly that, and a library not in the table is marked not assessed, which means that and not that it is fine. A library loaded at two versions and a dependency pinned to nothing are named as facts. bower.json in the tree is noted as a deprecated tool. DEPENDENCIES.md carries the table; nothing is upgraded or removed, because what the port does about a dated library is a decision about the product and the code that calls it. test/dependencies.test.js holds it.
 
 
+## Phase 93: markup written as calls
+
+**577. input-mithril walks hyperscript onto the dialect, and a child component's event reaches every target** 🔨
+Mithril has no template; its markup is a tree of m() calls, so there is nothing to lower and everything to walk. input-mithril reads each call the way the runtime would: the selector string gives the tag, id, classes and bracket attributes; the attrs object gives attributes, with on<event> becoming the dialect's event, value plus oninput the model, class with an expression ng-class, and an expression valued attribute ng-attr; a string child is text, an expression an interpolation, cond ? m() : null and cond && m() a conditional, list.map((row, i) => m()) a loop with track by $index, m.trust bound html, m.fragment a container, and m(Child, { attrs }) that component's tag with its callbacks as events. A component is any object or closure with a view, block or arrow bodied; its inputs are the vnode.attrs it reads, rewritten to the input itself in the template, its outputs the vnode.attrs.onX it calls, named as the event the way every reader names them, and m.request reaches the API surface with its method. A ternary choosing between two values, a spread in attrs and a computed tag are named rather than approximated. Two shared defects surfaced beside it and are fixed for every reader: an object literal parser that read a ternary as key value pairs and produced a class named `late ? 'late'`, and an event wired on a child component (ng-pick on a tag the run knows, hyphenated or a one word screen) that reached React as a raw attribute; the IR now learns the run's own tag names from every printer that builds one, so the callback lands as onPick in React, @pick in Vue and on:pick in Svelte, and an unknown directive on a plain element is still not guessed to be an event. The Ember reader's outputs are renamed the same way, so a React prop comes out as onPick once instead of onOnPick. test/mithril.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 529 |
+| new in this branch | 530 |
 | planned | 3 |
-| total | 576 |
+| total | 577 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
