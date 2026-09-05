@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and fifty nine features across seventy five phases. The statuses are
+Five hundred and sixty features across seventy six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-680 tests, on Node 18, 20 and 22, and on Windows in CI.
+685 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2069,15 +2069,20 @@ the fourth cleanup reader beside dsp-storage, dsp-timers and dsp-events: an Inte
 **559. dsp-focus names the focus management the port inherits** 🔨
 where a landmark says what a screen reader can reach and a label says what a control announces, focus is the third axis a screenshot never shows: where the keyboard is and where it goes next. dsp-focus reads the source for a positive tabindex (which pulls an element ahead of source order and breaks tab order; tabindex 0 and -1 are left alone), autofocus (which takes the keyboard on load, and more than one in a file is a conflict the browser resolves, not the author), accesskey (which collides with the shortcuts a browser and screen reader already own), and a programmatic .focus() call (a move the port must reproduce on the path that used it or a keyboard user is dropped somewhere they did not ask to be). It names the file and line for each, counts and changes nothing; which move is load-bearing and which tabindex was a mistake is the port owner's call. test/focus.test.js holds it and a CI step names a page's positive tabindex.
 
+## Phase 76: the second track the port must carry
+
+**560. dsp-media names the video and audio the port embeds** 🔨
+a media element is the one place accessibility is not contrast or a label but a second track: a video with speech and no captions is unusable to anyone who cannot hear it, a track a screenshot never shows and a pixel diff never catches. dsp-media finds every <video> and <audio>, records which of controls, autoplay, loop, muted and a captions track are present, and names the gaps: a video with no captions track (the WCAG failure), a media element with neither controls nor autoplay (nothing starts it), and an autoplay (which browsers block with sound and a port keeps on purpose, not by default). It reads the markup and the attribute names only and never records a src, which can carry a signed URL, the caution the secret gate keeps. It counts and changes nothing; captions are content a person writes. test/media.test.js holds it and a CI step names a page's uncaptioned video.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 512 |
+| new in this branch | 513 |
 | planned | 3 |
-| total | 559 |
+| total | 560 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

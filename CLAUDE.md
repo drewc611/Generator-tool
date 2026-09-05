@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and forty three in five classes, and the core has never learned
+Plugins that ship, a hundred and forty four in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -86,7 +86,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
-         dsp-diff  dsp-events  dsp-archetype  dsp-modernize  dsp-uplift
+         dsp-diff  dsp-events  dsp-media  dsp-archetype  dsp-modernize  dsp-uplift
          dsp-routes  dsp-boundaries  dsp-assets  dsp-css  dsp-entropy  dsp-era
          dsp-apistyle  dsp-auth  dsp-duplication  dsp-state  dsp-weight  dsp-seo  dsp-analytics  dsp-images  dsp-fonts  dsp-security  dsp-supplychain  dsp-console  dsp-globals  dsp-landmarks  dsp-labels  dsp-render-blocking  dsp-inline  dsp-learn  dsp-storage  dsp-timers  dsp-observers  dsp-complexity  dsp-magic  dsp-imports  dsp-async
 output   output-react  output-vue  output-svelte  output-angular  output-lit

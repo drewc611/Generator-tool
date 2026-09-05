@@ -808,9 +808,18 @@ jobs:
           grep -q "tabindex 3" fo-out/FOCUS.md || { echo "the positive tabindex was not named"; exit 1; }
           rm -rf fo-src fo-out
 
+      - name: the media reader names an uncaptioned video
+        run: |
+          mkdir -p me-src
+          printf '%s\n' '<video src="clip.mp4" autoplay></video>' > me-src/page.html
+          node src/cli.js run --src me-src --out me-out
+          test -f me-out/MEDIA.md || { echo "no media report"; exit 1; }
+          grep -q "no captions track" me-out/MEDIA.md || { echo "the uncaptioned video was not flagged"; exit 1; }
+          rm -rf me-src me-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "559" ]; then
-            echo "ROADMAP.md holds $count entries and claims 559"; exit 1
+          if [ "$count" != "560" ]; then
+            echo "ROADMAP.md holds $count entries and claims 560"; exit 1
           fi
