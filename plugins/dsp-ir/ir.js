@@ -247,12 +247,14 @@ function rootIdentifiers(code) {
   // A word inside a string is text, not a name.
   const bare = String(code).replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/g, '""');
   const found = [];
-  // $index and its siblings are the loop's own scope, never a prop; the
-  // boundary must see the $ or the name after it reads as one.
+  // $index, $ctrl, $root and the rest are the scope's own machinery, never a
+  // prop; the boundary must see the $ or the name after it reads as one.
   const re = /(\.\s*)?(?<![\w$])([A-Za-z_$][\w$]*)(?![\w$])(\s*:)?/g;
   let m;
   while ((m = re.exec(bare))) {
-    if (m[1] || m[3] || GLOBALS.has(m[2]) || /^\$(index|first|last|middle|odd|even|parent|id)$/.test(m[2])) continue;
+    if (m[1] || GLOBALS.has(m[2]) || m[2].startsWith("$")) continue;
+    // A name before a colon is an object key only after { or , ; in a ? b : c it is the then branch.
+    if (m[3] && /[{,]\s*$/.test(bare.slice(0, m.index))) continue;
     found.push(m[2]);
   }
   return found;

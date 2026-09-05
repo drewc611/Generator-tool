@@ -150,3 +150,46 @@ test("a run composes the page into its layout and fragments, ports it, reads the
     await run.cleanup();
   }
 });
+
+test("the sixth review pass: the older fragment spelling, a void element repeated with a condition, a selection with a utility", () => {
+  const lib = parseHtml(`<small th:fragment="legal">(c)</small><nav th:fragment="nav"><span th:replace="~{:: legal}">x</span></nav>`);
+  const library = { resolve: (name) => (name === "frags" ? { root: lib, fragments: collect(lib), name } : null) };
+  assert.equal(lower(`<footer th:replace="frags :: legal">host</footer>`, () => {}, library), `<small>(c)</small>`);
+  assert.equal(lower(`<div th:insert="~{frags :: nav}">h</div>`, () => {}, library), `<div><nav><small>(c)</small></nav></div>`, ":: inside a fragment means the file it came from");
+  assert.equal(lower(`<img th:each="i : \${imgs}" th:if="\${i.show}" th:src="@{\${i.url}}">`), `<ng-container ng-repeat="i in imgs"><img ng-src="{{ i.url }}" ng-if="i.show"></ng-container>`);
+  const sc = freshScope(); sc.object = "f";
+  assert.deepEqual(lowerValue("*{#maps.isEmpty(attrs)}", sc), { kind: "expr", text: "!f.attrs || !Object.keys(f.attrs).length" });
+  assert.deepEqual(lowerValue("*{#fields.hasErrors('body')}", sc), { kind: "expr", text: "fields.hasErrors('body')" });
+  assert.deepEqual(lowerValue("*{not active and name != null}", sc), { kind: "expr", text: "!f.active && f.name != null" });
+});
+
+test("the sixth review pass: appends apply after what they append to, th:field names its whole path, a whole template inserted is its body", () => {
+  assert.equal(lower(`<li th:classappend="\${x.hot} ? 'hot'" th:class="\${odd} ? 'odd' : 'even'">x</li>`), `<li ng-class="(odd ? 'odd' : 'even') + ' ' + (x.hot ? 'hot' : '')">x</li>`);
+  assert.equal(lower(`<form th:object="\${o}"><input th:field="*{billing.zip}"><input th:field="*{shipping.zip}"></form>`), `<form><input name="billing.zip" id="billing.zip" ng-model="o.billing.zip"><input name="shipping.zip" id="shipping.zip" ng-model="o.shipping.zip"></form>`);
+  const footer = parseHtml(`<html><head><title>F</title></head><body><footer>F</footer></body></html>`);
+  const library = { resolve: (name) => (name === "footer" ? { root: footer, fragments: collect(footer), name } : null) };
+  assert.equal(lower(`<div th:insert="~{footer}"></div><p>after</p>`, () => {}, library), `<div><footer>F</footer></div><p>after</p>`);
+  assert.equal(lowerTree(parseHtml(`<div th:replace="~{:: x}">h</div>`), freshScope()), "", "a direct caller with no fragments of its own does not crash");
+});
+
+test("the sixth review pass: a template is found by its path or a suffix of it, never by its basename alone", async () => {
+  const { mkdtemp, writeFile, mkdir, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const dir = await mkdtemp(join(tmpdir(), "portamp-th-"));
+  try {
+    await mkdir(join(dir, "templates/public"), { recursive: true });
+    await writeFile(join(dir, "templates/public/nav.html"), `<nav th:fragment="menu">public</nav>`);
+    await writeFile(join(dir, "templates/page.html"), `<html xmlns:th="http://www.thymeleaf.org"><body><div th:replace="~{admin/nav :: menu}">x</div><p th:text="\${t}">t</p></body></html>`);
+    const run = await runPipeline({ src: dir });
+    try {
+      assert.equal(run.error, null);
+      const page = run.ctx.screens.find((s) => s.selector === "page");
+      assert.equal(page.template, `<p>{{ t }}</p>`, "the wrong nav is not composed in");
+      assert.ok(run.ctx.report.unverified.some((n) => /admin\/nav.*does not hold/.test(n)));
+    } finally {
+      await run.cleanup();
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

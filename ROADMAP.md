@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and one features across one hundred and seventeen phases. The statuses are
+Six hundred and two features across one hundred and eighteen phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2308,14 +2308,19 @@ The review cadence held for the fifth time: input-pug was read on its own before
 **601. input-thymeleaf reads Thymeleaf, the natural template of the Spring world, and composes it the way the engine does** 🔨
 Thymeleaf is valid HTML whose prototype text and attributes are replaced at render time by th: attributes that sit beside them, which makes it the server dialect closest to the attribute dialect the rest of the tool reads; the lowering is mostly a renaming and the prototype text is what the engine throws away. th:if and th:unless lower onto ng-if, th:each with its status variable onto ng-repeat with the status fields (index, count, first, last, odd, even, size) written as the arithmetic on $index every target already carries, th:text onto the interpolation that replaces the prototype text, th:utext onto bound html, th:href and th:src with their link expressions (@{/products/{id}(id=${p.id},q=${q})}) onto ng-href and ng-src with the path variables and query filled, th:class and th:classappend onto one ng-class, th:attr onto each attribute it names, th:switch and th:case onto the equalities they test with * as the negation of the rest, th:field onto a two way model with the name and id the engine would have generated, th:with onto substituted aliases, th:object onto the prefix *{...} selects with, th:remove onto its four spellings, th:block onto a transparent container, [[...]] and [(...)] inline output onto an interpolation and bound html, and a prototype only comment onto the markup it hid. The expression language's words (and, or, not, eq, gt, the Elvis ?:, a ? with no else) are spelled as JavaScript outside strings, the utility objects with an exact equivalent (#lists.isEmpty, #strings.toUpperCase, #strings.listJoin) are rewritten, a formatter (#dates, #numbers) keeps its value unformatted and named, and any other utility stays the call it was with the object named as something the port must supply. th:fragment with th:insert, th:replace and th:include compose the way the engine composes them, positional and named parameters substituted and a fragment passed as an argument inserted where ${it} is asked for; the Layout Dialect's layout:decorate and layout:fragment compose a page into its layout, the layout and a fragment only file skipped as chrome. A message key (#{...}) is kept as its key and named, because the bundle is not in the markup and no text is invented; a th:onclick that built script from data is named and never carried; th:errors is named as validation the port must do itself. The same product page written in Thymeleaf is the seventh dialect the byte identity gate holds to jinja's React, Vue and Svelte. And the four readInputs the readers each wrote are one, in dsp-ir/text.js, reading an address around an expression as the expression alone, held to one definition by the hygiene gate. test/thymeleaf.test.js holds it.
 
+## Phase 118: the sixth review pass
+
+**602. The Thymeleaf reader reviewed on its own, ten defects fixed with the inputs that exposed them** 🔨
+The review cadence held for the sixth time, and two of the ten reached past the new reader into the IR every reader shares. The older fragment spelling, th:replace="frags :: legal" with no ~{}, still the commonest in Spring apps, was read as an expression and dropped as a render time choice; it is a fragment spec. A void element carrying both th:each and th:if left with a closing tag, because the repeat and test path returned before the void check. A selection with a utility inside it, *{#maps.isEmpty(attrs)}, had the object prefixed onto names the rewrite itself introduced (f.Object.keys, f.fields); the fields are prefixed first, on the source, and the rewrite runs after. th:classappend written before th:class produced two ng-class attributes, because the attributes were applied in source order rather than the engine's; appends now apply after what they append to. th:field named only the last segment of its path, so billing.zip and shipping.zip collided on name and id; the whole path under the object is what the engine renders. A :: selector inside a fragment cloned from another file resolved against the host page's fragments, and crashed a direct caller with none; a fragment now remembers the file it came from. A whole template inserted with ~{footer} brought its html and body wrapper, and the screen's body extraction stopped at the first close it met, dropping everything after; the wrapper is unwrapped and the extraction reads to the last. A template was found by its basename alone when its path did not match, so ~{admin/nav} silently composed public/nav.html; that was a guess, and a template is now found by its path or a suffix of it or named as missing. In the IR, rootIdentifiers took every name before a colon for an object key, so the then branch of a ? b : c was never a read and never a prop in any target; a key is only a key after { or a comma. And the $ boundary fix let $ctrl, $root and $scope surface as props verbatim; every $ name is the scope's machinery and none is a prop. Each fix carries the input that exposed it in test/thymeleaf.test.js and test/ir.test.js.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 554 |
+| new in this branch | 555 |
 | planned | 3 |
-| total | 601 |
+| total | 602 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

@@ -29,7 +29,6 @@ import { attrSafe, matchBracket, readInputs, splitCommas } from "../dsp-ir/text.
 
 const VOID = new Set(["img", "input", "br", "hr", "meta", "link", "area", "base", "col", "embed", "source", "track", "wbr"]);
 const BOOL = new Set(["disabled", "checked", "selected", "readonly", "required", "hidden", "multiple", "open", "autofocus"]);
-const LINK = new Set(["href", "src", "action", "poster", "cite", "formaction", "data"]);
 const OPS = { and: "&&", or: "||", eq: "==", ne: "!=", neq: "!=", gt: ">", lt: "<", ge: ">=", le: "<=", div: "/", mod: "%" };
 const CONTEXT = /#(authentication|authorization|request|session|servletContext|locale|httpServletRequest|httpSession|vars|ctx|root|execInfo|messages|uris|conversions|temporals|calendars|ids|dates|numbers)\b(?!\.\w+\()/g;
 const UTIL = {
@@ -120,11 +119,12 @@ const child = (scope, more = {}) => ({ ...scope, with: new Map(scope.with), frag
 
 /** *{x} under th:object is object.x; without one it is ${x}. */
 function selection(inner, scope) {
-  const js = exprToJs(inner, scope);
-  if (!scope.object) return js;
-  if (simplePath(js)) return `${scope.object}.${js}`;
+  if (!scope.object) return exprToJs(inner, scope);
   // *{stock > 0 and stock < 5}: each path root inside is a field of the object.
-  return js.split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/).map((p, i) => (i % 2 ? p : p.replace(/(?<![\w.$])([A-Za-z_]\w*)\b(?!\s*\()/g, (w) => (/^(true|false|null|undefined)$/.test(w) || w.startsWith("$") ? w : `${scope.object}.${w}`)))).join("");
+  // Prefixed before the utility rewrite, so a #utility, a context object or a
+  // JS global the rewrite introduces is never taken for a field.
+  const prefixed = String(inner).split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/).map((p, i) => (i % 2 ? p : p.replace(/(?<![\w.$#])([A-Za-z_]\w*)\b(?!\s*\()/g, (w) => (OPS[w] || /^(not|true|false|null|undefined)$/.test(w) ? w : `${scope.object}.${w}`)))).join("");
+  return exprToJs(prefixed, scope);
 }
 
 /** The body of a #{key} or #{key(args)} message expression: the key, the arguments named. */
@@ -303,11 +303,12 @@ function selectFragment(spec, scope, library, args) {
   if (!m) return null;
   const file = m[1] && m[1] !== "this" ? m[1] : null;
   const selector = m[2] ?? null;
-  const source = file ? library.resolve(file) : { fragments: scope.fragmentsOf, root: null, name: scope.file };
+  const source = file ? library.resolve(file) : { fragments: scope.fragmentsOf ?? new Map(), root: null, name: scope.file };
   if (!source) { scope.note(`~{${spec}} names a template this run does not hold; the host stands without it.`); return null; }
   if (!selector) {
     if (!source.root) return null;
-    return { nodes: clone(source.root.children), bindings: new Map() };
+    // A whole template inserted is its body; the document wrapper is not repeated inside the host.
+    return { nodes: clone(unwrapDocument(source.root.children)), bindings: new Map(), source };
   }
   const sm = /^([\w-]+)\s*(?:\(([\s\S]*)\))?$/.exec(selector.trim());
   if (!sm) {
@@ -316,7 +317,7 @@ function selectFragment(spec, scope, library, args) {
       let hit = null;
       const find = (n) => { if (hit) return; if (n.type === "el" && n.attrs.some((a) => a.name === "id" && a.value === idm[1])) { hit = n; return; } (n.children ?? []).forEach(find); };
       find(source.root);
-      if (hit) return { nodes: [clone(hit)], bindings: new Map() };
+      if (hit) return { nodes: [clone(hit)], bindings: new Map(), source };
     }
     scope.note(`~{${spec}} selects with \`${selector.trim()}\`, a selector this reader does not resolve; the host stands without it.`);
     return null;
@@ -332,8 +333,15 @@ function selectFragment(spec, scope, library, args) {
   });
   const el = clone(frag.el);
   el.attrs = el.attrs.filter((a) => thName(a.name) !== "fragment");
-  return { nodes: [el], bindings };
+  return { nodes: [el], bindings, source };
 }
+
+/** The elements a document holds once html, head and body are set aside. */
+const unwrapDocument = (nodes) => {
+  const top = elements(nodes);
+  if (top.length === 1 && top[0].tag === "html") return top[0].children.flatMap((e) => (e.type === "el" && e.tag === "body" ? e.children : e.type === "el" && e.tag === "head" ? [] : [e]));
+  return nodes;
+};
 
 /** Lower a tree onto the dialect. `library` resolves other templates for fragments. */
 export function lowerTree(root, scope = freshScope(), library = { resolve: () => null }) {
@@ -375,7 +383,8 @@ export function lowerTree(root, scope = freshScope(), library = { resolve: () =>
       const spec = getTh(el, kind) ?? (el.attrs.find((a) => layoutName(a.name) === kind)?.value ?? null);
       if (spec === null) continue;
       el.attrs = el.attrs.filter((a) => thName(a.name) !== kind && layoutName(a.name) !== kind);
-      const r = lowerValue(spec, sc);
+      // "frags :: legal" without ~{} is the older spelling of the same fragment expression.
+      const r = /[${}'"|@#*~]/.test(spec) ? lowerValue(spec, sc) : { kind: "fragment", text: spec.trim() };
       let picked = null;
       if (r.kind === "fragment") picked = r.text === "" ? { nodes: [], bindings: new Map() } : selectFragment(r.text, sc, library);
       else if (r.kind === "expr" && sc.fragments.has(r.text)) picked = { nodes: clone(sc.fragments.get(r.text)), bindings: new Map() };
@@ -383,6 +392,8 @@ export function lowerTree(root, scope = freshScope(), library = { resolve: () =>
       else picked = selectFragment(r.text, sc, library);
       if (!picked) picked = { nodes: [], bindings: new Map() };
       const inner = child(sc);
+      // Inside the fragment, :: means the file it came from.
+      if (picked.source) { inner.fragmentsOf = picked.source.fragments; inner.file = picked.source.name; }
       for (const [param, arg] of picked.bindings) {
         const v = lowerValue(arg, sc);
         if (v.kind === "fragment") inner.fragments.set(param, v.text === "" ? [] : (selectFragment(v.text, sc, library)?.nodes ?? []));
@@ -468,10 +479,12 @@ export function lowerTree(root, scope = freshScope(), library = { resolve: () =>
       dropPlain(name);
       if (BOOL.has(name)) { if (r.kind === "expr") derived.push(`ng-${name}="${attrSafe(r.text)}"`); else derived.push(`ng-attr-${name}="${attrSafe(r.text)}"`); return; }
       if (name === "class") { if (r.kind === "expr") derived.push(`ng-class="${attrSafe(r.text)}"`); else derived.push(`ng-attr-class="${attrSafe(r.text)}"`); return; }
-      if (LINK.has(name) && (name === "href" || name === "src")) { derived.push(`ng-${name}="${attrSafe(r.kind === "expr" ? `{{ ${r.text} }}` : r.text)}"`); return; }
+      if (name === "href" || name === "src") { derived.push(`ng-${name}="${attrSafe(r.kind === "expr" ? `{{ ${r.text} }}` : r.text)}"`); return; }
       derived.push(`ng-attr-${name}="${attrSafe(r.kind === "expr" ? `{{ ${r.text} }}` : r.text)}"`);
     };
-    for (const a of el.attrs) {
+    const APPEND = new Set(["classappend", "styleappend", "attrappend", "attrprepend"]);
+    const ordered = [...el.attrs.filter((a) => !APPEND.has(thName(a.name))), ...el.attrs.filter((a) => APPEND.has(thName(a.name)))];
+    for (const a of ordered) {
       const name = thName(a.name);
       if (!name || a.value === null) continue;
       const value = a.value;
@@ -498,14 +511,13 @@ export function lowerTree(root, scope = freshScope(), library = { resolve: () =>
       if (name === "style" || name === "styleappend") { const r = lowerValue(value, sc); if (r.kind === "literal") setAttr("style", r.text); else { dropPlain("style"); derived.push(`ng-attr-style="${attrSafe(r.kind === "expr" ? `{{ ${r.text} }}` : r.text)}"`); } continue; }
       if (name === "field") {
         const r = lowerValue(value, sc);
-        if (r.kind === "expr") { derived.push(`ng-model="${attrSafe(r.text)}"`); usesModel = true; const leaf = r.text.split(".").pop(); if (!plain.has("name")) setAttr("name", leaf); if (!plain.has("id")) setAttr("id", leaf); }
+        if (r.kind === "expr") { derived.push(`ng-model="${attrSafe(r.text)}"`); usesModel = true; const path = sc.object && r.text.startsWith(`${sc.object}.`) ? r.text.slice(sc.object.length + 1) : r.text; if (!plain.has("name")) setAttr("name", path); if (!plain.has("id")) setAttr("id", path); }
         continue;
       }
       if (name === "errors" || name === "errorclass") { sc.note(`th:${name} rendered Spring validation errors on the server; the port must carry field errors from its own validation.`); continue; }
       if (/^on\w+$/.test(name)) { sc.note(`th:${name} built inline script from data; the handler was not carried and must be wired in the port.`); continue; }
       if (name === "alt-title") { const r = lowerValue(value, sc); generic("alt", r); generic("title", r); continue; }
       if (name === "lang-xmllang") { const r = lowerValue(value, sc); generic("lang", r); continue; }
-      if (["each", "if", "unless", "case", "switch", "object", "with", "remove", "fragment", "inline", "assert", "ref", "insert", "replace", "include", "block"].includes(name)) continue;
       generic(name, lowerValue(value, sc));
     }
 
@@ -527,7 +539,7 @@ export function lowerTree(root, scope = freshScope(), library = { resolve: () =>
     if (remove === "tag") return body;
     if (usesModel) sc.markTwoWay?.();
     const open = (extra) => `<${tag}${[...attrText, ...extra].map((a) => ` ${a}`).join("")}>`;
-    if (repeat && test) return `<ng-container ng-repeat="${attrSafe(repeat)}">${open([`ng-if="${attrSafe(test)}"`])}${body}</${tag}>` + `</ng-container>`;
+    if (repeat && test) return `<ng-container ng-repeat="${attrSafe(repeat)}">${open([`ng-if="${attrSafe(test)}"`])}${VOID.has(tag) ? "" : `${body}</${tag}>`}</ng-container>`;
     const extra = [];
     if (repeat) extra.push(`ng-repeat="${attrSafe(repeat)}"`);
     if (test) extra.push(`ng-if="${attrSafe(test)}"`);
@@ -589,7 +601,8 @@ export default {
       const keys = [...bodies.keys()];
       const findKey = (name) => {
         const b = bare(name);
-        return keys.find((k) => bare(k) === b) ?? keys.find((k) => bare(k).endsWith(`/${b}`)) ?? keys.find((k) => bare(k).split("/").pop() === b.split("/").pop());
+        // By its path or a suffix of it; a basename alone would be a guess at which nav.html was meant.
+        return keys.find((k) => bare(k) === b) ?? keys.find((k) => bare(k).endsWith(`/${b}`));
       };
       const trees = new Map();
       const treeOf = (key) => {
@@ -625,7 +638,7 @@ export default {
         let twoWay = false;
         scope.markTwoWay = () => { twoWay = true; };
         let template = lowerTree(root, scope, library);
-        const body = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(template);
+        const body = /<body\b[^>]*>([\s\S]*)<\/body\s*>/i.exec(template);
         if (body) template = body[1];
         template = template.trim();
         if (!template) continue;
