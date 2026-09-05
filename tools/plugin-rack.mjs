@@ -122,6 +122,7 @@ const DOES = {
   "output-eleventy": "the site as an Eleventy project: chrome as layout, pages printed static, redirects as _redirects; dynamic screens named",
   "output-types": "TypeScript prop interfaces per screen and the endpoint paths as a union",
   "output-vercel": "a Vercel deploy plan, the redirects as permanent rules in vercel.json",
+  "output-playwright": "the same end to end walk for Playwright, with the config starting the port's own server",
   "output-cypress": "an end to end suite that walks every route and asserts the redirects land",
   "dsp-state": "where state should live, argued from what each screen reads",
   "dsp-storage": "the localStorage, sessionStorage and IndexedDB the app kept state in; keys named, values never read",

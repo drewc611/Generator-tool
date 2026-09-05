@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and eighty one features across ninety seven phases. The statuses are
+Five hundred and eighty two features across ninety eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-792 tests, on Node 18, 20 and 22, and on Windows in CI.
+794 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2191,14 +2191,20 @@ Liquid is the jinja shape with its own words, and a Shopify or Jekyll theme is a
 a page with thousands of nodes, a parent with sixty children or markup nested thirty levels deep costs memory, style recalculation and layout on every change, and a port carries the shape forward unless someone sees it. dsp-dom reads each screen's IR and measures the elements it renders once, how deep they nest, the widest parent and its tag, the loops that multiply the count at runtime and how deeply they nest, and holds the numbers against the three thresholds Lighthouse publishes for its DOM size audit: more than 1,500 nodes, a depth over 32, a parent with more than 60 children. The element count is stated as a floor, because a loop renders its body once per row and nothing guesses how many rows; loops inside loops are named because the inner body renders once per row of every enclosing list. DOM.md tables every screen and leads with the ones over a threshold; the performance scorecard gains a sixth axis counting them, so --max-perf holds it. Nothing is restructured, because where a screen should split is a decision about the product. test/dom.test.js holds it.
 
 
+## Phase 98: the same walk for the other runner
+
+**582. output-playwright walks the ported site with Playwright, the config starting the port's own server** 🔨
+output-cypress walks every route and every retired address of a ported site; teams that run Playwright asked for the same walk in their runner, and the port already leans on Playwright for input-record. output-playwright emits one spec that visits every route from the site model and asserts the layout mounted and the document has a title, one that visits every retired address and asserts the browser landed on the path the flattened redirect map promised, and a playwright.config.js whose webServer starts the port's own zero dependency serve.js on 4173 and waits for its /healthz, so npx playwright test is the whole invocation with @playwright/test the one dev dependency. Routes and redirects come from the site model and nothing asserts a pixel; without --site there is no model to walk and the run says so. Gated by --playwright. test/playwright-suite.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 534 |
+| new in this branch | 535 |
 | planned | 3 |
-| total | 581 |
+| total | 582 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

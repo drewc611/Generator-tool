@@ -97,7 +97,7 @@ test("discovery loads every plugin that ships", async () => {
     "output-adr", "output-alpine", "output-angular", "output-astro", "output-aws", "output-azure", "output-caddy", "output-cem", "output-ci", "output-cloudflare", "output-codemod", "output-curl", "output-cypress",
     "output-design-tokens", "output-dockerfile", "output-eleventy", "output-fixtures", "output-forms", "output-gcp", "output-html", "output-i18n", "output-lit",
     "output-migration", "output-msw", "output-netlify", "output-next", "output-nginx", "output-nuxt",
-    "output-openapi", "output-postman", "output-preact", "output-qwik", "output-react", "output-readme", "output-remix", "output-site", "output-solid",
+    "output-openapi", "output-playwright", "output-postman", "output-preact", "output-qwik", "output-react", "output-readme", "output-remix", "output-site", "output-solid",
     "output-storybook", "output-svelte", "output-sveltekit", "output-tailwind",
     "output-tests", "output-types", "output-vercel", "output-vue", "vis-a11y", "vis-coverage", "vis-equivalence", "vis-graph", "vis-lifecycle", "vis-parity", "vis-perf", "vis-roundtrip", "vis-security", "vis-timeline", "vis-transformer", "vis-ui",
   ]);

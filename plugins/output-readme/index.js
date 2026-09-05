@@ -109,6 +109,8 @@ const DESCRIBES = [
   [/^src\/tokens/, "design tokens measured from the original"],
   [/^src\/i18n\//, "strings pulled out of the markup"],
   [/^fixtures\//, "response fixtures, types only"],
+  [/^tests\/e2e\//, "the Playwright suite: every route visited, every retired address asserted to land"],
+  [/^cypress\//, "the Cypress suite: every route visited, every retired address asserted to land"],
 ];
 
 export function describe(file) {

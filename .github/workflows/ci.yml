@@ -995,9 +995,18 @@ jobs:
           grep -q "DOM size" dm-out/PERFORMANCE.md || { echo "the scorecard has no DOM axis"; exit 1; }
           rm -rf dm-out
 
+      - name: the playwright suite walks the routes and starts the port's own server
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out pw-out --site true --playwright true
+          grep -q "page.goto(" pw-out/tests/e2e/routes.spec.js || { echo "the route walk is missing"; exit 1; }
+          grep -q "toHaveURL" pw-out/tests/e2e/redirects.spec.js || { echo "the redirect assertions are missing"; exit 1; }
+          grep -q "npm run serve" pw-out/playwright.config.js || { echo "the config does not start the port's server"; exit 1; }
+          for f in pw-out/playwright.config.js pw-out/tests/e2e/*.spec.js; do node --check "$f"; done
+          rm -rf pw-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "581" ]; then
-            echo "ROADMAP.md holds $count entries and claims 581"; exit 1
+          if [ "$count" != "582" ]; then
+            echo "ROADMAP.md holds $count entries and claims 582"; exit 1
           fi
