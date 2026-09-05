@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and eighty nine features across one hundred and five phases. The statuses are
+Five hundred and ninety features across one hundred and six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-809 tests, on Node 18, 20 and 22, and on Windows in CI.
+812 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2239,14 +2239,20 @@ thirty four readers each take the files they recognise, and a legacy tree carrie
 CI already asserts that a screen written in Angular and in Vue produces byte identical React, Vue, Svelte and custom element output, which is the only honest way to claim the middle is framework blind. The server dialects now get the same proof: one product page, a heading, a three way stock condition and a tag list with its empty state, is written four times in jinja, Twig, Liquid and Blade, each is run through its own reader, and the emitted React, Vue and Svelte components are compared byte for byte once the two provenance lines naming the source file and its dialect are set aside, and asserted to still differ with them, because the port must say where it came from. A reader that lowers a conditional chain or an empty state one character differently from the others now fails the suite and CI rather than shipping a quiet divergence. test/dialects.test.js holds it.
 
 
+## Phase 106: the button that was a div
+
+**590. dsp-keyboard names every click target the keyboard cannot reach, in every dialect the readers know** 🔨
+a <div> or <span> with onclick, ng-click, @click, (click), on-click or onClick looks like a button and works like one for a mouse, and for a keyboard user it does not exist: not in the tab order without a tabindex, announced as nothing without a role, deaf to Enter and Space without a key handler. WCAG 2.1.1 is the rule. dsp-keyboard reads every opening tag that carries a click handler in any dialect the readers know, skips the elements interactive by nature (a with an href, button, input, select, textarea, summary, option, label) and an anchor with no href is not one of them, and names the rest by tag, file and line with which of the three it lacks; the handler's expression is never captured, because it is source and a value in it is not for a report. KEYBOARD.md carries the list and the accessibility scorecard gains the axis, so --max-a11y holds it. Nothing is rewritten; which of these becomes a real button is a change to the markup a person makes on purpose. test/keyboard.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 542 |
+| new in this branch | 543 |
 | planned | 3 |
-| total | 589 |
+| total | 590 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

@@ -1047,9 +1047,17 @@ jobs:
           done
           rm -rf dl-jinja dl-twig dl-liquid dl-blade dl-*.jsx
 
+      - name: the keyboard reader names a click target the keyboard cannot reach
+        run: |
+          node src/cli.js run --src test/fixtures/keyboard-site --out kb-out
+          test -f kb-out/KEYBOARD.md || { echo "no KEYBOARD.md"; exit 1; }
+          grep -q "lacks tabindex, role, key handler" kb-out/KEYBOARD.md || { echo "the div with a click was not named"; exit 1; }
+          grep -q "open(1)" kb-out/KEYBOARD.md && { echo "handler code leaked into the report"; exit 1; } || true
+          rm -rf kb-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "589" ]; then
-            echo "ROADMAP.md holds $count entries and claims 589"; exit 1
+          if [ "$count" != "590" ]; then
+            echo "ROADMAP.md holds $count entries and claims 590"; exit 1
           fi

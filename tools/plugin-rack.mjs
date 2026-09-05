@@ -95,6 +95,7 @@ const DOES = {
   "dsp-landmarks": "the ARIA landmark structure of each page, the regions a screen reader jumps between",
   "dsp-imports": "the module dependency graph from import and require, and the import cycles a port should break",
   "dsp-magic": "the magic numbers and hardcoded status strings buried in logic, each a value with no name to change",
+  "dsp-keyboard": "click handlers on elements the keyboard cannot reach, with the tabindex, role or key handler each lacks",
   "dsp-labels": "form controls a page left with no accessible name, which a placeholder does not give",
   "dsp-learn": "a learned second opinion on the app's archetype, from a model trained on the labelled corpus",
   "dsp-render-blocking": "what delays first paint: sync head scripts, blocking stylesheets, css @import",

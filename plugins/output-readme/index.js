@@ -64,6 +64,7 @@ const DESCRIBES = [
   [/^IMPROVEMENTS\.md$/, "measured findings ranked by the emitted lines each fix would touch"],
   [/^INLINE\.md$/, "inline style and script counted per tag, for theming and a strict CSP"],
   [/^JSF\.md$/, "the JSF and PrimeFaces components read, with what each becomes"],
+  [/^KEYBOARD\.md$/, "click targets the keyboard cannot reach, with what each lacks"],
   [/^LABELS\.md$/, "form controls with no accessible name, by file and line"],
   [/^LANDMARKS\.md$/, "the landmark structure of each page and the gaps a screen reader feels"],
   [/^LEARNED\.md$/, "the learned archetype model's reading, with its corpus size stated"],

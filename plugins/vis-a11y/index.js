@@ -15,7 +15,7 @@
  * product, so it does not pretend to.
  */
 
-function collect(ctx) {
+export function collect(ctx) {
   const rows = [];
 
   const landmarks = ctx.landmarks;
@@ -47,6 +47,15 @@ function collect(ctx) {
   rows.push(tables
     ? { axis: "Tables", present: true, count: tables.noCaption + tables.noScope, of: tables.dataTables, note: "data-table gap(s) in caption or scope, over tables with headers" }
     : { axis: "Tables", present: false });
+
+  const keyboard = ctx.keyboard?.findings;
+
+  rows.push(keyboard
+
+    ? { axis: "Keyboard", present: true, count: keyboard.length, note: "click target(s) with no tabindex, role or key handler, unreachable from the keyboard" }
+
+    : { axis: "Keyboard", present: false });
+
 
   const iframes = ctx.iframes;
   rows.push(iframes
