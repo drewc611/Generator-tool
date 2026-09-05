@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy five features across ninety one phases. The statuses are
+Five hundred and seventy six features across ninety two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-760 tests, on Node 18, 20 and 22, and on Windows in CI.
+765 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2155,14 +2155,20 @@ an Ember component is a Glimmer template beside or under a class that names what
 a legacy front end reads process.env.API_URL, import.meta.env.VITE_KEY, an Angular environment module, or a config object the server dropped on window, and each read is a value someone supplies before the port runs; the source states the name and never the value, so the port has exactly that gap and must not fill it with a guess. dsp-env reads every script for those four spellings, keeps the key with the file and line it is read at and whether the read carries a || or ?? fallback (never the fallback literal, which is where a value lives), and reads any .env file in the tree for its names only, the right hand side of each line never read. .env files now reach the scan, which also puts a live .env through the secret gate it had been walking past. ENV.md tables every key by source with its state (fallback in source, declared in .env, or neither), names the keys nobody supplies yet, the names a .env declares that no script reads, and a live .env as a file that must not be copied into the port or committed; .env.example lands beside it with every process environment key blank, so the port asks for what it needs by name. Keys a window object or an environment module supplies are named and left out of the example, because how the deploy hands them over is a decision and not a value. test/configuration.test.js holds it.
 
 
+## Phase 92: what the port stands on
+
+**576. dsp-deps names the libraries by version against the dates their own projects published** 🔨
+a legacy front end stands on libraries a manifest declares, a script tag loads by a path that carries a version (jquery-1.8.3.min.js, a cdnjs path, an @version on a CDN), or a vendored copy states in its first line banner, and every one of those is a version somebody chose. dsp-deps reads the root package.json and bower.json (a nested manifest belongs to another package and is left alone), every page's script tags, and the banner line of every script, merges the witnesses of one version into one row with its evidence, and assesses each against a short table of what the projects published about themselves: the day AngularJS, Bootstrap 2, 3 and 4, Vue 2 and each Angular major from 12 to 19 left support, the release that ended jQuery 1 and 2, the day moment declared itself finished, the last release of Prototype and MooTools. A version newer than every dated major the table holds is said to be exactly that, and a library not in the table is marked not assessed, which means that and not that it is fine. A library loaded at two versions and a dependency pinned to nothing are named as facts. bower.json in the tree is noted as a deprecated tool. DEPENDENCIES.md carries the table; nothing is upgraded or removed, because what the port does about a dated library is a decision about the product and the code that calls it. test/dependencies.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 528 |
+| new in this branch | 529 |
 | planned | 3 |
-| total | 575 |
+| total | 576 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

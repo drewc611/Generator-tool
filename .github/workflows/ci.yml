@@ -946,9 +946,17 @@ jobs:
           grep -rq "localhost:9999" en-out && { echo "a value from the live .env leaked into the port"; exit 1; } || true
           rm -rf en-out
 
+      - name: the dependency reader dates a library by what its project published
+        run: |
+          node src/cli.js run --src test/fixtures/deps-app --out dp-out
+          test -f dp-out/DEPENDENCIES.md || { echo "no DEPENDENCIES.md"; exit 1; }
+          grep -q "end of life since 2021-12-31" dp-out/DEPENDENCIES.md || { echo "AngularJS was not dated"; exit 1; }
+          grep -q "not assessed" dp-out/DEPENDENCIES.md || { echo "an unknown library was not marked not assessed"; exit 1; }
+          rm -rf dp-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "575" ]; then
-            echo "ROADMAP.md holds $count entries and claims 575"; exit 1
+          if [ "$count" != "576" ]; then
+            echo "ROADMAP.md holds $count entries and claims 576"; exit 1
           fi
