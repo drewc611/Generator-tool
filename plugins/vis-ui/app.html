@@ -226,8 +226,12 @@
   .theme-key { flex: 0 0 auto; align-self: center; padding: 4px 8px; }
   .sort-key { flex: 0 0 auto; padding: 2px 6px; font-size: 8px; margin-right: 6px; }
   .offline { color: var(--amber); }
-  .spark-box { width: 70px; }
+  .spark-box { width: 70px; position: relative; }
   #spark polyline { fill: none; stroke: var(--amber); stroke-width: 1.5; }
+  /* The run comparison drops below the head as a tooltip so its list never overruns the header bar. */
+  #compare { position: absolute; top: calc(100% + 5px); right: 0; z-index: 40; display: none; width: 214px; text-align: left; padding: 6px 9px; font-size: 9.5px; line-height: 1.5; color: var(--p-dim); background: var(--face); border: 1px solid var(--edge-hi); border-radius: 3px; box-shadow: 0 6px 18px #000a; white-space: normal; }
+  .spark-box:hover #compare[data-ready], .spark-box:focus-within #compare[data-ready] { display: block; }
+  #compare h3 { margin: 0 0 4px; font-size: 8.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--faint); } #compare ul { margin: 0; padding-left: 14px; } #compare li { color: var(--p-hi); } #compare p { margin: 3px 0 0; }
 
   /* the notes deck is tabbed: signals, files, reports */
   .tabs { gap: 3px; justify-content: flex-start; }
@@ -277,9 +281,9 @@
     <div class="sub" id="now-sub"></div>
     <div class="sub offline" id="offline" role="status"></div>
   </div>
-  <div class="sunk gauge spark-box" title="unverified per run, oldest first">
+  <div class="sunk gauge spark-box" tabindex="0" title="unverified per run, oldest first; hover for the change since the previous run">
     <svg id="spark" width="54" height="16" viewBox="0 0 54 16" aria-label="unverified count per run, oldest first"><polyline id="spark-line" points="" /></svg>
-    <aside id="compare" hidden aria-label="comparison with the previous run"></aside>
+    <aside id="compare" aria-label="comparison with the previous run"></aside>
     <span>trend</span>
   </div>
   <div class="gauges">
@@ -871,11 +875,11 @@ async function renderComparison() {
     const box = $("compare");
     if (!cmp || !box) return;
     const moved = cmp.metrics.filter((m) => m.delta !== 0);
-    box.hidden = false;
     box.innerHTML = "<h3>vs the previous run</h3>" +
       (moved.length ? "<ul>" + moved.map((m) => `<li>${m.name}: ${m.was} → ${m.is}${m.verdict === "level" || m.verdict === "changed" ? "" : ` (${m.verdict})`}</li>`).join("") + "</ul>" : "<p>Nothing moved.</p>") +
       (cmp.notesClosed.length ? `<p>${cmp.notesClosed.length} note(s) closed.</p>` : "") +
       (cmp.notesOpened.length ? `<p>${cmp.notesOpened.length} note(s) opened.</p>` : "");
+    box.dataset.ready = "1";
   } catch { /* no previous run kept yet */ }
 }
 
