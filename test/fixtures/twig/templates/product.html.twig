@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ product.name }} · {{ parent() }}{% endblock %}
+{% block body %}
+  {% set discounted = product.price < product.list %}
+  <h1>{{ product.name|e }}</h1>
+  {% if product.stock is empty %}
+    <p class="out">Sold out</p>
+  {% elseif product.stock < 5 %}
+    <p class="low">Only {{ product.stock }} left</p>
+  {% else %}
+    <p>In stock</p>
+  {% endif %}
+  <ul>
+    {% for tag in product.tags %}
+      <li>{{ tag|upper }}</li>
+    {% else %}
+      <li class="none">No tags</li>
+    {% endfor %}
+  </ul>
+  <img src="{{ asset('img/' ~ product.image) }}" alt="{{ product.name }}">
+{% endblock %}

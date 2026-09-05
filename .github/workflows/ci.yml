@@ -1004,9 +1004,17 @@ jobs:
           for f in pw-out/playwright.config.js pw-out/tests/e2e/*.spec.js; do node --check "$f"; done
           rm -rf pw-out
 
+      - name: the twig reader composes a page into its layout through the jinja lowering
+        run: |
+          node src/cli.js run --src test/fixtures/twig --out tw-out
+          test -f tw-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the Twig template was not ported"; exit 1; }
+          grep -q "<nav" tw-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the layout's include was not composed in"; exit 1; }
+          grep -qE "ng-|\{%" tw-out/src/features/TemplatesProduct/TemplatesProduct.jsx && { echo "the dialect or a twig tag leaked into the React output"; exit 1; } || true
+          rm -rf tw-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "583" ]; then
-            echo "ROADMAP.md holds $count entries and claims 583"; exit 1
+          if [ "$count" != "584" ]; then
+            echo "ROADMAP.md holds $count entries and claims 584"; exit 1
           fi

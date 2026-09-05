@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and eighty three features across ninety nine phases. The statuses are
+Five hundred and eighty four features across one hundred phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-795 tests, on Node 18, 20 and 22, and on Windows in CI.
+798 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2203,14 +2203,20 @@ output-cypress walks every route and every retired address of a ported site; tea
 9.36 held the README's digits to the measures that produce them, and the words kept drifting: the README's "still open" paragraph swore to four hundred and twenty six features in thirty four phases while the roadmap held five hundred and eighty two in ninety eight, and CLAUDE.md's pointer to the roadmap said four hundred and twenty in thirty three, because a number spelled out in words is invisible to a regex that looks for digits. Every such sentence is trued up, and test/hygiene.test.js now reads the words: the README's "across N features", its "N features in N phases, N shipped, N new in the current branch, N planned", CLAUDE.md's "N features in N phases" and the roadmap's own header are each parsed from English numerals and held equal to the roadmap's counted entries, its counted phase headings and its counted statuses. A sentence that spells a number the file no longer holds fails the suite, in words as it already did in digits. Nothing was added to make a number nicer; the words were made true.
 
 
+## Phase 100: one lowering, three dialects
+
+**584. input-twig reads Twig through the jinja lowering, its own spellings rewritten at the word level** 🔨
+Twig, the template language of Symfony, Drupal and Craft, is jinja's grammar with a handful of its own spellings, and a second lowering for it would be a second place for the same bug. input-twig rewrites the spellings onto jinja's outside of strings: elseif to elif, ~ to +, is defined and is not defined and is empty and is null to the null comparisons they are, is same as to strict equality, the escape, raw and translation filters dropped because the target escapes and the port owns its strings, and a path(), url() or asset() call kept as written and named because the route table is the server's and an address belongs in the endpoint map. The result goes through the one jinja lowering, which already composes extends and block, inlines a held include by exact path or basename with Twig's namespace prefix stripped, names a missing one, and turns the else of a for into the empty state. A layout other templates extend is composed into each of them and not ported as a screen of its own, the body is what becomes the screen, and a range loop is named rather than repeated. .twig reaches the scan. test/twig.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 536 |
+| new in this branch | 537 |
 | planned | 3 |
-| total | 583 |
+| total | 584 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
