@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The functions a legacy front end grew too tangled to port cleanly. A screen
@@ -27,12 +28,6 @@ const METHOD = /(?:^|[\s,{;])([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/gm;
 // short circuit operators and the ternary are counted separately below because
 // they are punctuation, not words.
 const BRANCH_WORD = /\b(if|for|while|case)\b/g;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 // Walk from the opening brace to its match with a plain depth counter. This is
 // the approximation the module admits to: a brace inside a string or a comment

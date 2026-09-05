@@ -61,7 +61,8 @@ test("it does not collide with dsp-security's own SECURITY.md and adds no depend
   const source = await readFile(new URL("../plugins/vis-security/index.js", import.meta.url), "utf8");
   assert.doesNotMatch(source, /ctx\.write\("SECURITY\.md"/, "the scorecard uses SECURITY_SCORECARD.md, not dsp-security's SECURITY.md");
   for (const line of source.split("\n").filter((l) => l.startsWith("import "))) {
-    assert.match(line, /from "node:/, `${line.trim()} is not a node builtin`);
+    // A node builtin or the shared IR helpers beside it: neither is a dependency and neither reaches the network.
+    assert.match(line, /from "(node:|\.\.\/dsp-ir\/)/, `${line.trim()} is neither a node builtin nor the shared IR helpers`);
   }
   assert.doesNotMatch(source, /\bfetch\(|https?:\/\//, "the plugin does not reach the network");
 });

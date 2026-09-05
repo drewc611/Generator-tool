@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The video and audio a legacy front end embedded, and the contract it carried.
@@ -22,12 +23,6 @@ import { readFile } from "node:fs/promises";
 
 const MEDIA = /<(video|audio)\b([^>]*)>/gi;
 const hasAttr = (attrs, name) => new RegExp(`\\b${name}\\b`, "i").test(attrs);
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 const captionsIn = (inner) => /<track\b[^>]*\bkind\s*=\s*(['"])(captions|subtitles)\1/i.test(inner);
 

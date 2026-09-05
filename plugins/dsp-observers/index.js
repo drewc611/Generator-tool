@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The observers a legacy front end constructed.
@@ -20,12 +21,6 @@ import { readFile } from "node:fs/promises";
 
 const CONSTRUCT = /\bnew\s+(IntersectionObserver|ResizeObserver|MutationObserver|PerformanceObserver)\b/g;
 const DISCONNECT = /\.\s*disconnect\s*\(/;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 export function readObservers(text, rel) {
   const cleaned = DISCONNECT.test(text);

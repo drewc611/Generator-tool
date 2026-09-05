@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The browser a legacy front end was written for is gone, and some of what it
@@ -41,12 +42,6 @@ const APIS = [
   { name: "captureEvents / releaseEvents", re: /\.\s*(?:capture|release)Events\s*\(/g, status: "removed", since: null, use: "addEventListener" },
   { name: "document.layers / document.charset", re: /\bdocument\s*\.\s*(?:layers|charset)\b/g, status: "removed", since: null, use: "querySelector / document.characterSet" },
 ];
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 /** Every call in one file to an API the platform has moved on from, with its line. */
 export function readPlatform(text, rel) {

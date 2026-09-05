@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The asynchronous shapes a legacy front end wrote before async and await were
@@ -25,12 +26,6 @@ const CALLBACK_ARG = /([(,])\s*(?:async\s+)?(?:function\s*\*?\s*[A-Za-z_$]*\s*\(
 
 // One promise link. Anchored on the dot and the method name, non backtracking.
 const PROMISE_LINK = /\.\s*(?:then|catch|finally)\s*\(/g;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 // The nesting a pyramid reaches is how many callback argument functions are
 // open at the brace where a new one opens. A linear character scan tracks brace

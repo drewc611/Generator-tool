@@ -50,7 +50,7 @@ test("nothing in the tool is deferred with a marker comment", async () => {
 
 test("the shared helpers exist exactly once", async () => {
   const files = [...(await walk(join(ROOT, "src"))), ...(await walk(join(ROOT, "plugins")))];
-  const defs = { "const pascal =": [], "const unique = (list) =>": [] };
+  const defs = { "const pascal =": [], "const unique = (list) =>": [], "const lineAt =": [] };
   for (const f of files) {
     const text = await readFile(f, "utf8");
     for (const needle of Object.keys(defs)) {

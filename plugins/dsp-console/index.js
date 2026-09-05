@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The debug output a legacy front end left in its scripts. A console call or a
@@ -19,12 +20,6 @@ import { readFile } from "node:fs/promises";
 // single linear scan with nothing to backtrack over.
 const CONSOLE_CALL = /\bconsole\s*\.\s*([A-Za-z]+)\s*\(/g;
 const DEBUGGER = /\bdebugger\b\s*;?/g;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 export function readConsole(text, rel) {
   const findings = [];

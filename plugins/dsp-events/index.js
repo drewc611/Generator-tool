@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The global event listeners a legacy front end attached.
@@ -18,12 +19,6 @@ import { readFile } from "node:fs/promises";
 
 const ADD = /\b(window|document|globalThis|self|[\w$.]+)\s*\.\s*addEventListener\s*\(\s*(['"`])([\w:-]+)\2/g;
 const REMOVE = /\.\s*removeEventListener\s*\(\s*(['"`])([\w:-]+)\1/g;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 const GLOBAL = new Set(["window", "document", "globalThis", "self"]);
 

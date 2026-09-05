@@ -67,6 +67,7 @@ test("it registers one command and never publishes", async () => {
   assert.doesNotMatch(source, /["']publish["']\s*[,\]]/, "npm publish is never invoked");
   assert.match(source, /--dry-run/, "only the dry run is ever run");
   for (const line of source.split("\n").filter((l) => l.startsWith("import "))) {
-    assert.match(line, /from "node:/, `${line.trim()} is not a node builtin`);
+    // A node builtin or the shared IR helpers beside it: neither is a dependency and neither reaches the network.
+    assert.match(line, /from "(node:|\.\.\/dsp-ir\/)/, `${line.trim()} is neither a node builtin nor the shared IR helpers`);
   }
 });

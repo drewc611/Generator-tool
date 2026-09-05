@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The iframes a legacy front end embedded, and the two contracts they carry.
@@ -26,12 +27,6 @@ const IFRAME = /<iframe\b([^>]*)>/gi;
 const SRC = /\bsrc\s*=\s*(['"])(.*?)\1/i;
 const TITLE = /\btitle\s*=\s*(['"])(.*?)\1/i;
 const SANDBOX = /\bsandbox\b/i;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 // The host of an absolute URL, or null for a relative or non-http src. Only the
 // host is returned, never the path or query, which can carry a token.

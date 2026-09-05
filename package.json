@@ -1,6 +1,6 @@
 {
   "name": "portamp",
-  "version": "9.56.0",
+  "version": "9.57.0",
   "description": "A tiny plugin host that ports legacy front ends. Thirty two input plugins read Angular, AngularJS, Vue, Knockout, Backbone, jQuery, Ember, Marko, Liquid, Twig, XSLT and more, or a running app with no source; it recognises what it is; it emits React, Vue, Svelte, Angular, Lit or a custom element, arranged for Next, Remix, Astro, Nuxt, SvelteKit or Eleventy, with the proofs beside them.",
   "type": "module",
   "bin": {

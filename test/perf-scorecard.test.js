@@ -67,7 +67,8 @@ test("it does not collide with PERF.md or SIZE.md and adds no dependency", async
   const source = await readFile(new URL("../plugins/vis-perf/index.js", import.meta.url), "utf8");
   assert.doesNotMatch(source, /ctx\.write\("(PERF|SIZE)\.md"/, "the scorecard uses PERFORMANCE.md");
   for (const line of source.split("\n").filter((l) => l.startsWith("import "))) {
-    assert.match(line, /from "node:/, `${line.trim()} is not a node builtin`);
+    // A node builtin or the shared IR helpers beside it: neither is a dependency and neither reaches the network.
+    assert.match(line, /from "(node:|\.\.\/dsp-ir\/)/, `${line.trim()} is neither a node builtin nor the shared IR helpers`);
   }
   assert.doesNotMatch(source, /\bfetch\(|https?:\/\//, "the plugin does not reach the network");
 });

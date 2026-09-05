@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * What delays the first paint. A browser building a page stops the moment it
@@ -12,11 +13,6 @@ import { readFile } from "node:fs/promises";
  */
 
 // The line a match sits on is the count of newlines before its index, plus one.
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index && i < text.length; i += 1) if (text[i] === "\n") line += 1;
-  return line;
-};
 
 // The head is everything before the first body tag. A script or link after it
 // is past the first paint boundary and does not block the same way.

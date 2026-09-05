@@ -94,3 +94,14 @@ test("a run reads the Ember component once, the plain handlebars template once, 
     await run.cleanup();
   }
 });
+
+test("a helper inside a quoted attribute is lowered once, loop metadata is not an input, and a handler arg is an output only", () => {
+  const notes = [];
+  const { template } = lowerGlimmer(`<div class="btn {{if this.busy "a" "b"}}" title={{concat "x" @name}}></div>`, (n) => notes.push(n));
+  assert.match(template, /class='btn \{\{ \(busy \? "a" : "b"\) \}\}'/, "the quoted helper is the expression it names, inside a value that survives its quotes");
+  assert.match(template, /title="\{\{ 'x' \+ name \}\}"/, "the unquoted helper is lowered once");
+  assert.ok(!notes.some((n) => /became the call busy/.test(n)), "no bogus helper note");
+  const screen = readComponent({ template: `{{#each @items as |item|}}{{@index}}{{/each}}<button {{on "click" @onSave}}>s</button>`, source: "", rel: "x/save-bar.hbs" });
+  assert.deepEqual(screen.inputs, ["items"], "@index is not an input and @onSave is an output, not both");
+  assert.deepEqual(screen.outputs, ["save"]);
+});

@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * A click handler on an element the keyboard cannot reach. A <div> or <span>
@@ -22,12 +23,6 @@ const CLICK = /\s(?:on[cC]lick|(?:data-)?ng-click|@click(?:\.[\w.]+)?|v-on:click
 const KEY = /\s(?:on[kK]ey(?:down|up|press)|(?:data-)?ng-key(?:down|up|press)|@key(?:down|up|press)(?:\.[\w.]+)?|v-on:key(?:down|up|press)|\(key(?:down|up|press)\)|on-key(?:down|up|press)|x-on:key(?:down|up|press)(?:\.[\w.]+)?|on:key(?:down|up|press))\s*(?:=|\()/;
 const NATIVE = new Set(["a", "button", "input", "select", "textarea", "summary", "details", "option", "label", "area", "audio", "video"]);
 const TAG = /<([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|\{[^}]*\}|[^>"'{])*)>/g;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 /** Every click target the keyboard cannot reach, with what it lacks. */
 export function readKeyboard(text, rel) {

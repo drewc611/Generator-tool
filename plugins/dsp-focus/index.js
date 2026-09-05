@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The focus management a legacy front end carried in its markup and scripts.
@@ -28,12 +29,6 @@ const POSITIVE_TABINDEX = /\btabindex\s*=\s*(['"])\s*([1-9]\d*)\s*\1/gi;
 const AUTOFOCUS = /\bautofocus\b/gi;
 const ACCESSKEY = /\baccesskey\s*=\s*['"]/gi;
 const FOCUS_CALL = /\.\s*focus\s*\(\s*\)/g;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 export function readFocus(text, rel) {
   const findings = [];

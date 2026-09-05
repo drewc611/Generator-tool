@@ -58,7 +58,8 @@ test("it does not collide with dsp-a11y's own A11Y.md and adds no dependency", a
   const source = await readFile(new URL("../plugins/vis-a11y/index.js", import.meta.url), "utf8");
   assert.doesNotMatch(source, /ctx\.write\("A11Y\.md"/, "the scorecard uses ACCESSIBILITY.md, not dsp-a11y's A11Y.md");
   for (const line of source.split("\n").filter((l) => l.startsWith("import "))) {
-    assert.match(line, /from "node:/, `${line.trim()} is not a node builtin`);
+    // A node builtin or the shared IR helpers beside it: neither is a dependency and neither reaches the network.
+    assert.match(line, /from "(node:|\.\.\/dsp-ir\/)/, `${line.trim()} is neither a node builtin nor the shared IR helpers`);
   }
   assert.doesNotMatch(source, /\bfetch\(|https?:\/\//, "the plugin does not reach the network");
 });

@@ -60,7 +60,8 @@ test("no dependency was added and nothing reaches the network", async () => {
   const { readFile } = await import("node:fs/promises");
   const source = await readFile(new URL("../plugins/vis-lifecycle/index.js", import.meta.url), "utf8");
   for (const line of source.split("\n").filter((l) => l.startsWith("import "))) {
-    assert.match(line, /from "node:/, `${line.trim()} is not a node builtin`);
+    // A node builtin or the shared IR helpers beside it: neither is a dependency and neither reaches the network.
+    assert.match(line, /from "(node:|\.\.\/dsp-ir\/)/, `${line.trim()} is neither a node builtin nor the shared IR helpers`);
   }
   assert.doesNotMatch(source, /\bfetch\(|https?:\/\//, "the plugin does not reach the network");
 });

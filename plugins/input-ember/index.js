@@ -117,6 +117,22 @@ function lowerTag(tag, note, outputs) {
   else if (name === "LinkTo") { elName = "a"; note("`<LinkTo>` became an `<a>`; its `@route` is a router concern the port wires in src/app."); }
   else if (isComponent) elName = kebab(name);
 
+  // A mustache inside a quoted value, class="btn {{if @primary 'primary'}}",
+  // is lowered here first and once; the rewrites below produce values of
+  // their own that must not be lowered a second time as helper calls.
+  // class="btn {{if this.busy "a" "b"}}": the helper's own quotes match the
+  // attribute's, and the template pass that lowers every mustache once would
+  // leave "a" inside a double quoted value. The attribute takes the other
+  // quote here so the one lowering, later, lands inside a value that survives.
+  for (const qt of ['"', "'"]) {
+    const other = qt === '"' ? "'" : '"';
+    const quoted = new RegExp(`=${qt}((?:[^${qt}{]|\\{\\{[^}]*\\}\\})*\\{\\{[^}]*${qt}[^}]*\\}\\}(?:[^${qt}{]|\\{\\{[^}]*\\}\\})*)${qt}`, "g");
+    attrs = attrs.replace(quoted, (_, val) => {
+      if (val.includes(other)) { note(`An attribute value mixes both quote kinds inside its helpers (${val.slice(0, 30)}...); check it by hand.`); return `=${qt}${val}${qt}`; }
+      return `=${other}${val}${other}`;
+    });
+  }
+
   // {{on "event" handler}} and {{action "name" args}} modifiers.
   attrs = attrs.replace(/\{\{on\s+["'](\w+)["']\s+([\s\S]*?)\}\}/g, (_, ev, handler) => {
     if (!EVENTS.has(ev)) note(`\`{{on "${ev}"}}\` is an event the dialect has no attribute for; it was lowered as ng-${ev} and needs a hand check.`);
@@ -144,8 +160,6 @@ function lowerTag(tag, note, outputs) {
     if (BOOL_ATTR[attr]) return ` ${BOOL_ATTR[attr]}="${attrSafe(plain(expr))}"`;
     return ` ${attr}="{{ ${attrSafe(lowerExpr(expr, note))} }}"`;
   });
-  // Quoted values with mustaches inside stay as interpolation, lowered.
-  attrs = attrs.replace(/\{\{([^#/!][\s\S]*?)\}\}/g, (_, expr) => `{{ ${lowerExpr(expr, note)} }}`);
 
   // One space between attributes and none before the close, whatever the
   // modifiers left behind; a built in field is a void element, a component
@@ -240,7 +254,7 @@ export function lowerGlimmer(source, note = () => {}) {
 export function readMembers(template, source) {
   const inputs = new Set();
   const outputs = new Set();
-  for (const m of template.matchAll(/\{\{[^}]*?@(\w+)/g)) inputs.add(m[1]);
+  for (const m of template.matchAll(/\{\{[^}]*?@(\w+)/g)) if (!/^(index|key|first|last)$/.test(m[1])) inputs.add(m[1]);
   // `@x={{...}}` on a child tag is the child's arg: remove any input that only appears that way.
   for (const m of template.matchAll(/\s@(\w+)=\{\{/g)) { if (!new RegExp(`\\{\\{[^}]*?@${m[1]}(?![\\w=])`).test(template)) inputs.delete(m[1]); }
   const called = new Set();
@@ -259,7 +273,7 @@ export function readComponent({ template, source, rel }, note = () => {}) {
     selector,
     className: pascal(selector),
     file: rel,
-    inputs: members.inputs.filter((i) => !outputs.includes(i)),
+    inputs: members.inputs.filter((i) => !outputs.includes(i) && !outputs.includes(asOutput(i))),
     outputs,
     template: lowered.template,
     templateOrigin: "an Ember component, lowered",

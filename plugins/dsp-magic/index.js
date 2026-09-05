@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The magic numbers and hardcoded status strings a legacy front end buried in
@@ -30,12 +31,6 @@ const SHORT_WORD = /^[A-Za-z]{2,15}$/;
 // A run of twelve or more characters mixing case and digits reads like a
 // credential, which is the secret gate's territory; this never captures one.
 const CREDENTIAL = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]{12,}$/;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 const lineBounds = (text, index) => {
   let start = index;

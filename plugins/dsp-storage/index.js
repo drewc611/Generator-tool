@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The browser storage a legacy front end kept its state in.
@@ -23,12 +24,6 @@ const CALL = /\b(localStorage|sessionStorage)\s*\.\s*(getItem|setItem|removeItem
 const BRACKET = /\b(localStorage|sessionStorage)\s*\[\s*(['"`])([^'"`]*)\2\s*\]/g;
 const CLEAR = /\b(localStorage|sessionStorage)\s*\.\s*clear\s*\(/g;
 const IDB = /\bindexedDB\s*\.\s*open\s*\(\s*(['"`])([^'"`]*)\1/g;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 const OP = { getItem: "read", setItem: "write", removeItem: "remove", key: "enumerate" };
 

@@ -107,3 +107,18 @@ export const pascal = (sel) => {
 /** Deduplicate and drop the holes, in first seen order. Four emitters each
  * carried this line; the shared spelling keeps them agreeing about it. */
 export const unique = (list) => [...new Set(list.filter(Boolean))];
+
+// The line a character index falls on. Seventeen analyzers asked this of the
+// same file thousands of times each, rescanning from the top for every match;
+// the newline table is built once per text and the answer is a binary search.
+let lineText = null;
+let lineBreaks = null;
+export const lineAt = (text, index) => {
+  if (text !== lineText) {
+    lineText = text; lineBreaks = [];
+    for (let i = 0; i < text.length; i += 1) if (text.charCodeAt(i) === 10) lineBreaks.push(i);
+  }
+  let lo = 0; let hi = lineBreaks.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (lineBreaks[mid] < index) lo = mid + 1; else hi = mid; }
+  return lo + 1;
+};

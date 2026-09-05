@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The tables a legacy front end drew, and whether a screen reader can read them.
@@ -21,12 +22,6 @@ import { readFile } from "node:fs/promises";
  * measured on its own content up to the caption; deep nesting is noted, not
  * resolved.
  */
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 const OPEN = /<table\b([^>]*)>/gi;
 

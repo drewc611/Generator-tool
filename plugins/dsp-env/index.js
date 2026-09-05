@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The configuration a legacy front end reaches for at runtime. An app reads
@@ -24,12 +25,6 @@ const ENV_MODULE_READ = /\benvironment\s*\.\s*([A-Za-z_$][\w$]*)/g;
 const WINDOW_CONFIG = /\b(?:window|globalThis)\s*\.\s*(__?[A-Za-z]*(?:ENV|CONFIG|SETTINGS)[A-Za-z_]*__?|[A-Za-z]*(?:Env|Config|Settings))\s*\.\s*([A-Za-z_$][\w$]*)/g;
 const DOTENV_LINE = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/;
 const FALLBACK = /^\s*(\|\||\?\?)/;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 export const isDotenv = (rel) => /(^|\/)\.env(\.[\w.-]+)?$/.test(rel);
 export const isDotenvExample = (rel) => /(^|\/)\.env\.(example|sample|template|dist)$/i.test(rel);

@@ -1,13 +1,15 @@
 /**
  * One accessibility scorecard over what the dsp analyzers already measured.
  *
- * The port's accessibility is read by seven plugins, each on its own axis:
+ * The port's accessibility is read by eight plugins, each on its own axis:
  * dsp-landmarks (regions), dsp-labels (control names), dsp-a11y (contrast and
- * target size), dsp-focus (the keyboard), dsp-media (captions), dsp-tables
- * (grids) and dsp-iframes (embedded documents). Each writes its own report, and
- * a port owner who wants the whole picture has to open seven files.
+ * target size), dsp-focus (focus order), dsp-media (captions), dsp-tables
+ * (grids), dsp-keyboard (click targets the keyboard cannot reach) and
+ * dsp-iframes (embedded documents). Each writes its own report, and a port
+ * owner who wants the whole picture has to open eight files.
  *
- * vis-a11y reads what those plugins left on the context and writes A11Y.md, one
+ * vis-a11y reads what those plugins left on the context and writes
+ * ACCESSIBILITY.md, one
  * table of every axis with the count it reported and exactly what that count is.
  * It invents nothing: every number here is another plugin's, and an axis whose
  * plugin did not run is named "not measured" rather than scored zero. It is a
@@ -55,7 +57,6 @@ export function collect(ctx) {
     ? { axis: "Keyboard", present: true, count: keyboard.length, note: "click target(s) with no tabindex, role or key handler, unreachable from the keyboard" }
 
     : { axis: "Keyboard", present: false });
-
 
   const iframes = ctx.iframes;
   rows.push(iframes
@@ -108,7 +109,7 @@ ${body}
 
 Each axis has its own report with the file and line of every item: LANDMARKS.md,
 LABELS.md, A11Y.md (dsp-a11y, the recovered palette's contrast), FOCUS.md,
-MEDIA.md, TABLES.md and IFRAMES.md. This page only gathers their headline
+MEDIA.md, TABLES.md, KEYBOARD.md and IFRAMES.md. This page only gathers their headline
 numbers so the whole picture fits in one glance.
 
 ---

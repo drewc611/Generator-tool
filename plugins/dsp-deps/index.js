@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The libraries a legacy front end stands on, with the version of each and
@@ -53,12 +54,6 @@ const AT_VERSION = /\/(?:npm\/)?((?:@[a-z0-9_-]+\/)?[a-z0-9_.-]+)@(\d+\.\d+(?:\.
 const SCRIPT_SRC = /<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi;
 // The banner a vendored minified library keeps on its first line.
 const BANNER = /^\s*\/\*!?\s*(?:v)?\s*([A-Za-z][A-Za-z0-9 .]*?)\s+(?:JavaScript Library\s+)?v?(\d+\.\d+(?:\.\d+)?)/;
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
-};
 
 // Numeric per segment, so 1.8.3 sorts before 1.12.4; an unpinned entry sorts last.
 const compareVersions = (a, b) => {

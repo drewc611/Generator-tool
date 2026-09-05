@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { lineAt } from "../dsp-ir/emit.js";
 
 /**
  * The timers and animation loops a legacy front end scheduled.
@@ -21,12 +22,6 @@ const SCHEDULERS = {
   setTimeout: "clearTimeout",
   requestAnimationFrame: "cancelAnimationFrame",
   requestIdleCallback: "cancelIdleCallback",
-};
-
-const lineAt = (text, index) => {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
 };
 
 export function readTimers(text, rel) {
