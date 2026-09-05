@@ -253,11 +253,52 @@ function innerHtml(expr) {
   return m ? m[1] : null;
 }
 
+/** Split a call's argument text on the commas at its top level, respecting parens, brackets, strings and templates. */
+function splitArgs(text) {
+  const args = [];
+  let depth = 0;
+  let quote = null;
+  let tick = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote) { if (c === quote && text[i - 1] !== "\\") quote = null; continue; }
+    if (tick) { if (c === "`" && text[i - 1] !== "\\") tick -= 1; continue; }
+    if (c === "'" || c === '"') quote = c;
+    else if (c === "`") tick += 1;
+    else if (c === "(" || c === "[" || c === "{") depth += 1;
+    else if (c === ")" || c === "]" || c === "}") depth -= 1;
+    else if (c === "," && depth === 0) { args.push(text.slice(start, i)); start = i + 1; }
+  }
+  args.push(text.slice(start));
+  return args.map((a) => a.trim());
+}
+
+/** The list expression an arrow's item template loops over, stripped of a `?? []` default and `this.`. */
+function loopFrom(listExpr, item, body, note) {
+  const inner = innerHtml(body);
+  if (inner == null) return null;
+  const list = stripThis(listExpr.replace(/\s*\?\?[\s\S]*$/, "").trim());
+  return injectAttr(lowerBody(lowerAttributes(inner, note), note), `ng-repeat="${item} in ${list}"`);
+}
+
 function lowerExpression(inner, note) {
   const loop = /^([\w.$]+)\s*\.\s*map\s*\(\s*\(?\s*([\w$]+)\s*(?:,\s*[\w$]+\s*)?\)?\s*=>\s*([\s\S]*)$/.exec(inner);
   if (loop) {
     const body = innerHtml(loop[3]);
     if (body != null) return injectAttr(lowerBody(lowerAttributes(body, note), note), `ng-repeat="${loop[2]} in ${stripThis(loop[1])}"`);
+  }
+  // Lit's repeat(items, keyFn, (item) => html`...`) directive: the item template is the last argument.
+  const rep = /^repeat\s*\(([\s\S]*)\)\s*$/.exec(inner);
+  if (rep) {
+    const args = splitArgs(rep[1]);
+    if (args.length >= 2) {
+      const itemArrow = /^\(?\s*([\w$]+)\s*(?:,\s*[\w$]+\s*)?\)?\s*=>\s*([\s\S]*)$/.exec(args[args.length - 1]);
+      if (itemArrow) {
+        const lowered = loopFrom(args[0], itemArrow[1], itemArrow[2], note);
+        if (lowered != null) return lowered;
+      }
+    }
   }
   const cond = /^([\s\S]+?)\?\s*([\s\S]+?)\s*:\s*([\s\S]*)$/.exec(inner);
   if (cond) {

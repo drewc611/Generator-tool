@@ -35,11 +35,13 @@ test("a React component lowers onto the dialect the rest of the tool reads", () 
   assert.match(screen.template, /class="card"/, "className becomes class");
 });
 
-test("the structure of a template survives the emit and the read back", () => {
+test("the structure of a template survives the emit and the read back, through every target", () => {
   const dialect = `<div *ngIf="loading">Loading</div><table><tr *ngFor="let o of orders" (click)="pick(o)">{{ o.id }}</tr></table><input [(ngModel)]="query">`;
   const trip = roundTrip(dialect);
-  assert.equal(trip.held, true, "the round trip held: " + trip.diffs.join("; "));
-  assert.equal(trip.original.elements, trip.back.elements);
+  const allDiffs = trip.targets.flatMap((t) => t.diffs.map((d) => `${t.name}: ${d}`));
+  assert.equal(trip.held, true, "the round trip held through every target: " + allDiffs.join("; "));
+  assert.deepEqual(trip.targets.map((t) => t.name), ["React", "Svelte", "Lit"], "all three targets ran");
+  for (const t of trip.targets) assert.equal(t.back.elements, trip.original.elements, `${t.name} kept the elements`);
   assert.equal(trip.original.loops, 1);
   assert.equal(trip.original.models, 1);
 });
@@ -59,7 +61,7 @@ test("a real React file ports and the round trip holds through a run", async () 
     assert.ok(screen, "the React component was read");
     assert.ok(run.ctx.written.includes("ROUNDTRIP.md"));
     const rt = run.ctx.roundtrip.find((r) => r.selector === screen.selector);
-    assert.ok(rt.held, "the port read back to the same structure: " + (rt?.diffs.join("; ") ?? ""));
+    assert.ok(rt.held, "the port read back to the same structure: " + (rt?.targets.flatMap((t) => t.diffs).join("; ") ?? ""));
     const jsx = await readFile(join(run.out, "src/features/ProductCard/ProductCard.jsx"), "utf8");
     assert.match(jsx, /items\.map\(/, "the loop came across into the re-emitted component");
   } finally {

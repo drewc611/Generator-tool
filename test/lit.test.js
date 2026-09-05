@@ -63,6 +63,18 @@ test("bindings lower: event, boolean attr, model, mapped loop, conditional", () 
   assert.match(out, /\{\{ o\.id \}\}/, "an interpolation came across");
 });
 
+test("Lit's repeat() directive is read as a loop, like map", () => {
+  const src = [
+    "class Grid extends LitElement { render(){ return html`",
+    "  <ul>${repeat(this.rows ?? [], (r) => r.id, (r) => html`<li @click=${() => this.pick(r)}>${r.name}</li>`)}</ul>",
+    "`; } }",
+  ].join("\n");
+  const out = lowerLit(findTemplate(src));
+  assert.match(out, /<li ng-repeat="r in rows"/, "the repeat list is read, this and the ?? default stripped");
+  assert.match(out, /ng-click="pick\(r\)"/, "the item template's bindings lower");
+  assert.match(out, /\{\{ r\.name \}\}/, "the item interpolation comes across");
+});
+
 test("a two branch ternary and an unknown event are noted, not guessed", () => {
   const notes = [];
   const src = [

@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and forty nine features across sixty six phases. The statuses are
+Five hundred and fifty one features across sixty seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-649 tests, on Node 18, 20 and 22, and on Windows in CI.
+650 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2021,15 +2021,23 @@ the inverse of output-lit closes another loop: a LitElement's `static properties
 **549. input-alpine reads Alpine islands onto the shared dialect** 🔨
 the inverse of output-alpine, and the third emitted framework read back: each `x-data` element on a page is a component, the object it declares is the state, and its subtree lowers onto the dialect. Alpine and the dialect are both attribute languages, so it is close to a rename: `x-for` is `ng-repeat`, `x-if`/`x-show` conditionals, `x-model` a two way model, `@event`/`x-on:event` the dialect event, `:attr`/`x-bind:attr` the bound attribute (a bound boolean becoming a directive, not a string that reads "false"), and `x-text` is `ng-bind`, which the IR carries natively. A `$dispatch` names an output. Because a page is also read as a static screen, an island takes its `id` or an `-app` suffix so the two readings never collide, and a modifier, an `x-init` or an `x-html` is named through a note. No dependency, deterministic; test/alpine.test.js holds it and a CI step ports an Alpine island through to React.
 
+## Phase 67: the round trip closes through three targets, not one
+
+**550. input-lit reads Lit's repeat() directive, not only .map()** 🔨
+output-lit emits a loop as Lit's `repeat(items, keyFn, (item) => html`...`)` directive, so input-lit now reads it: a top level argument splitter respecting parens, brackets, strings and templates pulls out the list, the item name and the item template, the `?? []` default and `this.` are stripped, and it lowers to `ng-repeat` exactly as `.map()` does. Real Lit code uses `repeat` for keyed lists, so this reads more of it, and it is what makes the Lit round trip close.
+
+**551. vis-roundtrip reads the port back through React, Svelte and Lit** 🔨
+each target now has a reader that is the inverse of its emitter, so vis-roundtrip closes the loop through all three: a template is emitted to React, Svelte and Lit and read back by that target's reader, and the structure that returns, the real (tagged) elements, the conditionals, loops and models, is compared to what went in. Only tagged elements count, so a reader that wraps a block in a transparent container the IR sees through does not read as drift. ROUNDTRIP.md names any drift per screen and per target, and the run reports it, so the claim that the port keeps its shape is a comparison that fails out loud through three frameworks rather than one. test/readback.test.js holds it.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 502 |
+| new in this branch | 504 |
 | planned | 3 |
-| total | 549 |
+| total | 551 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
