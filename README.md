@@ -10,7 +10,7 @@ about where the plugin classes come from. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 125 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 640 passing, 641 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer, the learned archetype model and the Svelte and Lit readers](media/test-run.png)
+![node --test running the portamp suite: 648 passing, 649 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer, the learned archetype model and the Svelte, Lit and Alpine readers](media/test-run.png)
 
 <sub>Proof, not a promise. Every line above is verbatim from `npm test`: 585
 assertions pass across 64 test files with `node --test` and no framework, and
@@ -339,9 +339,9 @@ framework at all needed nothing upstream to change.
 
 ## It reads what your decade actually shipped
 
-Angular, AngularJS, Vue, Svelte, Lit, Knockout, Backbone, jQuery, Polymer,
-Riot, React, a facelets tree, a WebForms tree, an OpenAPI document, or a running
-app with no source at all. Each reader turns its world into the same middle,
+Angular, AngularJS, Vue, Svelte, Lit, Alpine, Knockout, Backbone, jQuery,
+Polymer, Riot, React, a facelets tree, a WebForms tree, an OpenAPI document, or
+a running app with no source at all. Each reader turns its world into the same middle,
 which is why the emitters never learned any of their names. Svelte's `{#each}`
 and `{#if}` blocks become transparent containers the middle sees through, its
 `on:event` an event and its `bind:value` a two way model; Lit's `html` template

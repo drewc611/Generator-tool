@@ -19,6 +19,7 @@ import { createLogger } from "../src/core/context.js";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const DOES = {
+  "input-alpine": "alpine islands: x-data state, x-for and x-if, x-model, events and binds, onto the dialect",
   "input-angular": "components, bindings, RxJS operators, HttpClient calls, interceptors",
   "input-angularjs": "the 1.x apps that never went anywhere: controllers, components, $http",
   "input-knockout": "data-bind expanded into a dialect; the viewmodel is the component",

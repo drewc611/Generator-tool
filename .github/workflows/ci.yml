@@ -742,9 +742,17 @@ jobs:
           grep -q "cards.map" lit-out/src/features/Cards/Cards.jsx || { echo "the lit map did not become a react map"; exit 1; }
           rm -rf lit-src lit-out
 
+      - name: an alpine island ports through the shared dialect to react
+        run: |
+          mkdir -p al-src
+          printf '%s\n' '<div x-data="{ items: [] }" id="board">' '  <template x-for="item in items"><li x-text="item"></li></template>' '</div>' > al-src/board.html
+          node src/cli.js run --src al-src --out al-out
+          grep -q "items.map" al-out/src/features/BoardApp/BoardApp.jsx || { echo "the x-for did not become a react map"; exit 1; }
+          rm -rf al-src al-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "548" ]; then
-            echo "ROADMAP.md holds $count entries and claims 548"; exit 1
+          if [ "$count" != "549" ]; then
+            echo "ROADMAP.md holds $count entries and claims 549"; exit 1
           fi

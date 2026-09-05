@@ -91,7 +91,7 @@ test("discovery loads every plugin that ships", async () => {
     "dsp-ir", "dsp-labels", "dsp-landmarks", "dsp-learn", "dsp-magic", "dsp-modernize", "dsp-motion", "dsp-perf", "dsp-permissions", "dsp-print", "dsp-props", "dsp-render-blocking", "dsp-routes", "dsp-security", "dsp-seo", "dsp-state", "dsp-supplychain", "dsp-tokens",
     "dsp-uplift", "dsp-weight",
     "general-agents", "general-architect", "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-scaffold", "general-size", "general-watch",
-    "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",
+    "input-alpine", "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",
     "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-knockout",
     "input-lit", "input-openapi", "input-pdf", "input-polymer", "input-react", "input-record", "input-riot", "input-shots", "input-static", "input-svelte", "input-underscore", "input-vue",
     "output-adr", "output-alpine", "output-angular", "output-astro", "output-aws", "output-azure", "output-cem", "output-ci", "output-cloudflare", "output-codemod", "output-curl", "output-cypress",

@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and forty eight features across sixty five phases. The statuses are
+Five hundred and forty nine features across sixty six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-641 tests, on Node 18, 20 and 22, and on Windows in CI.
+649 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2016,15 +2016,20 @@ a `.svelte` file's `export let` props become inputs, its `createEventDispatcher`
 **548. input-lit reads LitElement components onto the shared dialect** 🔨
 the inverse of output-lit closes another loop: a LitElement's `static properties` (its top level keys, not the `{ type }` inside them) and `@property` fields become inputs, its `dispatchEvent(new CustomEvent(...))` names become outputs, and its `render()` html tagged template lowers onto the dialect. A mode stack matches the template through its nested `html` templates, `@event=${h}` becomes an event with the arrow reduced to the call, `?disabled=${c}` a boolean directive, `.value=${x}` a two way model, `${list.map((x) => html`...`)}` a loop and `${cond ? html`...` : ''}` a conditional, with the tag scanner skipping `${...}` so a `>` inside an arrow never closes a tag early. A two branch ternary, an unknown event and a property with no dialect directive are named through a note. No dependency, deterministic; test/lit.test.js holds it and a CI step ports a Lit component through to React.
 
+## Phase 66: portamp reads the framework it emits, Alpine in
+
+**549. input-alpine reads Alpine islands onto the shared dialect** 🔨
+the inverse of output-alpine, and the third emitted framework read back: each `x-data` element on a page is a component, the object it declares is the state, and its subtree lowers onto the dialect. Alpine and the dialect are both attribute languages, so it is close to a rename: `x-for` is `ng-repeat`, `x-if`/`x-show` conditionals, `x-model` a two way model, `@event`/`x-on:event` the dialect event, `:attr`/`x-bind:attr` the bound attribute (a bound boolean becoming a directive, not a string that reads "false"), and `x-text` is `ng-bind`, which the IR carries natively. A `$dispatch` names an output. Because a page is also read as a static screen, an island takes its `id` or an `-app` suffix so the two readings never collide, and a modifier, an `x-init` or an `x-html` is named through a note. No dependency, deterministic; test/alpine.test.js holds it and a CI step ports an Alpine island through to React.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 501 |
+| new in this branch | 502 |
 | planned | 3 |
-| total | 548 |
+| total | 549 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
