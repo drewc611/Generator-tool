@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and ten features across one hundred and twenty six phases. The statuses are
+Six hundred and eleven features across one hundred and twenty seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2353,14 +2353,19 @@ CFML is HTML with <cfif>, <cfloop>, <cfswitch> and <cfoutput> around it, #expres
 **610. The ColdFusion reader reviewed on its own, ten defects fixed with the inputs that exposed them** 🔨
 The review cadence held for the ninth time. Inside a query loop every name was prefixed as a column, variables.x and session.x and the name of a nested query among them, a wrong value that looks right; a bare name is a column and a dotted or scoped name is a variable, the way the engine falls through, the nested query's own name is resolved outside the row, and the note says exactly that. Twenty odd tags that stand alone (cffile, cfhttp, cfimage, cfschedule and the rest) were parsed as containers, so the rest of the page nested inside them and vanished with their silence; where the page never closes one it closes itself. cfsilent zeroed the output counter and never restored it, turning interpolation off inside its cfoutput and on for the rest of the page; the previous state is restored. A cfif folded from attribute position evaluated only inside a cfoutput; it evaluates always, as a tag does. Only files with cf tags could be included, so a plain HTML header was reported missing though it stood in the run; every .cfm can be included and only those with cf tags are screens. The alias check inside a row was case sensitive where CFML is not, and a nested query loop deleted the outer loop's currentRow; aliases read case blind and the outer loop's are restored. yes and no were rewritten to booleans after a dot, so invoice.no became invoice.false; a key stays a key. A cfelse buried inside an element the cfif opened, the idiomatic table row shape, was silently merged into the true branch; it is named. The cfscript strip was the one case sensitive match in the reader, so <CFSCRIPT> survived into the tree unnamed; it is case blind. And a bracket inside a string literal read as a function call with a false note; strings are set aside before functions are read. Text outside a cfoutput is now literal, ## included, as the engine leaves it. The value spelling helper and the attribute lookup the JSP and ColdFusion readers each wrote are one, in dsp-ir/text.js and dsp-ir/markup.js, held to one home. Each fix carries the input that exposed it in test/cfml.test.js.
 
+## Phase 127: the Rails view
+
+**611. input-haml reads Haml from its indentation and composes a page into its layout with its partials** 🔨
+Haml was the template language of a generation of Rails applications: a tree written as indentation, %tag.class#id with a Ruby hash or a bracket list of attributes, text after the tag, = for an expression's value, - for a line of Ruby that shapes the tree, #{} inside text, and the helpers Rails gave a view. input-haml reads the tree from the indentation, a hash or bracket list left open running onto the next line, and lowers it onto the dialect: if with its elsif and else chain negated the way the engine evaluates it, unless as the negated test, case and when with their value lists as the equalities they test, each and each_with_index and for onto ng-repeat with the index as the dialect's own and a pair of block variables as the key and value form, an attribute with an expression as ng-class, ng-href, ng-disabled or ng-attr as its name decides, = as an interpolation and != as bound html, a local set with = substituted where its value is fixed and named where it depends on a branch or a loop, a layout's yield filled by the page (app/views/layouts/application.html.haml is chrome and every page renders inside it), render "shared/nav" resolved to shared/_nav.html.haml and lowered where it is asked for with its locals named, link_to and image_tag and content_tag as the elements they render, form_for and its f.text_field, text_area, collection_select, label and submit as a form with two way models named the way Rails names them. Ruby is spelled as JavaScript outside strings: @ivar is the input it is, a symbol is a string and a symbol index a property, present?, blank?, empty?, any? and nil? are the tests they mean with empty? on a collection the dialect's own empty state, size, upcase, downcase, strip, first, last and to_s are their equivalents, and a string's #{} is a concatenation. number_to_currency, pluralize, time_ago_in_words and the other formatters keep their value unformatted and are named; a route helper (root_path, product_path) is a route the server owns and is named; t(...) keeps its key; a filter (:javascript, :markdown), content_for, a Ruby line the reader cannot read and a helper it does not know are named rather than approximated. .haml reaches the scan and the census, and the same product page written in Haml is the eleventh dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/haml.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 563 |
+| new in this branch | 564 |
 | planned | 3 |
-| total | 610 |
+| total | 611 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

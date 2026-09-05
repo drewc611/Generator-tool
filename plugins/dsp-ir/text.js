@@ -118,6 +118,8 @@ export function readInputs(template, { skip = [] } = {}) {
   // {{ body | limitTo:count }} names a filter after its pipe, not a local, but its argument reads; || is JS and stays.
   const bare = expressions.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`[^`]*`/g, "").replace(/(?<!\|)\|(?!\|)\s*\w+/g, " ");
   for (const m of bare.matchAll(/(?<![\w.$])([A-Za-z_]\w*)\b(?!\s*\()/g)) {
+    // { id: x } names a key, not a read; a ? b : c names a read.
+    if (/^\s*:/.test(bare.slice(m.index + m[0].length)) && /[{,]\s*$/.test(bare.slice(0, m.index))) continue;
     if (!/^(true|false|null|undefined|new|typeof)$/.test(m[1]) && !locals.has(m[1]) && !skipped.has(m[1])) names.add(m[1]);
   }
   return [...names].sort();
