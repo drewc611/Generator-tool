@@ -92,7 +92,6 @@ test("the README's plugin and test file counts are the truth, counted, everywher
 // is the slack that lets a sprint happen and still catches a stale table.
 test("the README's size table holds to the counted tool, within three percent", async () => {
   const readme = await readFile(join(ROOT, "README.md"), "utf8");
-  const { stat } = await import("node:fs/promises");
   const near = (stated, actual, what) => {
     const drift = Math.abs(stated - actual) / actual;
     assert.ok(drift <= 0.03, `README says ${what} is ${stated}; it is ${actual} (${(drift * 100).toFixed(1)}% off). True up the table.`);
@@ -113,7 +112,20 @@ test("the README's size table holds to the counted tool, within three percent", 
   assert.ok(tests, "the README states the suite's line count");
   near(num(tests[1]), testLines, "the suite's line count");
 
-  const bytes = async (dir) => { let n = 0; for (const f of await walkAll(join(ROOT, dir))) n += (await stat(f)).size; return n; };
+  // A Windows checkout turns every LF into CRLF, one byte a line, which put
+  // src 3.8% over this gate on the first run. Counting bytes as if every line
+  // ended in LF makes the measure the same on every platform and the same as
+  // the number the README states.
+  const bytes = async (dir) => {
+    let n = 0;
+    for (const f of await walkAll(join(ROOT, dir))) {
+      const buf = await readFile(f);
+      let crlf = 0;
+      for (let i = 1; i < buf.length; i += 1) if (buf[i] === 10 && buf[i - 1] === 13) crlf += 1;
+      n += buf.length - crlf;
+    }
+    return n;
+  };
   const size = /\| Source on disk \| src (\d+) KB, plugins ([\d.]+) MB/.exec(readme);
   assert.ok(size, "the README states the source size");
   near(Number(size[1]), (await bytes("src")) / 1024, "src in KB");
