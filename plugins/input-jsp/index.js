@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { cloneNode, elements, parseMarkup, VOID_ELEMENTS } from "../dsp-ir/markup.js";
+import { elements, parseMarkup, stripDelimited, VOID_ELEMENTS } from "../dsp-ir/markup.js";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
-import { attrSafe, matchBracket, readInputs, splitCommas } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket, quoteJs, readInputs, splitCommas } from "../dsp-ir/text.js";
 
 /**
  * JSP with the standard tag library, the enterprise Java page for twenty
@@ -137,7 +137,7 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
     scope.note("Message keys (fmt:message, spring:message) were kept as their keys; the port renders the key until a message bundle is wired, and no text was invented.");
     if (elements(el.children).some((c) => c.tag === "fmt:param" || c.tag === "spring:argument")) scope.note(`The message \`${key}\` carried arguments; they are not in the port.`);
     const varName = attr(el, "var");
-    if (varName) { scope.aliases.set(varName, `'${String(key ?? "").replace(/'/g, "\\'")}'`); return ""; }
+    if (varName) { scope.aliases.set(varName, quoteJs(key ?? "")); return ""; }
     return key ?? "";
   };
 
@@ -200,7 +200,7 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
       case "out": {
         const value = lowerValue(attr(el, "value") ?? "", scope);
         const dflt = attr(el, "default");
-        let js = value.kind === "expr" ? value.text : `'${value.text.replace(/'/g, "\\'")}'`;
+        let js = value.kind === "expr" ? value.text : quoteJs(value.text);
         if (dflt !== null) { const d = lowerValue(dflt, scope); js = `(${js} || ${d.kind === "expr" ? d.text : `'${d.text}'`})`; }
         if (/^\s*false\s*$/i.test(attr(el, "escapeXml") ?? "")) return `<span ng-bind-html="${attrSafe(js)}"></span>`;
         return value.kind === "literal" && dflt === null ? value.text : `{{ ${js} }}`;
@@ -208,8 +208,8 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
       case "set": {
         const varName = attr(el, "var");
         if (!varName) { scope.note(`<c:set target="${attr(el, "target") ?? ""}" property="${attr(el, "property") ?? ""}"> wrote into an object on the server; the port must carry it.`); return ""; }
-        const value = attr(el, "value") !== null ? lowerValue(attr(el, "value"), scope) : { kind: "expr", text: `'${lowerNodes(el.children).replace(/'/g, "\\'")}'` };
-        const js = value.kind === "expr" ? value.text : /^(?:-?\d+(?:\.\d+)?|true|false|null)$/.test(value.text.trim()) ? value.text.trim() : `'${value.text.replace(/'/g, "\\'")}'`;
+        const value = attr(el, "value") !== null ? lowerValue(attr(el, "value"), scope) : { kind: "expr", text: quoteJs(lowerNodes(el.children)) };
+        const js = value.kind === "expr" ? value.text : /^(?:-?\d+(?:\.\d+)?|true|false|null)$/.test(value.text.trim()) ? value.text.trim() : quoteJs(value.text);
         if (scope.depth > 0 || new RegExp(`(?<![\\w.$])${varName}(?![\\w$])`).test(js)) { scope.note(`<c:set var="${varName}"> inside a branch or loop, or reading itself, takes a value the port must carry; it was not substituted.`); return ""; }
         scope.aliases.set(varName, /^[\w$.]+$/.test(js) || /^'[^']*'$/.test(js) ? js : `(${js})`);
         return "";
@@ -332,8 +332,7 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
 /** Directives, comments, scriptlets and static includes handled before the tree is built. */
 export function prepare(source, scope, resolve = () => null, depth = 0) {
   let text = String(source ?? "").replace(/\r\n/g, "\n");
-  text = text.replace(/<%--[\s\S]*?--%>/g, "");
-  text = text.replace(/<!--[\s\S]*?-->/g, "");
+  text = stripDelimited(stripDelimited(text, "<%--", "--%>"), "<!--", "-->");
   text = text.replace(/<%@\s*include\s+file\s*=\s*["']([^"']+)["']\s*%>/g, (m, file) => {
     if (depth >= 6) return "";
     const body = resolve(file);

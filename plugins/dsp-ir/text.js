@@ -66,6 +66,9 @@ export function splitWords(text) {
 /** An expression inside a double quoted dialect attribute: its double quotes become single. */
 export const attrSafe = (s) => String(s).replace(/"/g, "'");
 
+/** A literal as a JS string, its backslashes escaped before its quotes. */
+export const quoteJs = (s) => `'${String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+
 /**
  * The names a lowered template reads, from its expressions only: every
  * interpolation and every dialect attribute, with string literals removed,

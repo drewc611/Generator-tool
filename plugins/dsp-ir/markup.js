@@ -37,3 +37,23 @@ export function parseMarkup(source) {
 
 export const elements = (nodes) => nodes.filter((n) => n.type === "el");
 export const cloneNode = (n) => JSON.parse(JSON.stringify(n));
+
+/**
+ * Text between an opening and a closing marker, walked by the markers rather
+ * than a pattern, so a span a removal exposes is removed too and nothing is
+ * reintroduced. `keep(body)` may return text to stand in a span's place.
+ */
+export function stripDelimited(text, open, close, keep = () => null) {
+  let out = ""; let i = 0;
+  for (;;) {
+    const at = text.indexOf(open, i);
+    if (at < 0) { out += text.slice(i); break; }
+    const end = text.indexOf(close, at + open.length);
+    if (end < 0) { out += text.slice(i, at); break; }
+    out += text.slice(i, at);
+    const kept = keep(text.slice(at + open.length, end));
+    if (kept !== null) out += kept;
+    i = end + close.length;
+  }
+  return out;
+}

@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { cloneNode, elements, parseMarkup, VOID_ELEMENTS } from "../dsp-ir/markup.js";
+import { cloneNode, elements, parseMarkup, stripDelimited, VOID_ELEMENTS } from "../dsp-ir/markup.js";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
-import { attrSafe, matchBracket, readInputs, splitCommas } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket, quoteJs, readInputs, splitCommas } from "../dsp-ir/text.js";
 
 /**
  * Thymeleaf, the natural template of the Spring world: valid HTML whose
@@ -62,8 +62,7 @@ const UTIL = {
   "bools.isFalse": ([x]) => `!${x}`,
 };
 
-/** A literal as a JS string, its backslashes escaped before its quotes. */
-const quote = (s) => `'${String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+const quote = quoteJs;
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const simplePath = (s) => /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*|\[[^\]]*\])*$/.test(s);
 
@@ -229,20 +228,7 @@ function splitPlus(text) {
 }
 
 /** Comments walked by their markers: a parser level comment goes, a prototype only comment leaves its content. */
-function stripComments(text) {
-  let out = ""; let i = 0;
-  for (;;) {
-    const at = text.indexOf("<!--", i);
-    if (at < 0) { out += text.slice(i); break; }
-    const end = text.indexOf("-->", at + 4);
-    if (end < 0) { out += text.slice(i, at); break; }
-    const body = text.slice(at + 4, end);
-    out += text.slice(i, at);
-    if (body.startsWith("/*/") && body.endsWith("/*/")) out += body.slice(3, -3);
-    i = end + 3;
-  }
-  return out;
-}
+const stripComments = (text) => stripDelimited(text, "<!--", "-->", (body) => (body.startsWith("/*/") && body.endsWith("/*/") ? body.slice(3, -3) : null));
 
 /** Markup into a tree of elements and text, prototype only comments unwrapped, the rest of the comments gone. */
 export function parseHtml(source) {
