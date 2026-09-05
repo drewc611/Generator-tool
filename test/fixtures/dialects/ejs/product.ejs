@@ -1,0 +1,3 @@
+<h1><%= product.name %></h1>
+<% if (product.stock == 0) { %><p class="out">Sold out</p><% } else if (product.stock < 5) { %><p class="low">Only <%= product.stock %> left</p><% } else { %><p>In stock</p><% } %>
+<ul><% product.tags.forEach((tag) => { %><li><%= tag %></li><% }); %><% if (!product.tags || !product.tags.length) { %><li class="none">No tags</li><% } %></ul>

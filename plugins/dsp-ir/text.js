@@ -120,7 +120,8 @@ export function readInputs(template, { skip = [] } = {}) {
   for (const m of bare.matchAll(/(?<![\w.$])([A-Za-z_]\w*)\b(?!\s*\()/g)) {
     // { id: x } names a key, not a read; a ? b : c names a read.
     if (/^\s*:/.test(bare.slice(m.index + m[0].length)) && /[{,]\s*$/.test(bare.slice(0, m.index))) continue;
-    if (!/^(true|false|null|undefined|new|typeof)$/.test(m[1]) && !locals.has(m[1]) && !skipped.has(m[1])) names.add(m[1]);
+    // A language global read as Object.keys(x) or Math.round(y) is not an input the port is handed.
+    if (!/^(true|false|null|undefined|new|typeof|Object|Math|JSON|Array|Number|String|Date|Boolean)$/.test(m[1]) && !locals.has(m[1]) && !skipped.has(m[1])) names.add(m[1]);
   }
   return [...names].sort();
 }

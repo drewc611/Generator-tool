@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and twenty features across one hundred and thirty six phases. The statuses are
+Six hundred and twenty one features across one hundred and thirty seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2403,14 +2403,19 @@ Django's template language is jinja's grandparent with spellings of its own, and
 **620. The Django reader read again** 🔨
 A review pass over input-django, each finding fixed with the input that exposed it. Django was detected per file, so a child template written only in the tags jinja shares, extending a Django base, was read by input-jinja against the raw base and lost every url, trans and static while the census called the base unread; a template is Django's by its own spellings and so is every template in its tree, the base it extends, the include it names, the child that extends it, and input-jinja leaves alone every file another reader already read or composed. Two apps' templates of one name collapsed to one selector and the second overwrote the first on disk, and `{% extends "base.html" %}` took the first of two bases by path; the selector keeps the app when the bared path would collide, a child's own app answers first, and a tie across apps is named. `|safe`, `|urlencode`, `|linebreaks`, `|striptags` and their kin were dropped silently, changing what the value meant; each dropped filter is named by what it meant. `{% url %}` keyword arguments lost their names and became positional; they travel as an object. A `{% blocktrans with %}` value quoted with a space was cut at the space and an unbalanced quote reached every emitter; the quoted alternation the `{% with %}` parser already had is shared. `{% blocktrans asvar %}` printed its text where the block stood and left the name unbound; the name is bound to the text and nothing is printed. A colon filter argument in a for's list or a url's argument survived into an expression no target evaluates; every tag's expression is rewritten. The include note printed the bound expressions and fired for `only`; it names the names, and `only` is its own fact. A name a removed tag defined, `regroup ... as` and `cycle ... as`, and a `trans ... as` name read inside a tag's test, reached the port as an input nothing supplies; defined names are excluded from the inputs and named, and aliases are read inside tags too. The detector claimed jinja's own `{% trans %}` block and `{% autoescape true %}` and a Liquid page's `{% comment %}` and colon filter; it knows those spellings apart. `loop.index` was rewritten in prose and outside any loop; it is spelled only inside a loop's own template spans. And a `{% with %}` name a loop inside the block rebinds keeps the loop's own. test/django.test.js holds it.
 
+## Phase 137: the Express view
+
+**621. input-ejs reads EJS on the underscore lowering, the escaping the right way round and the includes inlined with their locals bound** 🔨
+EJS is the template language of a decade of Express apps: underscore's delimiters with the escaping the other way round, `<%= %>` escaped and `<%- %>` raw, plus `<%# %>` comments, `<%_ _%>` and `-%>` whitespace control, `<%%` for a literal `<%`, and `include('path', { locals })` that inlines another file with names bound. Until now an .ejs file was read by input-underscore with underscore's meaning, so every escaped output was warned about as raw and every raw output interpolated as text. input-ejs claims .ejs, rewrites the EJS spellings onto the shapes the underscore lowering reads and hands the result over: the comments are gone, the whitespace markers are read past, a literal `<%` survives the lowering, escaped output is the interpolation it is with nothing to warn about, raw output is bound html, the same trust decision under every target's name, and an include is inlined relative to the including file with each local's reads replaced by what it named and a missing one named. The control flow is JavaScript and the underscore lowering learned the shapes EJS authors write, for both dialects: a forEach with an arrow as well as a function, a list that is a call such as `Object.keys(o)`, `Object.entries(o).forEach(([k, v]) =>` as the (key, value) loop, and an index argument as the dialect's `$index`, named where the body reads it by its own name; the reader spells `for...of` as a forEach, `for...in` as a loop over the keys, and a counted `for (i = 0; i < xs.length; i++)` as a loop over the list with the body's `xs[i]` reads as the item, named. `<%- body %>` is the layout's slot: a layout.ejs beside the views is composed around every page that is not a layout or a partial, counted as composed by the census, and partials are screens besides. EJS is the fifteenth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/ejs.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 573 |
+| new in this branch | 574 |
 | planned | 3 |
-| total | 620 |
+| total | 621 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
