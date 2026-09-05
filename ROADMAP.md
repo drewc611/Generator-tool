@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and eighty four features across one hundred phases. The statuses are
+Five hundred and eighty five features across one hundred and one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-798 tests, on Node 18, 20 and 22, and on Windows in CI.
+802 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2209,14 +2209,20 @@ output-cypress walks every route and every retired address of a ported site; tea
 Twig, the template language of Symfony, Drupal and Craft, is jinja's grammar with a handful of its own spellings, and a second lowering for it would be a second place for the same bug. input-twig rewrites the spellings onto jinja's outside of strings: elseif to elif, ~ to +, is defined and is not defined and is empty and is null to the null comparisons they are, is same as to strict equality, the escape, raw and translation filters dropped because the target escapes and the port owns its strings, and a path(), url() or asset() call kept as written and named because the route table is the server's and an address belongs in the endpoint map. The result goes through the one jinja lowering, which already composes extends and block, inlines a held include by exact path or basename with Twig's namespace prefix stripped, names a missing one, and turns the else of a for into the empty state. A layout other templates extend is composed into each of them and not ported as a screen of its own, the body is what becomes the screen, and a range loop is named rather than repeated. .twig reaches the scan. test/twig.test.js holds it.
 
 
+## Phase 101: the front end of the early web
+
+**585. input-xslt reads a stylesheet as the template it is, XPath as the path it names** 🔨
+XSLT was the front end of the early 2000s, an XML document and a stylesheet the browser or the server ran to make the page, and the stylesheet is a template in a strict grammar. input-xslt parses it with a small strict XML reader and lowers it onto the dialect: xsl:for-each is a loop over the selected nodes with the loop variable named for the last path step and an xsl:sort named, xsl:if and xsl:choose with when and otherwise are the conditional chain negated the way the processor evaluates it, xsl:value-of is an interpolation and with output escaping disabled bound html, xsl:attribute sets an attribute on its parent and an attribute value template binds one, xsl:element names an element, xsl:apply-templates over a select with a matching template repeats that template's body, xsl:call-template inlines the named template with its parameters named, and a variable with a select is substituted at its uses. XPath lowers to the JS path it names, a/b/@c to a.b.c, count() to .length, not() to !, position() to the index, and and or to their operators, the root to the one input called data; a predicate filter, an axis, a key or a function the table does not know is kept as written and named, because this is not an XPath engine and a wrong path that looks right is the defect the tool exists to avoid. .xsl and .xslt reach the scan. test/xslt.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 537 |
+| new in this branch | 538 |
 | planned | 3 |
-| total | 584 |
+| total | 585 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

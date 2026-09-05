@@ -1012,9 +1012,17 @@ jobs:
           grep -qE "ng-|\{%" tw-out/src/features/TemplatesProduct/TemplatesProduct.jsx && { echo "the dialect or a twig tag leaked into the React output"; exit 1; } || true
           rm -rf tw-out
 
+      - name: the xslt reader lowers a stylesheet onto React with the document as its input
+        run: |
+          node src/cli.js run --src test/fixtures/xslt --out xs-out
+          test -f xs-out/src/features/Catalog/Catalog.jsx || { echo "the stylesheet was not ported"; exit 1; }
+          grep -q "data.catalog.item.map(" xs-out/src/features/Catalog/Catalog.jsx || { echo "the for-each did not become a loop"; exit 1; }
+          grep -qE "ng-|xsl:" xs-out/src/features/Catalog/Catalog.jsx && { echo "the dialect or xsl leaked into the React output"; exit 1; } || true
+          rm -rf xs-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "584" ]; then
-            echo "ROADMAP.md holds $count entries and claims 584"; exit 1
+          if [ "$count" != "585" ]; then
+            echo "ROADMAP.md holds $count entries and claims 585"; exit 1
           fi
