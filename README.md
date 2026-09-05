@@ -10,9 +10,9 @@ about where the plugin classes come from. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 169 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 818 passing, 820 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the Ember, Mithril, Marko, Liquid, Twig and XSLT readers](media/test-run.png)
+![node --test running the portamp suite: 819 passing, 820 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the Ember, Mithril, Marko, Liquid, Twig and XSLT readers](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 818
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 819
 tests pass across 107 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing. CI reruns the same
 suite on Node 18, 20 and 22 and on Windows, and asserts the same screen written
