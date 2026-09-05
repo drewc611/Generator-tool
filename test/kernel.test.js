@@ -88,7 +88,7 @@ test("discovery loads every plugin that ships", async () => {
     "dsp-boundaries", "dsp-cognitive", "dsp-complexity", "dsp-components", "dsp-console", "dsp-cookies", "dsp-css", "dsp-dates",
     "dsp-deadcode", "dsp-diff", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-era", "dsp-flags", "dsp-fonts", "dsp-forms", "dsp-globals",
     "dsp-i18n", "dsp-images", "dsp-imports", "dsp-improve", "dsp-inline",
-    "dsp-ir", "dsp-labels", "dsp-landmarks", "dsp-magic", "dsp-modernize", "dsp-motion", "dsp-perf", "dsp-permissions", "dsp-print", "dsp-props", "dsp-render-blocking", "dsp-routes", "dsp-security", "dsp-seo", "dsp-state", "dsp-supplychain", "dsp-tokens",
+    "dsp-ir", "dsp-labels", "dsp-landmarks", "dsp-learn", "dsp-magic", "dsp-modernize", "dsp-motion", "dsp-perf", "dsp-permissions", "dsp-print", "dsp-props", "dsp-render-blocking", "dsp-routes", "dsp-security", "dsp-seo", "dsp-state", "dsp-supplychain", "dsp-tokens",
     "dsp-uplift", "dsp-weight",
     "general-agents", "general-architect", "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-scaffold", "general-size", "general-watch",
     "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",

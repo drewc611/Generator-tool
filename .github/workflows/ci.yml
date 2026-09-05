@@ -713,9 +713,18 @@ jobs:
           node src/cli.js run --src example/legacy --out ceiling-out
           rm -rf ceiling-out
 
+      - name: the learned archetype reading lands beside the rule based one, honestly
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out learn-out
+          test -f learn-out/LEARNED.md || { echo "no learned report"; exit 1; }
+          grep -qiE "one exemplar per (archetype|class)" learn-out/LEARNED.md || { echo "the learned report does not own its size"; exit 1; }
+          grep -qiE "robustness" learn-out/LEARNED.md || { echo "the learned report has no robustness figure"; exit 1; }
+          grep -qE "ARCHITECTURE\.md" learn-out/LEARNED.md || { echo "the learned report does not point at the rule based reading"; exit 1; }
+          rm -rf learn-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "545" ]; then
-            echo "ROADMAP.md holds $count entries and claims 545"; exit 1
+          if [ "$count" != "546" ]; then
+            echo "ROADMAP.md holds $count entries and claims 546"; exit 1
           fi

@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and forty five features across sixty two phases. The statuses are
+Five hundred and forty six features across sixty three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-564 tests, on Node 18, 20 and 22, and on Windows in CI.
+623 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2001,15 +2001,20 @@ the model pauses the turn to run the search server side, so the call resumes the
 **545. Grounding stays off by default and is tested without a network** 🔨
 web search is opt in and adds no tool unless asked, and the tool offer, the paused turn resume and the cited Sources list are all held by unit tests with an injected fetch, so the behaviour is proven without a key or a live call.
 
+## Phase 63: a learned second opinion on what the app is
+
+**546. dsp-learn names the archetype with a model trained on the labelled corpus** 🔨
+dsp-archetype names the app with hand written rules; dsp-learn names it with a nearest prototype model trained on the same eleven labelled miniatures, turning each screen into a vector of the features the rules already trust and placing a new screen by its nearest exemplar in a standardization learned from the corpus. LEARNED.md is a companion to ARCHITECTURE.md, ranks every archetype by distance with a softmax confidence, and is honest about its size: one exemplar per class means a held out accuracy is undefined, so it reports a reproducible robustness curve instead of a number it cannot compute, marks the reading unverified, and names the disagreement with the rule based reading as the thing to look at. No dependency, no network, deterministic; the embedded corpus is held byte equal to the fixtures.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 498 |
+| new in this branch | 499 |
 | planned | 3 |
-| total | 545 |
+| total | 546 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

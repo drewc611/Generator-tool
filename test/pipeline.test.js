@@ -23,6 +23,7 @@ test("the example runs end to end and writes the port", async (t) => {
     "GRAPH.md",
     "HISTORY.md",
     "IMPORTS.md",
+    "LEARNED.md",
     "MAGIC.md",
     "MODERNIZATION.md",
     "PERF.md",

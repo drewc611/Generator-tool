@@ -10,7 +10,7 @@ about where the plugin classes come from. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 125 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 585 passing, 586 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer](media/test-run.png)
+![node --test running the portamp suite: 622 passing, 623 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer and the learned archetype model](media/test-run.png)
 
 <sub>Proof, not a promise. Every line above is verbatim from `npm test`: 585
 assertions pass across 64 test files with `node --test` and no framework, and
@@ -499,6 +499,26 @@ Matched 3 of 4 signals, 75%.
 
 When two readings land within twenty points the report says so and sets out
 both, rather than picking one and sounding certain.
+
+`dsp-learn` reads the same screen a second way, with a model instead of rules. It
+turns each screen into a vector of the features the rules already trust and trains
+a nearest prototype classifier on the eleven labelled archetype miniatures, so a
+new screen is placed by its nearest exemplar in a standardization learned from the
+corpus rather than by which rules happened to fire. `LEARNED.md` ranks every
+archetype by distance with a softmax confidence, and is honest about being small:
+one exemplar per class means a held out accuracy is undefined, so instead of a
+number it cannot compute it reports how far a screen can be jittered by seeded
+noise and still keep its label.
+
+```
+[dsp-learn] learned reading: crud-table (30%), robustness 100% at low noise
+```
+
+The two readings are meant to be read together. When the learned model and the
+rules agree that is worth more than either alone; where they disagree, `LEARNED.md`
+says the disagreement is the thing to look at, and marks the whole reading a
+proposal, because a model can be confidently wrong most easily on an app whose
+shape sits between two archetypes.
 
 Then `dsp-modernize` turns the reading into a plan, and every decision names the
 thing in the old app that makes it necessary, so you can disagree with the
