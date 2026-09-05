@@ -1020,9 +1020,17 @@ jobs:
           grep -qE "ng-|xsl:" xs-out/src/features/Catalog/Catalog.jsx && { echo "the dialect or xsl leaked into the React output"; exit 1; } || true
           rm -rf xs-out
 
+      - name: the blade reader composes a view into its layout and ports it once
+        run: |
+          node src/cli.js run --src test/fixtures/blade --out bl-out
+          test -f bl-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the Blade view was not ported"; exit 1; }
+          grep -q "<nav" bl-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the layout's partial was not composed in"; exit 1; }
+          grep -qE "ng-|@endsection|@csrf" bl-out/src/features/ProductsShow/ProductsShow.jsx && { echo "the dialect or a directive leaked into the React output"; exit 1; } || true
+          rm -rf bl-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "586" ]; then
-            echo "ROADMAP.md holds $count entries and claims 586"; exit 1
+          if [ "$count" != "587" ]; then
+            echo "ROADMAP.md holds $count entries and claims 587"; exit 1
           fi

@@ -388,7 +388,9 @@ export default {
   class: "input",
   setup({ on, log }) {
     on("extract", async (ctx) => {
-      const files = ctx.sources.files.filter((f) => PAGE_EXT.test(f.rel));
+      // A .blade.php file is a Blade view with its own reader; reading it here
+      // too would make two screens of one page.
+      const files = ctx.sources.files.filter((f) => PAGE_EXT.test(f.rel) && !/\.blade\.php$/i.test(f.rel));
       if (!files.length) return log.debug("no pages");
 
       const local = new Set(ctx.sources.files.map((f) => f.rel.replace(/^\.\//, "")));

@@ -91,7 +91,7 @@ test("discovery loads every plugin that ships", async () => {
     "dsp-ir", "dsp-labels", "dsp-landmarks", "dsp-learn", "dsp-magic", "dsp-media", "dsp-modernize", "dsp-motion", "dsp-observers", "dsp-perf", "dsp-permissions", "dsp-platform", "dsp-print", "dsp-props", "dsp-render-blocking", "dsp-routes", "dsp-security", "dsp-seo", "dsp-state", "dsp-storage", "dsp-supplychain", "dsp-tables", "dsp-timers", "dsp-tokens",
     "dsp-uplift", "dsp-weight",
     "general-agents", "general-architect", "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-publish", "general-scaffold", "general-size", "general-watch",
-    "input-alpine", "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-ember", "input-explore",
+    "input-alpine", "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-blade", "input-ember", "input-explore",
     "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-knockout",
     "input-liquid", "input-lit", "input-marko", "input-mithril", "input-openapi", "input-pdf", "input-polymer", "input-react", "input-record", "input-riot", "input-shots", "input-static", "input-stencil", "input-svelte", "input-twig", "input-underscore", "input-vue", "input-webcomponents", "input-xslt",
     "output-adr", "output-alpine", "output-angular", "output-astro", "output-aws", "output-azure", "output-caddy", "output-cem", "output-ci", "output-cloudflare", "output-codemod", "output-curl", "output-cypress",

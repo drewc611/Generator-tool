@@ -104,6 +104,7 @@ const DOES = {
   "input-liquid": "liquid themes: if/elsif/unless/case/for lowered, templates wrapped in their layout, sections and snippets inlined, schema settings as inputs",
   "input-twig": "twig templates: elseif, ~, is defined/empty, |e and path() rewritten onto jinja and lowered by the one jinja lowering",
   "input-xslt": "xslt stylesheets: for-each, if, choose, value-of, attribute, apply and call templates lowered, XPath as the JS path it names",
+  "input-blade": "blade views: @if, @foreach, @forelse, @switch, @auth, @can lowered, composed into the layout they extend with partials inlined, the variables read as inputs",
   "input-marko": "marko templates: <if>, <for|row|>, bare attribute bindings, on-event(...) and ${} lowered onto the dialect; component.js read beside",
   "input-mithril": "mithril components: hyperscript m() trees walked as the runtime would and printed onto the dialect, attrs as inputs, callbacks as outputs",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",

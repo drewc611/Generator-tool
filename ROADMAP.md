@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and eighty six features across one hundred and two phases. The statuses are
+Five hundred and eighty seven features across one hundred and three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-802 tests, on Node 18, 20 and 22, and on Windows in CI.
+806 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2221,14 +2221,20 @@ XSLT was the front end of the early 2000s, an XML document and a stylesheet the 
 the contract's account of the tool stopped at 8.0 while the code reached 9.49, the README's test run caption named the Svelte, Lit, Alpine and Stencil readers as the newest, the package description listed six readers of thirty two and no host arrangement, and docs/PLUGIN-API.md gave a screen six fields where every reader pushes twelve. Each is trued up: CLAUDE.md carries a 9.x paragraph naming the scorecards and their ceilings, the six readers from Ember to XSLT and what each refuses to guess, the four analyzers of a source's own dependencies, the two hosts, the two defects fixed for every reader at once and the gates that hold the words like the digits; the caption names the newest readers; the description counts the input plugins and names the hosts; and the API doc lists every field a screen carries so a plugin author can guess the shape, which is what the contract promised. Nothing was added to the tool; the words about it were made true.
 
 
+## Phase 103: the view the controller filled
+
+**587. input-blade composes Laravel views the way the compiler does and lowers them onto the dialect** 🔨
+Blade is Laravel's template language, directives that begin with @ and PHP expressions in braces, and a view is composed from a layout it extends, sections it fills and partials it includes. input-blade composes first, the way the compiler does: @extends pulls the layout, each @section fills the @yield it names with @parent splicing the default back and an inline @section a value, a held @include is inlined by its dotted view name and a missing one named, and a layout other views extend is chrome rather than a screen. Then it lowers: @if, @elseif, @else, @unless, @isset, @empty, @auth, @guest, @can, @cannot and @error as conditionals with the chain negated the way the engine evaluates it, @foreach and @forelse as a loop with the @empty branch as the empty state and the key value form kept, @switch and @case as the equalities they test, {{ }} as interpolation and {!! !!} as bound html, and a PHP expression as the JS it names: $a->b to a.b, empty() and isset() and count() to their checks, string functions to their methods, concatenation to +, $loop->index and iteration and first to the dialect's index. The variables a view reads are its inputs, because the controller supplied them, with auth, can and errors named as inputs where a directive read them. @php, @csrf and @method, route() and asset() and __() helpers, @for and @while, @json and an @include with data are named rather than approximated. A .blade.php file is read by this reader alone; the static page reader steps aside for it. test/blade.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 539 |
+| new in this branch | 540 |
 | planned | 3 |
-| total | 586 |
+| total | 587 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
