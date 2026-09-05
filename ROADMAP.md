@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and twenty three features across one hundred and thirty nine phases. The statuses are
+Six hundred and twenty four features across one hundred and forty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2418,14 +2418,19 @@ A review pass over input-ejs and the underscore lowering it rides, each finding 
 **623. Nunjucks is read by the jinja lowering, which learned raw blocks, set bindings, the asynchronous loops, and to name an import and a call** 🔨
 Nunjucks is jinja ported to JavaScript, and its .njk files never reached a reader because the scan did not keep the extension. input-jinja now reads .njk and .nunjucks, credits them to Nunjucks by name in the census and the provenance, and the lowering learned four things every dialect riding it gets: a `{% raw %}` or `{% verbatim %}` block holds text the engine never read, so its braces are spelled as the strings they are and the dialect prints them rather than reading them; `{% set name = expr %}` binds a name for the rest of the template and each later read is what it named, the note naming the name and never the value, where before the tag was removed as machinery and the reads left dangling; Nunjucks's `asyncEach` and `asyncAll` are the loops they are; and `{% import %}`, `{% from %}` and `{% call %}` are named rather than falling through as unknown, a call's body kept once where it stood. Nunjucks is the sixteenth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/nunjucks.test.js holds it.
 
+## Phase 140: the sixteenth review pass
+
+**624. The set binding read again, and the Nunjucks path with it** 🔨
+A review pass over the Nunjucks change, each finding fixed with the input that exposed it. `{% set %}` substituted every read template wide with the first value it found, so a name set in both branches of an if, a total accumulated in a loop, a set inside one block read from a sibling, and a set inside a loop read after it each became one wrong value that looked right, and a set sharing a loop variable, a macro parameter or a block name rewrote that construct's binding head and broke it; the binding now applies only to a set at the top level, set once, that no for, macro or block rebinds, and only inside interpolations and the expression part of if, elif and a for's list, never a binding head, while every other set is left in place and named as the scope or branch the port cannot follow, which is also what input-smarty's branch assigns asked for. A child's top level set never reached the parent it extends, though both engines make it visible there, the menu highlighting idiom; it is applied to the merged parent. Nunjucks's `elseif` was read as an unknown tag and its branch merged into the one before; it is elif. Raw braces were spelled in double quotes and broke an attribute; they are single quoted. Comments were stripped before a raw block was read, deleting text the block existed to protect; raw is read first. `verbatim` marked a file as Django's, so a .njk using Nunjucks's alias for raw was dropped between the two readers; it is no mark. The layout's scripts and styles came back raw from the loader and reached the port; they are stripped after composing. And the loader search existed twice in input-jinja; it exists once. test/nunjucks.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 576 |
+| new in this branch | 577 |
 | planned | 3 |
-| total | 623 |
+| total | 624 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

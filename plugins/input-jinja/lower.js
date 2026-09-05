@@ -22,7 +22,7 @@ export function isDjango(text) {
   // Liquid in an .html page shares comment, cycle and the colon argument; its own tags say which engine this is.
   if (/\{%-?\s*(?:assign|capture|unless|tablerow|liquid|render)\b|\{\{-?\s*site\./.test(t)) return false;
   // jinja's i18n extension spells {% trans %} with no argument and {% autoescape true %}; Django's trans takes a string or a name and its autoescape on or off.
-  return /\{%-?\s*(?:load|url|static|csrf_token|blocktrans|blocktranslate|empty|ifequal|ifnotequal|comment|spaceless|now|cycle|firstof|widthratio|lorem|regroup|verbatim|localize|get_static_prefix)\b/.test(t)
+  return /\{%-?\s*(?:load|url|static|csrf_token|blocktrans|blocktranslate|empty|ifequal|ifnotequal|comment|spaceless|now|cycle|firstof|widthratio|lorem|regroup|localize|get_static_prefix)\b/.test(t)
     || /\{%-?\s*(?:trans|translate)\s+(?:["']|[\w.]+\s*(?:-?%\}|as\b|noop\b|context\b))/.test(t)
     || /\{%-?\s*autoescape\s+(?:on|off)\b/.test(t)
     || /\bforloop\./.test(t) || /\{\{[^}]*\|\s*\w+:(?=\S)/.test(t);
@@ -45,6 +45,55 @@ export function pythonToJs(code) {
         .replace(/\bNOT_IN\b/g, "not in");
     })
     .join("");
+}
+
+/**
+ * The top level `{% set name = expr %}` bindings of a template: removed from the text and substituted into every
+ * read that follows, in interpolations and in the expression part of if, elif and for tags, never in a binding head.
+ * A set that is not at the top level, is repeated, or names something a for, a macro or a block rebinds is left in
+ * place and named, because which value a read sees there is a branch or a scope the port cannot follow.
+ */
+function bindSets(source, note) {
+  let text = source;
+  const depthAt = (at) => {
+    let d = 0;
+    for (const m of text.slice(0, at).matchAll(/\{%-?\s*(end)?(if|for|block|macro|call|set)\b([^%]*)%\}/g)) {
+      if (m[2] === "set" && !/=/.test(m[3]) && !m[1]) d += 1;
+      else if (m[2] === "set") { if (m[1]) d -= 1; }
+      else d += m[1] ? -1 : 1;
+    }
+    return d;
+  };
+  const rebound = new Set([
+    ...[...text.matchAll(/\{%-?\s*for\s+([\w$]+)(?:\s*,\s*([\w$]+))?\s+in\b/g)].flatMap((m) => [m[1], m[2]].filter(Boolean)),
+    ...[...text.matchAll(/\{%-?\s*macro\s+([\w$]+)\s*\(([^)]*)\)/g)].flatMap((m) => [m[1], ...m[2].split(",").map((a) => a.split("=")[0].trim())].filter(Boolean)),
+    ...[...text.matchAll(/\{%-?\s*block\s+([\w$]+)/g)].map((m) => m[1]),
+  ]);
+  const seen = new Map();
+  for (const m of text.matchAll(/\{%-?\s*set\s+([\w$]+)\s*=\s*([\s\S]+?)\s*-?%\}/g)) seen.set(m[1], (seen.get(m[1]) ?? 0) + 1);
+  const bound = new Map();
+  text = text.replace(/\{%-?\s*set\s+([\w$]+)\s*=\s*([\s\S]+?)\s*-?%\}/g, (m, name, expr, at) => {
+    if (depthAt(at) > 0) { note(`\`{% set ${name} %}\` binds a name inside a block or a loop, a scope the port cannot follow; the tag was removed and the name is left as written.`); return ""; }
+    if (seen.get(name) > 1) { note(`\`{% set ${name} %}\` is set more than once, so which value a read sees is a branch the port cannot follow; the tags were removed and the name is left as written.`); return ""; }
+    if (rebound.has(name)) { note(`\`{% set ${name} %}\` names what a loop, a macro or a block binds again; the tag was removed and the name is left as written.`); return ""; }
+    // A set may read a name an earlier set bound; the value carries what that name named.
+    let e = expr.trim();
+    for (const [n, v] of bound) e = e.replace(new RegExp(`(?<![\\w.$])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w$])`, "g"), () => v);
+    bound.set(name, /^[\w$.]+$|^"(?:\\.|[^"\\])*"$|^'(?:\\.|[^'\\])*'$/.test(e) ? e : `(${e})`);
+    note(`\`{% set ${name} %}\` bound a name for the template; each read of it is what it named.`);
+    return "";
+  });
+  const apply = (t) => {
+    if (!bound.size) return t;
+    const names = [...bound.keys()].map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+    const re = new RegExp(`(?<![\\w.$])(${names})(?![\\w$])`, "g");
+    const swap = (expr) => expr.replace(re, (mm, n) => bound.get(n));
+    return t
+      .replace(/\{\{(-?)\s*([\s\S]*?)\s*(-?)\}\}/g, (mm, a, expr, b) => `{{${a} ${swap(expr)} ${b}}}`)
+      .replace(/\{%(-?)\s*(if|elif)\s+([\s\S]*?)\s*(-?)%\}/g, (mm, a, tag, expr, b) => `{%${a} ${tag} ${swap(expr)} ${b}%}`)
+      .replace(/\{%(-?)\s*for\s+([\s\S]+?)\s+in\s+([\s\S]*?)\s*(-?)%\}/g, (mm, a, head, list, b) => `{%${a} for ${head} in ${swap(list)} ${b}%}`);
+  };
+  return { text: apply(text), apply };
 }
 
 const BLOCK_RE = /\{%-?\s*block\s+([\w$]+)\s*-?%\}([\s\S]*?)\{%-?\s*endblock(?:\s+[\w$]+)?\s*-?%\}/g;
@@ -109,28 +158,23 @@ function attributeTernary(text, re, open, note) {
 }
 
 export function lowerJinja(source, note = () => {}, resolveInclude = null, depth = 0) {
-  let text = String(source ?? "").replace(/\{#[\s\S]*?#\}/g, "");
+  // {% raw %} and {% verbatim %} hold text the engine never read, comments included: its braces are spelled as the
+  // strings they are, in single quotes so an attribute stays whole, and the dialect prints them rather than reading them.
+  let text = String(source ?? "").replace(/\{%-?\s*(raw|verbatim)\s*-?%\}([\s\S]*?)\{%-?\s*end\1\s*-?%\}/g, (m, tag, body) => body.replace(/\{\{|\}\}|\{%|%\}|\{#|#\}/g, (b) => `{{ '${b[0]}' + '${b[1]}' }}`));
+  text = text.replace(/\{#[\s\S]*?#\}/g, "");
+  // Nunjucks spells an asynchronous loop asyncEach and asyncAll, and an else if branch elseif; the port renders them as what they are.
+  text = text.replace(/\{%(-?)\s*async(?:Each|All)\s+/g, "{%$1 for ").replace(/\{%(-?)\s*end(?:each|all)\s*(-?)%\}/g, "{%$1 endfor $2%}").replace(/\{%(-?)\s*elseif\s+/g, "{%$1 elif ");
+  // {% set name = expr %} at the top level, set once and shadowing no loop variable, macro parameter or block name, binds
+  // the name for the whole template, the parent it extends included: each read of it is what it named. A set inside a
+  // block or a loop, one set twice, or one whose name a construct rebinds is a scope or a branch the port cannot follow,
+  // so it is left where it stands and named below rather than substituted.
+  const sets = bindSets(text, note);
+  text = sets.text;
 
   // {% extends %} composes exactly like the server did: the child's blocks
   // replace the parent's, a block the child leaves alone keeps its default,
   // and {{ super() }} splices the default back in. Only a parent the run
   // does not hold falls through to the note below.
-  // {% raw %} and {% verbatim %} hold text the engine never read; its braces are spelled as the strings they are so the
-  // dialect prints them rather than reading them.
-  text = text.replace(/\{%-?\s*(raw|verbatim)\s*-?%\}([\s\S]*?)\{%-?\s*end\1\s*-?%\}/g, (m, tag, body) => body.replace(/\{\{|\}\}|\{%|%\}|\{#|#\}/g, (b) => `{{ "${b[0]}" + "${b[1]}" }}`));
-  // Nunjucks spells an asynchronous loop asyncEach and asyncAll; the port renders them as the loop they are.
-  text = text.replace(/\{%(-?)\s*async(?:Each|All)\s+/g, "{%$1 for ").replace(/\{%(-?)\s*end(?:each|all)\s*(-?)%\}/g, "{%$1 endfor $2%}");
-  // {% set name = expr %} binds a name for the rest of the template: each later read is what it named, before a parent's
-  // blocks are merged so a set outside every block still reaches them. A block set is named below.
-  const sets = [];
-  text = text.replace(/\{%-?\s*set\s+([\w$]+)\s*=\s*([\s\S]+?)\s*-?%\}/g, (m, name, expr, at) => { sets.push({ name, expr: expr.trim(), at }); return ""; });
-  for (const s of sets) {
-    const safe = s.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const value = /^[\w$.]+$|^"(?:\\.|[^"\\])*"$|^'(?:\\.|[^'\\])*'$/.test(s.expr) ? s.expr : `(${s.expr})`;
-    text = text.replace(/\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}/g, (span) => span.replace(new RegExp(`(?<![\\w.$])${safe}(?![\\w$])`, "g"), () => value));
-    note(`\`{% set ${s.name} %}\` bound a name for the template; each read of it is what it named.`);
-  }
-
   const extend = /\{%-?\s*extends\s+['"]([^'"]+)['"]\s*-?%\}/.exec(text);
   if (extend && resolveInclude && depth < 6) {
     const parent = resolveInclude(extend[1]);
@@ -142,7 +186,8 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
         if (own === undefined) return fallback;
         return own.replace(/\{\{-?\s*super\(\)\s*-?\}\}/g, fallback);
       });
-      return lowerJinja(merged, note, resolveInclude, depth + 1);
+      // A child's top level set is visible to the parent it extends, the menu highlighting idiom of both engines.
+      return lowerJinja(sets.apply(merged), note, resolveInclude, depth + 1);
     }
   }
 

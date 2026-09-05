@@ -30,16 +30,10 @@ export default {
       for (const file of candidates) {
         bodies.set(file.rel.replace(/^\.\//, ""), await readFile(file.path, "utf8").catch(() => ""));
       }
-      const resolveInclude = (name) => {
-        const clean = String(name).replace(/^\.\//, "");
-        if (bodies.has(clean)) return bodies.get(clean);
-        const base = clean.split("/").pop();
-        const hit = [...bodies.keys()].find((k) => k.endsWith(`/${base}`) || k === base);
-        return hit ? bodies.get(hit) : null;
-      };
+      const keyOf = (name) => { const clean = String(name).replace(/^\.\//, ""); if (bodies.has(clean)) return clean; const base = clean.split("/").pop(); return [...bodies.keys()].find((k) => k.endsWith(`/${base}`) || k === base) ?? null; };
+      const resolveInclude = (name) => { const k = keyOf(name); return k ? bodies.get(k) : null; };
 
       // A layout other templates extend is chrome: composed into each of them, not a screen of its own.
-      const keyOf = (name) => { const clean = String(name).replace(/^\.\//, ""); if (bodies.has(clean)) return clean; const base = clean.split("/").pop(); return [...bodies.keys()].find((k) => k.endsWith(`/${base}`) || k === base) ?? null; };
       const extended = new Set([...bodies.values()].flatMap((b) => [...b.matchAll(/\{%-?\s*extends\s+['"]([^'"]+)['"]/g)].map((m) => keyOf(m[1]))).filter(Boolean));
       for (const file of candidates) {
         const rel = file.rel.replace(/^\.\//, "");
@@ -51,10 +45,11 @@ export default {
         if (extended.has(rel) && /\{%-?\s*block\s/.test(text) && !/\{%-?\s*extends\s/.test(text)) { note(`${rel} is a layout other templates extend; it is composed into each of them rather than ported as a screen of its own.`); continue; }
 
         const parentKey = keyOf(/\{%-?\s*extends\s+['"]([^'"]+)['"]/.exec(text)?.[1] ?? "");
-        // The body is cut after the page is composed into its layout, so the document around a child template never reaches the port.
-        const composedText = lowerJinja(stripStyles(stripScripts(text)), note, resolveInclude);
+        // Scripts and styles are stripped and the body cut after the page is composed into its layout, so the document
+        // around a child template, and the layout's own scripts, never reach the port.
+        const composedText = lowerJinja(text, note, resolveInclude);
         const bodyMatch = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(composedText);
-        const lowered = (bodyMatch ? bodyMatch[1] : composedText).trim();
+        const lowered = stripStyles(stripScripts(bodyMatch ? bodyMatch[1] : composedText)).trim();
         if (!lowered) continue;
         const nunjucks = /\.(njk|nunjucks)$/i.test(file.rel);
         const name = file.rel.replace(/\.(jinja2?|j2|html?|njk|nunjucks)$/i, "").split("/").filter((p) => p !== ".").join("-");
