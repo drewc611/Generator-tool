@@ -111,6 +111,7 @@ const DOES = {
   "input-mithril": "mithril components: hyperscript m() trees walked as the runtime would and printed onto the dialect, attrs as inputs, callbacks as outputs",
   "input-razor": "razor views: @if, @foreach, @switch and @expressions lowered, composed into the layout _ViewStart names with partials and sections in place, Model and ViewBag as inputs",
   "input-freemarker": "freemarker templates: <#if>, <#list> with its else, <#switch>, ${x!\"d\"} defaults and ?built_ins lowered, includes inlined, macros expanded at their calls",
+  "input-pug": "pug templates read from their indentation: if, each with index and else, case, mixins, extends and block composed, includes inlined, #{} and !{} lowered",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",
   "input-svelte": "svelte components, {#each}/{#if} blocks and on:/bind:, lowered onto the dialect",
   "input-react": "React read back onto the dialect, so the tool can read what it writes",

@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and ninety eight features across one hundred and fourteen phases. The statuses are
+Five hundred and ninety nine features across one hundred and fifteen phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-839 tests, on Node 18, 20 and 22, and on Windows in CI.
+844 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2293,14 +2293,20 @@ a fourth review over the two newest readers found what a single test page cannot
 every template reader does three things to a string of source: finds the bracket that closes an open one, splits an argument list at its top level, and makes an expression safe inside a double quoted attribute. Eight readers written in this stretch each wrote their own, and the review passes found the same defect more than once because it had been written more than once: a quote opened by an apostrophe in prose, an unbalanced bracket that never returned. dsp-ir/text.js now carries one matchBracket that returns the index past the close or minus one and reads quotes only where told (false inside markup, where an apostrophe is prose) and backticks only where the language has them (JS yes, C# and the Java templates no), one splitCommas and one splitWords that keep brackets and strings whole, and one attrSafe. The Mithril, Marko, Razor, Velocity, FreeMarker, Liquid, Blade, XSLT and Ember readers import them, Razor and the Java readers through a two line wrapper that fixes their language's quoting, and the two splitters with semantics of their own, Ember's helper arguments and Velocity's comma or space call arguments, keep names of their own. The hygiene gate that holds pascal, unique and lineAt to one definition holds these four too, so the next reader cannot quietly write a fifth. test/text.test.js holds the helpers.
 
 
+## Phase 115: the tree written as indentation
+
+**599. input-pug reads Pug from its indentation and composes it the way the compiler does** 🔨
+Pug, once Jade, was the template language of the Express era: a tree written as indentation, tags with .class#id(attrs) shorthand, text after a tag or behind a pipe, and control flow as keywords at the start of a line. input-pug reads the tree from the indentation and lowers it onto the dialect: if with its else if and else chain negated the way the engine evaluates it, unless as the negated test, each and for as a loop with an index renamed to the dialect's own and an else as the empty state, case and when as the equalities they test, #{expr} as interpolation and !{expr} as bound html, a tag's = and != as buffered output, a dot as block text, an attribute with an expression as ng-class, ng-href, ng-disabled or ng-attr as its name decides and a value that carries spaces read as the JS expression it is, li: a as a tag and its inline child. extends and block compose the way the compiler composes them, block append and prepend included, a held include is inlined and a non Pug include lands as text, and a mixin defined in the file, in the child or the layout, expands at its call with its arguments substituted and named. Unbuffered code, a filter, &attributes and a mixin called with a block are named rather than approximated. The locals a view reads are its inputs, from the expressions only. .pug and .jade reach the scan. test/pug.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 551 |
+| new in this branch | 552 |
 | planned | 3 |
-| total | 598 |
+| total | 599 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
