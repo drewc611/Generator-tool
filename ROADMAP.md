@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and sixty two features across seventy eight phases. The statuses are
+Five hundred and sixty three features across seventy nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-695 tests, on Node 18, 20 and 22, and on Windows in CI.
+700 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2084,15 +2084,20 @@ a data table is a grid of relationships a sighted user reads from the layout and
 **562. dsp-iframes names the iframes the port embeds and the contracts they carry** 🔨
 an iframe drops a whole other document into the page, and a port inherits two things a screenshot never shows: a title, without which a screen reader announces only "frame" with nothing to say what is inside, and a sandbox, without which the embedded document runs with the page's own powers, which for a third-party embed is the whole page's trust handed to code the team does not control. dsp-iframes finds each iframe, records whether it has a title and a sandbox and whether its src points at a host the page is not served from, and names the gaps. It records the host of a cross-origin src only, never the path or query, which can carry a token, the caution the secret gate keeps. It counts and changes nothing; a title is copy a person writes and which sandbox tokens an embed needs is a decision about what it may do. test/iframes.test.js holds it and a CI step names a page's untitled iframe.
 
+## Phase 79: every accessibility axis on one page
+
+**563. vis-a11y gathers the accessibility axes into one scorecard** 🔨
+the port's accessibility is read by seven plugins, each on its own axis: dsp-landmarks (regions), dsp-labels (control names), dsp-a11y (contrast and target size), dsp-focus (the keyboard), dsp-media (captions), dsp-tables (grids) and dsp-iframes (embedded documents), each writing its own report. A port owner who wants the whole picture opens seven files. vis-a11y reads what those plugins left on the context and writes ACCESSIBILITY.md, one table of every axis with the count it reported and exactly what that count is. It invents nothing: every number is another plugin's, an axis whose plugin did not run is named "not measured" rather than scored zero, and it writes nothing when none ran. It is a count, not a grade; portamp does not know which gap matters most to this product, so it does not rank them. It does not collide with dsp-a11y's own A11Y.md. test/a11y-scorecard.test.js holds it.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 515 |
+| new in this branch | 516 |
 | planned | 3 |
-| total | 562 |
+| total | 563 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

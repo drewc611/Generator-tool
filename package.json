@@ -1,6 +1,6 @@
 {
   "name": "portamp",
-  "version": "9.26.0",
+  "version": "9.27.0",
   "description": "A tiny plugin host that ports legacy front ends. Reads Angular, AngularJS, Vue, Knockout, Backbone, jQuery or a running app with no source; recognises what it is; emits React, Vue, Svelte, Angular, Lit or a custom element, with the proofs beside them.",
   "type": "module",
   "bin": {

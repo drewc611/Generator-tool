@@ -835,9 +835,18 @@ jobs:
           grep -q "no title" if-out/IFRAMES.md || { echo "the untitled iframe was not flagged"; exit 1; }
           rm -rf if-src if-out
 
+      - name: the accessibility scorecard gathers the axes
+        run: |
+          mkdir -p ax-src
+          printf '%s\n' '<video src="clip.mp4"></video><iframe src="https://v.com/x"></iframe>' > ax-src/page.html
+          node src/cli.js run --src ax-src --out ax-out
+          test -f ax-out/ACCESSIBILITY.md || { echo "no accessibility scorecard"; exit 1; }
+          grep -q "item(s) flagged across" ax-out/ACCESSIBILITY.md || { echo "the scorecard did not tally"; exit 1; }
+          rm -rf ax-src ax-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "562" ]; then
-            echo "ROADMAP.md holds $count entries and claims 562"; exit 1
+          if [ "$count" != "563" ]; then
+            echo "ROADMAP.md holds $count entries and claims 563"; exit 1
           fi

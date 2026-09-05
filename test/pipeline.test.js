@@ -13,6 +13,7 @@ test("the example runs end to end and writes the port", async (t) => {
 
   assert.deepEqual(ctx.written.sort(), [
     "A11Y.md",
+    "ACCESSIBILITY.md",
     "API_FIELDS.md",
     "API_STYLE.md",
     "ARCHITECTURE.md",
