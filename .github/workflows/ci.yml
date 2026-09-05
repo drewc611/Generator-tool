@@ -927,9 +927,17 @@ jobs:
           grep -q "301" el-out/eleventy/pages/_redirects.njk || { echo "eleventy lost the redirect map"; exit 1; }
           rm -rf el-out
 
+      - name: the ember reader ports a component and hands plain handlebars to its own reader
+        run: |
+          node src/cli.js run --src test/fixtures/ember --out em-out
+          test -f em-out/src/features/UserCard/UserCard.jsx || { echo "the Ember component was not ported"; exit 1; }
+          test -f em-out/src/features/Plain/Plain.jsx || { echo "the plain .hbs template was not ported"; exit 1; }
+          grep -q "ng-repeat" em-out/src/features/UserCard/UserCard.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          rm -rf em-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "573" ]; then
-            echo "ROADMAP.md holds $count entries and claims 573"; exit 1
+          if [ "$count" != "574" ]; then
+            echo "ROADMAP.md holds $count entries and claims 574"; exit 1
           fi

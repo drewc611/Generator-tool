@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy three features across eighty nine phases. The statuses are
+Five hundred and seventy four features across ninety phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-750 tests, on Node 18, 20 and 22, and on Windows in CI.
+756 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2143,14 +2143,20 @@ the sanitation pass the contract asks for after a sprint, and the gate that make
 the site engine arranges a folder of old pages into Next, Remix, Astro, Nuxt and SvelteKit; output-eleventy adds Eleventy, the most common destination for exactly that folder because it needs no client framework at all. The lifted chrome becomes _includes/layout.njk with the page's title and description in the head, one template per route carries that screen's markup printed to static HTML by the same printer output-html proves, with the route as its permalink, and the redirect map lands as _data/redirects.json plus a template that writes _redirects at the site root, the file Netlify and Cloudflare Pages read and the same flattened map every other host target carries. The ported markup is wrapped in Nunjucks raw blocks, because Eleventy's default engine would otherwise read the page's own interpolations as its variables and render them empty. Eleventy runs nothing on the client, so a screen that carries handlers, two way bindings or events is arranged as its static markup and named in the notes and the README rather than flattened silently; the port owner decides whether it stays static or lives as an Astro island. Gated by --eleventy and a site model; nothing is translated twice. test/eleventy.test.js holds it.
 
 
+## Phase 90: the enterprise framework that was everywhere
+
+**574. input-ember reads Ember components onto the dialect, and .hbs reaches the scan** 🔨
+an Ember component is a Glimmer template beside or under a class that names what it takes and what it says, and Ember was the enterprise front end of a decade. input-ember lowers the template onto the attribute dialect with the same spellings the handlebars reader uses: {{#each list as |row|}} becomes ng-repeat naming the block param, with an index param reshaping the loop to track by $index and an {{else}} becoming the empty state; {{#if}} with its else if chain; {{on "click" this.save}} and classic {{action "save"}} become the event attributes with their arguments; <Input @value={{this.q}}> becomes a real input with ng-model; a child component <UserBadge @user={{x}} @onPick={{fn}}> becomes its kebab tag with ng-attr for an arg and an event attribute for a callback; {{yield}} becomes ng-transclude; and a helper with an exact JS spelling (if, unless, eq, not, and, or, concat, gt, lt, fn) becomes that expression while any other becomes a named call a person confirms. Inputs are the @args the template reads and the this.args the class reads, outputs the this.args.onX(...) the class calls and any @onX the template wires as a handler, and a @onX written on a child tag is the child's arg, not this component's. The scan never kept .hbs files, so the handlebars reader's .hbs path never ran; .hbs and .handlebars now reach the scan, and one exported predicate decides which reader owns each file so a template is read by exactly one of them, which a run test holds. test/ember.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 526 |
+| new in this branch | 527 |
 | planned | 3 |
-| total | 573 |
+| total | 574 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

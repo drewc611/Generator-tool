@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { lowerHandlebars } from "./lower.js";
 import { pascal } from "../dsp-ir/emit.js";
+import { isEmberTemplate } from "../input-ember/index.js";
 
 /**
  * The handlebars reader. Templates arrive from .hbs and .handlebars files and
@@ -75,6 +76,8 @@ export default {
 
         if (/\.(hbs|handlebars)$/i.test(file.rel)) {
           if (!/\{\{/.test(text) || inlined.has(file.rel.replace(/^\.\//, ""))) continue;
+          // An Ember component is input-ember's to read; one .hbs, one reader.
+          if (isEmberTemplate(text, file.rel)) continue;
           const id = file.rel.split("/").pop().replace(/\.(hbs|handlebars)$/i, "");
           ctx.screens.push(screenOf(id, text, file.rel, notes, resolvePartial));
           count += 1;
