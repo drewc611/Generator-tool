@@ -142,3 +142,51 @@ test("the port README can describe every report a plugin writes", async () => {
   }
   assert.deepEqual([...missing].sort(), [], "every report the run can write has a line in output-readme saying what it is");
 });
+
+// English numerals as the prose writes them, "five hundred and eighty three",
+// so a sentence that spells a count is held the way a digit already is.
+const SMALL = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+export function wordsToNumber(words) {
+  let total = 0; let current = 0;
+  for (const w of words.toLowerCase().replace(/-/g, " ").split(/\s+/).filter((x) => x && x !== "and")) {
+    if (w === "hundred") current *= 100;
+    else if (w === "thousand") { total += current * 1000; current = 0; }
+    else if (w in SMALL) current += SMALL[w];
+    else throw new Error(`not a numeral: ${w}`);
+  }
+  return total + current;
+}
+const NUM = "((?:(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|and)\\s+)*(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand))";
+
+test("the prose counts spelled in words agree with the roadmap, everywhere they appear", async () => {
+  const roadmap = await readFile(join(ROOT, "ROADMAP.md"), "utf8");
+  const entries = roadmap.match(/^\*\*\d+\..*(✅|🔨|▢)\s*$/gm) ?? [];
+  const features = entries.length;
+  const phases = (roadmap.match(/^## Phase /gm) ?? []).length;
+  const status = (mark) => entries.filter((e) => e.trim().endsWith(mark)).length;
+  const num = (text, re, what) => {
+    const m = new RegExp(re, "i").exec(text.replace(/\s+/g, " "));
+    assert.ok(m, `${what} is stated`);
+    return m.slice(1).map(wordsToNumber);
+  };
+
+  const [rf, rp] = num(roadmap, `${NUM} features across ${NUM} phases`, "the roadmap header");
+  assert.equal(rf, features, "the roadmap header's feature count is the count of its entries");
+  assert.equal(rp, phases, "the roadmap header's phase count is the count of its phase headings");
+
+  const readme = await readFile(join(ROOT, "README.md"), "utf8");
+  const [grew] = num(readme, `across ${NUM} features, and every`, "the README's growth sentence");
+  assert.equal(grew, features);
+  const [f, p, shipped, fresh, planned] = num(readme, `${NUM} features in ${NUM} phases, ${NUM} shipped, ${NUM} new in the current branch, ${NUM} planned`, "the README's still open paragraph");
+  assert.equal(f, features); assert.equal(p, phases);
+  assert.equal(shipped, status("✅")); assert.equal(fresh, status("🔨")); assert.equal(planned, status("▢"));
+
+  const claude = await readFile(join(ROOT, "CLAUDE.md"), "utf8");
+  const [cf, cp] = num(claude, `ROADMAP.md: ${NUM} features in ${NUM} phases`, "CLAUDE.md's pointer to the roadmap");
+  assert.equal(cf, features); assert.equal(cp, phases);
+
+  assert.equal(wordsToNumber("five hundred and eighty three"), 583);
+  assert.equal(wordsToNumber("ninety nine"), 99);
+  assert.equal(wordsToNumber("forty four"), 44);
+  assert.equal(wordsToNumber("three"), 3);
+});

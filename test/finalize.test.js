@@ -104,7 +104,7 @@ test("the roadmap holds exactly the number it claims, and the table agrees", asy
   const { readFile } = await import("node:fs/promises");
   const md = await readFile(join(process.cwd(), "ROADMAP.md"), "utf8");
   const entries = md.match(/^\*\*\d+\..*(✅|🔨|▢)\s*$/gm) ?? [];
-  assert.equal(entries.length, 582, "five hundred and eighty two entries, each carrying a status");
+  assert.equal(entries.length, 583, "five hundred and eighty three entries, each carrying a status");
   const count = (mark) => entries.filter((e) => e.trim().endsWith(mark)).length;
   assert.match(md, new RegExp(`\\| shipped \\| ${count("✅")} \\|`), "the table's shipped row is the real count");
   assert.match(md, new RegExp(`\\| new in this branch \\| ${count("🔨")} \\|`));
