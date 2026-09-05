@@ -937,9 +937,18 @@ jobs:
           grep -q "ng-repeat" em-out/src/features/UserCard/UserCard.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
           rm -rf em-out
 
+      - name: the env reader names every key and repeats no value
+        run: |
+          node src/cli.js run --src test/fixtures/env-app --out en-out
+          test -f en-out/ENV.md || { echo "no ENV.md"; exit 1; }
+          test -f en-out/.env.example || { echo "no .env.example"; exit 1; }
+          grep -q "^VITE_SENTRY_DSN=$" en-out/.env.example || { echo "the undeclared key is missing or carries a value"; exit 1; }
+          grep -rq "localhost:9999" en-out && { echo "a value from the live .env leaked into the port"; exit 1; } || true
+          rm -rf en-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "574" ]; then
-            echo "ROADMAP.md holds $count entries and claims 574"; exit 1
+          if [ "$count" != "575" ]; then
+            echo "ROADMAP.md holds $count entries and claims 575"; exit 1
           fi

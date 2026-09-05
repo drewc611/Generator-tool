@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy four features across ninety phases. The statuses are
+Five hundred and seventy five features across ninety one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-756 tests, on Node 18, 20 and 22, and on Windows in CI.
+760 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2149,14 +2149,20 @@ the site engine arranges a folder of old pages into Next, Remix, Astro, Nuxt and
 an Ember component is a Glimmer template beside or under a class that names what it takes and what it says, and Ember was the enterprise front end of a decade. input-ember lowers the template onto the attribute dialect with the same spellings the handlebars reader uses: {{#each list as |row|}} becomes ng-repeat naming the block param, with an index param reshaping the loop to track by $index and an {{else}} becoming the empty state; {{#if}} with its else if chain; {{on "click" this.save}} and classic {{action "save"}} become the event attributes with their arguments; <Input @value={{this.q}}> becomes a real input with ng-model; a child component <UserBadge @user={{x}} @onPick={{fn}}> becomes its kebab tag with ng-attr for an arg and an event attribute for a callback; {{yield}} becomes ng-transclude; and a helper with an exact JS spelling (if, unless, eq, not, and, or, concat, gt, lt, fn) becomes that expression while any other becomes a named call a person confirms. Inputs are the @args the template reads and the this.args the class reads, outputs the this.args.onX(...) the class calls and any @onX the template wires as a handler, and a @onX written on a child tag is the child's arg, not this component's. The scan never kept .hbs files, so the handlebars reader's .hbs path never ran; .hbs and .handlebars now reach the scan, and one exported predicate decides which reader owns each file so a template is read by exactly one of them, which a run test holds. test/ember.test.js holds it.
 
 
+## Phase 91: what the port asks its environment for
+
+**575. dsp-env names the configuration keys the app reads at runtime, and never a value** 🔨
+a legacy front end reads process.env.API_URL, import.meta.env.VITE_KEY, an Angular environment module, or a config object the server dropped on window, and each read is a value someone supplies before the port runs; the source states the name and never the value, so the port has exactly that gap and must not fill it with a guess. dsp-env reads every script for those four spellings, keeps the key with the file and line it is read at and whether the read carries a || or ?? fallback (never the fallback literal, which is where a value lives), and reads any .env file in the tree for its names only, the right hand side of each line never read. .env files now reach the scan, which also puts a live .env through the secret gate it had been walking past. ENV.md tables every key by source with its state (fallback in source, declared in .env, or neither), names the keys nobody supplies yet, the names a .env declares that no script reads, and a live .env as a file that must not be copied into the port or committed; .env.example lands beside it with every process environment key blank, so the port asks for what it needs by name. Keys a window object or an environment module supplies are named and left out of the example, because how the deploy hands them over is a decision and not a value. test/configuration.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 527 |
+| new in this branch | 528 |
 | planned | 3 |
-| total | 574 |
+| total | 575 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

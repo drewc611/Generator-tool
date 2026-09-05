@@ -28,7 +28,7 @@ async function walk(dir, root, out = []) {
     // plugin that reads it can split on one separator.
     // .htaccess has no extension to keep; the server's own redirect
     // declarations are exactly the evidence the site engine reads.
-    else if (KEEP.has(extname(e)) || e === ".htaccess") out.push({ path: p, rel: relative(root, p).split(sep).join("/") });
+    else if (KEEP.has(extname(e)) || e === ".htaccess" || /^\.env(\.[\w.-]+)?$/.test(e)) out.push({ path: p, rel: relative(root, p).split(sep).join("/") });
   }
   return out;
 }
