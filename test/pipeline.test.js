@@ -32,6 +32,7 @@ test("the example runs end to end and writes the port", async (t) => {
     "PORT_README.md",
     "ROUNDTRIP.md",
     "ROUTES.md",
+    "SECURITY_SCORECARD.md",
     "SIZE.md",
     "STATE.md",
     "WEIGHT.md",

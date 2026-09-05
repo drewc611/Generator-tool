@@ -10,7 +10,7 @@ about where the plugin classes come from. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 137 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 708 passing, 709 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer, the learned archetype model and the Svelte, Lit, Alpine and Stencil readers](media/test-run.png)
+![node --test running the portamp suite: 714 passing, 715 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer, the learned archetype model and the Svelte, Lit, Alpine and Stencil readers](media/test-run.png)
 
 <sub>Proof, not a promise. Every line above is verbatim from `npm test`: 650
 tests pass across 71 test files with `node --test` and no framework, and

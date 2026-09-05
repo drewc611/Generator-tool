@@ -855,9 +855,18 @@ jobs:
           grep -rq "XCard" wc-out/src || { echo "the custom element was not ported"; exit 1; }
           rm -rf wc-src wc-out
 
+      - name: the security scorecard gathers the concerns
+        run: |
+          mkdir -p sc-src
+          printf '%s\n' '<a href="x" onclick="go()">x</a><script src="https://cdn.example.com/a.js"></script>' > sc-src/page.html
+          node src/cli.js run --src sc-src --out sc-out
+          test -f sc-out/SECURITY_SCORECARD.md || { echo "no security scorecard"; exit 1; }
+          grep -q "item(s) flagged across" sc-out/SECURITY_SCORECARD.md || { echo "the scorecard did not tally"; exit 1; }
+          rm -rf sc-src sc-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "565" ]; then
-            echo "ROADMAP.md holds $count entries and claims 565"; exit 1
+          if [ "$count" != "566" ]; then
+            echo "ROADMAP.md holds $count entries and claims 566"; exit 1
           fi
