@@ -826,9 +826,18 @@ jobs:
           grep -q "no caption" ta-out/TABLES.md || { echo "the uncaptioned table was not flagged"; exit 1; }
           rm -rf ta-src ta-out
 
+      - name: the iframes reader names an untitled iframe
+        run: |
+          mkdir -p if-src
+          printf '%s\n' '<iframe src="https://widget.vendor.com/w"></iframe>' > if-src/page.html
+          node src/cli.js run --src if-src --out if-out
+          test -f if-out/IFRAMES.md || { echo "no iframes report"; exit 1; }
+          grep -q "no title" if-out/IFRAMES.md || { echo "the untitled iframe was not flagged"; exit 1; }
+          rm -rf if-src if-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "561" ]; then
-            echo "ROADMAP.md holds $count entries and claims 561"; exit 1
+          if [ "$count" != "562" ]; then
+            echo "ROADMAP.md holds $count entries and claims 562"; exit 1
           fi

@@ -72,6 +72,7 @@ const DOES = {
   "dsp-focus": "the focus habits the port inherits: positive tabindex, autofocus, accesskey, programmatic focus",
   "dsp-media": "the video and audio embedded, the captions track missing, controls and autoplay named; src withheld",
   "dsp-tables": "the tables drawn, and whether a screen reader can read them: caption, headers, scope; cells withheld",
+  "dsp-iframes": "the iframes embedded, their missing title and sandbox named, third-party hosts listed; src path withheld",
   "dsp-motion": "the animations and transitions, and whether reduced-motion is ever honoured",
   "dsp-observers": "the IntersectionObserver, ResizeObserver, MutationObserver and PerformanceObserver the port must disconnect, and which never got one",
   "dsp-print": "the print stylesheet the port must not lose, carried as identity not reinvented",

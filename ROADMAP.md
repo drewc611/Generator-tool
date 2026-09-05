@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and sixty one features across seventy seven phases. The statuses are
+Five hundred and sixty two features across seventy eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-691 tests, on Node 18, 20 and 22, and on Windows in CI.
+695 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2079,15 +2079,20 @@ a media element is the one place accessibility is not contrast or a label but a 
 **561. dsp-tables names the tables the port draws and whether a reader can read them** 🔨
 a data table is a grid of relationships a sighted user reads from the layout and a screen reader recovers only from the markup: a caption that names it, a th that marks a header, and a scope that ties a cell to its header. Strip those and the table is a flat wall of numbers, and the old web also built layout out of tables a reader announces as data unless they say role=presentation. dsp-tables finds each table, balanced across nested ones, records whether it has a caption, header cells, scope and a presentational role, and names the gap: a data table with no caption, headers with no scope, or a table with no headers and no presentational role. It reads structure only and never records a cell's content. It counts and changes nothing; whether a table was layout or data, and what its caption should say, is the port owner's call. test/tables.test.js holds it and a CI step names a page's uncaptioned data table.
 
+## Phase 78: the other document dropped into the page
+
+**562. dsp-iframes names the iframes the port embeds and the contracts they carry** 🔨
+an iframe drops a whole other document into the page, and a port inherits two things a screenshot never shows: a title, without which a screen reader announces only "frame" with nothing to say what is inside, and a sandbox, without which the embedded document runs with the page's own powers, which for a third-party embed is the whole page's trust handed to code the team does not control. dsp-iframes finds each iframe, records whether it has a title and a sandbox and whether its src points at a host the page is not served from, and names the gaps. It records the host of a cross-origin src only, never the path or query, which can carry a token, the caution the secret gate keeps. It counts and changes nothing; a title is copy a person writes and which sandbox tokens an embed needs is a decision about what it may do. test/iframes.test.js holds it and a CI step names a page's untitled iframe.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 514 |
+| new in this branch | 515 |
 | planned | 3 |
-| total | 561 |
+| total | 562 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
