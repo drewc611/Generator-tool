@@ -51,3 +51,17 @@ test("the extensions the jinja and underscore readers claim are markup when nobo
   assert.deepEqual(c.unread, ["a.j2", "b.ejs", "c.tpl", "d.jinja", "e.mustache"]);
   assert.deepEqual(c.assets, []);
 });
+
+test("every reader that composes a layout or a fragment into its pages records it, so the census never calls that file unread", async () => {
+  for (const fixture of ["blade", "liquid", "pug", "razor", "smarty", "thymeleaf", "twig", "velocity", "freemarker", "jsp", "cfml", "haml", "slim", "twirl", "django", "ejs", "nunjucks"]) {
+    const run = await runPipeline({ src: join(ROOT, "test/fixtures", fixture) });
+    try {
+      assert.equal(run.error, null, `${fixture} runs`);
+      const c = run.ctx.readers;
+      assert.deepEqual(c.unread, [], `${fixture}: ${c.unread.join(", ")} was read and composed, and must be counted so`);
+      assert.ok(c.composed.length >= 1 || fixture === "freemarker" || fixture === "jsp" || fixture === "cfml", `${fixture} composed a layout or fragment into its pages`);
+    } finally {
+      await run.cleanup();
+    }
+  }
+});

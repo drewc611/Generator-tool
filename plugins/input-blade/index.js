@@ -244,6 +244,8 @@ export default {
         const raw = bodies.get(rel) ?? "";
         if (!raw.trim()) continue;
         if ([...extended].some((p) => rel === p || rel.endsWith(`/${p}`))) { note(`${rel} is a layout other views extend; it is composed into each of them rather than ported as a screen of its own.`); continue; }
+        const ext = /@extends\s*\(\s*(['"][^'"]+['"])\s*\)/.exec(raw);
+        const parentKey = ext ? [...bodies.keys()].find((k) => k === viewPath(ext[1]) || k.endsWith(`/${viewPath(ext[1])}`)) ?? null : null;
         const composed = composeBlade(raw, resolve, note);
         let { template, variables } = lowerBlade(composed, note);
         const body = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(template);
@@ -255,6 +257,7 @@ export default {
           selector,
           className: pascal(selector),
           file: file.rel,
+          composed: parentKey ? [parentKey] : [],
           inputs: variables,
           outputs: [],
           template,

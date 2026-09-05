@@ -295,6 +295,7 @@ export default {
           selector,
           className: pascal(selector),
           file: file.rel,
+          composed: isTemplate && layout ? [layoutKey] : [],
           inputs: readGlobals(lowered, [...settings, ...pulled]),
           outputs: [],
           template: lowered,

@@ -570,7 +570,9 @@ export default {
         }
         return trees.get(key);
       };
-      const library = { resolve: (name) => { const k = findKey(name); return k ? treeOf(k) : null; } };
+      // Every file the library resolves for a page, its layout and its fragments, was composed into that page.
+      const used = new Set();
+      const library = { resolve: (name) => { const k = findKey(name); if (k) used.add(k); return k ? treeOf(k) : null; } };
 
       const decorated = new Set();
       for (const text of bodies.values()) for (const m of text.matchAll(/layout:decorate\s*=\s*["']~?\{?\s*([^"'}(]+)/g)) decorated.add(bare(m[1].trim()));
@@ -579,6 +581,7 @@ export default {
       for (const [key, text] of bodies) {
         const file = files.find((f) => f.rel.replace(/^\.\//, "") === key);
         if (decorated.has(bare(key))) { note(`${key} is a layout other templates decorate; it is composed into each of them rather than ported as a screen of its own.`); continue; }
+        used.clear();
         let { root, fragments } = treeOf(key);
         const top = elements(root.children);
         const inner = top.length === 1 && top[0].tag === "html" ? elements(top[0].children).flatMap((e) => (e.tag === "body" ? elements(e.children) : e.tag === "head" ? [] : [e])) : top;
@@ -605,6 +608,7 @@ export default {
           selector,
           className: pascal(selector),
           file: file?.rel ?? key,
+          composed: [...used].filter((k) => k !== key),
           inputs: readInputs(template),
           outputs: [],
           template,

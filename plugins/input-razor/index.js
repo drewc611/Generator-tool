@@ -305,6 +305,10 @@ export default {
         const raw = bodies.get(rel) ?? "";
         if (!raw.trim() || /_ViewStart\.cshtml$|_ViewImports\.cshtml$/.test(rel)) continue;
         if (layouts.has(rel)) { note(`${rel} is a layout that renders the views' bodies; it is composed into each of them rather than ported as a screen of its own.`); continue; }
+        const own = /\bLayout\s*=\s*(?:null|"([^"]*)")/.exec(raw);
+        const layoutName = own ? own[1] ?? null : defaultLayout;
+        const layoutBase = layoutName ? layoutName.split("/").pop().replace(/\.cshtml$/i, "") : null;
+        const parentKey = layoutBase ? [...layouts].find((k) => k.endsWith(`/${layoutBase}.cshtml`) || k === `${layoutBase}.cshtml`) ?? null : null;
         const composed = composeRazor(raw, resolve, note, defaultLayout);
         let { template, inputs } = lowerRazor(composed, note);
         const body = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(template);
@@ -317,6 +321,8 @@ export default {
           selector,
           className: pascal(selector),
           file: file.rel,
+          // _ViewStart chose the layout for a view that names none; it was read into that view as much as the layout was.
+          composed: parentKey ? [parentKey, ...(!own && viewStart ? [viewStart[0]] : [])] : [],
           inputs,
           outputs: [],
           template,

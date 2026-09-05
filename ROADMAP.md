@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and twenty four features across one hundred and forty phases. The statuses are
+Six hundred and twenty five features across one hundred and forty one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2423,14 +2423,19 @@ Nunjucks is jinja ported to JavaScript, and its .njk files never reached a reade
 **624. The set binding read again, and the Nunjucks path with it** 🔨
 A review pass over the Nunjucks change, each finding fixed with the input that exposed it. `{% set %}` substituted every read template wide with the first value it found, so a name set in both branches of an if, a total accumulated in a loop, a set inside one block read from a sibling, and a set inside a loop read after it each became one wrong value that looked right, and a set sharing a loop variable, a macro parameter or a block name rewrote that construct's binding head and broke it; the binding now applies only to a set at the top level, set once, that no for, macro or block rebinds, and only inside interpolations and the expression part of if, elif and a for's list, never a binding head, while every other set is left in place and named as the scope or branch the port cannot follow, which is also what input-smarty's branch assigns asked for. A child's top level set never reached the parent it extends, though both engines make it visible there, the menu highlighting idiom; it is applied to the merged parent. Nunjucks's `elseif` was read as an unknown tag and its branch merged into the one before; it is elif. Raw braces were spelled in double quotes and broke an attribute; they are single quoted. Comments were stripped before a raw block was read, deleting text the block existed to protect; raw is read first. `verbatim` marked a file as Django's, so a .njk using Nunjucks's alias for raw was dropped between the two readers; it is no mark. The layout's scripts and styles came back raw from the loader and reached the port; they are stripped after composing. And the loader search existed twice in input-jinja; it exists once. test/nunjucks.test.js holds it.
 
+## Phase 141: every composed file is counted
+
+**625. Eight more readers record the layout and the fragments they composed, so the census never calls a file it read unread** 🔨
+The reader census (READERS.md) counted a file as read only when it became a screen, so a layout a reader composed into every page, blade's `layouts/app.blade.php`, liquid's `layout/theme.liquid`, pug's `layout.pug`, razor's `_Layout.cshtml` and the `_ViewStart.cshtml` that chose it, smarty's and twig's extended templates, thymeleaf's layout and its fragment files, velocity's `$screen_content` chrome, was reported as markup no reader claimed, the row a port owner reads first, and the port owner would have gone looking for a reader that already existed. Each of those readers now records, on every screen it pushes, the files it composed into that screen, the way the Rails, Twirl, Django, EJS and jinja readers already did: blade, pug, smarty and twig the parent they extend, razor the layout and the view start that named it, liquid and velocity the theme or the chrome, and thymeleaf every file its fragment library resolved for the page, the layout and the fragments alike, recorded by the library as it resolves them. A test runs seventeen fixtures and asserts that no fixture leaves a composed file in the unread row, so the honesty holds for every reader at once and a new reader that forgets it fails the suite. test/readers-census.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 577 |
+| new in this branch | 578 |
 | planned | 3 |
-| total | 624 |
+| total | 625 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

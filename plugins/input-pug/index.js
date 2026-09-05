@@ -369,6 +369,8 @@ export default {
         const raw = bodies.get(rel) ?? "";
         if (!raw.trim()) continue;
         if ([...extended].some((p) => bare(rel) === p || bare(rel).endsWith(`/${p}`))) { note(`${rel} is a layout other templates extend; it is composed into each of them rather than ported as a screen of its own.`); continue; }
+        const extLine = /^\s*extends\s+(\S+)/m.exec(raw);
+        const parentKey = extLine ? [...bodies.keys()].find((k) => bare(k) === bare(extLine[1]) || bare(k).endsWith(`/${bare(extLine[1])}`)) ?? null : null;
         const tree = compose(parseTree(raw), resolve, note);
         let template = lowerTree(tree, note);
         const body = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(template);
@@ -380,6 +382,7 @@ export default {
           selector,
           className: pascal(selector),
           file: file.rel,
+          composed: parentKey ? [parentKey] : [],
           inputs: readInputs(template),
           outputs: [],
           template,

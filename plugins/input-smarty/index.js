@@ -361,6 +361,8 @@ export default {
       for (const [key, text] of bodies) {
         const file = files.find((f) => f.rel.replace(/^\.\//, "") === key);
         if ([...extended].some((p) => bare(key) === p || bare(key).endsWith(`/${p}`))) { note(`${key} is a layout other templates extend; it is composed into each of them rather than ported as a screen of its own.`); continue; }
+        const ext = /\{extends\s+(?:file=)?(['"])([^'"]+)\1/.exec(text);
+        const parentKey = ext ? resolveTemplate(keys, ext[2], bare) : null;
         const lowered = lowerJinja(smartyToJinja(text, note), note, resolve);
         const bodyMatch = /<body\b[^>]*>([\s\S]*)<\/body\s*>/i.exec(lowered);
         const template = stripStyles(stripScripts(bodyMatch ? bodyMatch[1] : lowered)).trim();
@@ -370,6 +372,7 @@ export default {
           selector,
           className: pascal(selector),
           file: file?.rel ?? key,
+          composed: parentKey ? [parentKey] : [],
           inputs: readInputs(template),
           outputs: [],
           template,

@@ -89,6 +89,8 @@ export default {
           note(`${rel} is a layout other templates extend; it is composed into each of them rather than ported as a screen of its own.`);
           continue;
         }
+        const ext = /\{%-?\s*extends\s+['"]([^'"]+)['"]/.exec(text);
+        const parentKey = ext ? (() => { const clean = ext[1].replace(/^@\w+\//, "").replace(/^\.\//, ""); if (bodies.has(clean)) return clean; const base = clean.split("/").pop(); return [...bodies.keys()].find((k) => k.endsWith(`/${clean}`) || k.endsWith(`/${base}`) || k === base) ?? null; })() : null;
         const lowered = lowerJinja(twigToJinja(text, note), note, resolve);
         const bodyMatch = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(lowered);
         const markup = stripStyles(stripScripts(bodyMatch ? bodyMatch[1] : lowered)).trim();
@@ -98,6 +100,7 @@ export default {
           selector,
           className: pascal(selector),
           file: file.rel,
+          composed: parentKey ? [parentKey] : [],
           inputs: [],
           outputs: [],
           template: markup,

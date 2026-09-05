@@ -246,6 +246,7 @@ export default {
           selector,
           className: pascal(selector),
           file: file.rel,
+          composed: layout ? [layout[0]] : [],
           inputs: readInputs(template),
           outputs: [],
           template,
