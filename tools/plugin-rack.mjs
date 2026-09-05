@@ -69,6 +69,7 @@ const DOES = {
   "dsp-analytics": "the trackers the old front end loaded, named as a consent decision, ids withheld",
   "dsp-images": "images shipped at one fixed size: srcset, dimensions and format proposed",
   "dsp-fonts": "how the old app loaded its type: formats to drop, a display strategy to add",
+  "dsp-focus": "the focus habits the port inherits: positive tabindex, autofocus, accesskey, programmatic focus",
   "dsp-motion": "the animations and transitions, and whether reduced-motion is ever honoured",
   "dsp-observers": "the IntersectionObserver, ResizeObserver, MutationObserver and PerformanceObserver the port must disconnect, and which never got one",
   "dsp-print": "the print stylesheet the port must not lose, carried as identity not reinvented",

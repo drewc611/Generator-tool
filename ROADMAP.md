@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and fifty eight features across seventy four phases. The statuses are
+Five hundred and fifty nine features across seventy five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-675 tests, on Node 18, 20 and 22, and on Windows in CI.
+680 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2064,15 +2064,20 @@ the third of the lifecycle trilogy beside dsp-storage (data) and dsp-timers (loo
 **558. dsp-observers names the observers the port must disconnect on unmount** 🔨
 the fourth cleanup reader beside dsp-storage, dsp-timers and dsp-events: an IntersectionObserver, ResizeObserver, MutationObserver or PerformanceObserver is a long-lived subscription the same way a global addEventListener is, keeping its callback and everything it closed over alive until disconnect() is called, and in a component world one made on mount has to be torn down on unmount or the port leaks it and stacks another on every remount, each still firing against detached nodes. dsp-observers finds every construction of the four DOM observers, names the kind and the line, reports whether a disconnect() appears in the same file, and calls out those with none. Like dsp-events it reports presence in the file, not proof of teardown on every path; a look-alike class named ...Observer is not counted. It counts and changes nothing. test/observers.test.js holds it and a CI step names a page's unclosed observer.
 
+## Phase 75: the focus the port must not drop
+
+**559. dsp-focus names the focus management the port inherits** 🔨
+where a landmark says what a screen reader can reach and a label says what a control announces, focus is the third axis a screenshot never shows: where the keyboard is and where it goes next. dsp-focus reads the source for a positive tabindex (which pulls an element ahead of source order and breaks tab order; tabindex 0 and -1 are left alone), autofocus (which takes the keyboard on load, and more than one in a file is a conflict the browser resolves, not the author), accesskey (which collides with the shortcuts a browser and screen reader already own), and a programmatic .focus() call (a move the port must reproduce on the path that used it or a keyboard user is dropped somewhere they did not ask to be). It names the file and line for each, counts and changes nothing; which move is load-bearing and which tabindex was a mistake is the port owner's call. test/focus.test.js holds it and a CI step names a page's positive tabindex.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 511 |
+| new in this branch | 512 |
 | planned | 3 |
-| total | 558 |
+| total | 559 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

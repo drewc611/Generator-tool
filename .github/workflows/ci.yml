@@ -799,9 +799,18 @@ jobs:
           grep -q "no .disconnect" ob-out/OBSERVERS.md || { echo "the unclosed observer was not flagged"; exit 1; }
           rm -rf ob-src ob-out
 
+      - name: the focus reader names a positive tabindex
+        run: |
+          mkdir -p fo-src
+          printf '%s\n' '<div tabindex="3">jumps the queue</div>' > fo-src/page.html
+          node src/cli.js run --src fo-src --out fo-out
+          test -f fo-out/FOCUS.md || { echo "no focus report"; exit 1; }
+          grep -q "tabindex 3" fo-out/FOCUS.md || { echo "the positive tabindex was not named"; exit 1; }
+          rm -rf fo-src fo-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "558" ]; then
-            echo "ROADMAP.md holds $count entries and claims 558"; exit 1
+          if [ "$count" != "559" ]; then
+            echo "ROADMAP.md holds $count entries and claims 559"; exit 1
           fi
