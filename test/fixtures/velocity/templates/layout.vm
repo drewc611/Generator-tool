@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>$!page.title</title></head>
+<body>
+#parse("includes/nav.vm")
+<main>$screen_content</main>
+</body>
+</html>

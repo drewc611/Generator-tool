@@ -28,6 +28,7 @@ const DOES = {
   "input-openapi": "a spec as a source, cross checked against what the app actually calls",
   "input-jsf": "the facelets inventory, honest that the rendered truth is server side",
   "input-aspnet": "server controls, handlers and postbacks, read from the declarations",
+  "input-velocity": "velocity templates: #if, #foreach with its else, $refs and Java methods with a JS spelling lowered, #parse inlined, macros expanded, a $screen_content layout composed around each page",
   "input-vue": "single file components, into the shape the Angular reader produces",
   "input-jquery": "a front end that declared no components. Inventories, never invents",
   "input-explore": "drives a running app and works out what it is, without the source",
