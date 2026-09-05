@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and twenty five features across one hundred and forty one phases. The statuses are
+Six hundred and twenty seven features across one hundred and forty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2428,14 +2428,22 @@ A review pass over the Nunjucks change, each finding fixed with the input that e
 **625. Eight more readers record the layout and the fragments they composed, so the census never calls a file it read unread** 🔨
 The reader census (READERS.md) counted a file as read only when it became a screen, so a layout a reader composed into every page, blade's `layouts/app.blade.php`, liquid's `layout/theme.liquid`, pug's `layout.pug`, razor's `_Layout.cshtml` and the `_ViewStart.cshtml` that chose it, smarty's and twig's extended templates, thymeleaf's layout and its fragment files, velocity's `$screen_content` chrome, was reported as markup no reader claimed, the row a port owner reads first, and the port owner would have gone looking for a reader that already existed. Each of those readers now records, on every screen it pushes, the files it composed into that screen, the way the Rails, Twirl, Django, EJS and jinja readers already did: blade, pug, smarty and twig the parent they extend, razor the layout and the view start that named it, liquid and velocity the theme or the chrome, and thymeleaf every file its fragment library resolved for the page, the layout and the fragments alike, recorded by the library as it resolves them. A test runs seventeen fixtures and asserts that no fixture leaves a composed file in the unread row, so the honesty holds for every reader at once and a new reader that forgets it fails the suite. test/readers-census.test.js holds it.
 
+## Phase 142: two more of jinja's family
+
+**626. input-pebble reads Pebble, the Java engine modelled on Twig, through Twig's front over the jinja lowering** 🔨
+Pebble is Twig's grammar in Java with a handful of spellings of its own, and its .peb files never reached a reader. The reader rewrites Pebble's own spellings onto Twig's and hands the result to the front and the lowering that already exist: `equals` is `==`, `contains` asks a collection or a string through `includes`, `is even` and `is odd` are the remainders they test, `?:` falls back as `||` does, `{% parallel %}`, `{% cache %}` and `{% autoescape %}` wrap a block the port renders once, `{% flush %}` is gone, a `{% filter %}` over a block stands unfiltered and is named, an `{% embed %}` is included as it stands with its block overrides named rather than applied, and a test of a runtime type the client cannot know is left as written and named. A base other templates extend is chrome, composed and counted so. Pebble is the seventeenth dialect the byte identity gate holds. test/pebble.test.js holds it.
+
+**627. input-volt reads Volt, Phalcon's engine, with its framework helpers as the elements they render and the calls the port must supply** 🔨
+Volt is jinja's grammar with Twig's tests and PHP framework helpers, and its .volt files never reached a reader. `{{ content() }}` is where a controller drops the view into its layout, so the one layout that renders it is composed around every view that is not itself a layout or a partial, and more than one is named, because Phalcon picks per controller and the run cannot see that. `{{ partial('x') }}` inlines a file, named when it passes parameters or is not held; `{{ link_to('route', 'Text') }}` is the anchor it renders with its route as a call to `url`, the reverse router the port must supply, and `url()` and `static_url()` are kept as that call; `tag.textField`, `tag.select`, `tag.textArea` and their siblings are the fields they render with their models, a field named through an expression dropped and named rather than guessed, and `tag.select` emitted with no options and named; `{% do %}` and an early `{% break %}`, `{% continue %}` or `{% return %}` are named; `{% cache %}` is transparent; `{{ flash.output() }}` is named; `{% elseif %}` is elif. Volt is the eighteenth dialect the byte identity gate holds. test/volt.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 578 |
+| new in this branch | 580 |
 | planned | 3 |
-| total | 625 |
+| total | 627 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

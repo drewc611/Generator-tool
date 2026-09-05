@@ -115,6 +115,8 @@ const DOES = {
   "input-cfml": "ColdFusion pages: cfif with its chain, cfloop over arrays, lists, collections and queries, cfswitch, cfoutput's #expressions#, cfset, cfinclude and cfform lowered; queries, cfscript, custom tags and scopes named",
   "input-haml": "Haml templates read from their indentation: if, elsif, else, unless, case, each with index, Ruby spelled as JS, a layout's yield filled by the page, partials rendered, Rails form and link helpers lowered, formats and routes named",
   "input-jsp": "JSP with the standard tag library: c:if, c:choose, c:forEach with its status, c:out, c:set, c:url, includes and Spring form tags lowered, EL spelled as JS, scriptlets and formats named",
+  "input-pebble": "Pebble (Java) templates through Twig's front over the jinja lowering: equals, contains, even and odd, ?:, the block wrappers transparent, a block filter and an embed named",
+  "input-volt": "Volt (Phalcon) templates on the jinja lowering: content() as the layout slot, partials inlined, link_to and url as the reverse router, tag.* helpers as fields, do and early exits named",
   "input-ejs": "EJS templates on the underscore lowering: escaped and raw output the right way round, comments and whitespace markers, includes inlined with locals bound, JavaScript loops, layout.ejs composed",
   "input-django": "Django templates on the jinja lowering: empty, ifequal, comment, with and blocktrans bound, trans and static and url named as the server's, firstof, forloop, colon filters; the base composed",
   "input-twirl": "Twirl (Play) templates: @if/@for/@match/@defining, .map as a loop or a presence test by declared type, Scala spelled as JavaScript, the layout applied as a call, Form fields, routes and messages named",

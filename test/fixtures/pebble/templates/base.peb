@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><title>{% block title %}Shop{% endblock %}</title></head>
+  <body>
+    {% include "partials/nav.peb" %}
+    <main>{% block content %}{% endblock %}</main>
+  </body>
+</html>

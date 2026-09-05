@@ -14,7 +14,7 @@
  * runs at verify so the census is what the readers actually did.
  */
 
-const MARKUP = /\.(html?|shtml|php|asp|jsp|inc|hbs|handlebars|mustache|marko|liquid|twig|jinja2?|j2|tpl|ejs|erb|njk|nunjucks|xslt?|cshtml|ftlh?|vm|vtl|pug|jade|cfml?|haml|slim|vue|riot|tag|svelte|jsx|tsx|xhtml|jsf|aspx|ascx|master)$/i;
+const MARKUP = /\.(html?|shtml|php|asp|jsp|inc|hbs|handlebars|mustache|marko|liquid|twig|jinja2?|j2|tpl|ejs|erb|njk|nunjucks|peb|pebble|volt|xslt?|cshtml|ftlh?|vm|vtl|pug|jade|cfml?|haml|slim|vue|riot|tag|svelte|jsx|tsx|xhtml|jsf|aspx|ascx|master)$/i;
 const SCRIPT = /\.(js|mjs|cjs|ts)$/i;
 const STYLE = /\.(css|scss|less)$/i;
 

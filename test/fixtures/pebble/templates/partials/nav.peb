@@ -1,0 +1,1 @@
+<nav><a href="/" class="{% if section equals 'shop' %}current{% endif %}">Shop</a><a href="/cart">Cart</a></nav>

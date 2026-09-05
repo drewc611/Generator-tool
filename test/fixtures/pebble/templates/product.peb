@@ -1,0 +1,14 @@
+{% extends "base.peb" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+  {% autoescape %}
+  <h1>{{ product.name }}</h1>
+  <p class="price">{{ product.price | numberformat("#.00") }}</p>
+  {% parallel %}
+  <ul>{% for tag in product.tags %}<li class="{% if loop.index is even %}even{% endif %}">{{ tag }}</li>{% endfor %}</ul>
+  {% endparallel %}
+  {% if product.tags contains "sale" %}<b>On sale</b>{% endif %}
+  <p>{{ product.tagline ?: product.name }}</p>
+  {% filter upper %}<p>shout</p>{% endfilter %}
+  {% endautoescape %}
+{% endblock %}
