@@ -49,7 +49,7 @@ export const DIALECTS = {
       return null;
     },
     text: (n) => (/^(?:data-)?ng-bind$/.test(n) ? "expr" : /^(?:data-)?ng-bind-template$/.test(n) ? "template" : null),
-    event: (n) => /^(?:data-)?ng-(click|change|submit|blur|focus|keyup|keydown|mouseover|mouseout|dblclick)$/.exec(n)?.[1] ?? null,
+    event: (n) => /^(?:data-)?ng-(click|change|input|submit|blur|focus|keyup|keydown|keypress|mouseover|mouseout|mouseenter|mouseleave|mousedown|mouseup|mousemove|dblclick|paste|copy|cut)$/.exec(n)?.[1] ?? null,
     html: (n) => n === "ng-bind-html",
     // ng-show and ng-hide are the same directive with the test inverted.
     show: (n) => (n === "ng-show" ? "show" : n === "ng-hide" ? "hide" : false),

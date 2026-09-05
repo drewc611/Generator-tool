@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy eight features across ninety four phases. The statuses are
+Five hundred and seventy nine features across ninety five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-774 tests, on Node 18, 20 and 22, and on Windows in CI.
+782 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2173,14 +2173,20 @@ Mithril has no template; its markup is a tree of m() calls, so there is nothing 
 the browser a legacy front end was written for is gone, and some of what it called went with it: document.all, Web SQL, mutation events, showModalDialog, attachEvent, the application cache, event.keyCode, escape(), getYear, synchronous XMLHttpRequest, the unload event, the document.domain setter, vendor prefixed names, user agent sniffing and the rest of a table of twenty one. A script that calls one still parses and still ships, and fails or degrades only when it runs, which is the worst time to learn it. dsp-platform reads every script and page for each, locates the call by file and line, and reports it with the status the specification or the engines published (removed with the year the last major engine dropped it, deprecated, strict mode error, prefixed, never standard, reduced) and the API the same documents name as its replacement; a current API is never a finding, a look alike name is not one, and arguments are never captured because what a page wrote to a database or passed to escape() is a value the report must not repeat. PLATFORM.md leads with what fails today in a current browser. Nothing is rewritten, because whether a fallback for an old engine still matters is a decision about who the port's users are. test/platform.test.js holds it.
 
 
+## Phase 95: control flow as tags
+
+**579. input-marko lowers Marko onto the dialect, and the port README describes every report** 🔨
+Marko writes control flow as tags and bindings as bare attributes, and every one has an exact spelling in the dialect: <if>, <else-if> and <else> become ng-if blocks with the chain negated the way the runtime evaluates it, <for|row, i| of=rows> becomes ng-repeat with track by $index and the index renamed in its body, <for|k, v| in=obj> the (key, value) form, a bare attribute value becomes ng-class, ng-style, ng-disabled, ng-href or ng-attr as its name decides, on-click("pick", row) becomes ng-click with its method and arguments, ${expr} an interpolation and $!{expr} bound html, and <section.card#main> carries its class and id on the tag name. The class in the file or component.js beside it supplies the inputs, the input.x reads rewritten to the input itself, and the outputs from this.emit; fetch calls reach the API surface. The concise indentation syntax, a dynamic tag, <include>, <await>, <macro>, a spread and an inline $ statement are named rather than approximated. The dialect's event list grows to the events AngularJS itself shipped plus input, which three readers already spelled ng-input with nowhere for it to land. Beside it a sanitation pass: PORT_README.md described twelve of the ninety two reports a run can write; it now describes every one, and a hygiene gate fails the suite when a plugin writes a report the README cannot name. test/marko.test.js holds the reader and test/hygiene.test.js the index.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 531 |
+| new in this branch | 532 |
 | planned | 3 |
-| total | 578 |
+| total | 579 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

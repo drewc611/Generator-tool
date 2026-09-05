@@ -1,0 +1,37 @@
+import { format } from "../../util.js";
+
+class {
+  onCreate(input) {
+    this.state = { q: "", busy: false };
+    fetch("/api/users").then(() => {});
+  }
+  pick(user) { this.emit("pick", user); }
+  save() { this.emit("save", this.state.q); }
+}
+
+style {
+  .card { padding: 1rem; }
+}
+
+<section.card>
+  <h2>${input.title}</h2>
+  <input type="search" value=state.q on-input("update")/>
+  <if(input.users.length)>
+    <ul>
+      <for|user, i| of=input.users>
+        <li class=(user.active ? "on" : "") on-click("pick", user)>
+          <span>${i}</span>
+          <user-badge user=user on-clear("save")/>
+          $!{user.html}
+        </li>
+      </for>
+    </ul>
+  </if>
+  <else-if(state.busy)>
+    <p>Loading</p>
+  </else-if>
+  <else>
+    <p class="empty">No users</p>
+  </else>
+  <button disabled=state.busy on-click("save")>Save</button>
+</section>

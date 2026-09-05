@@ -970,9 +970,17 @@ jobs:
           grep -q "IndexedDB" pf-out/PLATFORM.md || { echo "the replacement was not named"; exit 1; }
           rm -rf pf-out
 
+      - name: the marko reader lowers control tags and bare bindings onto React
+        run: |
+          node src/cli.js run --src test/fixtures/marko --out mk-out
+          test -f mk-out/src/features/UserCard/UserCard.jsx || { echo "the Marko component was not ported"; exit 1; }
+          grep -q "onClear=" mk-out/src/features/UserCard/UserCard.jsx || { echo "the child component's event was not wired"; exit 1; }
+          grep -q "ng-" mk-out/src/features/UserCard/UserCard.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          rm -rf mk-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "578" ]; then
-            echo "ROADMAP.md holds $count entries and claims 578"; exit 1
+          if [ "$count" != "579" ]; then
+            echo "ROADMAP.md holds $count entries and claims 579"; exit 1
           fi

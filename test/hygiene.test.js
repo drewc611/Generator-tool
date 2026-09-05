@@ -131,3 +131,14 @@ test("the README's size table holds to the counted tool, within three percent", 
   near(Number(size[1]), (await bytes("src")) / 1024, "src in KB");
   near(Number(size[2]), (await bytes("plugins")) / 1048576, "plugins in MB");
 });
+
+test("the port README can describe every report a plugin writes", async () => {
+  const { describe } = await import("../plugins/output-readme/index.js");
+  const files = await walk(join(ROOT, "plugins"));
+  const missing = new Set();
+  for (const f of files) {
+    const text = await readFile(f, "utf8");
+    for (const m of text.matchAll(/ctx\.write\("([A-Z_]+\.md)"/g)) if (!describe(m[1]) && m[1] !== "PORT_NOTES.md" && m[1] !== "PORT_README.md") missing.add(m[1]);
+  }
+  assert.deepEqual([...missing].sort(), [], "every report the run can write has a line in output-readme saying what it is");
+});
