@@ -242,6 +242,7 @@ export function lowerAttrs(head, scope) {
   if (head.list) {
     for (const m of head.list.matchAll(/([\w:-]+)\s*=\s*("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s]+)/g)) entries.push([m[1], m[2]]);
   }
+  if (head.entries) entries.push(...head.entries);
   const classes = [...head.classes]; let id = head.id;
   const parts = [];
   // data: { id: 1 } is data-id="1", as Haml renders it.
@@ -271,24 +272,35 @@ export function lowerAttrs(head, scope) {
 }
 
 /** Lower a tree onto the dialect; `resolve(name)` returns a partial's text or null. */
-export function lowerTree(root, scope = freshScope(), resolve = () => null, depth = 0) {
+/** Haml's line grammar: what a comment, a filter, a text line, an output line and a code line look like. */
+export const HAML = {
+  comment: (line) => line.startsWith("-#") || line.startsWith("/") || line.startsWith("!!!"),
+  filter: (line) => (line.startsWith(":") ? line.split(/\s/)[0] : null),
+  text: (line) => (line.startsWith("\\") ? line.slice(1) : null),
+  output: (line) => { const m = /^(!=|&=|=|~)\s*([\s\S]*)$/.exec(line); return m ? { code: m[2], html: m[1] === "!=" } : null; },
+  code: (line) => (line.startsWith("-") ? line.slice(1).trim() : null),
+  parseTag,
+  parseTree,
+};
+
+export function lowerTree(root, scope = freshScope(), resolve = () => null, depth = 0, grammar = HAML) {
   const out = [];
   const lowerChildren = (children, isRoot = false) => {
     for (let idx = 0; idx < children.length; idx += 1) {
       if (isRoot && idx > 0) out.push("\u0000NL\u0000");
       const node = children[idx];
       const line = node.line;
-      if (line.startsWith("-#") || line.startsWith("/") || line.startsWith("!!!")) continue;
-      if (line.startsWith(":")) { scope.note(`The filter \`${line.split(/\s/)[0]}\` transformed its block on the server; the block was not carried.`); continue; }
-      if (line.startsWith("\\")) { out.push(lowerText(line.slice(1), scope)); continue; }
+      if (grammar.comment(line)) continue;
+      const filter = grammar.filter(line);
+      if (filter) { scope.note(`The filter \`${filter}\` transformed its block on the server; the block was not carried.`); continue; }
+      const text = grammar.text(line);
+      if (text !== null) { out.push(lowerText(text, scope)); for (const c of node.children) out.push(lowerText(` ${c.line}`, scope)); continue; }
       if (line.startsWith("<")) { out.push(lowerText(line, scope)); lowerChildren(node.children); continue; }
-      if (line.startsWith("=") || line.startsWith("!=") || line.startsWith("&=") || line.startsWith("~")) {
-        const html = line.startsWith("!=");
-        out.push(expression(line.replace(/^(!=|&=|=|~)\s*/, ""), html, node, depth));
-        continue;
-      }
-      if (line.startsWith("-")) {
-        const code = line.slice(1).trim();
+      const output = grammar.output(line);
+      if (output) { out.push(expression(output.code, output.html, node, depth)); continue; }
+      const codeLine = grammar.code(line);
+      if (codeLine !== null) {
+        const code = codeLine;
         if (control(code, node, children, () => idx, (v) => { idx = v; }, depth)) continue;
         const assign = /^([a-z_]\w*)\s*(\|\|)?=\s*([\s\S]+)$/.exec(code);
         if (assign) {
@@ -304,11 +316,12 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
         continue;
       }
       // An element.
-      const head = parseTag(line);
-      if (!head) { scope.note(`\`${line.slice(0, 40)}\` could not be read as a tag; it was kept as text.`); out.push(lowerText(line, scope)); continue; }
+      const head = grammar.parseTag(line);
+      if (!head) { if (grammar === HAML && !/^[%.#]/.test(line)) { out.push(lowerText(line, scope)); continue; } scope.note(`\`${line.slice(0, 40)}\` could not be read as a tag; it was kept as text.`); out.push(lowerText(line, scope)); continue; }
       const attrs = lowerAttrs(head, scope);
       if (VOID_ELEMENTS.has(head.tag) || head.selfClose) { out.push(`<${head.tag}${attrs}>`); continue; }
       out.push(`<${head.tag}${attrs}>`);
+      if (head.mode === "inline") { lowerChildren([{ line: head.rest, children: node.children, indent: node.indent + 1 }]); out.push(`</${head.tag}>`); continue; }
       if (head.mode === "code") out.push(expression(head.rest, false, node, depth));
       else if (head.mode === "html") out.push(expression(head.rest, true, node, depth));
       else if (head.rest) out.push(lowerText(head.rest, scope));
@@ -430,7 +443,7 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
     if (found == null) { scope.note(`render "${name}" names a partial this run does not hold; the page stands without it.`); return ""; }
     const previousDir = scope.dir;
     scope.dir = found.dir ?? previousDir;
-    out.push(lowerTree(parseTree(found.body), scope, resolve, depthNow + 1));
+    out.push(lowerTree(grammar.parseTree(found.body), scope, resolve, depthNow + 1, grammar));
     scope.dir = previousDir;
     return "";
   };
@@ -485,69 +498,75 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
   return out.join("").split("\u0000NL\u0000").filter(Boolean).join("\n");
 }
 
-export default {
-  name: "input-haml",
-  version: "0.1.0",
-  class: "input",
-  setup({ on, log }) {
-    on("extract", async (ctx) => {
-      const files = ctx.sources.files.filter((f) => /\.haml$/i.test(f.rel));
-      if (!files.length) return log.debug("no Haml templates");
-      const notes = [];
-      const note = (t) => { if (!notes.includes(t)) notes.push(t); };
-      const bodies = new Map();
-      for (const f of files) bodies.set(f.rel.replace(/^\.\//, ""), await readFile(f.path, "utf8").catch(() => { note(`${f.rel} could not be read; it is not in the port.`); return ""; }));
-      const bare = (name) => String(name).replace(/^(\.\.?\/)+/, "").replace(/^(?:app\/)?views\//, "").replace(/\.html\.haml$|\.haml$/i, "");
-      const keys = [...bodies.keys()];
-      // A partial is asked for as "shared/nav" and lives at shared/_nav.html.haml; a bare "form" lives beside the view that renders it.
-      const resolve = (name, dir = "") => {
-        const parts = bare(name).split("/");
-        const underscored = [...parts.slice(0, -1), `_${parts[parts.length - 1]}`].join("/");
-        const beside = parts.length === 1 && dir ? keys.find((k) => bare(k) === `${dir}/${underscored}`) : null;
-        const k = beside ?? resolveTemplate(keys, underscored, bare) ?? resolveTemplate(keys, name, bare);
-        return k ? { body: bodies.get(k), dir: bare(k).split("/").slice(0, -1).join("/") } : null;
-      };
-      const layoutKey = keys.find((k) => /(^|\/)layouts\/application\.html\.haml$/.test(k));
-      let count = 0;
-      for (const [key, text] of bodies) {
-        if (/(^|\/)layouts\//.test(key)) { note(`${key} is a layout the pages render inside; it is composed into each of them rather than ported as a screen of its own.`); continue; }
-        const file = files.find((f) => f.rel.replace(/^\.\//, "") === key);
-        const scope = freshScope(note);
-        scope.dir = bare(key).split("/").slice(0, -1).join("/");
-        let template = lowerTree(parseTree(text), scope, resolve);
-        const partial = /(^|\/)_[^/]+$/.test(key);
-        if (layoutKey && !partial) {
-          const layoutScope = freshScope(note);
-          layoutScope.yieldMarker = "\u0000PAGE\u0000";
-          layoutScope.aliases = scope.aliases;
-          layoutScope.dir = bare(layoutKey).split("/").slice(0, -1).join("/");
-          const shell = lowerTree(parseTree(bodies.get(layoutKey)), layoutScope, resolve);
-          template = shell.includes("\u0000PAGE\u0000") ? shell.replace("\u0000PAGE\u0000", () => template) : template;
-          if (layoutScope.twoWay) scope.twoWay = true;
+/** A Rails view reader for one indentation dialect: the layout composed, partials resolved, screens pushed. */
+export function railsReader({ name, extension, grammar, readBy, origin, label }) {
+  const ext = new RegExp(`\\.${extension}$`, "i");
+  return {
+    name,
+    version: "0.1.0",
+    class: "input",
+    setup({ on, log }) {
+      on("extract", async (ctx) => {
+        const files = ctx.sources.files.filter((f) => ext.test(f.rel));
+        if (!files.length) return log.debug(`no ${label} templates`);
+        const notes = [];
+        const note = (t) => { if (!notes.includes(t)) notes.push(t); };
+        const bodies = new Map();
+        for (const f of files) bodies.set(f.rel.replace(/^\.\//, ""), await readFile(f.path, "utf8").catch(() => { note(`${f.rel} could not be read; it is not in the port.`); return ""; }));
+        const bare = (n) => String(n).replace(/^(\.\.?\/)+/, "").replace(/^(?:app\/)?views\//, "").replace(new RegExp(`\\.html\\.${extension}$|\\.${extension}$`, "i"), "");
+        const keys = [...bodies.keys()];
+        // A partial is asked for as "shared/nav" and lives at shared/_nav; a bare "form" lives beside the view that renders it.
+        const resolve = (n, dir = "") => {
+          const parts = bare(n).split("/");
+          const underscored = [...parts.slice(0, -1), `_${parts[parts.length - 1]}`].join("/");
+          const beside = parts.length === 1 && dir ? keys.find((k) => bare(k) === `${dir}/${underscored}`) : null;
+          const k = beside ?? resolveTemplate(keys, underscored, bare) ?? resolveTemplate(keys, n, bare);
+          return k ? { body: bodies.get(k), dir: bare(k).split("/").slice(0, -1).join("/") } : null;
+        };
+        const layoutKey = keys.find((k) => new RegExp(`(^|/)layouts/application\\.html\\.${extension}$`).test(k));
+        let count = 0;
+        for (const [key, text] of bodies) {
+          if (/(^|\/)layouts\//.test(key)) { note(`${key} is a layout the pages render inside; it is composed into each of them rather than ported as a screen of its own.`); continue; }
+          const file = files.find((f) => f.rel.replace(/^\.\//, "") === key);
+          const scope = freshScope(note);
+          scope.dir = bare(key).split("/").slice(0, -1).join("/");
+          let template = lowerTree(grammar.parseTree(text), scope, resolve, 0, grammar);
+          const partial = /(^|\/)_[^/]+$/.test(key);
+          if (layoutKey && !partial) {
+            const layoutScope = freshScope(note);
+            layoutScope.yieldMarker = "\u0000PAGE\u0000";
+            layoutScope.aliases = scope.aliases;
+            layoutScope.dir = bare(layoutKey).split("/").slice(0, -1).join("/");
+            const shell = lowerTree(grammar.parseTree(bodies.get(layoutKey)), layoutScope, resolve, 0, grammar);
+            template = shell.includes("\u0000PAGE\u0000") ? shell.replace("\u0000PAGE\u0000", () => template) : template;
+            if (layoutScope.twoWay) scope.twoWay = true;
+          }
+          const body = /<body\b[^>]*>([\s\S]*)<\/body\s*>/i.exec(template);
+          if (body) template = body[1];
+          template = template.trim();
+          if (!template) continue;
+          const selector = (bare(key).replace(/(^|\/)_/g, "$1") || "page").split("/").join("-").toLowerCase().replace(/[^\w-]/g, "-");
+          ctx.screens.push({
+            selector,
+            className: pascal(selector),
+            file: file?.rel ?? key,
+            inputs: readInputs(template),
+            outputs: [],
+            template,
+            templateOrigin: layoutKey && !partial ? `${origin}, composed into its layout and lowered` : `${origin}, lowered`,
+            usesNgIf: /ng-if/.test(template),
+            usesNgFor: /ng-repeat/.test(template),
+            usesTwoWay: Boolean(scope.twoWay),
+            rxjs: [],
+            readBy,
+          });
+          count += 1;
         }
-        const body = /<body\b[^>]*>([\s\S]*)<\/body\s*>/i.exec(template);
-        if (body) template = body[1];
-        template = template.trim();
-        if (!template) continue;
-        const selector = (bare(key).replace(/(^|\/)_/g, "$1") || "page").split("/").join("-").toLowerCase().replace(/[^\w-]/g, "-");
-        ctx.screens.push({
-          selector,
-          className: pascal(selector),
-          file: file?.rel ?? key,
-          inputs: readInputs(template),
-          outputs: [],
-          template,
-          templateOrigin: layoutKey && !partial ? "a Haml template, composed into its layout and lowered" : "a Haml template, lowered",
-          usesNgIf: /ng-if/.test(template),
-          usesNgFor: /ng-repeat/.test(template),
-          usesTwoWay: Boolean(scope.twoWay),
-          rxjs: [],
-          readBy: "haml",
-        });
-        count += 1;
-      }
-      for (const n of notes) ctx.unverified(n);
-      log.info(`${count} Haml template(s) lowered onto the dialect`);
-    });
-  },
-};
+        for (const n of notes) ctx.unverified(n);
+        log.info(`${count} ${label} template(s) lowered onto the dialect`);
+      });
+    },
+  };
+}
+
+export default railsReader({ name: "input-haml", extension: "haml", grammar: HAML, readBy: "haml", origin: "a Haml template", label: "Haml" });

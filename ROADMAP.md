@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and twelve features across one hundred and twenty eight phases. The statuses are
+Six hundred and thirteen features across one hundred and twenty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2363,14 +2363,19 @@ Haml was the template language of a generation of Rails applications: a tree wri
 **612. The Haml reader reviewed on its own, ten defects fixed with the inputs that exposed them** 🔨
 The review cadence held for the tenth time. A line of prose under a tag was parsed as a tag, so every multi line paragraph became a div per line; a line that does not begin a tag is text. A sentence ending in a comma ran onto the next line as if it were a Ruby argument list; only a line of Ruby continues on a comma. A block helper other than a form or an each (= link_to ... do, content_tag do) dropped its indented body and printed the do; link_to and content_tag wrap their body in the element they render and any other block helper keeps its body and is named. empty? lowered unbracketed everywhere, so !x.empty? read as (!x)... and inverted the branch; it is bracketed except as the whole test, which the byte identity gate holds. A form field's arguments were cut at a bracket that was never opened, so a select over options_for_select(sizes) lost its close; the argument list reads to its own bracket, and fields_for nests its model. A predicate's receiver stopped at a bracket, so foo(x).present? and items[0].blank? became syntax errors; the receiver is found by walking back over balanced brackets, and to_i, to_f and capitalize ride the same walk. A bare partial name resolved by path suffix across the whole tree, so products/new could be composed with orders' form; a bare name is found beside the view that renders it first, and a partial that renders itself is named where the reader stops following. A postfix if or unless passed into the binding as invalid JavaScript; it wraps the line in the container it means, and &:name is the block that reads one method. A nested data: hash became one attribute holding an object; it is the data-* attributes Haml renders. And the lines into a tree by indentation that Pug and Haml each wrote are one, in dsp-ir/markup.js, each dialect saying only when a line runs on, held to one home. Each fix carries the input that exposed it in test/haml.test.js.
 
+## Phase 129: one lowering, two Rails dialects
+
+**613. input-slim reads Slim on the Haml lowering, the line grammar the only thing its own** 🔨
+Slim is Haml's terser successor in the Rails world: the same tree written as indentation and the same Ruby in it, with the tag's own name where Haml writes %, attributes as name=value pairs after the tag or inside brackets, | and ' for text, == for unescaped output, / and /! for comments, tag: for an inline child, and javascript: or css: for an embedded block. The Haml lowering now takes a line grammar, what a comment, a filter, a text line, an output line, a code line and a tag look like, and the plugin body that composes the layout around a page, resolves partials beside the view and pushes screens is one factory both readers call, so input-slim is a line grammar and nothing else: a tag parser that reads the tag's own name with its classes and id, its attributes bare or wrapped with a value that may hold spaces inside brackets, a splat named, = and == output, : an inline child and / a self close, and a parse of the tree in which a bracket left open or a Ruby line ending in a comma runs on. Everything else, the control lines, the loops, the layout's yield, the partials, the form and link helpers, the Ruby spelled as JavaScript and every note, is the Haml reader's, which is how the two dialects cannot drift apart. .slim reaches the scan and the census, and the same product page written in Slim is the twelfth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/slim.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 565 |
+| new in this branch | 566 |
 | planned | 3 |
-| total | 612 |
+| total | 613 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

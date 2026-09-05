@@ -1,0 +1,12 @@
+h1 = @product.name
+- if @product.stock == 0
+  p.out Sold out
+- elsif @product.stock < 5
+  p.low Only #{@product.stock} left
+- else
+  p In stock
+ul
+  - @product.tags.each do |tag|
+    li = tag
+  - if @product.tags.empty?
+    li.none No tags
