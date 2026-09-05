@@ -74,7 +74,41 @@ test("a run composes every page into layout.ejs through the nav partial, inlines
     const jsx = await readFile(join(run.out, "src/features/ProductsShow/ProductsShow.jsx"), "utf8");
     assert.match(jsx, /dangerouslySetInnerHTML=\{\{ __html: product\.descriptionHtml \}\}/);
     assert.match(jsx, /related\.map\(\(related_item, \$index\)/);
-    assert.ok(run.ctx.report.unverified.some((n) => /layout\.ejs is the layout every page renders inside/.test(n)));
+    assert.ok(run.ctx.report.unverified.some((n) => /layout\.ejs is a layout every page renders inside/.test(n)));
+  } finally {
+    await run.cleanup();
+  }
+});
+
+test("the fifteenth review pass: nested indexes through $parent, computed includes named, whole locals, nested counted loops, an unknown opener owns its closer, a rooted include, a cycle cut, a destructured for...of", () => {
+  const notes = []; const note = (n) => notes.push(n);
+  const held = { "views/partials/card": { key: "views/partials/card.ejs", text: `<b><%= item.a %> <%= x %></b>` }, "views/self": { key: "views/self.ejs", text: `<p>a</p><%- include('self') %>` } };
+  const resolve = (name, from) => { const rooted = name.startsWith("/"); const rel = rooted ? ["views"] : from.split("/").slice(0, -1); for (const p of name.replace(/^\/+/, "").replace(/\.ejs$/, "").split("/")) { if (p === "..") rel.pop(); else if (p !== ".") rel.push(p); } return held[rel.join("/")] ?? null; };
+  const L = (src, from = "views/products/show.ejs") => lower(src, note, resolve, from);
+  assert.equal(L(`<% rows.forEach(function (row, i) { %><% row.cells.forEach(function (cell, j) { %><td><%= i %>:<%= j %></td><% }); %><i><%= i %></i><% }); %>`),
+    `<ng-container ng-repeat="row in rows track by $index"><ng-container ng-repeat="cell in row.cells track by $index"><td>{{ $parent.$index }}:{{ $index }}</td></ng-container><i>{{ $index }}</i></ng-container>`, "an outer index read inside an inner loop reaches it through $parent");
+  assert.equal(L(`<%- include('partials/' + name) %><%- include(partial) %>`), "", "a computed include is removed");
+  assert.ok(notes.some((n) => /`include\(\.\.\.\)` with a computed path/.test(n)));
+  assert.equal(L(`<%- include('../partials/card', { item: { a: b, c: d }, x: fn(p, q) }) %>`), `<b>{{ ({ a: b, c: d }).a }} {{ (fn(p, q)) }}</b>`, "a local with a nested literal or a call with commas is whole");
+  assert.ok(notes.some((n) => /bound `item`, `x` for the include/.test(n)) && !notes.some((n) => /`c`/.test(n)));
+  assert.equal(L(`<% for (let i = 0; i < a.length; i++) { %><% for (let j = 0; j < b.length; j++) { %><td><%= a[i] %><%= b[j] %></td><% } %><% } %>`),
+    `<ng-container ng-repeat="a_item in a track by $index"><ng-container ng-repeat="b_item in b track by $index"><td>{{ a_item }}{{ b_item }}</td></ng-container></ng-container>`, "nested counted loops each find their own closer and leave no marker");
+  assert.equal(L(`<% if (a) { %><% while (x) { %>w<% } %><p>after</p><% } %>`), `<ng-container ng-if="a">w<p>after</p></ng-container>`, "a dropped opener owns its closer, so the enclosing condition still holds what follows");
+  assert.equal(L(`<%- include('/partials/card', { item, x: 1 }) %>`), `<b>{{ item.a }} {{ 1 }}</b>`, "a rooted include resolves against the views root and shorthand binds the name to itself");
+  assert.equal(L(`<%- include('self') %>`, "views/page.ejs"), `<p>a</p>`, "an include cycle is cut at the repeat");
+  assert.ok(notes.some((n) => /includes a template already on the include chain; the cycle was cut/.test(n)));
+  assert.equal(L(`<% for (const [k, v] of Object.entries(o)) { %><dt><%= k %></dt><dd><%= v %></dd><% } %>`), `<ng-container ng-repeat="(k, v) in o"><dt>{{ k }}</dt><dd>{{ v }}</dd></ng-container>`);
+});
+
+test("a layout is the file whose <%- body %> is the page, whatever it is called", async () => {
+  const run = await runPipeline({ src: join(ROOT, "test/fixtures/ejs-layouts") });
+  try {
+    assert.equal(run.error, null);
+    assert.deepEqual(run.ctx.screens.map((s) => s.selector), ["index"], "layouts/main.ejs is chrome, not a screen");
+    const index = run.ctx.screens[0];
+    assert.match(index.template, /^<header>Main<\/header>/);
+    assert.ok(!/\u0000/.test(index.template), "no sentinel reaches the template");
+    assert.deepEqual(index.composed, ["views/layouts/main.ejs"]);
   } finally {
     await run.cleanup();
   }

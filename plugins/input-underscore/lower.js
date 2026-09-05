@@ -56,7 +56,7 @@ export function lowerUnderscore(source, note = () => {}) {
       const list = each ? each[1] : forEach[1];
       // The dialect spells the index $index; the body's reads of its own name are spelled so when the loop closes.
       out.push(`<ng-container ng-repeat="${loop[2]} in ${attrSafe(list)}${loop[3] ? " track by $index" : ""}">`);
-      stack.push({ kind: "each", index: loop[3] ?? null, opener: out.length - 1 });
+      stack.push({ kind: "each", index: loop[3] ?? null, opener: out.length - 1, inner: [] });
       continue;
     }
 
@@ -69,6 +69,7 @@ export function lowerUnderscore(source, note = () => {}) {
 
     const elseIf = /^\}\s*else\s+if\s*\(([\s\S]+)\)\s*\{$/.exec(code);
     const elseBare = /^\}\s*else\s*\{$/.exec(code);
+    if ((elseIf || elseBare) && stack.length && stack[stack.length - 1].kind === "plain") continue;
     if ((elseIf || elseBare) && stack.length && stack[stack.length - 1].kind === "if") {
       const frame = stack[stack.length - 1];
       const nots = frame.tried.map((c) => `!(${c})`);
@@ -82,16 +83,29 @@ export function lowerUnderscore(source, note = () => {}) {
     if (/^\}\s*\)?;?$/.test(code)) {
       if (stack.length) {
         const frame = stack.pop();
+        // A construct the lowering dropped owns its closer; the closer closes nothing the lowering opened.
+        if (frame.kind === "plain") continue;
         if (frame.index) {
+          // The index inside the loop's own span is $index; inside a loop nested within it, the dialect reaches the
+          // outer index through $parent, one per level of nesting.
           const safe = frame.index.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
           const spans = /\{\{[\s\S]*?\}\}|\bng-[\w-]+="[^"]*"/g;
-          for (let i = frame.opener + 1; i < out.length; i += 1) out[i] = out[i].replace(spans, (span) => span.replace(new RegExp(`(?<![\\w.$])${safe}(?![\\w$])`, "g"), "$index"));
+          const depthAt = (i) => frame.inner.filter((r) => i > r.start && i < r.end).reduce((d, r) => Math.max(d, r.depth), 0);
+          for (let i = frame.opener + 1; i < out.length; i += 1) {
+            const spelled = `${"$parent.".repeat(depthAt(i))}$index`;
+            out[i] = out[i].replace(spans, (span) => span.replace(new RegExp(`(?<![\\w.$])${safe}(?![\\w$])`, "g"), spelled));
+          }
         }
         out.push("</ng-container>");
+        // The closed loop's range, and every loop nested in it one level deeper, is known to the loop that encloses it.
+        const parent = [...stack].reverse().find((f) => f.kind === "each");
+        if (parent && frame.kind === "each") parent.inner.push({ start: frame.opener, end: out.length - 1, depth: 1 }, ...frame.inner.map((r) => ({ ...r, depth: r.depth + 1 })));
       }
       continue;
     }
 
+    // An opener the lowering does not know (while, switch, try, a destructuring for) owns the closer that follows it.
+    if (/\{$/.test(code)) stack.push({ kind: "plain" });
     note(`A template construct could not be carried across and was removed: \`<% ${code} %>\`.`);
   }
   out.push(text.slice(last));

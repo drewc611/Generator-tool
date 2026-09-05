@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and twenty one features across one hundred and thirty seven phases. The statuses are
+Six hundred and twenty two features across one hundred and thirty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2408,14 +2408,19 @@ A review pass over input-django, each finding fixed with the input that exposed 
 **621. input-ejs reads EJS on the underscore lowering, the escaping the right way round and the includes inlined with their locals bound** 🔨
 EJS is the template language of a decade of Express apps: underscore's delimiters with the escaping the other way round, `<%= %>` escaped and `<%- %>` raw, plus `<%# %>` comments, `<%_ _%>` and `-%>` whitespace control, `<%%` for a literal `<%`, and `include('path', { locals })` that inlines another file with names bound. Until now an .ejs file was read by input-underscore with underscore's meaning, so every escaped output was warned about as raw and every raw output interpolated as text. input-ejs claims .ejs, rewrites the EJS spellings onto the shapes the underscore lowering reads and hands the result over: the comments are gone, the whitespace markers are read past, a literal `<%` survives the lowering, escaped output is the interpolation it is with nothing to warn about, raw output is bound html, the same trust decision under every target's name, and an include is inlined relative to the including file with each local's reads replaced by what it named and a missing one named. The control flow is JavaScript and the underscore lowering learned the shapes EJS authors write, for both dialects: a forEach with an arrow as well as a function, a list that is a call such as `Object.keys(o)`, `Object.entries(o).forEach(([k, v]) =>` as the (key, value) loop, and an index argument as the dialect's `$index`, named where the body reads it by its own name; the reader spells `for...of` as a forEach, `for...in` as a loop over the keys, and a counted `for (i = 0; i < xs.length; i++)` as a loop over the list with the body's `xs[i]` reads as the item, named. `<%- body %>` is the layout's slot: a layout.ejs beside the views is composed around every page that is not a layout or a partial, counted as composed by the census, and partials are screens besides. EJS is the fifteenth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/ejs.test.js holds it.
 
+## Phase 138: the fifteenth review pass
+
+**622. The EJS reader read again, and the underscore lowering with it** 🔨
+A review pass over input-ejs and the underscore lowering it rides, each finding fixed with the input that exposed it. When a loop with an index closed, every read of that index inside it was spelled `$index`, including reads inside an inner loop, so an outer index read from a nested loop silently became the inner one; the inner loop's range is known to the loop that encloses it, and the outer index inside it is reached through `$parent`, one per level of nesting. An include whose path was computed reached the lowering as an interpolation and its rows became text; it is removed and named. Locals were split at every comma and brace, so a nested literal or a call with commas was cut and its inner keys reported as bound; they are split at the top level and a key read before its first colon, and a shorthand local binds its own name. A nested counted loop's marker was passed over and its bytes reached the emitted markup; each counted loop finds the closer that matches it by depth, innermost first. A dropped opener such as `while` still let its closer pop the enclosing container, so what followed rendered unconditionally; a dropped opener owns its closer. The layout was only ever `layout.ejs`, so `layouts/main.ejs` became a screen carrying the body sentinel; the layout is whichever file renders `<%- body %>`, two are named and one chosen, and the layout is lowered once per run rather than once per page. An include path beginning with `/` resolved against the including file and was reported as not held; it is against the views root. An include cycle was cut only by depth, six copies deep and with the wrong reason; the chain is known and the cycle is named where it repeats. And `for (const [k, v] of Object.entries(o))`, the commonest EJS spelling of an object loop, was dropped; it is the (key, value) loop. test/ejs.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 574 |
+| new in this branch | 575 |
 | planned | 3 |
-| total | 621 |
+| total | 622 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

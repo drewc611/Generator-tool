@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { attrSafe, readInputs, resolveTemplate } from "../dsp-ir/text.js";
+import { attrSafe, readInputs, resolveTemplate, splitCommas } from "../dsp-ir/text.js";
 import { lowerUnderscore } from "../input-underscore/lower.js";
 
 /**
@@ -28,7 +28,7 @@ import { lowerUnderscore } from "../input-underscore/lower.js";
 const PAGE_MARK = "\u0000EJS_BODY\u0000";
 
 /** EJS onto the underscore lowering's spellings; includes inlined through `resolve(path, from)`. */
-export function ejsToUnderscore(source, note = () => {}, resolve = () => null, from = "", depth = 0) {
+export function ejsToUnderscore(source, note = () => {}, resolve = () => null, from = "", chain = []) {
   let text = String(source ?? "");
   text = text.replace(/<%%/g, "\u0001LT\u0001").replace(/%%>/g, "\u0001GT\u0001");
   text = text.replace(/<%#[\s\S]*?%>/g, "");
@@ -44,34 +44,52 @@ export function ejsToUnderscore(source, note = () => {}, resolve = () => null, f
     return `<%- ${expr} %>`;
   });
   // The JavaScript loops EJS authors write, onto the callback shapes the lowering reads.
-  text = text.replace(/<%\s*for\s*\(\s*(?:const|let|var)\s+([\w$]+)\s+of\s+([\s\S]+?)\s*\)\s*\{\s*%>/g, (m, item, list) => `<% ${list.trim()}.forEach(function (${item}) { %>`);
+  text = text.replace(/<%\s*for\s*\(\s*(?:const|let|var)\s+(\[\s*[\w$]+\s*,\s*[\w$]+\s*\]|[\w$]+)\s+of\s+([\s\S]+?)\s*\)\s*\{\s*%>/g, (m, item, list) => `<% ${list.trim()}.forEach(function (${item.replace(/\s+/g, "")}) { %>`);
   text = text.replace(/<%\s*for\s*\(\s*(?:const|let|var)\s+([\w$]+)\s+in\s+([\s\S]+?)\s*\)\s*\{\s*%>/g, (m, key, obj) => `<% Object.keys(${obj.trim()}).forEach(function (${key}) { %>`);
   text = text.replace(/<%\s*for\s*\(\s*(?:let|var)\s+([\w$]+)\s*=\s*0\s*;\s*\1\s*<\s*([\w$.]+)\.length\s*;\s*(?:\1\+\+|\+\+\1|\1\s*\+=\s*1)\s*\)\s*\{\s*%>/g, (m, i, list) => {
     note(`\`for (${i} = 0; ${i} < ${list}.length; ${i}++)\` counted over a list; the port repeats over the list itself, and a read of \`${list}[${i}]\` in the body is the item.`);
     return `<% ${list}.forEach(function (${list.replace(/\W/g, "_")}_item, ${i}) { %>\u0001ITEM:${list}:${i}\u0001`;
   });
-  // The body of a counted loop reads list[i]; that is the item the loop hands over.
-  text = text.replace(/\u0001ITEM:([\w$.]+):([\w$]+)\u0001([\s\S]*?)(<%\s*\}\s*\)?;?\s*%>)/g, (m, list, i, body, close) => {
-    const safe = list.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return body.replace(new RegExp(`${safe}\\[${i}\\]`, "g"), `${list.replace(/\W/g, "_")}_item`) + close;
-  });
+  // The body of a counted loop reads list[i]; that is the item the loop hands over. The body ends at the closer that
+  // matches the loop, found by depth over the tags between, innermost loop first so a nested one is whole.
+  for (;;) {
+    const markers = [...text.matchAll(/\u0001ITEM:([\w$.]+):([\w$]+)\u0001/g)];
+    if (!markers.length) break;
+    const mk = markers[markers.length - 1];
+    const start = mk.index + mk[0].length;
+    let depth = 1; let end = text.length;
+    const tag = /<%[\s\S]*?%>/g; tag.lastIndex = start;
+    for (let t; (t = tag.exec(text));) {
+      const code = t[0].slice(2, -2).trim();
+      if (/^\}/.test(code)) depth -= 1;
+      if (/\{$/.test(code)) depth += 1;
+      if (depth === 0) { end = t.index; break; }
+    }
+    const safe = mk[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const body = text.slice(start, end).replace(new RegExp(`${safe}\\[${mk[2]}\\]`, "g"), `${mk[1].replace(/\W/g, "_")}_item`);
+    text = text.slice(0, mk.index) + body + text.slice(end);
+  }
   // include('path', { a: b }) and the legacy <% include path %> inline another file with its locals bound; last, so an
   // inlined body, already rewritten by the recursion, is never rewritten twice.
   text = text.replace(/<%[-=]?\s*include\s*\(\s*(["'])([^"']+)\1\s*(?:,\s*(\{[\s\S]*?\}))?\s*\)\s*;?\s*%>|<%\s*include\s+(\S+)\s*%>/g, (m, q, path, locals, legacy) => {
     const name = path ?? legacy;
-    const body = depth < 6 ? resolve(name, from) : null;
+    const body = resolve(name, from);
     if (body == null) { note(`\`include('${name}')\` names a template this run does not hold; the tag was removed and the content stands without it.`); return ""; }
+    if (chain.includes(body.key) || body.key === from) { note(`\`include('${name}')\` includes a template already on the include chain; the cycle was cut there.`); return ""; }
     let inner = body.text;
     if (locals) {
-      const pairs = [...locals.slice(1, -1).matchAll(/([\w$]+)\s*:\s*("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^,}]+)/g)].map((x) => [x[1], x[2].trim()]);
+      // { item: related[0], x: fn(p, q), nested: { a: b }, shorthand }: split at the top level commas, a key before its first colon.
+      const pairs = splitCommas(locals.slice(1, -1), { ticks: false }).map((entry) => { const m = /^([\w$]+)\s*(?::\s*([\s\S]+))?$/.exec(entry.trim()); return m ? [m[1], (m[2] ?? m[1]).trim()] : null; }).filter(Boolean);
       for (const [local, value] of pairs) {
         const safe = local.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         inner = inner.replace(/<%[-=_]?[\s\S]*?%>/g, (span) => span.replace(new RegExp(`(?<![\\w.$])${safe}(?![\\w$])`, "g"), () => (/^[\w$.]+$/.test(value) ? value : `(${value})`)));
       }
       if (pairs.length) note(`\`include('${name}', { ... })\` bound ${pairs.map((x) => `\`${x[0]}\``).join(", ")} for the include; each read was replaced with what it named.`);
     }
-    return ejsToUnderscore(inner, note, resolve, body.key, depth + 1);
+    return ejsToUnderscore(inner, note, resolve, body.key, [...chain, from]);
   });
+  // An include whose path is computed cannot be resolved without running the code; it is removed and named.
+  text = text.replace(/<%[-=]?\s*include\s*\([\s\S]*?\)\s*;?\s*%>/g, () => { note("`include(...)` with a computed path names a template the run cannot resolve without running the code; the include was removed and the content stands without it."); return ""; });
   return text;
 }
 
@@ -94,25 +112,28 @@ export default {
       const keys = [...bodies.keys()];
       // include('../partials/card') is relative to the including file, then to the views root.
       const resolve = (name, from) => {
-        const dir = from.split("/").slice(0, -1);
-        const parts = String(name).replace(/\.ejs$/i, "").split("/");
+        // '/partials/nav' is against the views root; 'partials/nav' and '../partials/nav' against the including file.
+        const rooted = /^\//.test(String(name));
+        const clean = String(name).replace(/^\/+/, "").replace(/\.ejs$/i, "");
+        const dir = rooted ? [] : from.split("/").slice(0, -1);
         const rel = [...dir];
-        for (const p of parts) { if (p === "..") rel.pop(); else if (p !== ".") rel.push(p); }
-        const k = keys.find((x) => x.replace(/\.ejs$/i, "") === rel.join("/")) ?? resolveTemplate(keys, name, bare);
+        for (const p of clean.split("/")) { if (p === "..") rel.pop(); else if (p !== ".") rel.push(p); }
+        const k = keys.find((x) => x.replace(/\.ejs$/i, "") === rel.join("/")) ?? resolveTemplate(keys, clean, bare);
         return k ? { key: k, text: bodies.get(k) } : null;
       };
-      const layoutKey = keys.find((k) => /(^|\/)layout\.ejs$/i.test(k) && /<%-\s*body\s*%>/.test(bodies.get(k)));
+      // The layout is the file whose <%- body %> is the page, whatever it is called; two are a choice the run cannot make.
+      const layouts = keys.filter((k) => /<%-\s*body\s*%>/.test(bodies.get(k)));
+      const layoutKey = layouts.length ? layouts.find((k) => /(^|\/)layout\.ejs$/i.test(k)) ?? layouts[0] : null;
+      if (layouts.length > 1) note(`${layouts.length} templates render \`<%- body %>\` (${layouts.join(", ")}); express-ejs-layouts picks per route, which the run cannot know, so ${layoutKey} was composed around every page.`);
+      const shell = layoutKey ? restoreLiterals(lowerUnderscore(ejsToUnderscore(bodies.get(layoutKey), note, resolve, layoutKey), note)) : null;
       let count = 0;
       for (const [key, text] of bodies) {
         if (!text.trim()) continue;
-        if (key === layoutKey) { note(`${key} is the layout every page renders inside (its \`<%- body %>\` is the page); it is composed into each of them rather than ported as a screen of its own.`); continue; }
+        if (layouts.includes(key)) { note(`${key} is a layout every page renders inside (its \`<%- body %>\` is the page); it is composed into each of them rather than ported as a screen of its own.`); continue; }
         const partial = /(^|\/)(?:partials?|includes?)\//i.test(key);
         let lowered = restoreLiterals(lowerUnderscore(ejsToUnderscore(text, note, resolve, key), note));
         const composed = [];
-        if (layoutKey && !partial) {
-          const shell = restoreLiterals(lowerUnderscore(ejsToUnderscore(bodies.get(layoutKey), note, resolve, layoutKey), note));
-          if (shell.includes(PAGE_MARK)) { lowered = shell.replace(PAGE_MARK, () => lowered); composed.push(layoutKey); }
-        }
+        if (shell && !partial && shell.includes(PAGE_MARK)) { lowered = shell.replace(PAGE_MARK, () => lowered); composed.push(layoutKey); }
         const bodyMatch = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(lowered);
         const template = (bodyMatch ? bodyMatch[1] : lowered).trim();
         if (!template) continue;
