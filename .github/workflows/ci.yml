@@ -789,9 +789,19 @@ jobs:
           grep -q "no matching .removeEventListener. in this file" ev-out/EVENTS.md || { echo "the unremoved listener was not flagged"; exit 1; }
           rm -rf ev-src ev-out
 
+      - name: the observers reader names an undisconnected observer
+        run: |
+          mkdir -p ob-src
+          printf '%s\n' '<script>const io = new IntersectionObserver(onSee); io.observe(el);</script>' > ob-src/page.html
+          node src/cli.js run --src ob-src --out ob-out
+          test -f ob-out/OBSERVERS.md || { echo "no observers report"; exit 1; }
+          grep -q "IntersectionObserver" ob-out/OBSERVERS.md || { echo "the observer was not named"; exit 1; }
+          grep -q "no .disconnect" ob-out/OBSERVERS.md || { echo "the unclosed observer was not flagged"; exit 1; }
+          rm -rf ob-src ob-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "557" ]; then
-            echo "ROADMAP.md holds $count entries and claims 557"; exit 1
+          if [ "$count" != "558" ]; then
+            echo "ROADMAP.md holds $count entries and claims 558"; exit 1
           fi

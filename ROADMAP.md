@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and fifty seven features across seventy three phases. The statuses are
+Five hundred and fifty eight features across seventy four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-670 tests, on Node 18, 20 and 22, and on Windows in CI.
+675 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2059,15 +2059,20 @@ a Stencil component is a class with a `@Component({ tag })` decorator, `@Prop` f
 **557. dsp-events names the global event listeners the port must remove on unmount** 🔨
 the third of the lifecycle trilogy beside dsp-storage (data) and dsp-timers (loops): a window or document addEventListener is a subscription that outlives the function that made it, and in a component world each has to be removed on unmount or the port leaks a listener that keeps firing, keeps holding its closure, and stacks a second copy on every remount. dsp-events finds every addEventListener, names the event and the target where it is a plain global, pairs each with a removeEventListener for the same event in the same file, and reports which listeners the port inherits with a teardown and which most likely leaked. It counts and changes nothing. test/events.test.js holds it and a CI step names a page's uncleared listener.
 
+## Phase 74: the observers the port must remember to disconnect
+
+**558. dsp-observers names the observers the port must disconnect on unmount** 🔨
+the fourth cleanup reader beside dsp-storage, dsp-timers and dsp-events: an IntersectionObserver, ResizeObserver, MutationObserver or PerformanceObserver is a long-lived subscription the same way a global addEventListener is, keeping its callback and everything it closed over alive until disconnect() is called, and in a component world one made on mount has to be torn down on unmount or the port leaks it and stacks another on every remount, each still firing against detached nodes. dsp-observers finds every construction of the four DOM observers, names the kind and the line, reports whether a disconnect() appears in the same file, and calls out those with none. Like dsp-events it reports presence in the file, not proof of teardown on every path; a look-alike class named ...Observer is not counted. It counts and changes nothing. test/observers.test.js holds it and a CI step names a page's unclosed observer.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 510 |
+| new in this branch | 511 |
 | planned | 3 |
-| total | 557 |
+| total | 558 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
