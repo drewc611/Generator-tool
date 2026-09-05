@@ -96,11 +96,36 @@ function gaussian(draw) {
 }
 
 /**
+ * Leave one out cross validation: a real held out accuracy. Each example is held
+ * out in turn, a model is trained on the rest, and the held out example is
+ * classified against it. With two examples per class, holding one out still
+ * leaves its class represented by its sibling, so the question "would the model
+ * have got this right if it had never seen it" is well posed. Deterministic; the
+ * same corpus always gives the same number, and a per class breakdown besides.
+ */
+export function crossValidate(corpus) {
+  let correct = 0;
+  const perClass = {};
+  const misses = [];
+  for (let i = 0; i < corpus.length; i += 1) {
+    const held = corpus[i];
+    const rest = corpus.filter((_, j) => j !== i);
+    const reading = classifyVector(train(rest), vectorFromEntry(held));
+    const right = reading.label === held.label;
+    perClass[held.label] = perClass[held.label] ?? { correct: 0, total: 0 };
+    perClass[held.label].total += 1;
+    if (right) { correct += 1; perClass[held.label].correct += 1; }
+    else misses.push({ label: held.label, predicted: reading.label });
+  }
+  return { accuracy: correct / corpus.length, n: corpus.length, perClass, misses };
+}
+
+/**
  * How far a screen can drift and still be recognised. Each prototype is jittered
  * by seeded Gaussian noise scaled to each feature's own spread, classified, and
- * scored on whether it kept its label. Deterministic given the seed. This is not
- * a held out accuracy, which one exemplar per class cannot provide; it is a
- * stability metric, reported as exactly that.
+ * scored on whether it kept its label. Deterministic given the seed. A companion
+ * to the held out accuracy: cross validation says how often an unseen exemplar
+ * lands right, robustness says how far one can move before it stops.
  */
 export function robustness(model, { seed = 1, trials = 40, sigma = 0.5 } = {}) {
   const draw = makeRng(seed);

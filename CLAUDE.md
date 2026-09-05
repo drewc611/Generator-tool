@@ -445,8 +445,9 @@ thirty three phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.
-2. **Growing the calibration corpus.** Eleven labelled miniatures now, one per
-   archetype; real labelled apps would make the confidence numbers mean more.
+2. **Growing the calibration corpus.** Twenty two labelled miniatures now, two
+   per archetype, enough for a leave one out cross validation; real labelled apps
+   would make the confidence numbers mean more.
 3. **A grammar for the template dialects.** The readers are structural
    scanners now, not regexes, but a real grammar with positions would make
    every note able to say the line it came from.

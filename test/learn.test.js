@@ -5,7 +5,7 @@ import test from "node:test";
 
 import plugin, { renderLearned } from "../plugins/dsp-learn/index.js";
 import { FEATURES, vectorFromEntry } from "../plugins/dsp-learn/features.js";
-import { train, standardizer, standardize, classifyVector, robustness } from "../plugins/dsp-learn/model.js";
+import { train, standardizer, standardize, classifyVector, robustness, crossValidate } from "../plugins/dsp-learn/model.js";
 import { CORPUS } from "../plugins/dsp-learn/corpus.js";
 import { ROOT } from "./helpers.js";
 
@@ -78,17 +78,31 @@ test("robustness is reproducible and decays as the noise grows", () => {
   assert.ok(low > 0.9, "at low noise the well separated exemplars are almost always recognised");
 });
 
-test("the report names the reading and states the one exemplar per class limit", () => {
+test("leave one out cross validation is a real, deterministic held out accuracy", () => {
+  const a = crossValidate(CORPUS);
+  const b = crossValidate(CORPUS);
+  assert.equal(a.accuracy, b.accuracy, "the same corpus gives the same number");
+  assert.equal(a.n, CORPUS.length);
+  assert.ok(a.accuracy > 0.7, `held out accuracy should clear chance by a lot, got ${a.accuracy}`);
+  assert.ok(a.accuracy <= 1);
+  // Every miss names a real substitution, never a phantom class.
+  const labels = new Set(CORPUS.map((c) => c.label));
+  for (const m of a.misses) assert.ok(labels.has(m.label) && labels.has(m.predicted));
+});
+
+test("the report names the reading and its held out accuracy", () => {
   const model = train(CORPUS);
   const reading = classifyVector(model, vectorFromEntry(CORPUS[2]));
   const md = renderLearned({
     reading,
     robustnessCurve: [0.5, 1.0, 1.5, 2.0].map((sigma) => ({ sigma, accuracy: robustness(model, { seed: 1, trials: 20, sigma }) })),
+    cv: crossValidate(CORPUS),
     top: [{ name: "loops", value: 1 }],
   });
   assert.match(md, /learned/i);
   assert.match(md, new RegExp(reading.label));
-  assert.match(md, /one exemplar per (archetype|class)/i, "it owns its size honestly");
+  assert.match(md, /leave one out|held out/i, "it reports a real held out accuracy");
+  assert.match(md, /two labelled exemplars per archetype/i, "it states the corpus size honestly");
   assert.match(md, /ARCHITECTURE\.md/, "it points at the rule based reading to compare");
   assert.match(md, /proposal|unverified|can be confidently wrong/i);
 });
@@ -144,14 +158,17 @@ test("the embedded corpus matches the calibration fixtures", async () => {
   const fixtures = [];
   for (const file of files) fixtures.push(JSON.parse(await readFile(join(dir, file), "utf8")));
 
-  const key = (e) => e.label;
-  const byLabel = (list) => Object.fromEntries(list.map((e) => [key(e), e]));
-  const embedded = byLabel(CORPUS);
-  const onDisk = byLabel(fixtures);
+  // Two exemplars share a label now, so a fixture is matched to its embedded twin
+  // by label and markup together, and the two sets must be the same size.
+  const key = (e) => `${e.label} ${e.html}`;
+  const byKey = (list) => new Map(list.map((e) => [key(e), e]));
+  const embedded = byKey(CORPUS);
+  const onDisk = byKey(fixtures);
 
-  assert.deepEqual(Object.keys(embedded).sort(), Object.keys(onDisk).sort(), "same set of labels");
-  for (const label of Object.keys(onDisk)) {
-    assert.equal(embedded[label].html, onDisk[label].html, `${label}: html drifted from the fixture`);
-    assert.deepEqual(embedded[label].calls ?? [], onDisk[label].calls ?? [], `${label}: calls drifted from the fixture`);
+  assert.equal(embedded.size, CORPUS.length, "no two embedded exemplars are identical");
+  assert.equal(onDisk.size, fixtures.length, "no two fixtures are identical");
+  assert.deepEqual([...embedded.keys()].sort(), [...onDisk.keys()].sort(), "the same exemplars, embedded and on disk");
+  for (const [k, fixture] of onDisk) {
+    assert.deepEqual(embedded.get(k).calls ?? [], fixture.calls ?? [], `${fixture.label}: calls drifted from the fixture`);
   }
 });

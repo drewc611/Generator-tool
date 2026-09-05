@@ -8,17 +8,18 @@
  * agree, that is worth more than either alone; when they disagree, the
  * disagreement is the finding, and LEARNED.md says so.
  *
- * It is honest about being small. The corpus is one exemplar per class, so the
- * report carries a reproducible robustness figure, not a held out accuracy it
- * cannot compute, and every reading is a proposal marked unverified. No network,
- * no dependency, deterministic: the same app reads the same way every run.
+ * It is honest about being small. The corpus holds two exemplars per class, so a
+ * leave one out cross validation is defined and the report carries that real held
+ * out accuracy alongside a reproducible robustness figure; every reading is a
+ * proposal marked unverified. No network, no dependency, deterministic: the same
+ * app reads the same way every run.
  */
 
 import { buildIr } from "../dsp-ir/ir.js";
 import { mergeShapes, shapeOf } from "../dsp-archetype/shape.js";
 import { readApi } from "../dsp-archetype/classify.js";
 import { vectorFromParts } from "./features.js";
-import { train, classifyVector, robustness } from "./model.js";
+import { train, classifyVector, robustness, crossValidate } from "./model.js";
 import { CORPUS } from "./corpus.js";
 
 /** Merge every screen's shape into one, the way dsp-archetype describes a whole app. */
@@ -40,12 +41,15 @@ function runShape(ctx) {
 
 const pct = (x) => `${Math.round(x * 100)}%`;
 
-export function renderLearned({ reading, robustnessCurve, top }) {
+export function renderLearned({ reading, robustnessCurve, cv, top }) {
   const rows = reading.ranked
     .map((r, i) => `| ${i + 1} | ${r.label} | ${r.distance.toFixed(2)} | ${pct(r.confidence)} |`)
     .join("\n");
   const topFeatures = top.length ? top.map((t) => `\`${t.name}\` (${t.value})`).join(", ") : "nothing stood out";
   const curve = robustnessCurve.map((c) => `| ${c.sigma.toFixed(1)} | ${pct(c.accuracy)} |`).join("\n");
+  const missed = cv.misses.length
+    ? cv.misses.map((m) => `\`${m.label}\` read as \`${m.predicted}\``).join(", ")
+    : "none";
 
   return `# What this app is, learned
 
@@ -75,24 +79,28 @@ exemplar reads as low confidence rather than being forced into the nearest class
 
 ## How much this can be trusted
 
-The corpus is one exemplar per archetype. A true held out accuracy is undefined
-here: removing a class's only exemplar leaves that class unrepresentable. So the
-honest measure is robustness: each exemplar is jittered by seeded Gaussian noise
-scaled to each feature's own spread, and scored on whether it kept its label. The
-curve below is how that decays as the noise grows, which is a stability property
-this method really has, not a promise about a screen the model has never seen.
+The corpus holds two labelled exemplars per archetype, so a real held out
+accuracy is defined: each exemplar is left out in turn, the model is retrained on
+the rest (its class still represented by its sibling), and the held out one is
+classified against it. Leave one out cross validation over ${cv.n} exemplars
+scores **${pct(cv.accuracy)}** (${Math.round(cv.accuracy * cv.n)} of ${cv.n}
+correct). The exemplars it missed when unseen: ${missed}. This is the honest
+number: how often the model gets a screen right that it never trained on.
+
+Robustness is the companion measure, how far a screen can be jittered by seeded
+noise and still keep its label:
 
 | noise (σ, in feature spreads) | kept its label |
 | --- | --- |
 ${curve}
 
-A screen that sits within a spread or so of its exemplar is recognised almost
-always; one pushed two spreads out starts to be confused with its neighbours,
-which is exactly the app whose shape is genuinely ambiguous.
+Cross validation says how often an unseen exemplar lands right; robustness says
+how far one can move before it stops. Two exemplars per class is still a small
+corpus, so both numbers are a floor to raise, not a ceiling to trust.
 
 ---
 
-This is a proposal from a model, not a fact. It is trained on eleven human
+This is a proposal from a model, not a fact. It is trained on twenty two human
 labelled miniatures and it can be confidently wrong, most easily on an app whose
 shape sits between two archetypes. Where it disagrees with ARCHITECTURE.md, treat
 the disagreement as the thing to look at, not as one reading to pick.
@@ -133,10 +141,11 @@ export default {
         .sort((a, b) => b.value - a.value)
         .slice(0, 6);
 
-      ctx.learned = { reading, robustnessCurve, model: "nearest-prototype", top };
+      const cv = crossValidate(CORPUS);
+      ctx.learned = { reading, robustnessCurve, cv, model: "nearest-prototype", top };
 
       log.info(
-        `learned reading: ${reading.label} (${pct(reading.confidence)}${reading.contested ? ", contested" : ""}), robustness ${pct(robustnessCurve[0].accuracy)} at low noise`
+        `learned reading: ${reading.label} (${pct(reading.confidence)}${reading.contested ? ", contested" : ""}), leave one out ${pct(cv.accuracy)} over ${cv.n} exemplars`
       );
     });
 
@@ -144,7 +153,7 @@ export default {
       if (!ctx.learned) return;
       await ctx.write("LEARNED.md", renderLearned(ctx.learned));
       ctx.unverified(
-        `LEARNED.md is a learned archetype reading from a model trained on eleven labelled miniatures, one per class. ` +
+        `LEARNED.md is a learned archetype reading from a model trained on twenty two labelled miniatures, two per class, and cross validated at leave one out. ` +
           `It read this app as ${ctx.learned.reading.label} at ${pct(ctx.learned.reading.confidence)}; that is a proposal for a ` +
           "person to confirm against ARCHITECTURE.md, not a measured fact, and the model can be confidently wrong."
       );

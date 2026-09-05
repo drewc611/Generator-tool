@@ -719,7 +719,7 @@ jobs:
         run: |
           node src/cli.js run --src example/legacy --shots example/screenshots --out learn-out
           test -f learn-out/LEARNED.md || { echo "no learned report"; exit 1; }
-          grep -qiE "one exemplar per (archetype|class)" learn-out/LEARNED.md || { echo "the learned report does not own its size"; exit 1; }
+          grep -qiE "leave one out|held out" learn-out/LEARNED.md || { echo "the learned report has no held out accuracy"; exit 1; }
           grep -qiE "robustness" learn-out/LEARNED.md || { echo "the learned report has no robustness figure"; exit 1; }
           grep -qE "ARCHITECTURE\.md" learn-out/LEARNED.md || { echo "the learned report does not point at the rule based reading"; exit 1; }
           rm -rf learn-out
@@ -753,6 +753,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "551" ]; then
-            echo "ROADMAP.md holds $count entries and claims 551"; exit 1
+          if [ "$count" != "552" ]; then
+            echo "ROADMAP.md holds $count entries and claims 552"; exit 1
           fi

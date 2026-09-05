@@ -1,0 +1,27 @@
+{
+  "label": "calendar",
+  "html": "<button>Previous month</button><button>Next month</button><table><tr><th>Sunday</th><th>Monday</th><th>Tuesday</th></tr><tr><td *ngFor=\"let d of days\">{{d.count}}</td></tr></table>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/bookings?start=2024-02-01&end=2024-02-29"
+    }
+  ],
+  "model": {
+    "screens": [
+      {
+        "kind": "grid"
+      }
+    ],
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/api/bookings",
+        "query": [
+          "start",
+          "end"
+        ]
+      }
+    ]
+  }
+}

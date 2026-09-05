@@ -10,7 +10,7 @@ about where the plugin classes come from. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 125 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 649 passing, 650 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer, the learned archetype model and the Svelte, Lit and Alpine readers](media/test-run.png)
+![node --test running the portamp suite: 650 passing, 651 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer, the learned archetype model and the Svelte, Lit and Alpine readers](media/test-run.png)
 
 <sub>Proof, not a promise. Every line above is verbatim from `npm test`: 585
 assertions pass across 64 test files with `node --test` and no framework, and
@@ -508,16 +508,17 @@ both, rather than picking one and sounding certain.
 
 `dsp-learn` reads the same screen a second way, with a model instead of rules. It
 turns each screen into a vector of the features the rules already trust and trains
-a nearest prototype classifier on the eleven labelled archetype miniatures, so a
-new screen is placed by its nearest exemplar in a standardization learned from the
-corpus rather than by which rules happened to fire. `LEARNED.md` ranks every
-archetype by distance with a softmax confidence, and is honest about being small:
-one exemplar per class means a held out accuracy is undefined, so instead of a
-number it cannot compute it reports how far a screen can be jittered by seeded
-noise and still keep its label.
+a nearest prototype classifier on twenty two labelled archetype miniatures, two per
+class, so a new screen is placed by its nearest exemplar in a standardization
+learned from the corpus rather than by which rules happened to fire. `LEARNED.md`
+ranks every archetype by distance with a softmax confidence, and reports a real
+held out number: two exemplars per class make a leave one out cross validation
+defined, so it leaves each out in turn, retrains on the rest, and scores whether
+it gets the unseen one right, naming the ones it missed and keeping the robustness
+curve beside it.
 
 ```
-[dsp-learn] learned reading: crud-table (30%), robustness 100% at low noise
+[dsp-learn] learned reading: crud-table (18%), leave one out 95% over 22 exemplars
 ```
 
 The two readings are meant to be read together. When the learned model and the

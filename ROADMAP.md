@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and fifty one features across sixty seven phases. The statuses are
+Five hundred and fifty two features across sixty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-650 tests, on Node 18, 20 and 22, and on Windows in CI.
+651 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2029,15 +2029,20 @@ output-lit emits a loop as Lit's `repeat(items, keyFn, (item) => html`...`)` dir
 **551. vis-roundtrip reads the port back through React, Svelte and Lit** 🔨
 each target now has a reader that is the inverse of its emitter, so vis-roundtrip closes the loop through all three: a template is emitted to React, Svelte and Lit and read back by that target's reader, and the structure that returns, the real (tagged) elements, the conditionals, loops and models, is compared to what went in. Only tagged elements count, so a reader that wraps a block in a transparent container the IR sees through does not read as drift. ROUNDTRIP.md names any drift per screen and per target, and the run reports it, so the claim that the port keeps its shape is a comparison that fails out loud through three frameworks rather than one. test/readback.test.js holds it.
 
+## Phase 68: the learned model earns a real held out number
+
+**552. dsp-learn grows to two exemplars per class and reports a leave one out accuracy** 🔨
+the calibration corpus grows from eleven miniatures to twenty two, a second labelled exemplar per archetype, each of which the rule based reader also classifies as its label so the two agree. Two per class is what makes a held out accuracy defined: dsp-learn now leaves each exemplar out in turn, retrains on the rest (its class still represented by its sibling) and classifies the held out one, reporting the real leave one out accuracy and the exemplars it missed when unseen, alongside the robustness curve it already carried. LEARNED.md stops saying a held out accuracy is undefined and prints the number instead, honest that two per class is still a floor to raise. test/learn.test.js holds the cross validation and the guard that the embedded corpus stays equal to the fixtures.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 504 |
+| new in this branch | 505 |
 | planned | 3 |
-| total | 551 |
+| total | 552 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
