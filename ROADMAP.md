@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and fifty four features across seventy phases. The statuses are
+Five hundred and fifty five features across seventy one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-660 tests, on Node 18, 20 and 22, and on Windows in CI.
+661 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2044,15 +2044,20 @@ a page that read and wrote localStorage, sessionStorage or IndexedDB held state 
 **554. dsp-timers names the timers and animation loops the port must clean up** 🔨
 a setInterval that polls, a setTimeout that retries, a requestAnimationFrame that drives a loop: each is work the page kept doing after the line that started it ran, and in a component world each has to be cleaned up on unmount or the port leaks a loop that keeps running, keeps fetching and keeps holding its closure. dsp-timers finds every setTimeout, setInterval, requestAnimationFrame and requestIdleCallback, pairs each with its own clear (clearTimeout with setTimeout, cancelAnimationFrame with requestAnimationFrame, not any clear with any scheduler) and reports whether that clear appears in the same file, so TIMERS.md separates the loops the port inherits with a stop from the ones that most likely leaked. It counts and changes nothing; which timer belongs in an effect with a cleanup, which moves to the server and which was a leak to drop is the owner's call. test/timers.test.js holds it and a CI step names a polling page's timers.
 
+## Phase 71: the learned model reads each screen, not just the app
+
+**555. dsp-learn classifies each screen on its own, not only the merged app** 🔨
+the whole app reading weighs every screen's shape and the endpoints together; dsp-learn now also places each screen on its own markup shape alone, so a multi screen app is not flattened to one label. LEARNED.md gains a per screen table, and the disagreement is the finding: the demo's one screen reads as crud-table for the whole app, endpoints included, but as search-and-filter on its markup alone, because the table and filters pull one way and the GET/POST/DELETE on the same resource pull another. A per screen reading rests on shape without the traffic, so it is weaker and is reported as exactly that. test/learn.test.js holds it.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 507 |
+| new in this branch | 508 |
 | planned | 3 |
-| total | 554 |
+| total | 555 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

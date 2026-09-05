@@ -41,7 +41,7 @@ function runShape(ctx) {
 
 const pct = (x) => `${Math.round(x * 100)}%`;
 
-export function renderLearned({ reading, robustnessCurve, cv, top }) {
+export function renderLearned({ reading, robustnessCurve, cv, perScreen = [], top }) {
   const rows = reading.ranked
     .map((r, i) => `| ${i + 1} | ${r.label} | ${r.distance.toFixed(2)} | ${pct(r.confidence)} |`)
     .join("\n");
@@ -67,7 +67,21 @@ ARCHITECTURE.md, not a replacement: read the two together.
 
 The features that carried the most signal for this screen: ${topFeatures}.
 
-## Every archetype, by distance
+${perScreen.length ? `## Each screen on its own
+
+The reading above weighs the whole app, endpoints included. Each screen also
+reads on its own markup shape alone, so a multi screen app is not flattened to
+one label:
+
+| screen | archetype | confidence |
+| --- | --- | --- |
+${perScreen.map((s) => `| \`${s.selector}\` | ${s.label}${s.contested ? ` (contested with ${s.runnerUp})` : ""} | ${pct(s.confidence)} |`).join("\n")}
+
+A per screen reading rests on shape without the traffic, so it is weaker than
+the whole app reading and can differ from it; where they disagree, the screen is
+one whose markup pulls one way and whose endpoints pull another.
+
+` : ""}## Every archetype, by distance
 
 | rank | archetype | distance | confidence |
 | --- | --- | --- | --- |
@@ -141,8 +155,21 @@ export default {
         .sort((a, b) => b.value - a.value)
         .slice(0, 6);
 
+      // Each screen placed on its own shape, so a multi screen app gets a
+      // breakdown rather than one label for everything. The endpoints are an app
+      // level signal, so a per screen reading rests on markup shape alone and the
+      // whole app reading above is the one that also weighs the traffic.
+      const emptyApi = readApi([]);
+      const perScreen = screens
+        .filter((s) => s.template)
+        .map((s) => {
+          const sVector = vectorFromParts({ shape: shapeOf(s.ir ?? buildIr(s.template)), api: emptyApi, widgets: 0, components: 1 });
+          const r = classifyVector(model, sVector);
+          return { selector: s.selector, label: r.label, confidence: r.confidence, contested: r.contested, runnerUp: r.ranked[1]?.label ?? null };
+        });
+
       const cv = crossValidate(CORPUS);
-      ctx.learned = { reading, robustnessCurve, cv, model: "nearest-prototype", top };
+      ctx.learned = { reading, robustnessCurve, cv, perScreen, model: "nearest-prototype", top };
 
       log.info(
         `learned reading: ${reading.label} (${pct(reading.confidence)}${reading.contested ? ", contested" : ""}), leave one out ${pct(cv.accuracy)} over ${cv.n} exemplars`

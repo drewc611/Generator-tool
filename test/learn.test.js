@@ -107,6 +107,29 @@ test("the report names the reading and its held out accuracy", () => {
   assert.match(md, /proposal|unverified|can be confidently wrong/i);
 });
 
+test("each screen is classified on its own shape, and the report tables it", async () => {
+  const handlers = {};
+  plugin.setup({ on: (stage, fn) => (handlers[stage] = fn), log: { info() {}, debug() {} } });
+  const ctx = {
+    screens: [
+      { selector: "orders", template: '<table><tr *ngFor="let o of orders"><td>{{o.id}}</td></tr></table>' },
+      { selector: "signup", template: '<form (submit)="go()"><input [(ngModel)]="a"><input [(ngModel)]="b"><button type="submit">Join</button></form>' },
+    ],
+    api: { calls: [] },
+    written: {},
+    write: async (rel, c) => (ctx.written[rel] = c),
+    unverified: () => {},
+  };
+  await handlers.plan(ctx);
+  assert.equal(ctx.learned.perScreen.length, 2, "both screens were placed on their own");
+  const byScreen = Object.fromEntries(ctx.learned.perScreen.map((s) => [s.selector, s.label]));
+  assert.ok(byScreen.orders && byScreen.signup, "each screen got a label");
+  await handlers.emit(ctx);
+  assert.match(ctx.written["LEARNED.md"], /Each screen on its own/);
+  assert.match(ctx.written["LEARNED.md"], /`orders`/);
+  assert.match(ctx.written["LEARNED.md"], /`signup`/);
+});
+
 test("the plugin is a dsp plugin that reads the run and writes a learned report", async () => {
   assert.equal(plugin.class, "dsp");
   const handlers = {};
