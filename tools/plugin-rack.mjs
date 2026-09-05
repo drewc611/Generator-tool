@@ -44,6 +44,7 @@ const DOES = {
   "dsp-apistyle": "the API's house style, so the port keeps it, quirks included",
   "general-history": "the run over time, counts only, so trends have a table",
   "general-size": "the port weighed by kind, with --max-kb the budget the run enforces",
+  "general-publish": "publish-check: the npm pack dry run read for you, a verdict with an exit code; never publishes",
   "vis-graph": "the port's shape drawn: screens, what composes what, which endpoints each calls",
   "vis-a11y": "every accessibility axis on one scorecard, each number another plugin's, none invented",
   "vis-security": "every security concern on one scorecard: markup, supply chain, sandbox, cookies, trackers",

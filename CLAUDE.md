@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and fifty one in five classes, and the core has never learned
+Plugins that ship, a hundred and fifty two in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -99,7 +99,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-codemod  output-aws  output-azure  output-gcp  output-vercel  output-netlify  output-cloudflare  output-caddy
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph  vis-transformer  vis-a11y  vis-security  vis-perf
 general  general-policy  general-authorization  general-license  general-size
-         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents
+         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish
 ```
 
 An option the CLI does not recognise is passed through to the plugins

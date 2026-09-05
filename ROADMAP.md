@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and sixty seven features across eighty three phases. The statuses are
+Five hundred and sixty eight features across eighty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-721 tests, on Node 18, 20 and 22, and on Windows in CI.
+727 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2109,15 +2109,20 @@ the port's trust surface is read by several plugins: dsp-security (the sharp edg
 **567. vis-perf gathers the performance concerns into one scorecard** 🔨
 the third scorecard beside vis-a11y and vis-security. The port's weight and its first paint are read by several plugins: dsp-perf (the script habits that stall a page: a synchronous XHR, a request in a loop, an interval poll), dsp-render-blocking (what the parser waits on before it can paint), dsp-inline (style and script that cannot be cached or themed), dsp-images (pictures shipped at one fixed size), dsp-fonts (faces with no woff2 or no font-display) and general-size (the bytes the port itself weighs), each writing its own report. vis-perf reads what those plugins left on the context and writes PERFORMANCE.md, one table of every concern with the count it reported and exactly what that count is. The port's size is shown beside the table as a measurement and never summed into the flagged items, because a byte is not a defect. It invents nothing, marks a concern whose plugin did not run as "not measured", writes nothing when none ran, and does not collide with dsp-perf's PERF.md or general-size's SIZE.md. It is a count, not a grade. test/perf-scorecard.test.js holds it.
 
+## Phase 84: the last manual step before publishing, made mechanical
+
+**568. publish-check proves the package is ready to ship without shipping it** 🔨
+docs/PUBLISHING.md ends with a step a person does by eye: run npm pack --dry-run and read the file list, because a recorded screenshot or a real attestation must never be in it. general-publish turns that into one command. publish-check runs the same dry run, reads the same list, and holds it against what the package promises: only the top levels `files` declares ship plus what npm always adds; nothing forbidden ships (an attestation, a local config, a screenshots or recordings directory, a dotenv, a private key, matched as whole path segments so a plugin named input-shots is not mistaken for a shots directory); dependencies is empty, the zero runtime dependency invariant; the version is a plain semver; and every bin target is in the tarball. Each check prints ok or FAIL and the command exits 1 on any FAIL. The pure check is tested without spawning npm and one test runs the real dry run against this repository, which is the actual proof. It never runs npm publish: entries 96 and 325 stay open on purpose, because publishing is a decision with an owner, and this only makes sure the last check before it cannot be skipped by accident. test/publish.test.js holds it.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 520 |
+| new in this branch | 521 |
 | planned | 3 |
-| total | 567 |
+| total | 568 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

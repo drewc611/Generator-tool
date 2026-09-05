@@ -874,9 +874,14 @@ jobs:
           grep -q "not summed" pf-out/PERFORMANCE.md || { echo "the port's weight was summed into the items"; exit 1; }
           rm -rf pf-src pf-out
 
+      - name: publish-check proves the package packs clean, and never publishes
+        run: |
+          node src/cli.js publish-check
+          grep -q '"publish"' plugins/general-publish/index.js && { echo "publish-check must never invoke npm publish"; exit 1; } || true
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "567" ]; then
-            echo "ROADMAP.md holds $count entries and claims 567"; exit 1
+          if [ "$count" != "568" ]; then
+            echo "ROADMAP.md holds $count entries and claims 568"; exit 1
           fi
