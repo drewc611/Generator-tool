@@ -1,3 +1,5 @@
+import { attrSafe } from "../dsp-ir/text.js";
+
 /**
  * Jinja and Django template syntax, lowered onto the attribute dialect.
  *
@@ -8,7 +10,6 @@
  * the block contents are kept and the machinery is named.
  */
 
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 
 /** Python operators into JS, outside of strings. */
 export function pythonToJs(code) {

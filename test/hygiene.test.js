@@ -50,7 +50,10 @@ test("nothing in the tool is deferred with a marker comment", async () => {
 
 test("the shared helpers exist exactly once", async () => {
   const files = [...(await walk(join(ROOT, "src"))), ...(await walk(join(ROOT, "plugins")))];
-  const defs = { "const pascal =": [], "const unique = (list) =>": [], "const lineAt =": [] };
+  // Each helper has one home: the emit helpers in dsp-ir/emit.js, the string
+  // helpers every reader shares in dsp-ir/text.js.
+  const HOME = { "const pascal =": "dsp-ir/emit.js", "const unique = (list) =>": "dsp-ir/emit.js", "const lineAt =": "dsp-ir/emit.js", "function matchBracket(": "dsp-ir/text.js", "function splitCommas(": "dsp-ir/text.js", "function splitWords(": "dsp-ir/text.js", "const attrSafe =": "dsp-ir/text.js" };
+  const defs = Object.fromEntries(Object.keys(HOME).map((k) => [k, []]));
   for (const f of files) {
     const text = await readFile(f, "utf8");
     for (const needle of Object.keys(defs)) {
@@ -60,7 +63,7 @@ test("the shared helpers exist exactly once", async () => {
     }
   }
   for (const [needle, where] of Object.entries(defs)) {
-    assert.deepEqual(where.map((f) => f.split(/[\\/]/).slice(-2).join("/")), ["dsp-ir/emit.js"], `${needle} is defined in ${where.length} place(s); the one spelling lives in dsp-ir/emit.js`);
+    assert.deepEqual(where.map((f) => f.split(/[\\/]/).slice(-2).join("/")), [HOME[needle]], `${needle} is defined in ${where.length} place(s); the one spelling lives in ${HOME[needle]}`);
   }
 });
 

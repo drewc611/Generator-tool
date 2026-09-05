@@ -1,4 +1,9 @@
 import { readFile } from "node:fs/promises";
+import { matchBracket, splitCommas as splitArgs } from "../dsp-ir/text.js";
+
+export { matchBracket, splitArgs };
+
+const CLOSERS = { "(": ")", "[": "]", "{": "}" };
 
 /**
  * Mithril writes its markup as JavaScript: m("div.card", { onclick }, [
@@ -22,42 +27,6 @@ import { readFile } from "node:fs/promises";
  */
 
 const EVENTS = new Set(["click", "change", "input", "submit", "keyup", "keydown", "keypress", "blur", "focus", "mouseenter", "mouseleave", "dblclick"]);
-const CLOSERS = { "(": ")", "[": "]", "{": "}" };
-
-/** Splits a source span on top level commas, respecting brackets, strings and template literals. */
-export function splitArgs(text) {
-  const out = [];
-  let depth = 0; let start = 0; let quote = null;
-  for (let i = 0; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) {
-      if (c === "\\") i += 1;
-      else if (c === quote) quote = null;
-      continue;
-    }
-    if (c === '"' || c === "'" || c === "`") quote = c;
-    else if (c in CLOSERS) depth += 1;
-    else if (c === ")" || c === "]" || c === "}") depth -= 1;
-    else if (c === "," && depth === 0) { out.push(text.slice(start, i).trim()); start = i + 1; }
-  }
-  const last = text.slice(start).trim();
-  if (last) out.push(last);
-  return out;
-}
-
-/** The index just past the bracket that closes the one at `open`. */
-export function matchBracket(text, open) {
-  const close = CLOSERS[text[open]];
-  let depth = 0; let quote = null;
-  for (let i = open; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (c === '"' || c === "'" || c === "`") quote = c;
-    else if (c in CLOSERS) depth += 1;
-    else if (c === ")" || c === "]" || c === "}") { depth -= 1; if (depth === 0 && c === close) return i + 1; }
-  }
-  return -1;
-}
 
 const isString = (s) => /^(["'`])[\s\S]*\1$/.test(s);
 const unquote = (s) => s.slice(1, -1);

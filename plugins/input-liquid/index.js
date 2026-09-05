@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
+import { attrSafe, splitCommas } from "../dsp-ir/text.js";
 
 /**
  * Liquid, the template language of Shopify themes and Jekyll sites, is the
@@ -24,7 +25,6 @@ import { pascal } from "../dsp-ir/emit.js";
  */
 
 const GLOBALS = ["product", "collection", "collections", "cart", "shop", "customer", "page", "article", "blog", "search", "request", "routes", "settings", "linklists", "all_products", "localization", "block", "blocks", "section"];
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 
 /** Liquid's operators and object shorthands into JS, outside of strings. */
 export function liquidToJs(code) {
@@ -55,7 +55,7 @@ export function lowerOutput(inner) {
     const m = /^\s*([\w-]+)\s*(?::\s*([\s\S]+))?$/.exec(f);
     if (!m) { kept.push(f.trim()); continue; }
     const [, name, rawArgs] = m;
-    const args = rawArgs ? splitArgs(rawArgs).map((a) => liquidToJs(a.trim())) : [];
+    const args = rawArgs ? splitCommas(rawArgs).map((a) => liquidToJs(a.trim())) : [];
     switch (name) {
       case "upcase": kept.push("uppercase"); break;
       case "downcase": kept.push("lowercase"); break;
@@ -80,17 +80,6 @@ export function lowerOutput(inner) {
 }
 
 // Filter arguments split on the commas outside of strings, so `join: ', '` keeps its comma.
-function splitArgs(text) {
-  const out = []; let quote = null; let start = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (c === '"' || c === "'") quote = c;
-    else if (c === ",") { out.push(text.slice(start, i)); start = i + 1; }
-  }
-  out.push(text.slice(start));
-  return out;
-}
 
 function splitPipes(text) {
   const out = []; let depth = 0; let quote = null; let start = 0;

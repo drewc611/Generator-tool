@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and ninety seven features across one hundred and thirteen phases. The statuses are
+Five hundred and ninety eight features across one hundred and fourteen phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-835 tests, on Node 18, 20 and 22, and on Windows in CI.
+839 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2287,14 +2287,20 @@ Velocity was the template language of the early Java web frameworks: directives 
 a fourth review over the two newest readers found what a single test page cannot. In input-freemarker: a macro whose body called another macro left the inner call as a raw tag, because the expansion never rescanned what it inserted, and the parameter substitution mangled the inner call's t=t; expansion now runs until no call is left and a parameter is substituted only as an expression, never as the name of an argument. ?string with a format selector, ?string.currency, was stripped to a property read that looked right; the selector is named as a formatting built in with no client equivalent and the value is interpolated unformatted. The implicit loop variables user_index and user_has_next surfaced as phantom inputs; the index is the dialect's own and the rest is named. A block <#assign> or <#function> leaked its captured body into the page; both are removed and named. A positional macro argument was reported as missing; positional arguments take the declared order. In input-velocity: a macro calling a macro lost the inner call, because the expanded body was lowered with an empty macro table; the table is shared down every expansion and every #parse. A string literal argument landed in the page with its quotes; it keeps them inside a directive's parentheses and sheds them in the page, as Velocity renders it. An unclosed #define dropped the rest of the file; it is named and the text kept. $foreach.last is carried as the $last the dialect's repeat provides, not a mangled name. In vis-readers, the extensions the jinja and underscore readers claim were missing from the markup row, so an unclaimed .j2 or .ejs was filed as an asset; they are markup. test/freemarker.test.js, test/velocity.test.js and test/readers-census.test.js hold them.
 
 
+## Phase 114: one bracket matcher for the readers
+
+**598. The string helpers eight readers each wrote are one module, held to one definition** 🔨
+every template reader does three things to a string of source: finds the bracket that closes an open one, splits an argument list at its top level, and makes an expression safe inside a double quoted attribute. Eight readers written in this stretch each wrote their own, and the review passes found the same defect more than once because it had been written more than once: a quote opened by an apostrophe in prose, an unbalanced bracket that never returned. dsp-ir/text.js now carries one matchBracket that returns the index past the close or minus one and reads quotes only where told (false inside markup, where an apostrophe is prose) and backticks only where the language has them (JS yes, C# and the Java templates no), one splitCommas and one splitWords that keep brackets and strings whole, and one attrSafe. The Mithril, Marko, Razor, Velocity, FreeMarker, Liquid, Blade, XSLT and Ember readers import them, Razor and the Java readers through a two line wrapper that fixes their language's quoting, and the two splitters with semantics of their own, Ember's helper arguments and Velocity's comma or space call arguments, keep names of their own. The hygiene gate that holds pascal, unique and lineAt to one definition holds these four too, so the next reader cannot quietly write a fifth. test/text.test.js holds the helpers.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 550 |
+| new in this branch | 551 |
 | planned | 3 |
-| total | 597 |
+| total | 598 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

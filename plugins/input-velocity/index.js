@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
+import { attrSafe, matchBracket as matchShared } from "../dsp-ir/text.js";
+
+const matchBracket = (text, open) => matchShared(text, open, { ticks: false });
 
 /**
  * Velocity, the Java template language of the early web frameworks: directives
@@ -49,21 +52,8 @@ export function vtlToJs(code, note = () => {}) {
   }).join("");
 }
 
-const attrSafe = (s) => String(s).replace(/"/g, "'");
 
-function matchParen(text, open) {
-  let depth = 0; let quote = null;
-  for (let i = open; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (c === '"' || c === "'") quote = c;
-    else if (c === "(" || c === "[" || c === "{") depth += 1;
-    else if (c === ")" || c === "]" || c === "}") { depth -= 1; if (depth === 0) return i + 1; }
-  }
-  return -1;
-}
-
-function splitArgs(text) {
+function splitCallArgs(text) {
   const out = []; let depth = 0; let quote = null; let start = 0;
   for (let i = 0; i < text.length; i += 1) {
     const c = text[i];
@@ -85,8 +75,8 @@ function referenceEnd(text, at) {
   if (!/[A-Za-z_]/.test(text[i] ?? "")) return -1;
   while (/[\w]/.test(text[i] ?? "")) i += 1;
   for (;;) {
-    if (text[i] === "." && /[A-Za-z_]/.test(text[i + 1] ?? "")) { i += 1; while (/[\w]/.test(text[i] ?? "")) i += 1; if (text[i] === "(") { const e = matchParen(text, i); if (e < 0) break; i = e; } continue; }
-    if (text[i] === "[") { const e = matchParen(text, i); if (e < 0) break; i = e; continue; }
+    if (text[i] === "." && /[A-Za-z_]/.test(text[i + 1] ?? "")) { i += 1; while (/[\w]/.test(text[i] ?? "")) i += 1; if (text[i] === "(") { const e = matchBracket(text, i); if (e < 0) break; i = e; } continue; }
+    if (text[i] === "[") { const e = matchBracket(text, i); if (e < 0) break; i = e; continue; }
     break;
   }
   return i;
@@ -101,13 +91,13 @@ export function lowerVelocity(source, note = () => {}, resolve = null, depth = 0
   for (let m = macroRe.exec(text); m; m = macroRe.exec(text)) {
     const end = blockEnd(text, m.index + m[0].length);
     if (end < 0) break;
-    macros.set(m[1], { params: splitArgs(m[2].trim()).map((p) => p.replace(/^\$!?/, "")), body: text.slice(m.index + m[0].length, end.start) });
+    macros.set(m[1], { params: splitCallArgs(m[2].trim()).map((p) => p.replace(/^\$!?/, "")), body: text.slice(m.index + m[0].length, end.start) });
     text = text.slice(0, m.index) + text.slice(end.end);
     macroRe.lastIndex = m.index;
   }
   const expandMacro = (name, argText) => {
     const mac = macros.get(name);
-    const args = splitArgs(argText);
+    const args = splitCallArgs(argText);
     let body = mac.body;
     mac.params.forEach((p, i) => {
       if (args[i] === undefined) { note(`The macro \`#${name}\` was called without \`$${p}\`; the name is left as written.`); return; }
@@ -146,7 +136,7 @@ export function lowerVelocity(source, note = () => {}, resolve = null, depth = 0
     const name = dm[1];
     let argText = null; let after = i + dm[0].length;
     const paren = /^\s*\(/.exec(text.slice(after));
-    if (paren && !/^(end|else|break|stop)$/.test(name)) { const e = matchParen(text, after + paren[0].length - 1); if (e < 0) { note(`#${name}( never closes; the rest of the file was kept as text.`); out.push(text.slice(i, limit)); i = limit; return; } argText = text.slice(after + paren[0].length, e - 1); after = e; }
+    if (paren && !/^(end|else|break|stop)$/.test(name)) { const e = matchBracket(text, after + paren[0].length - 1); if (e < 0) { note(`#${name}( never closes; the rest of the file was kept as text.`); out.push(text.slice(i, limit)); i = limit; return; } argText = text.slice(after + paren[0].length, e - 1); after = e; }
     i = after;
     switch (name) {
       case "if": { const t = vtlToJs(argText ?? "true", note); out.push(`<ng-container ng-if="${attrSafe(t)}">`); stack.push({ kind: "if", tried: [t] }); return; }

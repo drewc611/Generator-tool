@@ -1,0 +1,67 @@
+/**
+ * The three things every template reader does to a string of source: find the
+ * bracket that closes an open one, split an argument list at its top level,
+ * and make an expression safe inside a double quoted attribute. Eight readers
+ * each wrote their own before this file; a defect in one of them (a quote
+ * opened by an apostrophe in prose, an unbalanced bracket that never returned)
+ * had to be found eight times. It is found once here, and the hygiene suite
+ * holds each helper to this one definition.
+ */
+
+const CLOSERS = { "(": ")", "[": "]", "{": "}" };
+const isOpen = (c) => c === "(" || c === "[" || c === "{";
+const isClose = (c) => c === ")" || c === "]" || c === "}";
+
+/**
+ * The index just past the bracket that closes the one at `open`, or -1 when
+ * it never closes. `strings` says whether quotes open a string the scan skips
+ * (false inside markup, where an apostrophe is prose); `ticks` whether a
+ * backtick does (true for JS, false for C# and the Java template languages).
+ */
+export function matchBracket(text, open, { strings = true, ticks = true } = {}) {
+  const close = CLOSERS[text[open]];
+  if (!close) return -1;
+  let depth = 0; let quote = null;
+  for (let i = open; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
+    if (strings && (c === '"' || c === "'" || (ticks && c === "`"))) quote = c;
+    else if (isOpen(c)) depth += 1;
+    else if (isClose(c)) { depth -= 1; if (depth === 0 && c === close) return i + 1; }
+  }
+  return -1;
+}
+
+/** An argument list split at its top level commas, each item trimmed, a trailing empty item dropped. */
+export function splitCommas(text, { ticks = true } = {}) {
+  const out = []; let depth = 0; let start = 0; let quote = null;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
+    if (c === '"' || c === "'" || (ticks && c === "`")) quote = c;
+    else if (isOpen(c)) depth += 1;
+    else if (isClose(c)) depth -= 1;
+    else if (c === "," && depth === 0) { out.push(text.slice(start, i).trim()); start = i + 1; }
+  }
+  const last = text.slice(start).trim();
+  if (last) out.push(last);
+  return out;
+}
+
+/** An argument list split at its top level whitespace, brackets and strings kept whole. */
+export function splitWords(text) {
+  const out = []; let depth = 0; let quote = null; let start = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
+    if (c === '"' || c === "'") quote = c;
+    else if (isOpen(c)) depth += 1;
+    else if (isClose(c)) depth -= 1;
+    else if (/\s/.test(c) && depth === 0) { if (i > start) out.push(text.slice(start, i)); start = i + 1; }
+  }
+  if (text.length > start) out.push(text.slice(start));
+  return out;
+}
+
+/** An expression inside a double quoted dialect attribute: its double quotes become single. */
+export const attrSafe = (s) => String(s).replace(/"/g, "'");

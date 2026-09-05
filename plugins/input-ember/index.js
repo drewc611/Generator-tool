@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { pascal } from "../dsp-ir/emit.js";
+import { attrSafe } from "../dsp-ir/text.js";
 
 /**
  * Reads Ember components onto the same dialect every other reader targets.
@@ -27,7 +28,6 @@ import { pascal } from "../dsp-ir/emit.js";
  * handlebars reader honours too, so a template is read by exactly one of them.
  */
 
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 const EVENTS = new Set(["click", "submit", "change", "input", "keydown", "keyup", "keypress", "blur", "focus", "mouseenter", "mouseleave", "mouseover", "mousedown", "mouseup", "dblclick", "paste", "cut", "copy", "scroll"]);
 const BOOL_ATTR = { disabled: "ng-disabled", checked: "ng-checked", readonly: "ng-readonly", hidden: "ng-hide", required: "ng-required", selected: "ng-selected" };
@@ -48,7 +48,7 @@ export function isEmberTemplate(text, rel = "") {
 const plain = (e) => String(e).trim().replace(/\bthis\./g, "").replace(/@([\w.]+)/g, "$1");
 
 /** Split helper arguments on whitespace, keeping quoted strings and (sub expressions) whole. */
-function splitArgs(s) {
+function splitHelperArgs(s) {
   const out = [];
   let cur = "", depth = 0, quote = null;
   for (const ch of s) {
@@ -87,7 +87,7 @@ function helperCall(name, args, note) {
 export function lowerExpr(code, note = () => {}) {
   let e = String(code).trim();
   if (/^\(.*\)$/.test(e)) e = e.slice(1, -1).trim();
-  const parts = splitArgs(e);
+  const parts = splitHelperArgs(e);
   if (parts.length > 1 && /^[a-z][\w-]*$/.test(parts[0]) && !/^(this|true|false|null)$/.test(parts[0])) return helperCall(parts[0], parts.slice(1), note);
   if (/^[a-z][\w-]*$/.test(parts[0]) && parts[0].includes("-")) { note(`The helper \`{{${e}}}\` became the call \`${e}()\`.`); return `${e}()`; }
   return plain(e);
@@ -141,7 +141,7 @@ function lowerTag(tag, note, outputs) {
     return ` ng-${ev}="${attrSafe(handlerCall(h, note))}"`;
   });
   attrs = attrs.replace(/\{\{action\s+["'](\w+)["']([^}]*)\}\}/g, (_, fn, rest) => {
-    const args = splitArgs(rest).filter((a) => !/^on=/.test(a));
+    const args = splitHelperArgs(rest).filter((a) => !/^on=/.test(a));
     const onM = /\bon=["'](\w+)["']/.exec(rest);
     const ev = onM ? onM[1] : "click";
     return ` ng-${ev}="${attrSafe(`${fn}(${args.map((a) => lowerExpr(a, note)).join(", ")})`)}"`;

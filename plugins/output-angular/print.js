@@ -1,6 +1,7 @@
 import { buildIr } from "../dsp-ir/ir.js";
 import { VOID } from "../dsp-ir/parse.js";
 import { singleQuoted } from "../dsp-ir/emit.js";
+import { attrSafe } from "../dsp-ir/text.js";
 
 /**
  * The Angular printer, which closes a loop: portamp reads the old Angular
@@ -14,7 +15,6 @@ import { singleQuoted } from "../dsp-ir/emit.js";
  */
 
 const pad = (depth) => "  ".repeat(depth);
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 
 function classAttribute(classes, out) {
   const literal = classes.filter((c) => c.kind === "literal").map((c) => c.value).join(" ").trim();

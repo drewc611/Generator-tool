@@ -1,3 +1,5 @@
+import { attrSafe } from "../dsp-ir/text.js";
+
 /**
  * Underscore template syntax, lowered onto the attribute dialect.
  *
@@ -12,7 +14,6 @@
  * that dissolves, loops as ng-repeat.
  */
 
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 
 export function lowerUnderscore(source, note = () => {}) {
   const text = String(source ?? "");

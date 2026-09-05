@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
+import { attrSafe, matchBracket as matchShared, splitWords } from "../dsp-ir/text.js";
+
+const matchBracket = (text, open) => matchShared(text, open, { ticks: false });
 
 /**
  * FreeMarker, the template language Spring MVC shipped with for a decade:
@@ -57,34 +60,7 @@ export function fmToJs(code, note = () => {}) {
   }).join("");
 }
 
-const q = (s) => String(s).replace(/"/g, "'");
-const attrSafe = q;
-
-function matchBrace(text, open) {
-  let depth = 0; let quote = null;
-  for (let i = open; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (c === '"' || c === "'") quote = c;
-    else if (c === "{") depth += 1;
-    else if (c === "}") { depth -= 1; if (depth === 0) return i + 1; }
-  }
-  return -1;
-}
-
-function splitArgs(text) {
-  const out = []; let depth = 0; let quote = null; let start = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (c === '"' || c === "'") quote = c;
-    else if ("([{".includes(c)) depth += 1;
-    else if (")]}".includes(c)) depth -= 1;
-    else if (/\s/.test(c) && depth === 0) { if (i > start) out.push(text.slice(start, i)); start = i + 1; }
-  }
-  if (text.length > start) out.push(text.slice(start));
-  return out;
-}
+const q = attrSafe;
 
 /** Lower a FreeMarker template onto the attribute dialect. resolve(name) returns a held include or null. */
 export function lowerFreemarker(source, note = () => {}, resolve = null, depth = 0) {
@@ -93,7 +69,7 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
   // Macros defined here expand at their calls, arguments substituted textually.
   const macros = new Map();
   text = text.replace(/<#macro\s+(\w+)([^>]*)>([\s\S]*?)<\/#macro>/g, (m, name, params, body) => {
-    const spec = splitArgs(params.trim()).map((p) => { const [k, v] = p.split("="); return { name: k.trim(), fallback: v?.trim() }; });
+    const spec = splitWords(params.trim()).map((p) => { const [k, v] = p.split("="); return { name: k.trim(), fallback: v?.trim() }; });
     macros.set(name, { spec, body });
     return "";
   });
@@ -103,7 +79,7 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
     // Named arguments by name, positional ones in the order the macro declared.
     const given = new Map();
     let positional = 0;
-    for (const a of splitArgs(argText.trim())) {
+    for (const a of splitWords(argText.trim())) {
       const i = a.indexOf("=");
       if (i < 0) { const p = mac.spec[positional]; positional += 1; if (p) given.set(p.name, a); }
       else given.set(a.slice(0, i).trim(), a.slice(i + 1).trim());
@@ -180,7 +156,7 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
     } else if (m[2] !== undefined) {
       tokens.push({ start: m.index, end: m.index + m[0].length, close: m[2] });
     } else {
-      const end = matchBrace(text, m.index + m[0].length - 1);
+      const end = matchBracket(text, m.index + m[0].length - 1);
       if (end < 0) { note("An interpolation never closes; the rest of the file was kept as text."); break; }
       tokens.push({ start: m.index, end, expr: text.slice(m.index + 2, end - 1) });
       re.lastIndex = end;

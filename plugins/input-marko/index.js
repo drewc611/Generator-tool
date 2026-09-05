@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 import { pascal } from "../dsp-ir/emit.js";
+import { matchBracket, splitCommas as splitArgs } from "../dsp-ir/text.js";
 
 /**
  * Marko, eBay's template language, writes control flow as tags and bindings
@@ -22,41 +23,11 @@ import { pascal } from "../dsp-ir/emit.js";
  * equivalent here and are named rather than approximated.
  */
 
-const CLOSERS = { "(": ")", "[": "]", "{": "}" };
 const VOID = new Set(["input", "img", "br", "hr", "meta", "link", "source", "track", "wbr", "area", "base", "col", "embed", "param"]);
 const CONTROL = new Set(["if", "else-if", "else", "for", "while"]);
 const NAMED_ONLY = new Set(["include", "await", "macro", "layout-use", "layout-put", "invoke", "import", "static", "html-comment"]);
 
 const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-
-/** The index just past the bracket that closes the one at `open`. */
-function matchBracket(text, open) {
-  const close = CLOSERS[text[open]];
-  let depth = 0; let quote = null;
-  for (let i = open; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (c === '"' || c === "'" || c === "`") quote = c;
-    else if (c in CLOSERS) depth += 1;
-    else if (c === ")" || c === "]" || c === "}") { depth -= 1; if (depth === 0 && c === close) return i + 1; }
-  }
-  return -1;
-}
-
-function splitArgs(text) {
-  const out = []; let depth = 0; let start = 0; let quote = null;
-  for (let i = 0; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (c === '"' || c === "'" || c === "`") quote = c;
-    else if (c in CLOSERS) depth += 1;
-    else if (c === ")" || c === "]" || c === "}") depth -= 1;
-    else if (c === "," && depth === 0) { out.push(text.slice(start, i).trim()); start = i + 1; }
-  }
-  const last = text.slice(start).trim();
-  if (last) out.push(last);
-  return out;
-}
 
 /** Marko attributes: name, name="quoted", name=expression, name(args), ...spread. */
 export function scanAttrs(text) {
@@ -66,7 +37,7 @@ export function scanAttrs(text) {
     ws(); if (i >= text.length) break;
     if (text.startsWith("...", i)) {
       const start = i; i += 3;
-      while (i < text.length && !/\s/.test(text[i])) { if (text[i] in CLOSERS) i = matchBracket(text, i); else i += 1; }
+      while (i < text.length && !/\s/.test(text[i])) { if (text[i] === "(" || text[i] === "[" || text[i] === "{") i = matchBracket(text, i); else i += 1; }
       attrs.push({ name: "...", spread: text.slice(start + 3, i) }); continue;
     }
     const nm = /^[\w:.$@-]+/.exec(text.slice(i));
@@ -83,7 +54,7 @@ export function scanAttrs(text) {
       attrs.push({ name, quoted: text.slice(i + 1, j) }); i = j + 1; continue;
     }
     const start = i;
-    while (i < text.length && !/\s/.test(text[i])) { if (text[i] in CLOSERS) { const e = matchBracket(text, i); i = e < 0 ? text.length : e; } else if (text[i] === '"' || text[i] === "'" || text[i] === "`") { const q = text[i]; i += 1; while (i < text.length && text[i] !== q) i += 1; i += 1; } else i += 1; }
+    while (i < text.length && !/\s/.test(text[i])) { if (text[i] === "(" || text[i] === "[" || text[i] === "{") { const e = matchBracket(text, i); i = e < 0 ? text.length : e; } else if (text[i] === '"' || text[i] === "'" || text[i] === "`") { const q = text[i]; i += 1; while (i < text.length && text[i] !== q) i += 1; i += 1; } else i += 1; }
     attrs.push({ name, expr: text.slice(start, i) });
   }
   return attrs;
@@ -209,7 +180,7 @@ export function lowerMarko(text, note = () => {}) {
       const c = markup[k];
       if (quote) { if (c === "\\") k += 1; else if (c === quote) quote = null; k += 1; continue; }
       if (c === '"' || c === "'" || c === "`") quote = c;
-      else if (c in CLOSERS) depth += 1;
+      else if (c === "(" || c === "[" || c === "{") depth += 1;
       else if (c === ")" || c === "]" || c === "}") depth -= 1;
       else if (c === ">" && depth === 0) break;
       k += 1;

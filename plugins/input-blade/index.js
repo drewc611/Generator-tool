@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
+import { attrSafe, splitCommas } from "../dsp-ir/text.js";
 
 /**
  * Blade, Laravel's template language: directives that begin with @, PHP
@@ -58,7 +59,7 @@ export function phpToJs(code, note = () => {}) {
   }).join("");
 }
 
-const q = (s) => String(s).replace(/"/g, "'");
+const q = attrSafe;
 const viewPath = (name) => String(name).replace(/^['"]|['"]$/g, "").replace(/\./g, "/") + ".blade.php";
 
 /** The balanced (...) argument that follows a directive at `at`; returns [inner, endIndex]. */
@@ -76,20 +77,6 @@ function argument(text, at) {
     else if (c === ")") { depth -= 1; if (depth === 0) return [text.slice(i + 1, j), j + 1]; }
   }
   return [text.slice(i + 1), text.length];
-}
-
-function splitTop(text) {
-  const out = []; let depth = 0; let quote = null; let start = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (c === '"' || c === "'") quote = c;
-    else if ("([{".includes(c)) depth += 1;
-    else if (")]}".includes(c)) depth -= 1;
-    else if (c === "," && depth === 0) { out.push(text.slice(start, i).trim()); start = i + 1; }
-  }
-  out.push(text.slice(start).trim());
-  return out;
 }
 
 /** Compose a view into the layout it extends and inline what it includes; returns the composed Blade. */
@@ -125,7 +112,7 @@ export function composeBlade(source, resolve, note = () => {}, depth = 0) {
   }
   if (resolve && depth < 6) {
     text = text.replace(/@include(?:If|When|Unless|First)?\s*\(([\s\S]*?)\)(?=\s|$|<)/g, (m, args) => {
-      const parts = splitTop(args);
+      const parts = splitCommas(args);
       const nameArg = parts.find((p) => /^['"]/.test(p)) ?? parts[0];
       const body = resolve(viewPath(nameArg));
       if (body == null) { note(`@include(${nameArg}) names a partial this run does not hold; the tag was removed and the content stands without it.`); return ""; }

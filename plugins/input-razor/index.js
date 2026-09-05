@@ -2,6 +2,11 @@ import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 
 import { pascal } from "../dsp-ir/emit.js";
+import { attrSafe, matchBracket as matchShared } from "../dsp-ir/text.js";
+
+// Quotes are C# strings only where the text is C#: inside a ( ) condition or
+// a @{ } block. A { } body is markup, and "Don't" in a paragraph is prose.
+const matchBracket = (text, open, code = text[open] !== "{") => matchShared(text, open, { strings: code, ticks: false });
 
 /**
  * Razor, the view language of ASP.NET MVC and ASP.NET Core: C# after an @,
@@ -49,22 +54,6 @@ export function csharpToJs(code, note = () => {}) {
   }).join("");
 }
 
-const CLOSERS = { "(": ")", "[": "]", "{": "}" };
-// Quotes are C# strings only where the text is C#: inside a ( ) condition or
-// a @{ } block. A { } body is markup, and "Don't" in a paragraph is prose.
-// Returns -1 when the bracket never closes; every caller checks.
-function matchBracket(text, open, code = text[open] !== "{") {
-  const close = CLOSERS[text[open]];
-  let depth = 0; let quote = null;
-  for (let i = open; i < text.length; i += 1) {
-    const c = text[i];
-    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (code && (c === '"' || c === "'")) quote = c;
-    else if (c in CLOSERS) depth += 1;
-    else if (c === ")" || c === "]" || c === "}") { depth -= 1; if (depth === 0 && c === close) return i + 1; }
-  }
-  return -1;
-}
 
 /** An implicit expression after @: an identifier chain with member access, indexers and calls. */
 function implicitExpression(text, at) {
@@ -81,7 +70,7 @@ function implicitExpression(text, at) {
   return [text.slice(at, i), i];
 }
 
-const q = (s) => String(s).replace(/"/g, "'");
+const q = attrSafe;
 
 /** Compose a view into its layout and inline its partials; returns Razor with the composition done. */
 export function composeRazor(source, resolve, note = () => {}, viewStartLayout = null, depth = 0) {

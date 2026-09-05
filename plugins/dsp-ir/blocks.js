@@ -1,4 +1,5 @@
 import { balanced } from "./scan.js";
+import { attrSafe } from "./text.js";
 
 /**
  * Angular's built in control flow, lowered onto the attribute dialect.
@@ -17,7 +18,6 @@ const HEAD = /@(if|for|switch|defer)\s*[({]/g;
 
 // The rewritten condition lands inside attr="...", so a double quoted string
 // in it would end the attribute early. Single quotes say the same thing.
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 
 function branchChain(conditions) {
   // The branch that runs is the first whose test passes, so each later branch

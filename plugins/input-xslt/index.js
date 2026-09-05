@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 
 import { pascal } from "../dsp-ir/emit.js";
+import { attrSafe } from "../dsp-ir/text.js";
 
 /**
  * XSLT, the front end of the early 2000s: an XML document and a stylesheet
@@ -99,7 +100,7 @@ export function xpathToJs(expr, ctx = "data", note = () => {}) {
   }).join("");
 }
 
-const q = (s) => String(s).replace(/"/g, "'");
+const q = attrSafe;
 
 /** Lower a parsed stylesheet onto the dialect. Returns { template }. */
 export function lowerXslt(text, note = () => {}) {
