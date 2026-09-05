@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { attrSafe, matchBracket, readInputs, splitCommas } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket, readInputs, resolveTemplate, splitCommas } from "../dsp-ir/text.js";
 
 /**
  * Pug, once Jade, the template language of the Express era: a tree written as
@@ -367,11 +367,9 @@ export default {
       const bare = (name) => String(name).replace(/^(\.\.?\/)+/, "").replace(/\.(pug|jade)$/i, "");
       const resolve = (name) => {
         const clean = String(name).replace(/^(\.\.?\/)+/, "");
-        const withExt = /\.\w+$/.test(clean) ? clean : `${clean}.pug`;
         const keys = [...bodies.keys()];
-        const key = keys.find((k) => k === withExt || k.endsWith(`/${withExt}`))
-          ?? keys.find((k) => bare(k) === bare(withExt) || bare(k).endsWith(`/${bare(withExt)}`))
-          ?? keys.find((k) => bare(k).split("/").pop() === bare(withExt).split("/").pop());
+        // A non Pug include (a .txt, a .css) is found by its own name; a template by its bared path or a suffix of it.
+        const key = (/\.\w+$/.test(clean) && !/\.(pug|jade)$/i.test(clean) ? keys.find((k) => k === clean || k.endsWith(`/${clean}`)) : null) ?? resolveTemplate(keys, clean, bare);
         return key ? bodies.get(key) : null;
       };
       const extended = new Set();

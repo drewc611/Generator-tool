@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and seven features across one hundred and twenty three phases. The statuses are
+Six hundred and eight features across one hundred and twenty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2338,14 +2338,19 @@ The suite proves what the tests assert; the workflow's hundred odd exercise step
 **607. input-jsp reads JSP with the standard tag library, and the markup tree Thymeleaf and JSP share has one home** 🔨
 JSP with JSTL was the enterprise Java page for twenty years: HTML with <c:if>, <c:choose>, <c:forEach> and <c:out> around it, the expression language's ${...} inside it, <fmt:> for messages and formats, fn: functions, jsp: actions, the directives that name tag libraries and include other pages, and the scriptlets that ran Java where a tag would not do. input-jsp lowers the tags onto the dialect: c:if onto ng-if, c:choose with its when and otherwise onto the chain negated the way the container evaluates it, c:forEach with its varStatus onto ng-repeat with index, count, first and last as arithmetic on $index and a bounded range named, c:out onto an interpolation, a default folded in, or bound html when escapeXml is false, c:set onto a substituted alias where the value is fixed and named where it depends on a branch or reads itself, c:url with its params onto the address it builds, a static include (<%@ include %>) and a dynamic one (<jsp:include>) onto the page they name with passed params named, jsp:getProperty onto its read, and the Spring form tags (form:form with its model, input, textarea, select with items, checkboxes, label, errors named) onto a two way model with the name and id the tag would have rendered. EL is spelled as JavaScript outside strings (and, or, not, eq, empty, the fn: functions with an exact equivalent rewritten), a formatter (fmt:formatNumber, fmt:formatDate) keeps its value unformatted and is named, a message key (fmt:message, spring:message) is kept as its key, an implicit object (param, sessionScope, pageContext) is named as context the port must supply, and a tag from a library the reader does not know is named with its content standing. A scriptlet is named and never carried; a Java expression (<%= %>) is kept as written inside an interpolation and named; a .jspf fragment is composed, not ported as a screen. The markup tree the Thymeleaf reader built is now dsp-ir/markup.js, one parser both readers import and the hygiene gate holds to one home. JSTL pages leave input-static's hands, .jspf and .jspx reach the scan, and the same product page written in JSP is the ninth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/jsp.test.js holds it.
 
+## Phase 124: the eighth review pass
+
+**608. The JSP reader and the local CI runner reviewed, ten defects fixed with the inputs that exposed them** 🔨
+The review cadence held for the eighth time. In the JSP reader, six places still quoted a literal by hand after the hygiene pass had introduced quoteJs, so an apostrophe in a c:out default or a fmt value broke the expression; one helper now spells a value wherever JavaScript is wanted, an expression as itself, a literal quoted, text around expressions as a concatenation, and c:out prints a literal or an interpolation as the text it is rather than an interpolation inside an interpolation. A dynamic include was parsed without its scripts and styles stripped, unlike the page and a static include, so a footer's script landed in the template; it is stripped the same way. A Spring form cssClass was copied raw, so an expression in it survived unlowered; it goes through the text lowering, an own id or name is kept rather than doubled, and checkboxes honour itemValue and itemLabel like a select. A test with a trailing space or two expressions became a quoted string and read as always true; it is trimmed and a mixed one is read as the concatenation it is and named. An inner c:forEach that reused the outer loop's status name deleted the outer aliases when it closed, leaving a later read unlowered and an input invented; the outer status is restored. The bare function stripped jsp, views or pages without requiring a slash after them, so viewstate.jsp became tate, and two pages that bare to one name overwrote each other's emitted file; the slash is required and a colliding page keeps its whole path or a counted suffix, named. A spaceless ternary (a ? b:c(x) : d) read as a tag library call; only a declared prefix names one, which is what the prefixes the directives record are for. In the runner, a step that fails or is interrupted may leave files it would have removed on success, one of them a planted secret that makes every later demo fail at the secret gate with no hint why; the runner now names what appeared and removes those untracked paths with --clean and nothing else; a spawn failure names the missing shell instead of printing NaN; and zero parsed or matched steps is a failure, because nothing run proves nothing. The template resolver the tag readers and Smarty and Pug each wrote is one, in dsp-ir/text.js, held to one home. Each fix carries the input that exposed it in test/jsp.test.js and test/ci-local.test.js.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 560 |
+| new in this branch | 561 |
 | planned | 3 |
-| total | 607 |
+| total | 608 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

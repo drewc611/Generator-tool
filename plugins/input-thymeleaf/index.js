@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { pascal } from "../dsp-ir/emit.js";
 import { cloneNode, elements, parseMarkup, stripDelimited, VOID_ELEMENTS } from "../dsp-ir/markup.js";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
-import { attrSafe, matchBracket, quoteJs, readInputs, splitCommas } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket, quoteJs, readInputs, resolveTemplate, splitCommas } from "../dsp-ir/text.js";
 
 /**
  * Thymeleaf, the natural template of the Spring world: valid HTML whose
@@ -561,11 +561,7 @@ export default {
 
       const bare = (name) => String(name).replace(/^(\.\.?\/)+/, "").replace(/^(?:src\/main\/resources\/)?templates\//, "").replace(/\.(html?|xhtml|thtml)$/i, "");
       const keys = [...bodies.keys()];
-      const findKey = (name) => {
-        const b = bare(name);
-        // By its path or a suffix of it; a basename alone would be a guess at which nav.html was meant.
-        return keys.find((k) => bare(k) === b) ?? keys.find((k) => bare(k).endsWith(`/${b}`));
-      };
+      const findKey = (name) => resolveTemplate(keys, name, bare);
       const trees = new Map();
       const treeOf = (key) => {
         if (!trees.has(key)) {

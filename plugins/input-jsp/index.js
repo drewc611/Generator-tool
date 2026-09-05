@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { pascal } from "../dsp-ir/emit.js";
 import { elements, parseMarkup, stripDelimited, VOID_ELEMENTS } from "../dsp-ir/markup.js";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
-import { attrSafe, matchBracket, quoteJs, readInputs, splitCommas } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket, quoteJs, readInputs, resolveTemplate, splitCommas } from "../dsp-ir/text.js";
 
 /**
  * JSP with the standard tag library, the enterprise Java page for twenty
@@ -51,17 +51,21 @@ const FN = {
 export function elToJs(expr, scope = freshScope()) {
   let s = String(expr).trim();
   for (;;) {
-    const m = /\b(fn:\w+|\w+:\w+)\(/.exec(s);
+    const m = /(?<![\w.$])(\w+):(\w+)\(/.exec(s);
     if (!m) break;
+    // Only a declared prefix names a tag library function; a ? b:c(x) : d is a ternary.
+    if (!scope.prefixes.has(m[1])) { s = s.slice(0, m.index) + m[1] + ":\u0000" + s.slice(m.index + m[1].length + 1); continue; }
     const open = m.index + m[0].length - 1;
     const end = matchBracket(s, open, { ticks: false });
     if (end < 0) break;
     const args = splitCommas(s.slice(open + 1, end - 1), { ticks: false }).map((a) => elToJs(a, scope));
+    const name = `${m[1]}:${m[2]}`;
     let rep;
-    if (FN[m[1]]) rep = FN[m[1]](args);
-    else { scope.note(`${m[1]}() is a tag library function this reader does not know; the call was kept and the port must supply it.`); rep = `${m[1].replace(":", "_")}(${args.join(", ")})`; }
+    if (FN[name]) rep = FN[name](args);
+    else { scope.note(`${name}() is a tag library function this reader does not know; the call was kept and the port must supply it.`); rep = `${m[1]}_${m[2]}(${args.join(", ")})`; }
     s = s.slice(0, m.index) + rep + s.slice(end);
   }
+  s = s.replace(/:\u0000/g, ":");
   const parts = s.split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/);
   return parts.map((p, i) => {
     if (i % 2) return p;
@@ -113,6 +117,21 @@ function lowerValue(value, scope) {
 
 const attr = (el, name) => el.attrs.find((a) => a.name.toLowerCase() === name.toLowerCase())?.value ?? null;
 
+/** A lowered value where JavaScript is wanted: an expression as itself, a literal quoted, text around expressions as a concatenation. */
+function valueJs(r) {
+  if (r.kind === "expr") return r.text;
+  if (r.kind === "literal") return quoteJs(r.text);
+  const pieces = [];
+  let last = 0;
+  for (const m of r.text.matchAll(/\{\{\s*([\s\S]*?)\s*\}\}/g)) {
+    if (m.index > last) pieces.push(quoteJs(r.text.slice(last, m.index)));
+    pieces.push(`(${m[1]})`);
+    last = m.index + m[0].length;
+  }
+  if (last < r.text.length) pieces.push(quoteJs(r.text.slice(last)));
+  return pieces.join(" + ");
+}
+
 /** Lower a tree onto the dialect. `resolve(path)` returns the text of another page in the run, or null. */
 export function lowerTree(root, scope = freshScope(), resolve = () => null, depth = 0) {
   const lowerNodes = (nodes) => nodes.map((n) => lowerNode(n)).join("");
@@ -158,7 +177,11 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
     return `${open}${lowerNodes(el.children)}</${el.tag}>`;
   };
 
-  const test = (value) => { const r = lowerValue(value ?? "", scope); return r.kind === "expr" ? r.text : `'${r.text}'`; };
+  const test = (value) => {
+    const r = lowerValue(String(value ?? "").trim(), scope);
+    if (r.kind === "interp") scope.note(`The test \`${String(value).trim().slice(0, 40)}\` mixes text and expressions; it was read as their concatenation, which is a string and always true.`);
+    return valueJs(r);
+  };
 
   const lowerCore = (local, el) => {
     switch (local) {
@@ -189,27 +212,33 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
         if (items === null) { scope.note(`<c:forEach begin="${attr(el, "begin") ?? ""}" end="${attr(el, "end") ?? ""}"> counts a range; the port repeats over a list it must be given, and the body was kept once.`); return `<ng-container>${lowerNodes(el.children)}</ng-container>`; }
         if (attr(el, "begin") !== null || attr(el, "end") !== null || attr(el, "step") !== null) scope.note(`<c:forEach> over \`${items}\` bounded its range with begin, end or step; the bounds are not carried and the port repeats over the whole list.`);
         const list = test(items);
+        const saved = new Map();
         if (status) {
-          for (const [k, v] of [["index", "$index"], ["count", "($index + 1)"], ["first", "($index == 0)"], ["last", `($index == ${list}.length - 1)`], ["current", item]]) scope.aliases.set(`${status}.${k}`, v);
+          for (const [k, v] of [["index", "$index"], ["count", "($index + 1)"], ["first", "($index == 0)"], ["last", `($index == ${list}.length - 1)`], ["current", item]]) {
+            if (scope.aliases.has(`${status}.${k}`)) saved.set(`${status}.${k}`, scope.aliases.get(`${status}.${k}`));
+            scope.aliases.set(`${status}.${k}`, v);
+          }
         }
         scope.depth += 1; const body = lowerNodes(el.children); scope.depth -= 1;
-        if (status) for (const k of ["index", "count", "first", "last", "current"]) scope.aliases.delete(`${status}.${k}`);
+        // The outer loop's status, if the inner reused its name, is what stands after the inner closes.
+        if (status) for (const k of ["index", "count", "first", "last", "current"]) { if (saved.has(`${status}.${k}`)) scope.aliases.set(`${status}.${k}`, saved.get(`${status}.${k}`)); else scope.aliases.delete(`${status}.${k}`); }
         return `<ng-container ng-repeat="${attrSafe(`${item} in ${list}${status ? " track by $index" : ""}`)}">${body}</ng-container>`;
       }
       case "fortokens": scope.note(`<c:forTokens> split \`${attr(el, "items")}\` on \`${attr(el, "delims")}\` at render time; the body was kept once and the port must split it.`); return `<ng-container>${lowerNodes(el.children)}</ng-container>`;
       case "out": {
         const value = lowerValue(attr(el, "value") ?? "", scope);
         const dflt = attr(el, "default");
-        let js = value.kind === "expr" ? value.text : quoteJs(value.text);
-        if (dflt !== null) { const d = lowerValue(dflt, scope); js = `(${js} || ${d.kind === "expr" ? d.text : `'${d.text}'`})`; }
+        let js = valueJs(value);
+        if (dflt !== null) js = `(${js} || ${valueJs(lowerValue(dflt, scope))})`;
         if (/^\s*false\s*$/i.test(attr(el, "escapeXml") ?? "")) return `<span ng-bind-html="${attrSafe(js)}"></span>`;
-        return value.kind === "literal" && dflt === null ? value.text : `{{ ${js} }}`;
+        if (dflt === null && value.kind !== "expr") return value.text;
+        return `{{ ${js} }}`;
       }
       case "set": {
         const varName = attr(el, "var");
         if (!varName) { scope.note(`<c:set target="${attr(el, "target") ?? ""}" property="${attr(el, "property") ?? ""}"> wrote into an object on the server; the port must carry it.`); return ""; }
         const value = attr(el, "value") !== null ? lowerValue(attr(el, "value"), scope) : { kind: "expr", text: quoteJs(lowerNodes(el.children)) };
-        const js = value.kind === "expr" ? value.text : /^(?:-?\d+(?:\.\d+)?|true|false|null)$/.test(value.text.trim()) ? value.text.trim() : quoteJs(value.text);
+        const js = value.kind === "literal" && /^(?:-?\d+(?:\.\d+)?|true|false|null)$/.test(value.text.trim()) ? value.text.trim() : valueJs(value);
         if (scope.depth > 0 || new RegExp(`(?<![\\w.$])${varName}(?![\\w$])`).test(js)) { scope.note(`<c:set var="${varName}"> inside a branch or loop, or reading itself, takes a value the port must carry; it was not substituted.`); return ""; }
         scope.aliases.set(varName, /^[\w$.]+$/.test(js) || /^'[^']*'$/.test(js) ? js : `(${js})`);
         return "";
@@ -243,7 +272,7 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
     if (body == null) { scope.note(`${path} is included by this page and is not in the run; the page stands without it.`); return ""; }
     const params = el ? elements(el.children).filter((c) => c.tag === "jsp:param").map((c) => attr(c, "name")).filter(Boolean) : [];
     if (params.length) scope.note(`<jsp:include page="${path}"> passed ${params.join(", ")} into the included page; the port reads them from the same scope.`);
-    return lowerTree(parseMarkup(prepare(body, scope, resolve, depth + 1)), scope, resolve, depth + 1);
+    return lowerTree(parseMarkup(stripStyles(stripScripts(prepare(body, scope, resolve, depth + 1)))), scope, resolve, depth + 1);
   };
 
   const lowerFmt = (local, el) => {
@@ -253,7 +282,7 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
       case "formatnumber": case "formatdate": case "parsenumber": case "parsedate": {
         const value = lowerValue(attr(el, "value") ?? "", scope);
         scope.note(`<fmt:${local}> formatted its value on the server; the value is unformatted in the port and the format is not carried.`);
-        const js = value.kind === "expr" ? value.text : `'${value.text}'`;
+        const js = valueJs(value);
         const varName = attr(el, "var");
         if (varName) { scope.aliases.set(varName, js); return ""; }
         return `{{ ${js} }}`;
@@ -280,8 +309,8 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
     const model = scope.formModel ?? null;
     const bind = path ? (model ? `${model}.${path}` : path) : null;
     const carry = el.attrs.filter((a) => !["path", "cssClass", "cssErrorClass", "items", "itemValue", "itemLabel", "modelAttribute", "commandName", ...(local === "input" ? ["type"] : [])].includes(a.name)).map((a) => (a.value === null ? a.name : `${a.name}="${lowerText(a.value, scope)}"`));
-    const css = attr(el, "cssClass"); if (css) carry.push(`class="${css}"`);
-    const named = bind ? [`name="${path}"`, `id="${path}"`, `ng-model="${attrSafe(bind)}"`] : [];
+    const css = attr(el, "cssClass"); if (css) carry.push(`class="${lowerText(css, scope)}"`);
+    const named = bind ? [...(attr(el, "name") === null ? [`name="${path}"`] : []), ...(attr(el, "id") === null ? [`id="${path}"`] : []), `ng-model="${attrSafe(bind)}"`] : [];
     if (bind) scope.twoWay = true;
     switch (local) {
       case "form": {
@@ -302,7 +331,7 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
         let options = lowerNodes(el.children);
         if (items) {
           const r = lowerValue(items, scope);
-          const list = r.kind === "expr" ? r.text : `'${r.text}'`;
+          const list = valueJs(r);
           const value = attr(el, "itemValue"); const label = attr(el, "itemLabel");
           options += `<option ng-repeat="o in ${attrSafe(list)}" ng-attr-value="{{ ${value ? `o.${value}` : "o"} }}">{{ ${label ? `o.${label}` : "o"} }}</option>`;
         }
@@ -310,14 +339,15 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
       }
       case "option": return `<option${el.attrs.filter((a) => a.name === "value").map((a) => ` value="${lowerText(a.value ?? "", scope)}"`).join("")}>${lowerNodes(el.children)}</option>`;
       case "options": {
-        const r = lowerValue(attr(el, "items") ?? "", scope); const list = r.kind === "expr" ? r.text : `'${r.text}'`;
+        const r = lowerValue(attr(el, "items") ?? "", scope); const list = valueJs(r);
         const value = attr(el, "itemValue"); const label = attr(el, "itemLabel");
         return `<option ng-repeat="o in ${attrSafe(list)}" ng-attr-value="{{ ${value ? `o.${value}` : "o"} }}">{{ ${label ? `o.${label}` : "o"} }}</option>`;
       }
       case "checkboxes": case "radiobuttons": {
-        const r = lowerValue(attr(el, "items") ?? "", scope); const list = r.kind === "expr" ? r.text : `'${r.text}'`;
+        const r = lowerValue(attr(el, "items") ?? "", scope); const list = valueJs(r);
         const type = local === "checkboxes" ? "checkbox" : "radio";
-        return `<label ng-repeat="o in ${attrSafe(list)}"><input type="${type}" name="${path}" ng-attr-value="{{ o }}"${bind ? ` ng-model="${attrSafe(bind)}"` : ""}>{{ o }}</label>`;
+        const value = attr(el, "itemValue"); const label = attr(el, "itemLabel");
+        return `<label ng-repeat="o in ${attrSafe(list)}"><input type="${type}" name="${path}" ng-attr-value="{{ ${value ? `o.${value}` : "o"} }}"${bind ? ` ng-model="${attrSafe(bind)}"` : ""}>{{ ${label ? `o.${label}` : "o"} }}</label>`;
       }
       case "label": return `<label for="${path ?? ""}">${lowerNodes(el.children)}</label>`;
       case "errors": scope.note(`<form:errors path="${path ?? ""}"> rendered Spring validation errors on the server; the port must carry field errors from its own validation.`); return "";
@@ -355,7 +385,7 @@ export function prepare(source, scope, resolve = () => null, depth = 0) {
   return text;
 }
 
-const isJsp = (rel, text) => /\.(jsp|jspf|jspx|tag)$/i.test(rel) && (/<%@|<%[\s=!-]|<c:\w+|<jsp:\w+|<fmt:\w+|<form:\w+|\$\{/.test(text));
+const isJsp = (rel, text) => /\.(jsp|jspf|jspx)$/i.test(rel) && (/<%@|<%[\s=!-]|<c:\w+|<jsp:\w+|<fmt:\w+|<form:\w+|\$\{/.test(text));
 
 export default {
   name: "input-jsp",
@@ -372,14 +402,10 @@ export default {
       if (!bodies.size) return log.debug("no JSP pages");
       const notes = [];
       const note = (t) => { if (!notes.includes(t)) notes.push(t); };
-      const bare = (name) => String(name).replace(/^(\.\.?\/)+/, "").replace(/^\//, "").replace(/^(?:src\/main\/webapp\/|webapp\/)?(?:WEB-INF\/)?(?:jsp|views|pages)?\/?/, "").replace(/\.(jsp|jspf|jspx)$/i, "");
+      const bare = (name) => String(name).replace(/^(\.\.?\/)+/, "").replace(/^\//, "").replace(/^(?:src\/main\/webapp\/|webapp\/)?(?:WEB-INF\/)?(?:(?:jsp|views|pages)\/)?/, "").replace(/\.(jsp|jspf|jspx)$/i, "");
       const keys = [...bodies.keys()];
-      // By its path or a suffix of it; a basename alone would be a guess at which header.jspf was meant.
-      const resolve = (name) => {
-        const b = bare(name);
-        const k = keys.find((x) => bare(x) === b) ?? keys.find((x) => bare(x).endsWith(`/${b}`));
-        return k ? bodies.get(k) : null;
-      };
+      const resolve = (name) => { const k = resolveTemplate(keys, name, bare); return k ? bodies.get(k) : null; };
+      const taken = new Set(ctx.screens.map((s) => s.selector));
       let count = 0;
       for (const [key, text] of bodies) {
         if (/\.jspf$/i.test(key)) { note(`${key} is a fragment other pages include; it is composed into each of them rather than ported as a screen of its own.`); continue; }
@@ -391,7 +417,15 @@ export default {
         if (body) template = body[1];
         template = template.trim();
         if (!template) continue;
-        const selector = (bare(key) || "page").split("/").join("-").toLowerCase().replace(/[^\w-]/g, "-");
+        let selector = (bare(key) || "page").split("/").join("-").toLowerCase().replace(/[^\w-]/g, "-");
+        // Two pages that bare to one name (index.jsp beside WEB-INF/jsp/index.jsp) keep their whole paths apart.
+        if (taken.has(selector)) {
+          let full = key.replace(/\.(jsp|jspf|jspx)$/i, "").split("/").join("-").toLowerCase().replace(/[^\w-]/g, "-");
+          for (let n = 2; taken.has(full); n += 1) full = `${selector}-${n}`;
+          note(`${key} and another page share the name ${selector}; this one is ported as ${full} so neither overwrites the other.`);
+          selector = full;
+        }
+        taken.add(selector);
         ctx.screens.push({
           selector,
           className: pascal(selector),

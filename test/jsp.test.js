@@ -26,6 +26,8 @@ test("EL is spelled as JavaScript: word operators, not, empty in its two senses,
   assert.equal(elToJs("not empty product.tags and y", sc), "!(!product.tags || !product.tags.length) && y");
   assert.equal(elToJs("fn:contains(fn:toLowerCase(a), 'b') and fn:replace(s, 'x', 'y')"), "a.toLowerCase().includes('b') && s.split('x').join('y')");
   assert.equal(elToJs("param.q", sc), "param.q");
+  assert.equal(elToJs("a ? b:c(x) : d", sc), "a ? b:c(x) : d", "a spaceless ternary is not a tag library call");
+  sc.prefixes.add("my");
   assert.equal(elToJs("my:helper(a)", sc), "my_helper(a)");
   assert.equal(elToJs("'and eq empty'"), "'and eq empty'", "a string is left alone");
   assert.ok(notes.some((n) => /param is an implicit object/.test(n)) && notes.some((n) => /my:helper\(\) is a tag library function/.test(n)));
@@ -111,5 +113,49 @@ test("a run composes the page with its includes, ports it, reads the locals and 
     }
   } finally {
     await run.cleanup();
+  }
+});
+
+test("the eighth review pass: literals quoted through one helper, text around expressions in expression position, includes stripped, form attributes lowered, nested status restored", () => {
+  const notes = [];
+  const files = { "footer.jsp": `<script>var a = 1 < 2;</script><style>a{}</style><footer>F</footer>` };
+  const { out } = lower(
+    `<c:out value="\${q}" default="Don't know" /><c:out value="Hello \${name}" /><fmt:formatNumber value="it's" />` +
+    `<c:if test="\${a} ">x</c:if><c:if test="\${a}\${b}">y</c:if>` +
+    `<jsp:include page="footer.jsp" />` +
+    `<form:form modelAttribute="r"><form:input path="n" id="own" cssClass="\${err ? 'bad' : ''}" /><form:checkboxes path="c" items="\${opts}" itemValue="id" itemLabel="label" /></form:form>` +
+    `<c:forEach var="row" items="\${rows}" varStatus="s"><c:forEach var="cell" items="\${row}" varStatus="s">\${s.index}</c:forEach>|\${s.index}</c:forEach>`,
+    (n) => notes.push(n), (name) => files[name] ?? null,
+  );
+  assert.equal(out,
+    `{{ (q || 'Don\\'t know') }}Hello {{ name }}{{ 'it\\'s' }}` +
+    `<ng-container ng-if="a">x</ng-container><ng-container ng-if="(a) + (b)">y</ng-container>` +
+    `<footer>F</footer>` +
+    `<form method="post"><input type="text" name="n" ng-model="r.n" id="own" class="{{ err ? 'bad' : '' }}"><label ng-repeat="o in opts"><input type="checkbox" name="c" ng-attr-value="{{ o.id }}" ng-model="r.c">{{ o.label }}</label></form>` +
+    `<ng-container ng-repeat="row in rows track by $index"><ng-container ng-repeat="cell in row track by $index">{{ $index }}</ng-container>|{{ $index }}</ng-container>`);
+  assert.ok(notes.some((n) => /mixes text and expressions/.test(n)));
+});
+
+test("the eighth review pass: a folder name is stripped only before a slash, and two pages that bare to one name keep their paths apart", async () => {
+  const { mkdtemp, writeFile, mkdir, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const dir = await mkdtemp(join(tmpdir(), "portamp-jsp-"));
+  try {
+    await mkdir(join(dir, "WEB-INF/jsp"), { recursive: true });
+    await writeFile(join(dir, "index.jsp"), `<p>\${a}</p>`);
+    await writeFile(join(dir, "WEB-INF/jsp/index.jsp"), `<p>\${b}</p>`);
+    await writeFile(join(dir, "viewstate.jsp"), `<p>\${c}</p>`);
+    const run = await runPipeline({ src: dir });
+    try {
+      assert.equal(run.error, null);
+      const sels = run.ctx.screens.filter((s) => s.readBy === "jsp").map((s) => s.selector).sort();
+      assert.deepEqual(sels.filter((x) => x !== "viewstate").length, 2);
+      assert.ok(sels.includes("viewstate") && sels.includes("index") && (sels.includes("web-inf-jsp-index") || sels.includes("index-2")), JSON.stringify(sels));
+      assert.ok(run.ctx.report.unverified.some((n) => /share the name index/.test(n)));
+    } finally {
+      await run.cleanup();
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });

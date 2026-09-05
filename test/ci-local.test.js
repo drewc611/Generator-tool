@@ -34,14 +34,14 @@ test("steps are chosen by name, the network step is skipped unless named, and a 
   ];
   const lines = [];
   const r = runSteps(steps, { log: (l) => lines.push(l) });
-  assert.deepEqual(r, { ran: 4, failed: ["a false step"] });
+  assert.deepEqual(r, { ran: 4, failed: ["a false step"], leftBehind: [] });
   assert.ok(lines.some((l) => /^ok\s+a true step/.test(l)) && lines.some((l) => /^FAIL\s+a false step/.test(l)) && lines.some((l) => /boom/.test(l)));
   assert.ok(!lines.some((l) => /after/.test(l)), "the first failure stops the run");
-  assert.deepEqual(runSteps(steps, { only: ["install"], log: () => {} }), { ran: 1, failed: ["install the optional reader"] });
+  assert.deepEqual(runSteps(steps, { only: ["install"], log: () => {} }), { ran: 1, failed: ["install the optional reader"], leftBehind: [] });
   const skipped = [];
-  assert.deepEqual(runSteps(steps, { skip: ["false"], keepGoing: true, readerInstalled: false, log: (l) => skipped.push(l) }), { ran: 3, failed: [] });
+  assert.deepEqual(runSteps(steps, { skip: ["false"], keepGoing: true, readerInstalled: false, log: (l) => skipped.push(l) }), { ran: 3, failed: [], leftBehind: [] });
   assert.ok(skipped.some((l) => /^skip\s+tests, with the typescript reader/.test(l)), "a step that needs the optional reader is skipped and says so when it is not installed");
-  assert.deepEqual(runSteps(steps, { skip: ["false"], keepGoing: true, readerInstalled: true, log: () => {} }), { ran: 3, failed: ["tests, with the typescript reader"] });
+  assert.deepEqual(runSteps(steps, { skip: ["false"], keepGoing: true, readerInstalled: true, log: () => {} }), { ran: 3, failed: ["tests, with the typescript reader"], leftBehind: [] });
 });
 
 test("the runner runs a real step of this repository's workflow from the command line", () => {
@@ -51,4 +51,31 @@ test("the runner runs a real step of this repository's workflow from the command
   assert.match(r.stdout, /1 of 1 step\(s\) passed/);
   const list = spawnSync(process.execPath, [join(ROOT, "tools/ci-local.mjs"), "--list"], { cwd: ROOT, encoding: "utf8" });
   assert.match(list.stdout, /the smarty reader composes a template/);
+});
+
+test("the eighth review pass: what a failed step leaves behind is named and removed only on request; a missing shell is said; nothing run is a failure", async () => {
+  const { mkdtemp, rm, readdir } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const dir = await mkdtemp(join(tmpdir(), "portamp-ci-"));
+  try {
+    spawnSync("git", ["init", "-q"], { cwd: dir });
+    const steps = [{ name: "plants and fails", run: "mkdir -p out-dir && echo x > out-dir/a.txt && echo leak > leak.txt && exit 1" }];
+    const lines = [];
+    const r = runSteps(steps, { cwd: dir, log: (l) => lines.push(l) });
+    assert.deepEqual(r.failed, ["plants and fails"]);
+    assert.deepEqual(r.leftBehind.sort(), ["leak.txt", "out-dir/a.txt"]);
+    assert.ok(lines.some((l) => /left behind \(pass --clean to remove\): leak\.txt, out-dir\/a\.txt|left behind \(pass --clean to remove\): out-dir\/a\.txt, leak\.txt/.test(l)));
+    assert.deepEqual((await readdir(dir)).filter((f) => f !== ".git").sort(), ["leak.txt", "out-dir"], "nothing is removed unless asked");
+    await rm(join(dir, "leak.txt")); await rm(join(dir, "out-dir"), { recursive: true });
+    runSteps(steps, { cwd: dir, clean: true, log: () => {} });
+    assert.deepEqual((await readdir(dir)).filter((f) => f !== ".git"), [], "with --clean the untracked leavings go, and nothing else");
+    const missing = [];
+    runSteps([{ name: "any", run: "true" }], { cwd: dir, shell: "no-such-shell-here", log: (l) => missing.push(l) });
+    assert.ok(missing.some((l) => /could not run no-such-shell-here/.test(l)) && !missing.some((l) => /NaN/.test(l)));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+  const none = spawnSync(process.execPath, [join(ROOT, "tools/ci-local.mjs"), "--only", "no step has this name"], { cwd: ROOT, encoding: "utf8" });
+  assert.equal(none.status, 1);
+  assert.match(none.stderr, /no step matched; nothing ran/);
 });

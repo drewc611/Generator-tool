@@ -66,6 +66,16 @@ export function splitWords(text) {
 /** An expression inside a double quoted dialect attribute: its double quotes become single. */
 export const attrSafe = (s) => String(s).replace(/"/g, "'");
 
+/**
+ * The template a name refers to, among the run's own files: by its bared path
+ * or a suffix of it, never by its basename alone, which would be a guess at
+ * which nav.html was meant. `bare` strips a dialect's prefixes and extension.
+ */
+export function resolveTemplate(keys, name, bare) {
+  const b = bare(name);
+  return keys.find((k) => bare(k) === b) ?? keys.find((k) => bare(k).endsWith(`/${b}`)) ?? null;
+}
+
 /** A literal as a JS string, its backslashes escaped before its quotes. */
 export const quoteJs = (s) => `'${String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { pascal } from "../dsp-ir/emit.js";
 import { lowerJinja } from "../input-jinja/lower.js";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
-import { matchBracket, readInputs } from "../dsp-ir/text.js";
+import { matchBracket, readInputs, resolveTemplate } from "../dsp-ir/text.js";
 
 /**
  * Smarty, the template engine of a generation of PHP applications: {$var}
@@ -353,12 +353,7 @@ export default {
       const note = (t) => { if (!notes.includes(t)) notes.push(t); };
       const bare = (name) => String(name).replace(/^(\.\.?\/)+/, "").replace(/^(?:templates|views)\//, "").replace(/\.tpl$/i, "");
       const keys = [...bodies.keys()];
-      // By its path or a suffix of it; a basename alone would be a guess at which nav.tpl was meant.
-      const resolve = (name) => {
-        const b = bare(name);
-        const k = keys.find((x) => bare(x) === b) ?? keys.find((x) => bare(x).endsWith(`/${b}`));
-        return k ? smartyToJinja(bodies.get(k), note) : null;
-      };
+      const resolve = (name) => { const k = resolveTemplate(keys, name, bare); return k ? smartyToJinja(bodies.get(k), note) : null; };
       const extended = new Set();
       for (const text of bodies.values()) for (const m of text.matchAll(/\{extends\s+(?:file=)?(['"])([^'"]+)\1/g)) extended.add(bare(m[2]));
 
