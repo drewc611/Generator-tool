@@ -760,9 +760,19 @@ jobs:
           if grep -q "secret" store-out/STORAGE.md; then echo "a value leaked into the storage report"; exit 1; fi
           rm -rf store-src store-out
 
+      - name: the timers reader names an uncleared loop
+        run: |
+          mkdir -p timer-src
+          printf '%s\n' 'setInterval(poll, 1000); requestAnimationFrame(frame);' > timer-src/loop.js
+          node src/cli.js run --src timer-src --out timer-out
+          test -f timer-out/TIMERS.md || { echo "no timers report"; exit 1; }
+          grep -q "setInterval" timer-out/TIMERS.md || { echo "the interval was not named"; exit 1; }
+          grep -q "no .clearInterval. in this file" timer-out/TIMERS.md || { echo "the uncleared interval was not flagged"; exit 1; }
+          rm -rf timer-src timer-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "553" ]; then
-            echo "ROADMAP.md holds $count entries and claims 553"; exit 1
+          if [ "$count" != "554" ]; then
+            echo "ROADMAP.md holds $count entries and claims 554"; exit 1
           fi

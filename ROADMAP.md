@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and fifty three features across sixty nine phases. The statuses are
+Five hundred and fifty four features across seventy phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-656 tests, on Node 18, 20 and 22, and on Windows in CI.
+660 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2039,15 +2039,20 @@ the calibration corpus grows from eleven miniatures to twenty two, a second labe
 **553. dsp-storage names the browser storage the app kept state in** 🔨
 a page that read and wrote localStorage, sessionStorage or IndexedDB held state the server never saw, and a port that rebuilds the screens but not the storage loses it on the first load, silently, because nothing in the markup shows it. dsp-storage finds every getItem, setItem, removeItem, clear, literal bracket access and IndexedDB open, names the keys and the store each belongs to, and says which state survives a reload, which lasts a tab, and which is a database of its own. It names the key, never the value: a key is an identifier the code chose, a value can be a token or a payload, exactly what the secret gate keeps out, so a computed key is not captured as a literal and no value is read. It measures and migrates nothing. test/storage.test.js holds it and a CI step names the storage a small page uses.
 
+## Phase 70: the loops the port must remember to stop
+
+**554. dsp-timers names the timers and animation loops the port must clean up** 🔨
+a setInterval that polls, a setTimeout that retries, a requestAnimationFrame that drives a loop: each is work the page kept doing after the line that started it ran, and in a component world each has to be cleaned up on unmount or the port leaks a loop that keeps running, keeps fetching and keeps holding its closure. dsp-timers finds every setTimeout, setInterval, requestAnimationFrame and requestIdleCallback, pairs each with its own clear (clearTimeout with setTimeout, cancelAnimationFrame with requestAnimationFrame, not any clear with any scheduler) and reports whether that clear appears in the same file, so TIMERS.md separates the loops the port inherits with a stop from the ones that most likely leaked. It counts and changes nothing; which timer belongs in an effect with a cleanup, which moves to the server and which was a leak to drop is the owner's call. test/timers.test.js holds it and a CI step names a polling page's timers.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 506 |
+| new in this branch | 507 |
 | planned | 3 |
-| total | 553 |
+| total | 554 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
