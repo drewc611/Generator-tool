@@ -14,12 +14,14 @@
   /* Original artwork in the late 90s skinned player genre. Nothing here is
      traced from, or copied out of, any real player skin. */
   :root {
-    --chassis-hi: #3f3f47; --chassis-lo: #1d1d22; --face: #2b2b31;
-    --edge-hi: #63636f; --edge-lo: #0a0a0c;
-    --lcd: #04120b; --lcd-edge: #0d3a24;
+    /* Black chassis with a dark blue tint; the phosphor greens and amber stay
+       as the readout so the panel reads black and navy with a lit display. */
+    --chassis-hi: #1b2740; --chassis-lo: #070b16; --face: #0d1526;
+    --edge-hi: #2c3f60; --edge-lo: #02030a;
+    --lcd: #030a18; --lcd-edge: #123057;
     --p-hi: #7df3b0; --p-mid: #3fbf7f; --p-dim: #237a52;
     --amber: #f0a830; --amber-dim: #9c6c1d;
-    --sel: #1b3d6b; --ink: #d7d7de; --muted: #8b8b96; --faint: #5d5d68;
+    --sel: #16305c; --ink: #d5dbe8; --muted: #7f8aa3; --faint: #4f5a72;
     --input: #6ee7a8; --dsp: #7dd3fc; --output: #f0a830; --vis: #c4b5fd; --general: #fb7185;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   }
@@ -27,7 +29,7 @@
   html, body { height: 100%; margin: 0; }
   body {
     height: 100vh; overflow: hidden; padding: 5px; gap: 5px;
-    background: #101013; color: var(--ink);
+    background: #04060e; color: var(--ink);
     font: 11px/1.45 var(--mono); letter-spacing: .2px;
     display: grid; grid-template-columns: 276px 1fr;
     grid-template-rows: 42px 128px minmax(0, 1fr) minmax(0, 168px);
