@@ -75,10 +75,10 @@ test("a run composes the template into the layout it extends, ports it, reads th
     assert.match(product.template, /<h1>\{\{ product\.name \}\}<\/h1>/);
     assert.match(product.template, /ng-if="!\(product\.stock == 0\) && \(product\.stock < 5\)">\s*<p class="low">Only \{\{ product\.stock \}\} left<\/p>/, "the assigned value is substituted where it is read");
     assert.match(product.template, /<p class="price">\{\{ product\.price \}\} \{\{ \(currency \|\| 'EUR'\) \}\}<\/p>/);
-    assert.match(product.template, /<ng-container ng-repeat="tag in product\.tags">\s*<li class="\{\{ \(\$index == 0\) \? 'first' : '' \}\}\{\{ \(\$index == product\.tags\.length - 1\) \? ' last' : '' \}\}">\{\{ \(\$index \+ 1\) \}\}\/\{\{ product\.tags\.length \}\}: \{\{ tag\.name\.toUpperCase\(\) \}\}<\/li>/);
+    assert.match(product.template, /<ng-container ng-repeat="tag in product\.tags track by \$index">\s*<li class="\{\{ \(\$index == 0\) \? 'first' : '' \}\}\{\{ \(\$index == product\.tags\.length - 1\) \? ' last' : '' \}\}">\{\{ \(\$index \+ 1\) \}\}\/\{\{ product\.tags\.length \}\}: \{\{ tag\.name\.toUpperCase\(\) \}\}<\/li>/);
     assert.match(product.template, /<li class="none">No tags<\/li>/);
     assert.match(product.template, /<ng-container ng-repeat="i in reviews">\s*<blockquote>\{\{ i\.body \| limitTo:80 \}\} - \{\{ i\.author \}\}<\/blockquote>/);
-    assert.match(product.template, /<ng-container ng-repeat="spec in specs">\s*<dl><dt>\{\{ \$index \}\}<\/dt><dd>\{\{ spec \}\} \(\{\{ \(\$index \+ 1\) \}\}\)<\/dd><\/dl>/);
+    assert.match(product.template, /<ng-container ng-repeat="spec in specs track by \$index">\s*<dl><dt>\{\{ \$index \}\}<\/dt><dd>\{\{ spec \}\} \(\{\{ \(\$index \+ 1\) \}\}\)<\/dd><\/dl>/);
     assert.match(product.template, /<p class="q">Search: \{\{ smarty\.get\.q \}\}<\/p>/);
     assert.match(product.template, /<p class="brace">Use \{ braces \} freely; &#123;literal&#125;<\/p>/);
     assert.match(product.template, /<ng-container ng-if="product\.tags\.length > 0 && user"><a class="buy" href="\/cart\/add\/\{\{ product\.id \}\}">Buy<\/a><\/ng-container>/);

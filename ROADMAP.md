@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eighteen features across one hundred and thirty four phases. The statuses are
+Six hundred and nineteen features across one hundred and thirty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2393,14 +2393,19 @@ A review pass over input-twirl, each finding fixed with the input that exposed i
 **618. The bound html change read again, across the IR, five printers and two readers** 🔨
 A review pass over the bound html change, each finding fixed with the input that exposed it. The React reader's model regex allowed one brace level, so a handler with a block body or an object literal lost its model silently, and that included the printer's own model plus change handler output, so the round trip the change claimed regressed; the tag is now read to the > at brace depth zero and the handler removed by its matching brace. The entries loop matched `Object.entries(`, its `)` and the `[k, v]` head independently, so a map over tuples and a chain after `Object.entries` were lowered as the object loop over the wrong list; the two shapes are matched whole, a tuple map and a chained entries are kept once and named, and a map index the dialect spells `$index` is named when it carries another name; the Svelte reader's entries argument must be balanced and whole, or the each is left as written with its closing marker. The IR converted the children an html binding replaces, so placeholder content registered reads that became props; they are set aside and named. A void element cannot hold html and a control's value is its content, so those two bindings are dropped and named rather than printed as what React throws on. A tagless wrapper carrying html reached Vue as `v-html` on a `<template>`; it falls to the html case. Knockout's wrapping loop over an element that also binds html per row has no row element of its own, and says so. The sole html child test the five printers each restated is one helper, `boundHtml`, in the IR with one home. test/boundhtml.test.js holds it.
 
+## Phase 135: the Django view
+
+**619. input-django reads Django's template language on the jinja lowering, its own spellings rewritten and what the server did named** 🔨
+Django's template language is jinja's grandparent with spellings of its own, and a template using any of them was read by input-jinja with those spellings dropped: `{% empty %}` fell through so the empty state rendered always, `{% ifequal %}` lost its test, a `{% comment %}` block kept its body, `{% url %}` inside an href left it empty, `forloop.counter` reached the port as a name nothing defines, and a filter argument after a colon reached it as written. input-django claims a template by a spelling only Django has (its tags, `forloop.`, a colon filter argument) and input-jinja leaves those files to it. The reader rewrites Django onto jinja and hands the result to the jinja lowering: `{% empty %}` is a for's else, `{% ifequal %}` and `{% ifnotequal %}` are the tests they mean, a `{% comment %}` block is gone, `{% with %}` and `{% blocktrans with %}` bind names for their block and each read is replaced with what it named (the plural form named and the singular carried), `{% trans %}` stands as its source text and is named, `{% static %}` keeps its path with the prefix named as the deployment's, `{% url %}` is kept as a call to `url`, the reverse router the port must supply, and the `as` forms of all three bind where they are read, `{% firstof %}` is the `||` chain, `{% widthratio %}` the ratio unrounded and named, `{% cycle %}`, `{% now %}`, `{% regroup %}` and `{% lorem %}` are removed and named, an include's `with` names are named, `reversed` is named, `forloop.*` is jinja's `loop.*`, and `{{ x|date:"Y" }}` is the call jinja spells with parentheses. The jinja lowering learned two things for every dialect riding it: `for key, value in map.items()` is the (key, value) loop over an object rather than a tuple that dropped its second name, and `loop.index0`, `loop.index` and `loop.first` are the dialect's own index spelled, with the rest still named. `{% extends "base.html" %}` composes the page into its base, the base is chrome the census counts as composed, and an include is a screen besides. Django is the fourteenth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/django.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 571 |
+| new in this branch | 572 |
 | planned | 3 |
-| total | 618 |
+| total | 619 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

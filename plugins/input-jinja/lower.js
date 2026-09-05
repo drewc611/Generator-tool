@@ -12,6 +12,16 @@ import { attrSafe } from "../dsp-ir/text.js";
  */
 
 
+/**
+ * True when a template uses a spelling only Django's engine has: its own tags,
+ * its loop variable, or a filter argument after a colon. input-django reads
+ * those files and input-jinja leaves them to it.
+ */
+export function isDjango(text) {
+  const t = String(text ?? "");
+  return /\{%-?\s*(?:load|url|static|csrf_token|trans|translate|blocktrans|blocktranslate|empty|ifequal|ifnotequal|comment|spaceless|autoescape|now|cycle|firstof|widthratio|lorem|regroup|verbatim|localize|get_static_prefix)\b/.test(t) || /\bforloop\./.test(t) || /\{\{[^}]*\|\s*\w+:/.test(t);
+}
+
 /** Python operators into JS, outside of strings. */
 export function pythonToJs(code) {
   const parts = String(code).split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/);
@@ -201,17 +211,23 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
       }
       continue;
     }
-    const forLoop = /^for\s+([\w$]+)(?:\s*,\s*[\w$]+)?\s+in\s+([\s\S]+)$/.exec(code);
+    const forLoop = /^for\s+([\w$]+)(?:\s*,\s*([\w$]+))?\s+in\s+([\s\S]+)$/.exec(code);
     if (forLoop) {
-      if (/,/.test(code.slice(4, code.indexOf(" in ")))) {
-        note(`\`{% ${code} %}\` unpacked a tuple. Only the first name is carried; rewire the rest in the port.`);
-      }
-      out.push(`<ng-container ng-repeat="${forLoop[1]} in ${attrSafe(pythonToJs(forLoop[2]))}">`);
-      stack.push({ kind: "for", list: pythonToJs(forLoop[2]) });
+      // for key, value in map.items() is the (key, value) loop over an object; any other pair carries its first name.
+      const items = forLoop[2] ? /^([\s\S]+?)\.items(?:\(\))?$/.exec(forLoop[3].trim()) : null;
+      if (forLoop[2] && !items) note(`\`{% ${code} %}\` unpacked a tuple. Only the first name is carried; rewire the rest in the port.`);
+      const list = pythonToJs(items ? items[1] : forLoop[3]);
+      out.push(`<ng-container ng-repeat="${attrSafe(items ? `(${forLoop[1]}, ${forLoop[2]}) in ${list}` : `${forLoop[1]} in ${list}`)}">`);
+      stack.push({ kind: "for", list, opener: out.length - 1, pair: Boolean(items) });
       continue;
     }
     if (/^end(if|for)$/.test(code)) {
-      if (stack.length) { stack.pop(); out.push("</ng-container>"); }
+      if (stack.length) {
+        const frame = stack.pop();
+        // A body that reads the loop index asks the dialect to carry it: track by $index.
+        if (frame.opener !== undefined && !frame.pair && /\bloop\.(?:index0?|first|revindex0?|last)\b|\$index\b/.test(out.slice(frame.opener + 1).join(""))) out[frame.opener] = out[frame.opener].replace(/">$/, ' track by $index">');
+        out.push("</ng-container>");
+      }
       continue;
     }
     if (/^(block\s|endblock)/.test(code)) continue;
@@ -231,9 +247,11 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
 
   // `loop.index` and friends are jinja's loop metadata; naming it beats
   // emitting a variable nothing defines.
-  const result = out.join("");
-  if (/\{\{[^}]*\bloop\./.test(result)) {
-    note("`loop.` metadata inside a for has no counterpart in the dialect. Rewire it from the loop index in the port.");
+  let result = out.join("");
+  // loop.index0 and loop.first are the dialect's own index; loop.index counts from one; the rest is named.
+  result = result.replace(/\bloop\.index0\b/g, "$index").replace(/\bloop\.index\b/g, "($index + 1)").replace(/\bloop\.first\b/g, "($index == 0)");
+  if (/\bloop\.\w+/.test(result)) {
+    note("`loop.` metadata beyond index and first inside a for has no counterpart in the dialect. Rewire it from the loop index in the port.");
   }
   return result;
 }

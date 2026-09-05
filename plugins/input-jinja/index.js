@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
-import { lowerJinja } from "./lower.js";
+import { isDjango, lowerJinja } from "./lower.js";
 import { pascal } from "../dsp-ir/emit.js";
 
 /**
@@ -40,6 +40,8 @@ export default {
       for (const file of candidates) {
         const text = bodies.get(file.rel.replace(/^\.\//, "")) ?? "";
         if (!text || !/\{%/.test(text)) continue;
+        // Django's own spellings are input-django's to read.
+        if (isDjango(text)) continue;
 
         const bodyMatch = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(text);
         const markup = stripStyles(stripScripts(bodyMatch ? bodyMatch[1] : text)).trim();

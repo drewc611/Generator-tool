@@ -70,6 +70,7 @@ const COMPONENT = ({ name, props, result, collection, screen, referenced = [] })
 
   return `<script>
 ${referenced.map((r) => `  import ${r} from "../${r}/${r}.svelte";`).join("\n")}${referenced.length ? "\n" : ""}  // Ported from ${screen.file} by portamp.
+  // Template translated from ${screen.templateOrigin ?? "the decorator"}.
   //
   // Every state below is present on purpose. Delete one only when you have
   // checked the legacy screen genuinely cannot reach it.

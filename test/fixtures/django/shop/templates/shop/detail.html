@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n static %}
+{% block title %}{{ product.name }} - Shop{% endblock %}
+{% block content %}
+  {% comment %}The old sidebar lived here.{% endcomment %}
+  <h1>{{ product.name }}</h1>
+  <img src="{% static 'img/placeholder.png' %}" alt="{{ product.name }}">
+  {% ifequal product.stock 0 %}<p class="out">{% trans "Sold out" %}</p>{% endifequal %}
+  <ul class="tags">
+    {% for tag in product.tags %}
+      <li class="{% cycle 'odd' 'even' %}">{{ forloop.counter }}. {{ tag|title }}</li>
+    {% empty %}
+      <li class="none">{% trans "No tags" %}</li>
+    {% endfor %}
+  </ul>
+  <dl>{% for key, value in product.specs.items %}<dt>{{ key }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
+  {% with price=product.price|floatformat:2 %}
+    <p class="price">{{ price }} {% blocktrans with name=product.name %}for {{ name }}{% endblocktrans %}</p>
+  {% endwith %}
+  <p>{% firstof product.tagline product.name %}</p>
+  <p class="since">{{ product.created|date:"Y-m-d" }}</p>
+  <form method="post" action="{% url 'shop:order' product.id %}">
+    {% csrf_token %}
+    <button type="submit">{% trans "Buy" %}</button>
+  </form>
+{% endblock %}

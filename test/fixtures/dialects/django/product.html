@@ -1,0 +1,4 @@
+{% load i18n %}
+<h1>{{ product.name }}</h1>
+{% if product.stock == 0 %}<p class="out">Sold out</p>{% elif product.stock < 5 %}<p class="low">Only {{ product.stock }} left</p>{% else %}<p>In stock</p>{% endif %}
+<ul>{% for tag in product.tags %}<li>{{ tag }}</li>{% empty %}<li class="none">No tags</li>{% endfor %}</ul>

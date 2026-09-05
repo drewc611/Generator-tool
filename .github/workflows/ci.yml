@@ -1012,6 +1012,15 @@ jobs:
           grep -qE "ng-|\{%" tw-out/src/features/TemplatesProduct/TemplatesProduct.jsx && { echo "the dialect or a twig tag leaked into the React output"; exit 1; } || true
           rm -rf tw-out
 
+      - name: the django reader rides the jinja lowering, composes the page into its base and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/django --out dj-out
+          test -f dj-out/src/features/ShopDetail/ShopDetail.jsx || { echo "the Django page was not ported"; exit 1; }
+          grep -q "<nav" dj-out/src/features/ShopDetail/ShopDetail.jsx || { echo "the base's nav include was not composed in"; exit 1; }
+          grep -qE "\{%|forloop|ng-" dj-out/src/features/ShopDetail/ShopDetail.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          grep -q "composed into screens as a layout or partial | 1" dj-out/READERS.md || { echo "the base was not counted as composed"; exit 1; }
+          rm -rf dj-out
+
       - name: the xslt reader lowers a stylesheet onto React with the document as its input
         run: |
           node src/cli.js run --src test/fixtures/xslt --out xs-out
@@ -1038,14 +1047,14 @@ jobs:
 
       - name: one page in twelve server dialects is one React component, provenance aside
         run: |
-          for d in jinja twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl; do
+          for d in jinja twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl django; do
             node src/cli.js run --src test/fixtures/dialects/$d --out dl-$d >/dev/null
             grep -vE "Ported from|Template translated from" dl-$d/src/features/Product/Product.jsx > dl-$d.jsx
           done
-          for d in twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl; do
+          for d in twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl django; do
             cmp dl-jinja.jsx dl-$d.jsx || { echo "the $d port of the same page differs from the jinja port"; exit 1; }
           done
-          rm -rf dl-jinja dl-twig dl-liquid dl-blade dl-freemarker dl-velocity dl-thymeleaf dl-smarty dl-jsp dl-cfml dl-haml dl-slim dl-twirl dl-*.jsx
+          rm -rf dl-jinja dl-twig dl-liquid dl-blade dl-freemarker dl-velocity dl-thymeleaf dl-smarty dl-jsp dl-cfml dl-haml dl-slim dl-twirl dl-django dl-*.jsx
 
       - name: the keyboard reader names a click target the keyboard cannot reach
         run: |
@@ -1154,6 +1163,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "618" ]; then
-            echo "ROADMAP.md holds $count entries and claims 618"; exit 1
+          if [ "$count" != "619" ]; then
+            echo "ROADMAP.md holds $count entries and claims 619"; exit 1
           fi

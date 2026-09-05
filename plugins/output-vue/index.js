@@ -57,6 +57,7 @@ const COMPONENT = ({ name, props, emits, result, collection, screen, referenced 
 
   return `<script setup>
 ${models.length ? 'import { ref } from "vue";\n' : ""}${imports ? imports + "\n" : ""}// Ported from ${screen.file} by portamp.
+// Template translated from ${screen.templateOrigin ?? "the decorator"}.
 //
 // Every state below is present on purpose. Delete one only when you have
 // checked the legacy screen genuinely cannot reach it.
