@@ -101,6 +101,7 @@ const DOES = {
   "output-vercel": "a Vercel deploy plan, the redirects as permanent rules in vercel.json",
   "output-cypress": "an end to end suite that walks every route and asserts the redirects land",
   "dsp-state": "where state should live, argued from what each screen reads",
+  "dsp-storage": "the localStorage, sessionStorage and IndexedDB the app kept state in; keys named, values never read",
   "dsp-weight": "how much port each screen is, by a formula printed beside it",
   "dsp-archetype": "what kind of app this is, from its structure and its traffic",
   "dsp-boundaries": "components proposed for an app that declared none. Proposals, never results",

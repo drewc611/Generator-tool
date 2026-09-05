@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and fifty two features across sixty eight phases. The statuses are
+Five hundred and fifty three features across sixty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-651 tests, on Node 18, 20 and 22, and on Windows in CI.
+656 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2034,15 +2034,20 @@ each target now has a reader that is the inverse of its emitter, so vis-roundtri
 **552. dsp-learn grows to two exemplars per class and reports a leave one out accuracy** 🔨
 the calibration corpus grows from eleven miniatures to twenty two, a second labelled exemplar per archetype, each of which the rule based reader also classifies as its label so the two agree. Two per class is what makes a held out accuracy defined: dsp-learn now leaves each exemplar out in turn, retrains on the rest (its class still represented by its sibling) and classifies the held out one, reporting the real leave one out accuracy and the exemplars it missed when unseen, alongside the robustness curve it already carried. LEARNED.md stops saying a held out accuracy is undefined and prints the number instead, honest that two per class is still a floor to raise. test/learn.test.js holds the cross validation and the guard that the embedded corpus stays equal to the fixtures.
 
+## Phase 69: the state the markup does not show
+
+**553. dsp-storage names the browser storage the app kept state in** 🔨
+a page that read and wrote localStorage, sessionStorage or IndexedDB held state the server never saw, and a port that rebuilds the screens but not the storage loses it on the first load, silently, because nothing in the markup shows it. dsp-storage finds every getItem, setItem, removeItem, clear, literal bracket access and IndexedDB open, names the keys and the store each belongs to, and says which state survives a reload, which lasts a tab, and which is a database of its own. It names the key, never the value: a key is an identifier the code chose, a value can be a token or a payload, exactly what the secret gate keeps out, so a computed key is not captured as a literal and no value is read. It measures and migrates nothing. test/storage.test.js holds it and a CI step names the storage a small page uses.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 505 |
+| new in this branch | 506 |
 | planned | 3 |
-| total | 552 |
+| total | 553 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

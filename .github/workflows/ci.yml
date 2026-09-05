@@ -750,9 +750,19 @@ jobs:
           grep -q "items.map" al-out/src/features/BoardApp/BoardApp.jsx || { echo "the x-for did not become a react map"; exit 1; }
           rm -rf al-src al-out
 
+      - name: the storage reader names the keys a page uses and never a value
+        run: |
+          mkdir -p store-src
+          printf '%s\n' '<div></div>' '<script>localStorage.setItem("theme", secret); const t = sessionStorage.getItem("csrf");</script>' > store-src/page.html
+          node src/cli.js run --src store-src --out store-out
+          test -f store-out/STORAGE.md || { echo "no storage report"; exit 1; }
+          grep -q "theme" store-out/STORAGE.md || { echo "the storage key was not named"; exit 1; }
+          if grep -q "secret" store-out/STORAGE.md; then echo "a value leaked into the storage report"; exit 1; fi
+          rm -rf store-src store-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "552" ]; then
-            echo "ROADMAP.md holds $count entries and claims 552"; exit 1
+          if [ "$count" != "553" ]; then
+            echo "ROADMAP.md holds $count entries and claims 553"; exit 1
           fi
