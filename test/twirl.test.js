@@ -59,7 +59,7 @@ test("if chains, for with an index and a guard, match with Some, None, literals 
     '<ng-container ng-repeat="p in ps track by $index"><ng-container ng-repeat="q in p.qs"><ng-container ng-if="q.ok"><i>{{ p.a }} {{ $index }} {{ q }}</i></ng-container></ng-container></ng-container>' +
     '<ng-container ng-if="x != null"><b>{{ x }}</b></ng-container><ng-container ng-if="!(x != null) && (x == \'a\')">A</ng-container><ng-container ng-if="!(x != null) && !(x == \'a\') && (x > 2)"><i>{{ x }}</i></ng-container><ng-container ng-if="!(x != null) && !(x == \'a\') && !(x > 2)">D</ng-container>' +
     ' <q>{{ a.b }}</q> <span ng-bind-html="raw"></span> me@x.org {{ a + 1 }}');
-  assert.ok(notes.some((n) => /Scala block `@\{ val z = 1 \}` ran code/.test(n)));
+  assert.ok(notes.some((n) => /A Scala block declaring `z` ran code/.test(n)), "a code block is named by what it declared, never by its text");
   assert.ok(!notes.some((n) => /could not be read/.test(n)));
 });
 
@@ -110,7 +110,7 @@ test("Play's form helpers become the form and fields they render, messages keeps
   assert.ok(notes.some((n) => /`orderForm` is a Play Form/.test(n)));
   assert.ok(notes.some((n) => /CSRF\.formField/.test(n)));
   assert.ok(notes.some((n) => /messages\("key"\)/.test(n)));
-  assert.ok(notes.some((n) => /`@unknown\.layout\("x"\)` calls a template this run does not hold/.test(n)));
+  assert.ok(notes.some((n) => /`@unknown\.layout\(\.\.\.\)` calls a template this run does not hold/.test(n)));
 });
 
 test("input-static leaves a Twirl file to its reader", () => {
@@ -145,4 +145,59 @@ test("a run composes the page into its layout through the nav partial, inlines t
   } finally {
     await run.cleanup();
   }
+});
+
+test("the twelfth review pass: a comment before the header, aliases in one pass, Map getOrElse and get, an Option of a value, a typed lambda, a declared Option in a for, a literal layout call not held, and notes that carry names only", () => {
+  const notes = []; const note = (n) => notes.push(n);
+  const { params, rest } = parseParams('@* licence *@\n@(product: Product, f: String => Html, m: Map[String, Int] = Map())(content: Html)\n<h1>@product.name</h1>');
+  assert.deepEqual(params.map((p) => [p.name, p.type, p.fallback ?? null]), [["product", "Product", null], ["f", "String => Html", null], ["m", "Map[String, Int]", "Map()"], ["content", "Html", null]]);
+  assert.equal(rest, "\n<h1>@product.name</h1>");
+
+  const s = freshScope(note);
+  s.aliases.set("product", "related[0]"); s.aliases.set("related", "product.related");
+  assert.equal(scalaToJs("product.name + related.size", s), "related[0].name + product.related.length", "an alias whose value names another alias is rewritten once");
+  const t = freshScope(note);
+  t.types.set("user", "Option[User]"); t.types.set("m", "Map[String, Int]");
+  assert.equal(scalaToJs('m.getOrElse(k, "d") + m.get(k) + o.getOrElse("x")', t), "(m[k] ?? 'd') + m[k] + (o ?? 'x')");
+  assert.equal(scalaToJs("user.nonEmpty && !user.isEmpty && tags.isEmpty", t), "(user != null) && !(user == null) && (!tags || !tags.length)");
+  assert.equal(scalaToJs('xs.mkString("[", ", ", "]") + ys.mkString', t), "('[' + xs.join(', ') + ']') + ys.join('')");
+
+  const u = freshScope(note);
+  for (const [k, v] of Object.entries({ desc: "Option[String]", xs: "Seq[Product]", user: "Option[User]", orderForm: "Form[Order]" })) u.types.set(k, v);
+  const out = lowerTwirl([
+    '@for(d <- desc) {<p>@d</p>}',
+    '@xs.map { (p: Product) => <b>@p.name</b> }',
+    '@user.get.roles.map { r => <li>@r</li> }',
+    '<a title="@(if (a > 1) "x" else "y")" class="@if(on) {on}">go</a>',
+    '@main("Title") {<p>@x</p>}',
+    '@for(i <- xs) { @helper.inputText(orderForm("qty")) }',
+    '@{ val secret = "hunter2" }@messages("cart.count", n)',
+  ].join(""), u, () => null, 0);
+  assert.equal(out,
+    '<ng-container ng-if="desc != null"><p>{{ desc }}</p></ng-container>' +
+    '<ng-container ng-repeat="p in xs"> <b>{{ p.name }}</b> </ng-container>' +
+    '<ng-container ng-repeat="r in user.roles"> <li>{{ r }}</li> </ng-container>' +
+    '<a title="{{ (a > 1) ? \'x\' : \'y\' }}" class="{{ on ? \'on\' : \'\' }}">go</a>' +
+    '<p>{{ x }}</p>' +
+    '<ng-container ng-repeat="i in xs"> <input type="text" ng-model="orderForm.qty"> </ng-container>' +
+    'cart.count');
+  assert.equal(u.twoWay, true, "a field inside a loop still makes the screen two way");
+  assert.ok(notes.some((n) => /`user\.get\.roles\.map \{ \}` was read as a loop/.test(n)), "the receiver's type is the receiver's own, not its root's");
+  assert.ok(notes.some((n) => /`@main\(\.\.\.\)` calls a template this run does not hold/.test(n)), "a layout called with a literal and not held is named");
+  assert.ok(notes.some((n) => /`messages\("cart\.count", \.\.\.\)` carried 1 argument/.test(n)));
+  assert.ok(notes.some((n) => /declaring `secret`/.test(n)) && !notes.some((n) => /hunter2/.test(n)), "a code block's note names what it declared and never its values");
+
+  // A layout that renders its content inside a defining still composes, a partial's form parameter binds the page's form, and a second argument group is named.
+  const templates = {
+    main: { key: "main.scala.html", params: parseParams("@(title: String)(content: Html)").params, body: "@defining(title.trim) { t => <h1>@t</h1><main>@content</main> }", layout: true },
+    "partials/field": { key: "partials/field.scala.html", params: parseParams("@(form: Form[X])").params, body: '@helper.inputText(form("qty"))', layout: false },
+  };
+  const v = freshScope(note);
+  const composed = lowerTwirl('@main("T")(Html("")) {@partials.field(orderForm)}', v, (path) => templates[path] ?? null, 0);
+  assert.equal(composed, ' <h1>{{ \'T\'.trim() }}</h1><main><input type="text" ng-model="orderForm.qty"></main> ');
+  assert.ok(notes.some((n) => /`main` was called with 1 more argument group/.test(n)));
+  assert.ok(notes.some((n) => /`orderForm` is a Play Form/.test(n)) && !notes.some((n) => /`form` is a Play Form/.test(n)));
+  assert.ok(!notes.some((n) => /never renders its/.test(n)));
+
+  assert.notDeepEqual(readPage("<html><body><p>sales@main.com</p></body></html>", "contact.html"), { skip: "another dialect owns it" }, "an e-mail address is not a Twirl call");
 });

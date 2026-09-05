@@ -27,7 +27,7 @@ import {
  * the graph the output-site plugin builds the shell from.
  */
 
-const OWNED = /^\s*@\((?=[\s\S]*?\)\s*(?:\(|\n|<|@))|@(?:if|for|match|defining|main|import)\b|@\*[\s\S]*?\*@|\bng-[\w-]+=|\b(?:th|data-th)[:-][\w-]+=|\blayout:decorate=|<c:\w+|<jsp:\w+|<fmt:\w+|<form:\w+|<%@|\bv-(?:if|for|model|show|bind|on|html)\b|\bko-[\w-]+=|\bdata-bind=|\{\{|<%|\{%/;
+const OWNED = /^\s*@\((?=[\s\S]*?\)\s*(?:\(|\n|<|@))|@(?:if|for|defining|main)\s*\(|@import\s+[\w.]+|@[\w.]+\s+match\s*\{|@\*[\s\S]*?\*@|\bng-[\w-]+=|\b(?:th|data-th)[:-][\w-]+=|\blayout:decorate=|<c:\w+|<jsp:\w+|<fmt:\w+|<form:\w+|<%@|\bv-(?:if|for|model|show|bind|on|html)\b|\bko-[\w-]+=|\bdata-bind=|\{\{|<%|\{%/;
 const PAGE_EXT = /\.(html?|shtml|php|asp|jsp)$/i;
 const SERVER_EXT = /\.(php|asp|jsp|shtml)$/i;
 

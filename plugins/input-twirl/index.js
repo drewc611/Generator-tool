@@ -36,14 +36,20 @@ const OPTION = /^(?:scala\.)?Option\[/;
 const COLLECTION = /^(?:scala\.(?:collection\.(?:immutable\.)?)?)?(?:Seq|List|Iterable|Array|Set|Vector|IndexedSeq|Map|Traversable|Stream|LazyList)\[/;
 
 export function freshScope(note = () => {}) {
-  const scope = { note, aliases: new Map(), types: new Map(), composed: new Set(), twoWay: false, forms: new Set() };
-  scope.child = () => Object.assign(freshScope(note), { aliases: new Map(scope.aliases), types: new Map(scope.types), forms: scope.forms, composed: scope.composed, parent: scope });
+  const scope = { note, aliases: new Map(), types: new Map(), composed: new Set(), forms: new Set(), flags: { twoWay: false } };
+  // Two way binding is one fact per screen wherever the field stood, so it lives on the flags every child shares.
+  Object.defineProperty(scope, "twoWay", { get() { return this.flags.twoWay; }, set(v) { this.flags.twoWay = Boolean(v); }, enumerable: true });
+  scope.child = () => Object.assign(freshScope(note), { aliases: new Map(scope.aliases), types: new Map(scope.types), forms: scope.forms, composed: scope.composed, flags: scope.flags, content: scope.content, contentName: scope.contentName, templateKey: scope.templateKey, parent: scope });
   return scope;
 }
 
+/** True when a declared type is an Option of something that has no length: a presence test, not an emptiness test. */
+const optionOfValue = (type) => Boolean(type) && OPTION.test(type) && !/^(?:scala\.)?Option\[\s*(?:String|Seq|List|Iterable|Array|Set|Vector|IndexedSeq|Map)\b/.test(type);
+
 /** The parameter groups a template declares on its first line, and the body after them. */
 export function parseParams(source) {
-  const text = String(source ?? "");
+  // A licence comment may stand before the header; it is dropped, as every comment is.
+  const text = String(source ?? "").replace(/^(?:\s*@\*[\s\S]*?\*@)+/, "");
   const m = /^\s*@\(/.exec(text);
   if (!m) return { params: [], rest: text };
   let i = m[0].length - 1;
@@ -56,7 +62,7 @@ export function parseParams(source) {
     let implicit = false;
     if (/^implicit\b/.test(inner)) { implicit = true; inner = inner.replace(/^implicit\s+/, ""); }
     for (const p of splitCommas(inner, { ticks: false })) {
-      const pm = /^(\w+)\s*:\s*([^=]+?)\s*(?:=\s*([\s\S]+))?$/.exec(p);
+      const pm = /^(\w+)\s*:\s*((?:[^=]|=>)+?)\s*(?:=(?!>)\s*([\s\S]+))?$/.exec(p);
       if (pm) params.push({ name: pm[1], type: pm[2].trim(), fallback: pm[3]?.trim(), implicit, group });
     }
     i = end; group += 1;
@@ -102,7 +108,7 @@ export function scalaToJs(code, scope = freshScope()) {
     const end = matchBracket(s, open);
     if (end < 0) break;
     const args = scalaArgs(s.slice(open + 1, end - 1));
-    scope.note(`The formatter \`${unhold(holds[Number(fm[1])]).slice(0, 30)}.format\` has no client equivalent; the value is interpolated unformatted.`);
+    scope.note("The formatter `.format` on a string literal has no client equivalent; the value is interpolated unformatted.");
     s = s.slice(0, fm.index) + (args[0] ?? "''") + s.slice(end);
   }
   s = s.replace(/\bSome\(/g, "(").replace(/\bNone\b/g, "null").replace(/\bNil\b/g, "[]");
@@ -112,40 +118,52 @@ export function scalaToJs(code, scope = freshScope()) {
   // _.name and (_ > 2) are the lambdas Scala spells with a placeholder.
   s = s.replace(/\(\s*_((?:\.\w+(?:\([^()]*\))?)+|\s*[<>=!]=?\s*[^()]+)\s*\)/g, (m, tail) => `((it) => it${tail.trim()})`);
   s = rewriteReceivers(s, /\.(isEmpty|nonEmpty|isDefined|get|getOrElse|orNull|size|length|head|last|headOption|toString|toUpperCase|toLowerCase|trim|mkString|contains|toInt|toDouble|toLong|toFloat|take|exists|forall|reverse)(?![\w])/g, (recv, method, whole) => {
+    // A declared Option of a value has no length: its emptiness is its absence.
+    const valueOption = /^[\w$]+$/.test(recv) && optionOfValue(scope.types.get(recv));
     switch (method) {
-      case "isEmpty": return whole ? `!${recv} || !${recv}.length` : `(!${recv} || !${recv}.length)`;
-      case "nonEmpty": return whole ? `${recv} && ${recv}.length` : `(${recv} && ${recv}.length)`;
+      case "isEmpty": if (valueOption) return whole ? `${recv} == null` : `(${recv} == null)`; return whole ? `!${recv} || !${recv}.length` : `(!${recv} || !${recv}.length)`;
+      case "nonEmpty": if (valueOption) return whole ? `${recv} != null` : `(${recv} != null)`; return whole ? `${recv} && ${recv}.length` : `(${recv} && ${recv}.length)`;
       case "isDefined": return `(${recv} != null)`;
-      case "get": case "orNull": case "toString": return recv;
-      case "getOrElse": return `(${recv} ?? \u0004`;
+      case "orNull": case "toString": return recv;
+      // The methods that take arguments are finished below, once the argument list after them is known.
+      case "getOrElse": return `\u0004G${hold(recv)}`;
+      case "get": return `\u0004T${hold(recv)}`;
+      case "take": return `\u0004K${hold(recv)}`;
+      case "mkString": return `\u0004M${hold(recv)}`;
       case "size": case "length": return `${recv}\u0007length`;
       case "head": case "headOption": return `${recv}[0]`;
       case "last": return `${recv}\u0007at(-1)`;
       case "toUpperCase": case "toLowerCase": case "trim": return `${recv}\u0007${method}()`;
-      case "mkString": return `${recv}\u0007join`;
       case "contains": return `${recv}\u0007includes`;
       case "exists": return `${recv}\u0007some`;
       case "forall": return `${recv}\u0007every`;
-      case "take": return `${recv}\u0007slice(0, \u0004`;
       case "reverse": return `${recv}\u0007slice()\u0007reverse()`;
       default: return `Number(${recv})`;
     }
   });
-  // The rewrites spell their dot as a marker so none can match itself; the marker is a dot again here.
-  s = s.replace(/\u0007/g, ".");
-  // \u0004(args) is the argument list a rewrite above still needs, closed after it.
+  // getOrElse, get, take and mkString read their argument list: on an Option getOrElse(d) is ??, on a Map getOrElse(k, d) reads the key first and get(k) is the index.
   for (;;) {
-    const at = s.indexOf("\u0004");
-    if (at < 0) break;
-    if (s[at + 1] !== "(") { s = s.slice(0, at) + "'')" + s.slice(at + 1); continue; }
-    const end = matchBracket(s, at + 1);
-    if (end < 0) { s = s.slice(0, at) + s.slice(at + 2) + ")"; break; }
-    s = s.slice(0, at) + s.slice(at + 2, end - 1) + ")" + s.slice(end);
+    const mk = /\u0004([GTKM])\u0001(\d+)\u0002/.exec(s);
+    if (!mk) break;
+    const recv = `\u0001${mk[2]}\u0002`;
+    const after = mk.index + mk[0].length;
+    let args = null; let end = after;
+    if (s[after] === "(") { end = matchBracket(s, after); if (end < 0) end = s.length; args = scalaArgs(s.slice(after + 1, end - 1)); }
+    let js;
+    switch (mk[1]) {
+      case "G": js = !args ? recv : args.length >= 2 ? `(${recv}[${args[0]}] ?? ${args[1]})` : `(${recv} ?? ${args[0] ?? "''"})`; break;
+      case "T": js = args?.length ? `${recv}[${args[0]}]` : recv; break;
+      case "K": js = `${recv}\u0007slice(0, ${args?.[0] ?? "0"})`; break;
+      default: js = !args || args.length <= 1 ? `${recv}\u0007join(${args?.[0] ?? "''"})` : `(${args[0]} + ${recv}\u0007join(${args[1]}) + ${args[2] ?? "''"})`;
+    }
+    s = s.slice(0, mk.index) + js + s.slice(end);
   }
-  s = s.replace(/\(\)\(\)/g, "()").replace(/\.join(?![\w(])/g, ".join('')");
-  for (const [name, js] of scope.aliases) {
-    const safe = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    s = s.replace(new RegExp(`(?<![\\w.$\\u0001])${safe}(?![\\w$])`, "g"), () => js);
+  // The rewrites spell their dot as a marker so none can match itself; the marker is a dot again here.
+  s = s.replace(/\u0007/g, ".").replace(/\(\)\(\)/g, "()");
+  // Every alias in one pass, so an alias whose value names another alias is never rewritten twice.
+  if (scope.aliases.size) {
+    const names = [...scope.aliases.keys()].map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+    s = s.replace(new RegExp(`(?<![\\w.$\\u0001])(${names})(?![\\w$])`, "g"), (m, n) => scope.aliases.get(n));
   }
   for (const m of s.matchAll(/(?<![\w.$\u0001])([A-Za-z_]\w*)(?=\.|\(|\b)/g)) {
     const what = CONTEXT[m[1]];
@@ -199,9 +217,11 @@ function readBlock(text, at) {
   const end = matchBracket(text, at);
   if (end < 0) return null;
   const inner = text.slice(at + 1, end - 1);
-  const m = /^\s*(?:case\s+)?(\(\s*\w+(?:\s*,\s*\w+)*\s*\)|\w+)\s*=>/.exec(inner);
+  const m = /^\s*(?:case\s+)?(\((?:[^()]|\([^()]*\))*\)|\w+)\s*=>/.exec(inner);
   if (!m) return { names: [], body: inner, end };
-  return { names: m[1].replace(/[()]/g, "").split(",").map((n) => n.trim()), body: inner.slice(m[0].length), end };
+  // { (p: Product, i: Int) => ... } declares types the JS does not need.
+  const names = splitCommas(m[1].replace(/^\(|\)$/g, ""), { ticks: false }).map((n) => n.split(":")[0].trim()).filter((n) => /^[\w$]+$/.test(n));
+  return { names, body: inner.slice(m[0].length), end };
 }
 
 /** A text span as one JS string expression: literal pieces quoted, @expressions spliced in. */
@@ -225,8 +245,15 @@ function branchJs(body, scope) {
 /** The template a call names, `main("x")` or `views.html.partials.card(p)`: its path and its argument text, or null when the chain is not a call. */
 function templateCall(chain) {
   const m = /^((?:\w+\.)*\w+)\(/.exec(chain);
-  if (!m || matchBracket(chain, m[0].length - 1) !== chain.length) return null;
-  return { path: m[1].replace(/^views\.html\./, "").split(".").join("/"), args: chain.slice(m[0].length, -1) };
+  if (!m) return null;
+  let end = matchBracket(chain, m[0].length - 1);
+  if (end < 0) return null;
+  const args = chain.slice(m[0].length, end - 1);
+  // main("T")(Html("")) passes a second group; it is counted so the caller can say it was not bound.
+  let extraGroups = 0;
+  while (end < chain.length && chain[end] === "(") { const e = matchBracket(chain, end); if (e < 0) return null; end = e; extraGroups += 1; }
+  if (end !== chain.length) return null;
+  return { path: m[1].replace(/^views\.html\./, "").split(".").join("/"), args, extraGroups };
 }
 
 /** Arguments bound to a template's declared parameters, positional or `name = value`, as aliases in `scope`. */
@@ -234,10 +261,10 @@ function bindParams(params, argText, scope, callee, into) {
   const args = scalaArgs(argText);
   const own = params.filter((p) => !p.implicit && !/^(?:play\.twirl\.api\.)?Html$/.test(p.type));
   let positional = 0;
-  for (const a of args) {
+  for (const [index, a] of args.entries()) {
     const named = /^(\w+)\s*=(?!=)\s*([\s\S]+)$/.exec(a);
     const p = named ? own.find((q) => q.name === named[1]) : own[positional++];
-    if (!p) { scope.note(`\`${callee}\` was called with an argument its template does not declare; \`${a.slice(0, 30)}\` was not bound.`); continue; }
+    if (!p) { scope.note(`\`${callee}\` was called with ${named ? `\`${named[1]}\`` : `argument ${index + 1}`}, which its template does not declare; it was not bound.`); continue; }
     into.aliases.set(p.name, scalaToJs(named ? named[2] : a, scope));
     into.types.set(p.name, p.type);
   }
@@ -254,10 +281,12 @@ const FIELD_HELPERS = { inputText: "text", inputPassword: "password", inputDate:
 function fieldModel(argText, scope) {
   const m = /^\s*(\w+)\s*\(\s*"([^"]+)"\s*\)\s*$/.exec(argText);
   if (!m) return null;
-  scope.forms.add(m[1]);
-  scope.note(`\`${m[1]}\` is a Play Form; the port must hold the values its fields bind and post them itself.`);
+  // A partial's form parameter is the page's form under another name.
+  const form = scalaToJs(m[1], scope);
+  scope.forms.add(form);
+  scope.note(`\`${form}\` is a Play Form; the port must hold the values its fields bind and post them itself.`);
   scope.twoWay = true;
-  return /^\w+$/.test(m[2]) ? `${m[1]}.${m[2]}` : `${m[1]}[${quoteJs(m[2])}]`;
+  return /^\w+$/.test(m[2]) ? `${form}.${m[2]}` : `${form}[${quoteJs(m[2])}]`;
 }
 
 /** Play helper arguments beyond the field: 'class -> "x" as attributes, '_label -> "L" as a label, the rest named. */
@@ -265,7 +294,7 @@ function helperArgs(args, scope) {
   const attrs = []; let label = null;
   for (const a of args) {
     const m = /^'(_?\w+)\s*->\s*([\s\S]+)$/.exec(a.trim());
-    if (!m) { scope.note(`The helper argument \`${a.trim().slice(0, 30)}\` has a shape this reader does not know; it was dropped.`); continue; }
+    if (!m) { scope.note(`The helper argument \`${a.trim().split(/[\s(]/)[0]}\` has a shape this reader does not know; it was dropped.`); continue; }
     const js = scalaToJs(m[2], scope);
     const literal = /^'[^']*'$/.test(js) ? js.slice(1, -1) : null;
     if (m[1] === "_label") { label = literal ?? `{{ ${js} }}`; continue; }
@@ -305,7 +334,10 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
       if (end < 0) { scope.note("A @{ block never closes; the rest of the file was kept as text."); break; }
       const inner = text.slice(at + 2, end - 1);
       flush(at);
-      if (/\b(?:val|var|def|import)\b/.test(inner)) scope.note(`A Scala block \`@{ ${inner.trim().slice(0, 30)} }\` ran code in the template; it has no client equivalent and was removed.`);
+      if (/\b(?:val|var|def|import)\b/.test(inner)) {
+        const declared = [...inner.matchAll(/\b(?:val|var|def)\s+(\w+)/g)].map((d) => d[1]);
+        scope.note(`A Scala block ${declared.length ? `declaring \`${declared.join("`, `")}\`` : "with an import"} ran code in the template; it has no client equivalent and was removed.`);
+      }
       else if (inner.trim()) out.push(interpolate(inner));
       last = i = end; continue;
     }
@@ -322,7 +354,7 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
       const chain = readIfChain(text, at);
       if (!chain) { scope.note("An @if could not be read to its closing brace; it was kept as text."); i = at + 1; continue; }
       flush(at);
-      if (insideAttribute(text, at, /@if\s*\([^)]*\)/g)) {
+      if (insideAttribute(text, at, /@(?:if\s*|[\w.]*)\((?:[^()]|\([^()]*\))*\)/g)) {
         let expr = chain.elseBody === null ? "''" : branchJs(chain.elseBody, scope);
         for (const b of [...chain.branches].reverse()) expr = `${js(b.test)} ? ${branchJs(b.body, scope)} : ${expr}`;
         scope.note("A condition inside an attribute value was folded into the ternary it means; an element cannot stand inside an attribute.");
@@ -354,10 +386,18 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
       const opens = []; let closes = 0;
       for (const g of gens) {
         const gm = /^(\(\s*\w+\s*,\s*\w+\s*\)|\w+)\s*<-\s*([\s\S]+?)(?:\s+if\s+([\s\S]+))?$/.exec(g);
-        if (!gm) { scope.note(`The generator \`${g.slice(0, 30)}\` has a shape this reader does not know; the body was kept once.`); continue; }
+        if (!gm) { scope.note(`The generator binding \`${g.split("<-")[0].trim().slice(0, 30)}\` has a shape this reader does not know; the body was kept once.`); continue; }
         const names = gm[1].replace(/[()]/g, "").split(",").map((n) => n.trim());
         let list = gm[2].trim();
         for (const n of names) inner.aliases.delete(n);
+        if (names.length === 1 && OPTION.test(scope.types.get(list) ?? "")) {
+          // for (d <- desc) over a declared Option runs once when it is present.
+          const present = scalaToJs(list, inner);
+          inner.aliases.set(names[0], present);
+          opens.push(`<ng-container ng-if="${attrSafe(`${present} != null`)}">`); closes += 1;
+          if (gm[3]) { opens.push(`<ng-container ng-if="${attrSafe(scalaToJs(gm[3], inner))}">`); closes += 1; }
+          continue;
+        }
         let head = names[0]; let track = "";
         if (names.length === 2 && /\.zipWithIndex$/.test(list)) { list = list.replace(/\.zipWithIndex$/, ""); inner.aliases.set(names[1], "$index"); track = " track by $index"; }
         else if (names.length === 2) head = `(${names[0]}, ${names[1]})`;
@@ -400,7 +440,7 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
         else if (/^(?:"(?:\\.|[^"\\])*"|-?\d+(?:\.\d+)?|true|false)$/.test(p)) test = `${subject} == ${js(p)}`;
         else if (p === "_") test = null;
         else if (/^\w+$/.test(p)) { child.aliases.set(p, subject); test = null; }
-        else { scope.note(`The pattern \`case ${p.slice(0, 30)}\` cannot be tested on the client; its branch is emitted under a false condition for a person to write the test.`); test = "false"; }
+        else { scope.note(`The pattern \`case ${p.replace(/\([\s\S]*$/, "(...)").slice(0, 30)}\` cannot be tested on the client; its branch is emitted under a false condition for a person to write the test.`); test = "false"; }
         if (guard) { const g = scalaToJs(guard[2], child); test = test === null ? g : `${test} && ${g}`; }
         out.push(`<ng-container ng-if="${attrSafe(chainWithNegations(tried, test))}">${lowerIn(body, child)}</ng-container>`);
         if (test !== null) tried.push(test); else break;
@@ -411,7 +451,9 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
     const target = call && depth < 6 ? resolve(call.path) : null;
     if (target) {
       const inner = scope.child();
-      bindParams(target.params, call.args, scope, chain.text.slice(0, 40), inner);
+      const callee = call.path.split("/").join(".");
+      bindParams(target.params, call.args, scope, callee, inner);
+      if (call.extraGroups) scope.note(`\`${callee}\` was called with ${call.extraGroups} more argument group(s); only the first is bound to the template's parameters.`);
       inner.templateKey = target.key;
       if (target.layout && blockAt) {
         const be = matchBracket(text, end + blockAt[0].length - 1);
@@ -451,7 +493,11 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
     if (/^[Mm]essages(?:\.apply)?\(/.test(chain.text)) {
       const args = scalaArgs(chain.text.slice(chain.text.indexOf("(") + 1, -1));
       const key = /^"((?:\\.|[^"\\])*)"$/.exec(args[0] ?? "");
-      if (key) { scope.note("`messages(\"key\")` looked a translation up on the server; the key stands as the text and is named so the port can wire its own i18n."); out.push(key[1]); }
+      if (key) {
+        scope.note("`messages(\"key\")` looked a translation up on the server; the key stands as the text and is named so the port can wire its own i18n.");
+        if (args.length > 1) scope.note(`\`messages("${key[1]}", ...)\` carried ${args.length - 1} argument(s) the translation formats in; the port must format them into its own.`);
+        out.push(key[1]);
+      }
       else out.push(interpolate(chain.text));
       last = i = end; continue;
     }
@@ -469,7 +515,7 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
       if (helper[1] === "CSRF") { scope.note("`CSRF.formField` carried the server's CSRF token; the port must obtain one from its own API."); last = i = end; continue; }
       if (helper[1] === "repeat") { scope.note("`helper.repeat` rendered a field once per element of a Form list; the repetition is a loop the port must write over its own state."); last = i = end; continue; }
       const model = fieldModel(args[0] ?? "", scope);
-      if (!model) { scope.note(`\`${helper[1]}\` was called with \`${(args[0] ?? "").slice(0, 30)}\`, not a form field; it was dropped.`); last = i = end; continue; }
+      if (!model) { scope.note(`\`${helper[1]}\` was called with something other than a \`form("field")\`; it was dropped.`); last = i = end; continue; }
       const { attrs, label } = helperArgs(args.slice(1).filter((a) => !/^options\(|^Seq\(|^\w+\.map\(/.test(a.trim())), scope);
       const type = FIELD_HELPERS[helper[1]];
       const labelHtml = label ? `<label>${label}</label>` : "";
@@ -479,10 +525,10 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
       else out.push(`${labelHtml}<input type="${type}" ng-model="${attrSafe(model)}"${attrs}>`);
       last = i = end; continue;
     }
-    if (call && !target && !/^(?:routes|helper|Html|CSRF|Messages|messages|implicitly|request|flash|session|lang)\b/.test(chain.text) && /^[a-z]/.test(root) && !scope.aliases.has(root) && !scope.types.has(root) && /^\w+(?:\.\w+)*\(/.test(chain.text) && !/^\w+\(\s*"/.test(chain.text) && blockAt) {
+    if (call && !target && !/^(?:routes|helper|Html|CSRF|Messages|messages|implicitly|request|flash|session|lang)\b/.test(chain.text) && /^[a-z]/.test(root) && !scope.aliases.has(root) && !scope.types.has(root) && blockAt) {
       // A lowercase call with a block whose template is not in the run is a layout or helper the run does not hold.
       const be = matchBracket(text, end + blockAt[0].length - 1);
-      scope.note(`\`@${chain.text.slice(0, 40)}\` calls a template this run does not hold; the call was removed and its body stands without it.`);
+      scope.note(`\`@${call.path.split("/").join(".")}(...)\` calls a template this run does not hold; the call was removed and its body stands without it.`);
       if (be >= 0) { out.push(lowerIn(text.slice(end + blockAt[0].length, be - 1))); last = i = be; continue; }
     }
     if (/\.(?:map|foreach|flatMap)$/.test(chain.text) && blockAt) {
@@ -490,7 +536,8 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
       if (block) {
         const recvText = chain.text.replace(/\.(?:map|foreach|flatMap)$/, "");
         const recv = js(recvText);
-        const declared = scope.types.get(root);
+        // The type the header declares is the receiver's own, never its root's: user.get.roles is not typed by user.
+        const declared = scope.types.get(recvText.replace(/\.zipWithIndex$/, ""));
         const inner = scope.child();
         // .getOrElse after .map proves an Option: a collection has no getOrElse.
         const option = (declared && OPTION.test(declared)) || /^\s*\.getOrElse\s*\{/.test(text.slice(block.end));
@@ -504,7 +551,7 @@ export function lowerTwirl(source, scope = freshScope(), resolve = () => null, d
           }
           last = i = tail; continue;
         }
-        if (!declared || !COLLECTION.test(declared)) scope.note(`\`${recvText.slice(0, 30)}.map { }\` was read as a loop; the template declares no type for it, and an Option here would be a presence test instead.`);
+        if (!declared || !COLLECTION.test(declared)) scope.note(`\`${recvText.replace(/\([^()]*\)/g, "()").slice(0, 30)}.map { }\` was read as a loop; the template declares no type for it, and an Option here would be a presence test instead.`);
         let head = block.names[0] ?? "item"; let track = "";
         for (const n of block.names) inner.aliases.delete(n);
         if (block.names.length === 2 && /\.zipWithIndex$/.test(recvText)) { inner.aliases.set(block.names[1], "$index"); track = " track by $index"; }
