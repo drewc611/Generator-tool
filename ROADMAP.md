@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy seven features across ninety three phases. The statuses are
+Five hundred and seventy eight features across ninety four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-771 tests, on Node 18, 20 and 22, and on Windows in CI.
+774 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2167,14 +2167,20 @@ a legacy front end stands on libraries a manifest declares, a script tag loads b
 Mithril has no template; its markup is a tree of m() calls, so there is nothing to lower and everything to walk. input-mithril reads each call the way the runtime would: the selector string gives the tag, id, classes and bracket attributes; the attrs object gives attributes, with on<event> becoming the dialect's event, value plus oninput the model, class with an expression ng-class, and an expression valued attribute ng-attr; a string child is text, an expression an interpolation, cond ? m() : null and cond && m() a conditional, list.map((row, i) => m()) a loop with track by $index, m.trust bound html, m.fragment a container, and m(Child, { attrs }) that component's tag with its callbacks as events. A component is any object or closure with a view, block or arrow bodied; its inputs are the vnode.attrs it reads, rewritten to the input itself in the template, its outputs the vnode.attrs.onX it calls, named as the event the way every reader names them, and m.request reaches the API surface with its method. A ternary choosing between two values, a spread in attrs and a computed tag are named rather than approximated. Two shared defects surfaced beside it and are fixed for every reader: an object literal parser that read a ternary as key value pairs and produced a class named `late ? 'late'`, and an event wired on a child component (ng-pick on a tag the run knows, hyphenated or a one word screen) that reached React as a raw attribute; the IR now learns the run's own tag names from every printer that builds one, so the callback lands as onPick in React, @pick in Vue and on:pick in Svelte, and an unknown directive on a plain element is still not guessed to be an event. The Ember reader's outputs are renamed the same way, so a React prop comes out as onPick once instead of onOnPick. test/mithril.test.js holds it.
 
 
+## Phase 94: the browser that is gone
+
+**578. dsp-platform names the browser APIs the scripts call that the platform has moved on from** 🔨
+the browser a legacy front end was written for is gone, and some of what it called went with it: document.all, Web SQL, mutation events, showModalDialog, attachEvent, the application cache, event.keyCode, escape(), getYear, synchronous XMLHttpRequest, the unload event, the document.domain setter, vendor prefixed names, user agent sniffing and the rest of a table of twenty one. A script that calls one still parses and still ships, and fails or degrades only when it runs, which is the worst time to learn it. dsp-platform reads every script and page for each, locates the call by file and line, and reports it with the status the specification or the engines published (removed with the year the last major engine dropped it, deprecated, strict mode error, prefixed, never standard, reduced) and the API the same documents name as its replacement; a current API is never a finding, a look alike name is not one, and arguments are never captured because what a page wrote to a database or passed to escape() is a value the report must not repeat. PLATFORM.md leads with what fails today in a current browser. Nothing is rewritten, because whether a fallback for an old engine still matters is a decision about who the port's users are. test/platform.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 530 |
+| new in this branch | 531 |
 | planned | 3 |
-| total | 577 |
+| total | 578 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

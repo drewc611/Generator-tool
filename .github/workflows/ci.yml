@@ -962,9 +962,17 @@ jobs:
           grep -q "ng-" mi-out/src/features/OrderList/OrderList.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
           rm -rf mi-out
 
+      - name: the platform reader names a removed API and what replaced it
+        run: |
+          node src/cli.js run --src test/fixtures/platform-app --out pf-out
+          test -f pf-out/PLATFORM.md || { echo "no PLATFORM.md"; exit 1; }
+          grep -q "Web SQL (openDatabase)" pf-out/PLATFORM.md || { echo "Web SQL was not named"; exit 1; }
+          grep -q "IndexedDB" pf-out/PLATFORM.md || { echo "the replacement was not named"; exit 1; }
+          rm -rf pf-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "577" ]; then
-            echo "ROADMAP.md holds $count entries and claims 577"; exit 1
+          if [ "$count" != "578" ]; then
+            echo "ROADMAP.md holds $count entries and claims 578"; exit 1
           fi
