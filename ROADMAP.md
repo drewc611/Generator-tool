@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and forty seven features across sixty four phases. The statuses are
+Five hundred and forty eight features across sixty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-633 tests, on Node 18, 20 and 22, and on Windows in CI.
+641 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2011,15 +2011,20 @@ dsp-archetype names the app with hand written rules; dsp-learn names it with a n
 **547. input-svelte reads Svelte components onto the shared dialect** 🔨
 a `.svelte` file's `export let` props become inputs, its `createEventDispatcher` dispatches become outputs, and its markup lowers onto the same AngularJS attribute dialect every other reader targets: `{#each}` and `{#if}` blocks become transparent `<ng-container>` wrappers the IR sees through, `on:event` becomes an event with its arrow reduced to the call, `bind:value` becomes a two way model, and `{expr}` becomes interpolation, so a Svelte front end reaches the translator, the endpoint map and every emitter as any other component and ports on to React, Vue or the custom element. An event modifier, a class directive, an `{:else if}` chain and `{@html}` have no honest equivalent and are named through a note rather than guessed. No dependency, structural, deterministic; test/svelte.test.js holds the lowering and the parse into the IR.
 
+## Phase 65: portamp reads the framework it emits, Lit in
+
+**548. input-lit reads LitElement components onto the shared dialect** 🔨
+the inverse of output-lit closes another loop: a LitElement's `static properties` (its top level keys, not the `{ type }` inside them) and `@property` fields become inputs, its `dispatchEvent(new CustomEvent(...))` names become outputs, and its `render()` html tagged template lowers onto the dialect. A mode stack matches the template through its nested `html` templates, `@event=${h}` becomes an event with the arrow reduced to the call, `?disabled=${c}` a boolean directive, `.value=${x}` a two way model, `${list.map((x) => html`...`)}` a loop and `${cond ? html`...` : ''}` a conditional, with the tag scanner skipping `${...}` so a `>` inside an arrow never closes a tag early. A two branch ternary, an unknown event and a property with no dialect directive are named through a note. No dependency, deterministic; test/lit.test.js holds it and a CI step ports a Lit component through to React.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 500 |
+| new in this branch | 501 |
 | planned | 3 |
-| total | 547 |
+| total | 548 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

@@ -733,9 +733,18 @@ jobs:
           grep -q "rows.map" sv-out/src/features/List/List.jsx || { echo "the each did not become a react map"; exit 1; }
           rm -rf sv-src sv-out
 
+      - name: a lit component ports through the shared dialect to react
+        run: |
+          mkdir -p lit-src
+          printf '%s\n' 'import { LitElement, html } from "lit";' 'class Cards extends LitElement {' '  static properties = { cards: { type: Array } };' '  render(){ return html`<ul>${this.cards.map((c) => html`<li>${c.name}</li>`)}</ul>`; }' '}' > lit-src/Cards.js
+          node src/cli.js run --src lit-src --out lit-out
+          grep -q "Ported from Cards.js" lit-out/src/features/Cards/Cards.jsx || { echo "lit was not read into a component"; exit 1; }
+          grep -q "cards.map" lit-out/src/features/Cards/Cards.jsx || { echo "the lit map did not become a react map"; exit 1; }
+          rm -rf lit-src lit-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "547" ]; then
-            echo "ROADMAP.md holds $count entries and claims 547"; exit 1
+          if [ "$count" != "548" ]; then
+            echo "ROADMAP.md holds $count entries and claims 548"; exit 1
           fi

@@ -22,6 +22,7 @@ const DOES = {
   "input-angular": "components, bindings, RxJS operators, HttpClient calls, interceptors",
   "input-angularjs": "the 1.x apps that never went anywhere: controllers, components, $http",
   "input-knockout": "data-bind expanded into a dialect; the viewmodel is the component",
+  "input-lit": "litelement html templates, @event/.value/?bool and mapped loops, onto the dialect",
   "input-backbone": "views are boundaries somebody drew, and they are read as such",
   "input-openapi": "a spec as a source, cross checked against what the app actually calls",
   "input-jsf": "the facelets inventory, honest that the rendered truth is server side",
