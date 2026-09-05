@@ -36,6 +36,8 @@ export function parseMarkup(source) {
 }
 
 export const elements = (nodes) => nodes.filter((n) => n.type === "el");
+/** An element's attribute value by name, case blind, or null. */
+export const attrOf = (el, name) => el.attrs.find((a) => a.name.toLowerCase() === name.toLowerCase())?.value ?? null;
 export const cloneNode = (n) => JSON.parse(JSON.stringify(n));
 
 /**

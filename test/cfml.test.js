@@ -61,7 +61,7 @@ test("cfif chains, cfloop over arrays, lists, collections and queries, cfswitch,
     `<ng-container ng-if="b"></ng-container>{{ inner }}` +
     `<p>#outside#</p>` +
     `<ng-container ng-repeat="row in q"><b>{{ row.name }} {{ ($index + 1) }}/{{ q.length }}</b></ng-container><ng-container ng-if="q.length == 0">none</ng-container>`);
-  for (const re of [/cfparam name="url\.q"/, /cfset inner> inside a branch or loop/, /unqualified name was read as a column/, /cfoutput writes a value unescaped/]) assert.ok(notes.some((n) => re.test(n)), `named: ${re}`);
+  for (const re of [/cfparam name="url\.q"/, /cfset inner> inside a branch or loop/, /bare name was read as a column/, /cfoutput writes a value unescaped/]) assert.ok(notes.some((n) => re.test(n)), `named: ${re}`);
 });
 
 test("comments, cfscript, cfquery, cfsilent, cfinclude, cfform, cftry, custom tags and a range loop are composed or named", () => {
@@ -101,7 +101,7 @@ test("a run composes the page with its include, ports it, reads the locals and n
     assert.match(product.template, /<ng-container ng-repeat="row in reviews">\s*<blockquote>\{\{ row\.body \}\} - \{\{ row\.author \}\} \(\{\{ \(\$index \+ 1\) \}\} of \{\{ reviews\.length \}\}\)<\/blockquote>/);
     assert.match(product.template, /<ng-container ng-if="reviews\.length == 0"><p>No reviews yet\.<\/p><\/ng-container>/);
     assert.match(product.template, /<form action="\/reviews" method="post">\s*<input type="text" name="body" required="yes">\s*<input type="submit" name="go" value="Send">\s*<\/form>/);
-    assert.match(product.template, /Custom footer content\s*<p>Price: #not an expression#<\/p>\s*<p>Free shipping on every order\.<\/p>/);
+    assert.match(product.template, /Custom footer content\s*<p>Price: ##not an expression##<\/p>\s*<p>Free shipping on every order\.<\/p>/);
     assert.doesNotMatch(product.template, /SELECT|visits|<cf|Shop:|enablecfoutputonly/);
     assert.deepEqual(product.inputs, ["currency", "product", "reviews", "session", "url"]);
     assert.ok(by("includes-nav"), "the included page is also a screen of its own");
@@ -113,5 +113,66 @@ test("a run composes the page with its include, ports it, reads the locals and n
     }
   } finally {
     await run.cleanup();
+  }
+});
+
+test("the ninth review pass: query rows prefix bare names only, aliases read case blind and survive a nested loop, scoped names stay scopes", () => {
+  const notes = [];
+  const { out } = lower(
+    `<cfset total = 9><cfoutput query="a">#variables.total# #session.user.name# #product.name# #name# #currentrow# #RecordCount#` +
+    `<cfloop query="b">#b.title# #title#</cfloop> #currentRow#</cfoutput>`,
+    (n) => notes.push(n),
+  );
+  assert.equal(out,
+    `<ng-container ng-repeat="row in a">{{ 9 }} {{ session.user.name }} {{ product.name }} {{ row.name }} {{ ($index + 1) }} {{ a.length }}` +
+    `<ng-container ng-repeat="row in b">{{ b.title }} {{ row.title }}</ng-container> {{ ($index + 1) }}</ng-container>`);
+  assert.ok(notes.some((n) => /bare name was read as a column/.test(n)));
+});
+
+test("the ninth review pass: lone tags close themselves, cfsilent restores output, an attribute cfif evaluates outside cfoutput, yes and no keys stay keys", () => {
+  const notes = [];
+  const { out } = lower(
+    `<div><cffile action="read" file="x" variable="v"><p>after file</p></div><div><CFHTTP url="http://x"><p>after http</p></div>` +
+    `<cfoutput><cfsilent><cfset a = 1></cfsilent>#x#</cfoutput><p>#outside#</p>` +
+    `<a class="<cfif on>on</cfif>" <cfif done>disabled</cfif>>Go</a>` +
+    `<cfoutput>#invoice.no# #order.yes# #a#</cfoutput>` +
+    `<CFSCRIPT>x = 1 < 2;</CFSCRIPT><cfset label = "Tel(home)"><cfoutput>#label#</cfoutput>`,
+    (n) => notes.push(n),
+  );
+  assert.equal(out,
+    `<div><p>after file</p></div><div><p>after http</p></div>` +
+    `{{ x }}<p>#outside#</p>` +
+    `<a ng-class="(on ? 'on' : '')" ng-disabled="(done)">Go</a>` +
+    `{{ invoice.no }} {{ order.yes }} {{ 1 }}` +
+    `{{ 'Tel(home)' }}`);
+  assert.ok(notes.some((n) => /cfscript> block ran code/.test(n)));
+  assert.ok(!notes.some((n) => /Tel\(\)/.test(n)), "a bracket inside a string is not a call");
+});
+
+test("the ninth review pass: a cfelse buried in an element the cfif opened is named, and a plain html include is composed", async () => {
+  const notes = [];
+  const files = { "header.cfm": `<header><h1>Shop</h1></header>` };
+  const { out } = lower(`<cfif a><tr class="a"><td>A</td><cfelse><tr class="b"><td>B</td></cfif></tr><cfinclude template="header.cfm">`, (n) => notes.push(n), (name) => files[name] ?? null);
+  assert.match(out, /^<ng-container ng-if="a"><tr class="a"><td>A<\/td>/);
+  assert.match(out, /<header><h1>Shop<\/h1><\/header>$/);
+  assert.ok(notes.some((n) => /could not be read as a branch; both branches stand/.test(n)));
+  const { mkdtemp, writeFile, mkdir, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const dir = await mkdtemp(join(tmpdir(), "portamp-cf-"));
+  try {
+    await mkdir(join(dir, "includes"), { recursive: true });
+    await writeFile(join(dir, "includes/header.cfm"), `<header><h1>Shop</h1></header>`);
+    await writeFile(join(dir, "index.cfm"), `<cfinclude template="includes/header.cfm"><cfoutput><p>#t#</p></cfoutput>`);
+    const run = await runPipeline({ src: dir });
+    try {
+      assert.equal(run.error, null);
+      assert.equal(run.ctx.screens.find((s) => s.selector === "index").template, `<header><h1>Shop</h1></header><p>{{ t }}</p>`);
+      assert.ok(!run.ctx.report.unverified.some((n) => /header\.cfm is included by this page and is not in the run/.test(n)));
+      assert.ok(!run.ctx.screens.some((s) => s.selector === "includes-header"), "a plain html include is composed, not a ColdFusion screen of its own");
+    } finally {
+      await run.cleanup();
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });

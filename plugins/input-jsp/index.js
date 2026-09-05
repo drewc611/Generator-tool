@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { elements, parseMarkup, stripDelimited, VOID_ELEMENTS } from "../dsp-ir/markup.js";
+import { VOID_ELEMENTS, attrOf, elements, parseMarkup, stripDelimited } from "../dsp-ir/markup.js";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
-import { attrSafe, matchBracket, quoteJs, readInputs, resolveTemplate, splitCommas } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket, quoteJs, readInputs, resolveTemplate, splitCommas, valueJs as valueJsShared } from "../dsp-ir/text.js";
 
 /**
  * JSP with the standard tag library, the enterprise Java page for twenty
@@ -115,22 +115,9 @@ function lowerValue(value, scope) {
   return { kind: text.includes("{{") ? "interp" : "literal", text };
 }
 
-const attr = (el, name) => el.attrs.find((a) => a.name.toLowerCase() === name.toLowerCase())?.value ?? null;
+const valueJs = valueJsShared;
+const attr = attrOf;
 
-/** A lowered value where JavaScript is wanted: an expression as itself, a literal quoted, text around expressions as a concatenation. */
-function valueJs(r) {
-  if (r.kind === "expr") return r.text;
-  if (r.kind === "literal") return quoteJs(r.text);
-  const pieces = [];
-  let last = 0;
-  for (const m of r.text.matchAll(/\{\{\s*([\s\S]*?)\s*\}\}/g)) {
-    if (m.index > last) pieces.push(quoteJs(r.text.slice(last, m.index)));
-    pieces.push(`(${m[1]})`);
-    last = m.index + m[0].length;
-  }
-  if (last < r.text.length) pieces.push(quoteJs(r.text.slice(last)));
-  return pieces.join(" + ");
-}
 
 /** Lower a tree onto the dialect. `resolve(path)` returns the text of another page in the run, or null. */
 export function lowerTree(root, scope = freshScope(), resolve = () => null, depth = 0) {

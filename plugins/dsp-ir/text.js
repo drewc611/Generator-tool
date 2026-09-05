@@ -76,6 +76,24 @@ export function resolveTemplate(keys, name, bare) {
   return keys.find((k) => bare(k) === b) ?? keys.find((k) => bare(k).endsWith(`/${b}`)) ?? null;
 }
 
+/**
+ * A lowered attribute value where JavaScript is wanted: an expression as
+ * itself, a literal quoted, text around interpolations as a concatenation.
+ */
+export function valueJs(r) {
+  if (r.kind === "expr") return r.text;
+  if (r.kind === "literal") return quoteJs(r.text);
+  const pieces = [];
+  let last = 0;
+  for (const m of r.text.matchAll(/\{\{\s*([\s\S]*?)\s*\}\}/g)) {
+    if (m.index > last) pieces.push(quoteJs(r.text.slice(last, m.index)));
+    pieces.push(`(${m[1]})`);
+    last = m.index + m[0].length;
+  }
+  if (last < r.text.length) pieces.push(quoteJs(r.text.slice(last)));
+  return pieces.join(" + ");
+}
+
 /** A literal as a JS string, its backslashes escaped before its quotes. */
 export const quoteJs = (s) => `'${String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 

@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { elements, parseMarkup, stripDelimited, VOID_ELEMENTS } from "../dsp-ir/markup.js";
+import { attrOf, elements, parseMarkup, stripDelimited, VOID_ELEMENTS } from "../dsp-ir/markup.js";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
-import { attrSafe, matchBracket, quoteJs, readInputs, resolveTemplate, splitCommas } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket, quoteJs, readInputs, resolveTemplate, splitCommas, valueJs } from "../dsp-ir/text.js";
 
 /**
  * ColdFusion Markup, the tag language a generation of intranets and shops
@@ -56,13 +56,21 @@ const FORMATTERS = /^(dateformat|timeformat|datetimeformat|lsdateformat|numberfo
 
 /** A CFML expression as JavaScript, outside strings; #x# inside a string is spliced in. */
 export function cfToJs(expr, scope = freshScope()) {
-  let s = String(expr).trim();
-  // Functions first: their brackets hold expressions of their own.
+  const hold = (js) => `\u0001${scope.holds.push(js) - 1}\u0002`;
+  // Strings first, so a bracket or a word inside one is never an operator or a call.
+  let s = String(expr).trim().replace(/'(?:''|[^'])*'|"(?:""|[^"])*"/g, (p) => {
+    const q = p[0];
+    const body = p.slice(1, -1).split(q + q).join(q);
+    if (!/#[^#]+#/.test(body)) return hold(quoteJs(body));
+    const pieces = body.split(/#([^#]+)#/).map((x, j) => (j % 2 ? `(${cfToJs(x, scope)})` : x ? quoteJs(x) : null)).filter(Boolean);
+    return hold(`(${pieces.join(" + ")})`);
+  });
+  // Functions next: their brackets hold expressions of their own.
   for (;;) {
     const m = /(?<![\w.$])([A-Za-z_]\w*)\(/.exec(s);
     if (!m) break;
     const open = m.index + m[0].length - 1;
-    const end = matchBracket(s, open, { ticks: false });
+    const end = matchBracket(s, open, { ticks: false, strings: false });
     if (end < 0) break;
     const args = splitCommas(s.slice(open + 1, end - 1), { ticks: false }).map((a) => cfToJs(a, scope));
     const name = m[1].toLowerCase();
@@ -71,35 +79,23 @@ export function cfToJs(expr, scope = freshScope()) {
     else if (FORMATTERS.test(name)) { scope.note(`${m[1]}() formatted or computed its value on the server; the value is unformatted in the port and the format is not carried.`); rep = args[0] ?? "null"; }
     else { scope.note(`${m[1]}() is a ColdFusion function this reader does not know, or one the application defined; the call was kept and the port must supply \`${m[1]}\`.`); rep = `${m[1]}(${args.join(", ")})`; }
     if ((m.index !== 0 || end !== s.length) && /\s(\|\||&&|==|!=)\s/.test(rep) && !/^\(.*\)$/.test(rep)) rep = `(${rep})`;
-    s = s.slice(0, m.index) + `\u0001${scope.holds.push(rep) - 1}\u0002` + s.slice(end);
+    s = s.slice(0, m.index) + hold(rep) + s.slice(end);
   }
-  const parts = s.split(/('(?:''|[^'])*'|"(?:""|[^"])*")/);
-  let out = parts.map((p, i) => {
-    if (i % 2) {
-      // A doubled quote is the quote; a #x# inside a string is spliced in as a concatenation.
-      const q = p[0];
-      const body = p.slice(1, -1).split(q + q).join(q);
-      if (!/#[^#]+#/.test(body)) return quoteJs(body);
-      const pieces = body.split(/#([^#]+)#/).map((x, j) => (j % 2 ? `(${cfToJs(x, scope)})` : x ? quoteJs(x) : null)).filter(Boolean);
-      return `(${pieces.join(" + ")})`;
-    }
-    // A lone & concatenates; it is rewritten before AND becomes &&.
-    let c = p.replace(/\s*(?<!&)&(?!&)\s*/g, " + ");
-    for (const [re, to] of OPS) c = c.replace(re, to);
-    c = c.replace(/\b(\w+)\s+CONTAINS\s+(\w+)/g, "$1.includes($2)").replace(/\b(\w+)\s+NOTCONTAINS\s+(\w+)/g, "!$1.includes($2)");
-    c = c.replace(/\bvariables\./gi, "").replace(/\battributes\./gi, "");
-    c = c.replace(/\.recordcount\b/gi, ".length");
-    c = c.replace(SCOPES, (all, sc, key) => { scope.note(`${sc.toLowerCase()}.${key} is the ${sc.toLowerCase()} scope the server supplied; the port must supply \`${sc.toLowerCase()}\` itself.`); return `${sc.toLowerCase()}.${key}`; });
-    // One based arrays: a literal index shifts; a variable index shifts and is named.
-    c = c.replace(/\[\s*(\d+)\s*\]/g, (mm, n) => `[${Number(n) - 1}]`);
-    c = c.replace(/\[\s*([A-Za-z_]\w*)\s*\]/g, (mm, v) => { scope.note(`CFML arrays are one based; the index \`${v}\` was shifted by one for the port.`); return `[${v} - 1]`; });
-    c = c.replace(/\b(true|false)\b/gi, (w) => w.toLowerCase()).replace(/\b(yes)\b/gi, "true").replace(/\b(no)\b/gi, "false");
-    if (scope.row) c = c.replace(/(?<![\w.$'"])([A-Za-z_]\w*)(?![\w$]|\s*\()/g, (w) => (/^(true|false|null|undefined|\d.*)$/.test(w) || scope.known.has(w.toLowerCase()) || scope.aliases.has(w) ? w : `${scope.row}.${w}`));
-    for (const [alias, js] of scope.aliases) c = c.replace(new RegExp(`(?<![\\w.$])${alias}(?![\\w$])`, "gi"), () => js);
-    return c;
-  }).join("");
-  out = out.replace(/\u0001(\d+)\u0002/g, (m, i) => scope.holds[Number(i)]);
-  return out;
+  // A lone & concatenates; it is rewritten before AND becomes &&.
+  let c = s.replace(/\s*(?<!&)&(?!&)\s*/g, " + ");
+  for (const [re, to] of OPS) c = c.replace(re, to);
+  c = c.replace(/\b(\w+)\s+CONTAINS\s+(\w+)/g, "$1.includes($2)").replace(/\b(\w+)\s+NOTCONTAINS\s+(\w+)/g, "!$1.includes($2)");
+  c = c.replace(/\.recordcount\b/gi, ".length");
+  c = c.replace(SCOPES, (all, sc, key) => { scope.note(`${sc.toLowerCase()}.${key} is the ${sc.toLowerCase()} scope the server supplied; the port must supply \`${sc.toLowerCase()}\` itself.`); return `${sc.toLowerCase()}.${key}`; });
+  // One based arrays: a literal index shifts; a variable index shifts and is named.
+  c = c.replace(/\[\s*(\d+)\s*\]/g, (mm, n) => `[${Number(n) - 1}]`);
+  c = c.replace(/\[\s*([A-Za-z_]\w*)\s*\]/g, (mm, v) => { scope.note(`CFML arrays are one based; the index \`${v}\` was shifted by one for the port.`); return `[${v} - 1]`; });
+  c = c.replace(/(?<![\w.$])(true|false)(?![\w$.])/gi, (w) => w.toLowerCase()).replace(/(?<![\w.$])yes(?![\w$.])/gi, "true").replace(/(?<![\w.$])no(?![\w$.])/gi, "false");
+  // Inside a query loop a bare name is a column; a dotted or scoped name is a variable, the way the engine falls through.
+  if (scope.row) c = c.replace(/(?<![\w.$])([A-Za-z_]\w*)(?![\w$.[]|\s*\()/g, (w) => (/^(true|false|null|undefined)$/i.test(w) || scope.known.has(w.toLowerCase()) || [...scope.aliases.keys()].some((k) => k.toLowerCase() === w.toLowerCase()) ? w : `${scope.row}.${w}`));
+  c = c.replace(/\bvariables\./gi, "").replace(/\battributes\./gi, "");
+  for (const [alias, js] of scope.aliases) c = c.replace(new RegExp(`(?<![\\w.$])${alias}(?![\\w$])`, "gi"), () => js);
+  return c.replace(/\u0001(\d+)\u0002/g, (m, i) => scope.holds[Number(i)]);
 }
 
 export function freshScope(note = () => {}) {
@@ -108,7 +104,9 @@ export function freshScope(note = () => {}) {
 
 /** #expr# inside text that cfoutput turned on; ## is a literal #. */
 function lowerText(text, scope, always = false) {
-  if (!scope.output && !always) return text.replace(/##/g, "#");
+  // A folded attribute condition evaluates whether or not a cfoutput is on.
+  text = text.replace(/\u0007([\s\S]*?)\u0007/g, (m, e) => `{{ ${cfToJs(e, scope)} }}`);
+  if (!scope.output && !always) return text;
   let out = ""; let i = 0;
   while (i < text.length) {
     const at = text.indexOf("#", i);
@@ -131,8 +129,7 @@ function lowerAttr(value, scope) {
   const text = lowerText(v, scope, true);
   return { kind: text.includes("{{") ? "interp" : "literal", text };
 }
-const valueJs = (r) => (r.kind === "expr" ? r.text : r.kind === "literal" ? quoteJs(r.text) : r.text.split(/\{\{\s*([\s\S]*?)\s*\}\}/g).map((x, j) => (j % 2 ? `(${x})` : x ? quoteJs(x) : null)).filter(Boolean).join(" + "));
-const attr = (el, name) => el.attrs.find((a) => a.name.toLowerCase() === name.toLowerCase())?.value ?? null;
+const attr = attrOf;
 
 /** Lower a tree onto the dialect; `resolve(path)` returns another page's text or null. */
 export function lowerTree(root, scope = freshScope(), resolve = () => null, depth = 0) {
@@ -180,6 +177,8 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
       case "cfif": {
         const tried = []; let out = "";
         const branches = []; let current = { test: test(el), children: [] };
+        const buried = (nodes) => nodes.some((c) => c.type === "el" && (c.tag === "cfelse" || c.tag === "cfelseif" || (c.tag !== "cfif" && buried(c.children))));
+        if (el.children.some((c) => c.type === "el" && c.tag !== "cfif" && c.tag !== "cfelse" && c.tag !== "cfelseif" && buried(c.children))) scope.note(`A <cfelse> or <cfelseif> inside an element this <cfif ${(attr(el, "test") ?? "").slice(0, 30)}> opened could not be read as a branch; both branches stand in the port and must be wired by hand.`);
         for (const c of el.children) {
           if (c.type === "el" && c.tag === "cfelseif") { branches.push(current); current = { test: test(c), children: [] }; continue; }
           if (c.type === "el" && c.tag === "cfelse") { branches.push(current); current = { test: null, children: [] }; continue; }
@@ -277,7 +276,7 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
         const open = `<${htmlTag}${parts.map((p) => ` ${p}`).join("")}>`;
         return htmlTag === "input" ? open : `${open}${lowerNodes(el.children)}</${htmlTag}>`;
       }
-      case "cfsilent": { scope.output = 0; lowerNodes(el.children); return ""; }
+      case "cfsilent": { const was = scope.output; scope.output = 0; lowerNodes(el.children); scope.output = was; return ""; }
       case "cftry": return lowerNodes(el.children.filter((c) => !(c.type === "el" && c.tag === "cfcatch")));
       case "cfcatch": return "";
       case "cfscript": case "cfquery": case "cfstoredproc": case "cfabort": case "cfdump": case "cfheader": case "cfcontent": case "cfcookie": case "cfsetting": case "cfprocessingdirective": case "cfimport": case "cfmail": case "cffile": case "cfhttp": case "cflog": case "cfflush": case "cfcache": case "cfapplication": case "cferror": case "cfobject": case "cfinvoke": case "cfdirectory": case "cflock": case "cftransaction": case "cfexit": case "cfreturn": case "cfargument": case "cfproperty": case "cfthrow": case "cfrethrow": case "cfschedule": case "cfwddx": case "cfxml": case "cfsavecontent": case "cfassociate": case "cfsearch": case "cfindex": case "cfcollection": case "cfldap": case "cfpop": case "cfimap": case "cfftp": case "cfregistry": case "cfexecute": case "cfzip": case "cfpdf": case "cfimage": case "cfchart": case "cfspreadsheet": case "cffeed": case "cfthread": case "cfwebsocket": case "cfajaxproxy": case "cfajaximport":
@@ -293,18 +292,20 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
 
   /** A query's rows: cfoutput query or cfloop query repeat the body per row; unqualified names read as the row's columns. */
   const repeatRows = (query, el) => {
+    const previous = scope.row;
+    scope.row = null;
     const q = cfToJs(query.replace(/^#|#$/g, ""), scope);
     const row = "row";
-    const previous = scope.row;
     scope.row = row;
     scope.known.add(row);
     scope.known.add(q.toLowerCase());
+    const saved = new Map([["currentRow", scope.aliases.get("currentRow")], ["recordCount", scope.aliases.get("recordCount")]]);
     scope.aliases.set("currentRow", "($index + 1)");
     scope.aliases.set("recordCount", `${q}.length`);
-    if (!scope.queries.has(q)) { scope.queries.add(q); scope.note(`Inside <cfoutput query="${q}"> an unqualified name was read as a column of the row (\`${row}.name\`), as the engine resolves it; the query itself ran on the server and the port must fetch \`${q}\`.`); }
+    if (!scope.queries.has(q)) { scope.queries.add(q); scope.note(`Inside <cfoutput query="${q}"> a bare name was read as a column of the row (\`${row}.name\`) and a dotted or scoped name as a variable, the way the engine falls through; the query itself ran on the server and the port must fetch \`${q}\`.`); }
     scope.depth += 1; const body = lowerNodes(el.children); scope.depth -= 1;
     scope.row = previous;
-    scope.aliases.delete("currentRow"); scope.aliases.delete("recordCount");
+    for (const [k, v] of saved) { if (v === undefined) scope.aliases.delete(k); else scope.aliases.set(k, v); }
     return `<ng-container ng-repeat="${attrSafe(`${row} in ${q}`)}">${body}</ng-container>`;
   };
 
@@ -315,24 +316,28 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
 export function prepare(source, scope, resolve = () => null, depth = 0) {
   let text = String(source ?? "").replace(/\r\n/g, "\n");
   text = stripDelimited(stripDelimited(text, "<!---", "--->"), "<!--", "-->");
-  text = stripDelimited(text, "<cfscript>", "</cfscript>", () => { scope.note("A <cfscript> block ran code in the page; it was not carried and its values are not in the port."); return ""; });
+  text = text.replace(/<cfscript\b[^>]*>[\s\S]*?<\/cfscript\s*>/gi, () => { scope.note("A <cfscript> block ran code in the page; it was not carried and its values are not in the port."); return ""; });
   text = text.replace(/<cfquery\b([^>]*)>[\s\S]*?<\/cfquery>/gi, (m, attrs) => { const name = /name\s*=\s*["']([^"']+)["']/i.exec(attrs); scope.note(`<cfquery name="${name?.[1] ?? ""}"> ran SQL on the server; the SQL is not in the port and the port must fetch \`${name?.[1] ?? "the query"}\` from an endpoint.`); return ""; });
   text = text.replace(/<cfstoredproc\b[\s\S]*?<\/cfstoredproc>/gi, "");
   // <cfif EXPR> and <cfset a = b> hold an expression where a tag holds attributes.
   const quoteExpr = (e) => e.replace(/"/g, "&quot;");
   // class="<cfif a>x<cfelse>y</cfif>" cannot hold an element; it is the ternary it means, as an expression the attribute evaluates.
-  text = text.replace(/=("[^"<]*)<cfif\s+([^>]+)>([^<]*)(?:<cfelse>([^<]*))?<\/cfif>([^"]*")/gi, (m, before, t, a, b, after) => `=${before}#(${t.trim()} ? ${quoteJs(a)} : ${quoteJs(b ?? "")})#${after}`);
+  text = text.replace(/=("[^"<]*)<cfif\s+([^>]+)>([^<]*)(?:<cfelse>([^<]*))?<\/cfif>([^"]*")/gi, (m, before, t, a, b, after) => `=${before}\u0007(${t.trim()} ? ${quoteJs(a)} : ${quoteJs(b ?? "")})\u0007${after}`);
   text = text.replace(/<cfelseif\s+([\s\S]*?)>/gi, (m, expr) => `<cfelseif test="${quoteExpr(expr.trim())}"/>`);
   text = text.replace(/<cfelse\s*>/gi, "<cfelse/>");
   // <cfif X>disabled</cfif> standing where an attribute would: a bare attribute the test decides, or named.
   text = text.replace(/(<[\w:-]+(?:\s+[^\s=>/"'<]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>"'<]+))?)*)\s*<cfif\s+([^>]+)>\s*([^<]*?)\s*<\/cfif>/gi, (m, head, t, body) => {
-    if (/^[\w-]+$/.test(body)) return `${head} ng-${body}="#(${t.trim()})#"`;
+    if (/^[\w-]+$/.test(body)) return `${head} ng-${body}="\u0007(${t.trim()})\u0007"`;
     scope.note(`<cfif ${t.trim().slice(0, 40)}> stood where an attribute would and decided \`${body.slice(0, 30)}\` at render time; it is not in the port and must be wired by hand.`);
     return head;
   });
   text = text.replace(/<cfif\s+([\s\S]*?)>/gi, (m, expr) => `<cfif test="${quoteExpr(expr.trim())}">`);
   // The tags that never hold content close themselves, so the page does not nest inside them.
-  text = text.replace(/<(cfparam|cfinclude|cfinput|cfsetting|cfabort|cfqueryparam|cfbreak|cfcontinue|cflocation|cfheader|cfcontent|cfcookie|cfdump|cfthrow|cfexit|cfargument|cfproperty|cfflush|cfimport|cfinvokeargument|cfprocparam|cfrethrow|cfassociate|cfobject|cfinvoke|cflog|cfapplication|cferror|cfsetting)\b([^>]*?)\s*\/?>/gi, (m, tag, attrs) => `<${tag}${attrs}/>`);
+  text = text.replace(/<(cfparam|cfinclude|cfinput|cfsetting|cfabort|cfqueryparam|cfbreak|cfcontinue|cflocation|cfheader|cfcontent|cfcookie|cfdump|cfthrow|cfexit|cfargument|cfproperty|cfflush|cfimport|cfinvokeargument|cfprocparam|cfrethrow|cfassociate|cfobject|cflog|cfapplication|cferror)\b([^>]*?)\s*\/?>/gi, (m, tag, attrs) => `<${tag}${attrs}/>`);
+  // The tags that may stand alone or hold children close themselves where the page never closes them.
+  for (const tag of ["cffile", "cfhttp", "cfdirectory", "cfimage", "cfschedule", "cfsearch", "cfindex", "cfldap", "cfpop", "cfregistry", "cfexecute", "cfwddx", "cffeed", "cfspreadsheet", "cfzip", "cfpdf", "cfajaximport", "cfajaxproxy", "cfcollection", "cfimap", "cfftp", "cfinvoke", "cfmail", "cfchart", "cfsavecontent", "cflock", "cftransaction", "cfstoredproc", "cfxml", "cfthread"]) {
+    if (!new RegExp(`</${tag}\\s*>`, "i").test(text)) text = text.replace(new RegExp(`<${tag}\\b([^>]*?)\\s*/?>`, "gi"), (m, attrs) => `<${tag}${attrs}/>`);
+  }
   text = text.replace(/<cfset\s+([\s\S]*?)>/gi, (m, code) => `<cfset code="${quoteExpr(code.trim())}"/>`);
   text = text.replace(/<cfreturn\b[^>]*>/gi, "");
   return text;
@@ -348,11 +353,8 @@ export default {
     on("extract", async (ctx) => {
       const files = ctx.sources.files.filter((f) => /\.cfml?$/i.test(f.rel));
       const bodies = new Map();
-      for (const f of files) {
-        const text = await readFile(f.path, "utf8").catch(() => "");
-        if (isCfml(text)) bodies.set(f.rel.replace(/^\.\//, ""), text);
-      }
-      if (!bodies.size) return log.debug("no ColdFusion pages");
+      for (const f of files) bodies.set(f.rel.replace(/^\.\//, ""), await readFile(f.path, "utf8").catch(() => ""));
+      if (![...bodies.values()].some(isCfml)) return log.debug("no ColdFusion pages");
       const notes = [];
       const note = (t) => { if (!notes.includes(t)) notes.push(t); };
       const bare = (name) => String(name).replace(/^(\.\.?\/)+/, "").replace(/^\//, "").replace(/\.cfml?$/i, "");
@@ -360,6 +362,7 @@ export default {
       const resolve = (name) => { const k = resolveTemplate(keys, name, bare); return k ? bodies.get(k) : null; };
       let count = 0;
       for (const [key, text] of bodies) {
+        if (!isCfml(text)) continue;
         if (/(^|\/)(Application|OnRequestEnd|OnRequest)\.cfml?$/i.test(key)) { note(`${key} is the application's own file, run around every request; it is not a screen and was not ported.`); continue; }
         const file = files.find((f) => f.rel.replace(/^\.\//, "") === key);
         const scope = freshScope(note);

@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and nine features across one hundred and twenty five phases. The statuses are
+Six hundred and ten features across one hundred and twenty six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2348,14 +2348,19 @@ The review cadence held for the eighth time. In the JSP reader, six places still
 **609. input-cfml reads ColdFusion Markup, the tag language a generation of intranets and shops were written in** 🔨
 CFML is HTML with <cfif>, <cfloop>, <cfswitch> and <cfoutput> around it, #expressions# inside a cfoutput, <cfset> and <cfparam> for variables, <cfinclude> for shared markup, <cfquery> for SQL in the page, <cfscript> for code, and a library of functions whose names are its own. input-cfml lowers the tags onto the dialect: cfif with its cfelseif and cfelse onto the chain negated the way the engine evaluates it, and a cfif inside an attribute value onto the ternary it means; cfloop over an array onto ng-repeat (with item and index tracked), over a list onto ng-repeat over the list split on its delimiter, over a collection onto the key and value form, over a query onto rows with unqualified names read as the row's columns the way the engine resolves them and named, and a counted or conditional loop kept once and named; cfswitch and cfcase with their value lists onto the equalities they test; cfoutput onto the interpolations it turned on, a doubled ## the literal # it is; cfset onto a substituted alias where the value is fixed and named where it depends on a branch or reads itself, cfparam's default named; cfinclude onto the page it names; cfform, cfinput, cftextarea and cfselect onto a form and its inputs with the server side validation attributes named. Expressions are spelled as JavaScript outside strings: EQ, NEQ, GT, LT, GTE, LTE, IS, AND, OR, NOT, MOD and the spelled out forms become their signs, a lone & becomes +, a doubled quote inside a string is the quote and a #x# inside one is a concatenation; Len, ArrayLen, UCase, Trim, IsDefined, StructKeyExists, ArrayIsEmpty, Replace with ALL, Left, Right, Val, ListLen and their kin are rewritten, DateFormat, NumberFormat, DollarFormat and the other formatters keep their value unformatted and are named, and a function the reader does not know or the application defined is kept and named. CFML arrays are one based, so a literal index is shifted and a variable index is shifted and named. A query, a cfscript block, a custom tag, a cflocation, a cfsilent's output and the url, form, cgi and session scopes are named as what the server did or supplied and never carried, and Application.cfm and OnRequestEnd.cfm are the application's own files, not screens. .cfm and .cfml reach the scan and the census. The same product page written in CFML is the tenth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/cfml.test.js holds it.
 
+## Phase 126: the ninth review pass
+
+**610. The ColdFusion reader reviewed on its own, ten defects fixed with the inputs that exposed them** 🔨
+The review cadence held for the ninth time. Inside a query loop every name was prefixed as a column, variables.x and session.x and the name of a nested query among them, a wrong value that looks right; a bare name is a column and a dotted or scoped name is a variable, the way the engine falls through, the nested query's own name is resolved outside the row, and the note says exactly that. Twenty odd tags that stand alone (cffile, cfhttp, cfimage, cfschedule and the rest) were parsed as containers, so the rest of the page nested inside them and vanished with their silence; where the page never closes one it closes itself. cfsilent zeroed the output counter and never restored it, turning interpolation off inside its cfoutput and on for the rest of the page; the previous state is restored. A cfif folded from attribute position evaluated only inside a cfoutput; it evaluates always, as a tag does. Only files with cf tags could be included, so a plain HTML header was reported missing though it stood in the run; every .cfm can be included and only those with cf tags are screens. The alias check inside a row was case sensitive where CFML is not, and a nested query loop deleted the outer loop's currentRow; aliases read case blind and the outer loop's are restored. yes and no were rewritten to booleans after a dot, so invoice.no became invoice.false; a key stays a key. A cfelse buried inside an element the cfif opened, the idiomatic table row shape, was silently merged into the true branch; it is named. The cfscript strip was the one case sensitive match in the reader, so <CFSCRIPT> survived into the tree unnamed; it is case blind. And a bracket inside a string literal read as a function call with a false note; strings are set aside before functions are read. Text outside a cfoutput is now literal, ## included, as the engine leaves it. The value spelling helper and the attribute lookup the JSP and ColdFusion readers each wrote are one, in dsp-ir/text.js and dsp-ir/markup.js, held to one home. Each fix carries the input that exposed it in test/cfml.test.js.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 562 |
+| new in this branch | 563 |
 | planned | 3 |
-| total | 609 |
+| total | 610 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
