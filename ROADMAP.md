@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and five features across one hundred and twenty one phases. The statuses are
+Six hundred and six features across one hundred and twenty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2328,14 +2328,19 @@ The review cadence held for the seventh time, and this pass reached the jinja lo
 **605. A screen whose name is an HTML element's is never what an element of that name refers to** 🔨
 The Smarty fixture's partial is nav.tpl, and a partial is also a screen of its own, so the run held a screen called nav. Every target resolves a tag naming another screen in the run to that ported component, which is how a shared component composes with nothing target specific added; here it made every <nav> element in every screen a reference to the nav partial, in React by the components map, in Vue and Svelte by the tag rewrite and in the graph by the composition edge, and CI caught it where the suite had not, because the suite checked the lowered template and not the React the partial was composed into. An element is never a reference to a screen named like it. dsp-ir now carries the one list of HTML and SVG element names, and every place a selector is taken for a tag, the IR's known set, output-react's components map, output-vue's and output-svelte's rewrite and vis-graph's edges, skips a selector on that list; the screen is still ported under its own name and a note says nothing composes it by that name. The hygiene gate holds the list to one home, and the Smarty run test now reads the React and not only the template.
 
+## Phase 122: the CI's own steps, before the push
+
+**606. tools/ci-local.mjs runs the workflow's exercise steps locally and names the first that fails** 🔨
+The suite proves what the tests assert; the workflow's hundred odd exercise steps prove what the emitted files hold, with grep and cmp over real runs, and those only ran on the server. 9.69 was caught by one of them after the suite had passed here, which is the wrong order. tools/ci-local.mjs reads the workflow file, whose shape is regular (a named step and its run, one line or a block), and runs the check job's steps in order with bash under set -e and pipefail, printing ok or FAIL per step with the failing step's last lines, stopping at the first failure unless told to keep going. Steps are chosen by name (--only smarty), skipped by name or by a word in their script (--skip "npm test"), listed (--list), the one step that reaches the network to install the optional reader is skipped unless named, and the three that can only pass with that reader installed are skipped and say so when it is not. The parser is held to the workflow: a test counts the named steps in the file and asserts every one was parsed with its run, so a step written in a shape the parser does not read fails the suite rather than being silently skipped; another runs a real step of this repository's workflow from the command line. npm run ci-local is the script and the run it playbook names it. test/ci-local.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 558 |
+| new in this branch | 559 |
 | planned | 3 |
-| total | 605 |
+| total | 606 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
