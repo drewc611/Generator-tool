@@ -724,9 +724,18 @@ jobs:
           grep -qE "ARCHITECTURE\.md" learn-out/LEARNED.md || { echo "the learned report does not point at the rule based reading"; exit 1; }
           rm -rf learn-out
 
+      - name: a svelte component ports through the shared dialect to react
+        run: |
+          mkdir -p sv-src
+          printf '%s\n' '<script>export let rows = [];</script>' '<ul>{#each rows as r}<li>{r.name}</li>{/each}</ul>' > sv-src/List.svelte
+          node src/cli.js run --src sv-src --out sv-out
+          grep -q "Ported from List.svelte" sv-out/src/features/List/List.jsx || { echo "svelte was not read into a component"; exit 1; }
+          grep -q "rows.map" sv-out/src/features/List/List.jsx || { echo "the each did not become a react map"; exit 1; }
+          rm -rf sv-src sv-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "546" ]; then
-            echo "ROADMAP.md holds $count entries and claims 546"; exit 1
+          if [ "$count" != "547" ]; then
+            echo "ROADMAP.md holds $count entries and claims 547"; exit 1
           fi

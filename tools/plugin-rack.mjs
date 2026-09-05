@@ -82,6 +82,7 @@ const DOES = {
   "input-pdf": "a tech document read from its own text operators, nothing invented",
   "input-polymer": "dom-module elements, [[one way]] and {{two way}}, lowered onto the dialect",
   "input-riot": "riot tags, { expr } and each= and if=, lowered onto the dialect",
+  "input-svelte": "svelte components, {#each}/{#if} blocks and on:/bind:, lowered onto the dialect",
   "input-react": "React read back onto the dialect, so the tool can read what it writes",
   "output-next": "the site model as a Next app directory, components imported not copied",
   "output-astro": "each screen as an Astro island hydrating the emitted React component",

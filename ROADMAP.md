@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and forty six features across sixty three phases. The statuses are
+Five hundred and forty seven features across sixty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-623 tests, on Node 18, 20 and 22, and on Windows in CI.
+633 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2006,15 +2006,20 @@ web search is opt in and adds no tool unless asked, and the tool offer, the paus
 **546. dsp-learn names the archetype with a model trained on the labelled corpus** 🔨
 dsp-archetype names the app with hand written rules; dsp-learn names it with a nearest prototype model trained on the same eleven labelled miniatures, turning each screen into a vector of the features the rules already trust and placing a new screen by its nearest exemplar in a standardization learned from the corpus. LEARNED.md is a companion to ARCHITECTURE.md, ranks every archetype by distance with a softmax confidence, and is honest about its size: one exemplar per class means a held out accuracy is undefined, so it reports a reproducible robustness curve instead of a number it cannot compute, marks the reading unverified, and names the disagreement with the rule based reading as the thing to look at. No dependency, no network, deterministic; the embedded corpus is held byte equal to the fixtures.
 
+## Phase 64: another framework read, Svelte in
+
+**547. input-svelte reads Svelte components onto the shared dialect** 🔨
+a `.svelte` file's `export let` props become inputs, its `createEventDispatcher` dispatches become outputs, and its markup lowers onto the same AngularJS attribute dialect every other reader targets: `{#each}` and `{#if}` blocks become transparent `<ng-container>` wrappers the IR sees through, `on:event` becomes an event with its arrow reduced to the call, `bind:value` becomes a two way model, and `{expr}` becomes interpolation, so a Svelte front end reaches the translator, the endpoint map and every emitter as any other component and ports on to React, Vue or the custom element. An event modifier, a class directive, an `{:else if}` chain and `{@html}` have no honest equivalent and are named through a note rather than guessed. No dependency, structural, deterministic; test/svelte.test.js holds the lowering and the parse into the IR.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 499 |
+| new in this branch | 500 |
 | planned | 3 |
-| total | 546 |
+| total | 547 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
