@@ -1,0 +1,1 @@
+<nav><a href="@Url.Action("Index", "Home")">Home</a>@if (User.Identity.IsAuthenticated) {<span class="who">@User.Identity.Name</span>}</nav>

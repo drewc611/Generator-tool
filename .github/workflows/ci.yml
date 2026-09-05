@@ -1055,9 +1055,17 @@ jobs:
           grep -q "open(1)" kb-out/KEYBOARD.md && { echo "handler code leaked into the report"; exit 1; } || true
           rm -rf kb-out
 
+      - name: the razor reader composes a view into the layout _ViewStart names and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/razor --out rz-out
+          test -f rz-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the Razor view was not ported"; exit 1; }
+          grep -q "<nav" rz-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the layout's partial was not composed in"; exit 1; }
+          grep -qE "ng-|@Model|RenderBody" rz-out/src/features/ProductsShow/ProductsShow.jsx && { echo "the dialect or razor leaked into the React output"; exit 1; } || true
+          rm -rf rz-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "590" ]; then
-            echo "ROADMAP.md holds $count entries and claims 590"; exit 1
+          if [ "$count" != "591" ]; then
+            echo "ROADMAP.md holds $count entries and claims 591"; exit 1
           fi

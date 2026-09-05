@@ -74,7 +74,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and sixty eight in five classes, and the core has never learned
+Plugins that ship, a hundred and sixty nine in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -82,7 +82,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -467,8 +467,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: five hundred and ninety features in
-one hundred and six phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: five hundred and ninety one features in
+one hundred and seven phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.

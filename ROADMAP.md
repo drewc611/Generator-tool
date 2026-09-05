@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and ninety features across one hundred and six phases. The statuses are
+Five hundred and ninety one features across one hundred and seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-812 tests, on Node 18, 20 and 22, and on Windows in CI.
+816 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2245,14 +2245,20 @@ CI already asserts that a screen written in Angular and in Vue produces byte ide
 a <div> or <span> with onclick, ng-click, @click, (click), on-click or onClick looks like a button and works like one for a mouse, and for a keyboard user it does not exist: not in the tab order without a tabindex, announced as nothing without a role, deaf to Enter and Space without a key handler. WCAG 2.1.1 is the rule. dsp-keyboard reads every opening tag that carries a click handler in any dialect the readers know, skips the elements interactive by nature (a with an href, button, input, select, textarea, summary, option, label) and an anchor with no href is not one of them, and names the rest by tag, file and line with which of the three it lacks; the handler's expression is never captured, because it is source and a value in it is not for a report. KEYBOARD.md carries the list and the accessibility scorecard gains the axis, so --max-a11y holds it. Nothing is rewritten; which of these becomes a real button is a change to the markup a person makes on purpose. test/keyboard.test.js holds it.
 
 
+## Phase 107: the view the view engine composed
+
+**591. input-razor composes ASP.NET views the way the view engine does and lowers them onto the dialect** 🔨
+Razor is the view language of ASP.NET MVC and ASP.NET Core: C# after an @ and markup everywhere else, a view composed from the layout _ViewStart or its own code block names, the body rendered where the layout says, sections landing where the layout asks and dropped with a note where it does not, and partials rendered by name from Shared or beside the view. input-razor composes first, then lowers: @if with its else if and else chain negated the way the runtime evaluates it, @foreach as a loop naming its variable, @switch and case as the equalities they test, @expr and @(expr) as interpolation, @Html.Raw as bound html, @Html.DisplayFor as the value it displays and DisplayNameFor as the property's name, @: as a literal line and @@ as the sign itself, and a C# expression as the JS it names: .Count and .Length and .Any() to length checks, string.IsNullOrEmpty to a truth test, ToUpper and ToLower and Trim to their methods, is null to a null test. Model, ViewBag, ViewData and User are the inputs where the view read them, and @model names the C# type the port's Model carries without knowing its shape. A @{ } code block, @for and @while, @Url.Action and @Html.ActionLink and the form helpers, tag helpers and a section no layout renders are named rather than approximated, because Razor's parser is a C# parser and this is not one. .cshtml reaches the scan. test/razor.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 543 |
+| new in this branch | 544 |
 | planned | 3 |
-| total | 590 |
+| total | 591 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
