@@ -1,4 +1,4 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { buildIr, mapExpressions } from "../dsp-ir/ir.js";
 import { jsString, guardHandler } from "../dsp-ir/emit.js";
 
 /**
@@ -113,6 +113,9 @@ function print(node, depth) {
     }
 
     case "each": {
+      // A $ prefixed name is a store subscription in Svelte, so the dialect's $index and $index2 are index and index2 here.
+      const bare = (name) => String(name).replace(/(?<![\w$.])\$index(\d*)\b/g, "index$1");
+      if (/\$index/.test(node.index ?? "")) return print(mapExpressions({ ...node, index: bare(node.index) }, bare), depth);
       const head = node.index ? `${node.item}, ${node.index}` : node.item;
       const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
       if (node.object) {

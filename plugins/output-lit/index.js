@@ -1,4 +1,4 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { buildIr, mapExpressions } from "../dsp-ir/ir.js";
 import { identifier, jsString, guardHandler, pascal } from "../dsp-ir/emit.js";
 
 /**
@@ -112,24 +112,7 @@ export function toLit(html, { dialect } = {}) {
   const roots = new Set([...ir.reads, ...ir.models.map((m) => m.split(".")[0])]);
   const withThis = (code) => code.replace(/(^|[^.\w$])([A-Za-z_$][\w$]*)/g, (m, before, name) =>
     roots.has(name) ? `${before}this.${name}` : m);
-  const rewrite = (node) => {
-    if (!node) return node;
-    if (node.kind === "text") return { ...node, parts: node.parts.map((p) => (p.expression !== undefined ? { expression: withThis(p.expression) } : p)) };
-    if (node.kind === "when") return { ...node, test: withThis(node.test), children: node.children.map(rewrite) };
-    if (node.kind === "each") return { ...node, list: withThis(node.list), key: node.key, children: node.children.map(rewrite) };
-    if (node.kind === "html") return { ...node, expression: withThis(node.expression) };
-    if (node.kind === "element") return {
-      ...node,
-      attrs: node.attrs.map((a) => (a.kind === "bound" ? { ...a, expression: withThis(a.expression) } : a.kind === "template" ? { ...a, parts: a.parts.map((p) => (p.expression !== undefined ? { expression: withThis(p.expression) } : p)) } : a)),
-      classes: node.classes.map((c) => (c.kind === "conditional" ? { ...c, when: withThis(c.when) } : c.kind === "expression" ? { ...c, expression: withThis(c.expression) } : c)),
-      styles: node.styles.map((s) => (s.expression ? { ...s, expression: withThis(s.expression) } : s)),
-      events: node.events.map((e) => ({ ...e, handler: withThis(e.handler) })),
-      children: node.children.map(rewrite),
-    };
-    if (node.children) return { ...node, children: node.children.map(rewrite) };
-    return node;
-  };
-  const root = rewrite(ir.root);
+  const root = mapExpressions(ir.root, withThis);
   return { markup: print(root, 3) || `${pad(3)}<!-- nothing to render -->`, ...ir };
 }
 

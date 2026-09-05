@@ -78,7 +78,7 @@ export function lowerReact(jsx, note = () => {}) {
     const plain = entries ? null : new RegExp(`^${LIST}\\s*\\.\\s*map\\s*\\(\\s*\\(?\\s*([\\w$]+)\\s*(?:,\\s*([\\w$]+)\\s*)?\\)?\\s*=>\\s*([\\s\\S]*)$`).exec(inner);
     const loop = entries ? { list: entries[1], head: `(${entries[2]}, ${entries[3]})`, index: entries[4], body: entries[5] } : plain ? { list: plain[1], head: plain[2], index: plain[3], body: plain[4] } : null;
     // A map index the dialect spells $index; any other name is left as written and named.
-    if (loop?.index && loop.index !== "$index") note(`The map index \`${loop.index}\` maps to $index in the dialect; it is left as written in the row.`);
+    if (loop?.index && !/^\$index\d*$/.test(loop.index)) note(`The map index \`${loop.index}\` maps to $index in the dialect; it is left as written in the row.`);
     // A map over destructured tuples, pairs.map(([a, b]) => ...), is not the object entries loop and has no dialect spelling.
     const tuples = !loop && new RegExp(`^${LIST}\\s*\\.\\s*map\\s*\\(\\s*\\(?\\s*\\[`).test(inner);
     if (tuples && /<[a-zA-Z]/.test(inner)) note(/^Object\.entries\(/.test(inner) ? "A .map over a chain after Object.entries has no dialect loop; its rows were kept once and left as written." : "A .map over destructured tuples has no dialect loop; its rows were kept once and the names are left as written.");

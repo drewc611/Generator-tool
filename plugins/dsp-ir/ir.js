@@ -27,6 +27,32 @@ import { jsString } from "./emit.js";
 const SLOT = new Set(["ng-content", "slot"]);
 // A screen may be named like an element (a partial called nav.tpl); an
 // element is never a reference to it, or every <nav> would become the screen.
+/**
+ * A copy of an IR tree with every expression string passed through `fn`: the
+ * tests, lists, keys, interpolation parts, bound attributes, class and style
+ * expressions and handlers. A printer that must respell names does it here
+ * rather than walking the shape itself.
+ */
+export function mapExpressions(node, fn) {
+  if (!node) return node;
+  const parts = (ps) => ps.map((p) => (p.expression !== undefined ? { ...p, expression: fn(p.expression) } : p));
+  switch (node.kind) {
+    case "text": return { ...node, parts: parts(node.parts) };
+    case "when": return { ...node, test: fn(node.test), children: node.children.map((c) => mapExpressions(c, fn)) };
+    case "each": return { ...node, list: fn(node.list), key: node.key === null || node.key === undefined ? node.key : fn(String(node.key)), children: node.children.map((c) => mapExpressions(c, fn)) };
+    case "html": return { ...node, expression: fn(node.expression) };
+    case "element": return {
+      ...node,
+      attrs: node.attrs.map((a) => (a.kind === "bound" ? { ...a, expression: fn(a.expression) } : a.kind === "template" ? { ...a, parts: parts(a.parts) } : a)),
+      classes: node.classes.map((c) => (c.kind === "conditional" ? { ...c, when: fn(c.when) } : c.kind === "expression" ? { ...c, expression: fn(c.expression) } : c)),
+      styles: node.styles.map((s) => (s.expression ? { ...s, expression: fn(s.expression) } : s)),
+      events: node.events.map((e) => ({ ...e, handler: fn(e.handler) })),
+      children: node.children.map((c) => mapExpressions(c, fn)),
+    };
+    default: return node.children ? { ...node, children: node.children.map((c) => mapExpressions(c, fn)) } : node;
+  }
+}
+
 /** The html node an element carries as its only content, or null: the one shape every printer puts on the element itself. */
 export const boundHtml = (node) => (node?.kind === "element" && node.tag && node.children.length === 1 && node.children[0].kind === "html" ? node.children[0] : null);
 
@@ -281,6 +307,9 @@ export function buildIr(html, { dialect, components = [] } = {}) {
   // The line the converter is currently standing on, so a note can say where
   // it came from. The parser stamped every node; convert() moves the cursor.
   const where = { line: null };
+  // The loops open around the node being converted, each with the name its index goes by. The dialect's $index is
+  // the innermost loop's; $parent.$index the one above it; a nested loop's index is its own name, never the outer's.
+  const loops = [];
   const note = (text) => {
     const said = where.line ? `line ${where.line}: ${text}` : text;
     if (!notes.includes(said)) notes.push(said);
@@ -314,6 +343,13 @@ export function buildIr(html, { dialect, components = [] } = {}) {
     if (d.name === "angular") {
       code = code.replace(/\b([\w$]+)\.emit\(/g, (m, name) => `${callback(name)}(`);
     }
+    code = code.replace(/(?:\$parent\.)*\$index\b/g, (m) => {
+      const up = (m.match(/\$parent\./g) ?? []).length;
+      const frame = loops[loops.length - 1 - up];
+      if (!frame) return m;
+      frame.used = true;
+      return frame.name;
+    });
     for (const id of rootIdentifiers(code)) reads.add(id);
     return code;
   };
@@ -325,7 +361,7 @@ export function buildIr(html, { dialect, components = [] } = {}) {
   // A named <ng-template #ref> is content waiting for a reference. Harvested
   // before conversion so an else branch can resolve to it wherever it sits.
   const templates = harvestTemplates(tree);
-  const clean = convertList(tree, d, { expr, note, models, locals, lists, templates, where, known }, null);
+  const clean = convertList(tree, d, { expr, note, models, locals, lists, templates, where, known, loops }, null);
   const root = clean.length === 1 ? clean[0] : { kind: "fragment", children: clean };
 
   const modelRoots = new Set([...models].map((m) => m.split(".")[0]));
@@ -483,9 +519,15 @@ function convert(node, d, ctx) {
     else ctx.note(`<${node.tag}> switches on nothing readable; its cases render unconditionally.`);
   }
 
+  // A repeated node's children are converted inside its loop: its index has a name of its own, distinct from any
+  // loop around it, so a body reading $index in a nested loop never reads the outer one by accident.
+  const pre = structural.each !== undefined ? d.loop(structural.each) : null;
+  const frame = pre ? { name: pre.index && pre.index !== "$index" ? pre.index : ctx.loops.length ? `$index${ctx.loops.length + 1}` : "$index", used: Boolean(pre.index) } : null;
+  if (frame) ctx.loops.push(frame);
   // Bound html replaces the element's children, never the element: the tag
   // and its attributes are the author's and every target keeps them.
   const element = buildElement(node, d, ctx, childSw);
+  if (frame) ctx.loops.pop();
   if (structural.html !== undefined) {
     // A control's value is its content; a model and bound html cannot both be, so the model stays.
     if (element.model) ctx.note(`<${node.tag}> binds both a model and html; a control's value is its content, so the html binding was dropped.`);
@@ -495,7 +537,8 @@ function convert(node, d, ctx) {
   let out = element;
 
   if (structural.each !== undefined) {
-    const loop = d.loop(structural.each);
+    // The frame's name is the loop's index wherever the dialect spelled $index, in the key too.
+    const loop = pre ? { ...pre, index: frame.used ? frame.name : null, key: pre.key === "$index" ? frame.name : pre.key } : pre;
     if (!loop) {
       ctx.note(`Could not read the loop on <${node.tag}>: \`${structural.each}\`. Kept as a plain element.`);
     } else if (d.loopWrapsChildren && element.kind === "element") {
