@@ -770,9 +770,18 @@ jobs:
           grep -q "no .clearInterval. in this file" timer-out/TIMERS.md || { echo "the uncleared interval was not flagged"; exit 1; }
           rm -rf timer-src timer-out
 
+      - name: a stencil component ports through the shared dialect to react
+        run: |
+          mkdir -p st-src
+          printf '%s\n' 'import { Component, Prop, h } from "@stencil/core";' '@Component({ tag: "my-list" })' 'export class MyList {' '  @Prop() rows: any[] = [];' '  render() { return (<ul>{this.rows.map((r) => (<li>{r.name}</li>))}</ul>); }' '}' > st-src/MyList.tsx
+          node src/cli.js run --src st-src --out st-out
+          grep -q "Ported from MyList.tsx" st-out/src/features/MyList/MyList.jsx || { echo "stencil was not read into a component"; exit 1; }
+          grep -q "rows.map" st-out/src/features/MyList/MyList.jsx || { echo "the stencil map did not become a react map"; exit 1; }
+          rm -rf st-src st-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "555" ]; then
-            echo "ROADMAP.md holds $count entries and claims 555"; exit 1
+          if [ "$count" != "556" ]; then
+            echo "ROADMAP.md holds $count entries and claims 556"; exit 1
           fi

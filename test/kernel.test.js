@@ -93,7 +93,7 @@ test("discovery loads every plugin that ships", async () => {
     "general-agents", "general-architect", "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-scaffold", "general-size", "general-watch",
     "input-alpine", "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",
     "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-knockout",
-    "input-lit", "input-openapi", "input-pdf", "input-polymer", "input-react", "input-record", "input-riot", "input-shots", "input-static", "input-svelte", "input-underscore", "input-vue",
+    "input-lit", "input-openapi", "input-pdf", "input-polymer", "input-react", "input-record", "input-riot", "input-shots", "input-static", "input-stencil", "input-svelte", "input-underscore", "input-vue",
     "output-adr", "output-alpine", "output-angular", "output-astro", "output-aws", "output-azure", "output-cem", "output-ci", "output-cloudflare", "output-codemod", "output-curl", "output-cypress",
     "output-design-tokens", "output-dockerfile", "output-fixtures", "output-forms", "output-gcp", "output-html", "output-i18n", "output-lit",
     "output-migration", "output-msw", "output-netlify", "output-next", "output-nginx", "output-nuxt",

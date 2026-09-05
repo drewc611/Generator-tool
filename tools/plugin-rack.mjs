@@ -35,6 +35,7 @@ const DOES = {
   "input-record": "drives the running app with Playwright: shots, HAR, computed styles",
   "input-blackbox": "HAR, schema dumps, exports. Passive: nothing driven, nothing fetched",
   "input-static": "a site with no framework: pages are screens, links are the routes",
+  "input-stencil": "stencil components: @Component tag, @Prop/@Event, render JSX lowered by the React reader",
   "input-underscore": "the templates input-backbone deferred: <%= %> lowered to the dialect",
   "input-handlebars": "#if, #each and the empty state in else, lowered to the dialect",
   "input-jinja": "server rendered pages read as screens; python logic respelled as JS",

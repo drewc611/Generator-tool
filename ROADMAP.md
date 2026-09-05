@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and fifty five features across seventy one phases. The statuses are
+Five hundred and fifty six features across seventy two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-661 tests, on Node 18, 20 and 22, and on Windows in CI.
+666 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2049,15 +2049,20 @@ a setInterval that polls, a setTimeout that retries, a requestAnimationFrame tha
 **555. dsp-learn classifies each screen on its own, not only the merged app** 🔨
 the whole app reading weighs every screen's shape and the endpoints together; dsp-learn now also places each screen on its own markup shape alone, so a multi screen app is not flattened to one label. LEARNED.md gains a per screen table, and the disagreement is the finding: the demo's one screen reads as crud-table for the whole app, endpoints included, but as search-and-filter on its markup alone, because the table and filters pull one way and the GET/POST/DELETE on the same resource pull another. A per screen reading rests on shape without the traffic, so it is weaker and is reported as exactly that. test/learn.test.js holds it.
 
+## Phase 72: another framework read, Stencil in
+
+**556. input-stencil reads Stencil components onto the shared dialect** 🔨
+a Stencil component is a class with a `@Component({ tag })` decorator, `@Prop` fields for its inputs, `@Event` emitters for its outputs, `@State` for local state, and a `render()` that returns JSX. The tag is the selector, and because the render JSX is the same shape React emits, it lowers with the React reader's own lowering, reused not reinvented, once `this.` is stripped from the expressions: `this.items.map(...)` a loop, `this.open && (...)` a conditional, `onClick={() => this.pick(x)}` an event, `{this.name}` interpolation. A design system's elements reach the translator and every emitter as any other component, and because input-react keys on function components a Stencil class is read only by this reader, no collision. No dependency; test/stencil.test.js holds it and a CI step ports a Stencil component through to React.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 508 |
+| new in this branch | 509 |
 | planned | 3 |
-| total | 555 |
+| total | 556 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
