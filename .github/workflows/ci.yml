@@ -63,8 +63,10 @@ jobs:
       # honesty debt is counted and bounded, not merely listed.
       - name: the demo holds offline and under the unverified ceiling
         run: |
+          # 15, not 14: dsp-learn adds one honest unverified item, its learned
+          # archetype reading, which is a proposal for a person to confirm.
           node src/cli.js run --src example/legacy --shots example/screenshots \
-            --out /tmp/gated-demo --offline --max-unverified 14
+            --out /tmp/gated-demo --offline --max-unverified 15
           test -s /tmp/gated-demo/PORT_NOTES.md
 
       # The console is part of the run, not beside it: boot it against the
