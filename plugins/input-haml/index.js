@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { VOID_ELEMENTS } from "../dsp-ir/markup.js";
+import { parseIndented, VOID_ELEMENTS } from "../dsp-ir/markup.js";
 import { attrSafe, matchBracket, quoteJs, readInputs, resolveTemplate, splitCommas } from "../dsp-ir/text.js";
 
 /**
@@ -49,22 +49,28 @@ export function rubyToJs(expr, scope = freshScope()) {
     return hold(`(${pieces.join(" + ")})`);
   });
   s = s.replace(/\[:([a-z_]\w*)\]/g, ".$1");
+  // &:name is the block that reads one method.
+  s = s.replace(/\(&:(\w+)\)/g, "((x) => x.$1)");
   s = s.replace(/(?<![\w?]):([a-z_]\w*[?!]?)(?![\w:])/g, (m, sym) => hold(quoteJs(sym)));
   s = s.replace(/@@?([a-z_]\w*)/g, "$1");
-  // Predicates and methods with an exact equivalent; a bare receiver's predicate reads the dialect's empty state.
-  s = s.replace(/([\w$.\]\)]+)\.(present\?|blank\?|empty\?|any\?|nil\?|none\?)/g, (m, recv, pred) => {
-    switch (pred) {
-      case "empty?": return `!${recv} || !${recv}.length`;
+  s = s.replace(/\bunless\b/g, "!").replace(/(?<![\w.$])not\s+/g, "!").replace(/(?<![\w.$])and(?![\w$])/g, "&&").replace(/(?<![\w.$])or(?![\w$])/g, "||");
+  // Predicates and conversions apply to the receiver before them, found by walking back over balanced brackets.
+  s = rewriteReceivers(s, /\.(present\?|blank\?|empty\?|any\?|nil\?|none\?|to_i|to_f|capitalize)(?![\w?])/g, (recv, method, whole) => {
+    switch (method) {
+      case "empty?": return whole ? `!${recv} || !${recv}.length` : `(!${recv} || !${recv}.length)`;
       case "blank?": return `(!${recv} || !${recv}.length)`;
       case "present?": return `(!!${recv} && ${recv}.length !== 0)`;
       case "any?": return `(${recv}.length > 0)`;
       case "none?": return `(${recv}.length === 0)`;
-      default: return `${recv} == null`;
+      case "nil?": return `${recv} == null`;
+      case "to_i": return `Math.trunc(Number(${recv}))`;
+      case "to_f": return `Number(${recv})`;
+      default: return `(${recv}.charAt(0).toUpperCase() + ${recv}.slice(1))`;
     }
   });
-  s = s.replace(/\bnil\b/g, "null").replace(/\bunless\b/g, "!").replace(/(?<![\w.$])not\s+/g, "!").replace(/(?<![\w.$])and(?![\w$])/g, "&&").replace(/(?<![\w.$])or(?![\w$])/g, "||");
-  s = s.replace(/\.(size|length|count)(?![\w?(])/g, ".length").replace(/\.upcase\b/g, ".toUpperCase()").replace(/\.downcase\b/g, ".toLowerCase()").replace(/\.strip\b/g, ".trim()").replace(/\.capitalize\b/g, ".capitalize()")
-    .replace(/\.first\b(?!\()/g, "[0]").replace(/\.last\b(?!\()/g, ".at(-1)").replace(/\.to_s\b/g, ".toString()").replace(/\.to_i\b/g, " | 0").replace(/\.to_f\b/g, " * 1").replace(/\.html_safe\b/g, "").replace(/\.reverse\b(?!\()/g, ".reverse()").replace(/\.include\?\(/g, ".includes(");
+  s = s.replace(/\bnil\b/g, "null");
+  s = s.replace(/\.(size|length|count)(?![\w?(])/g, ".length").replace(/\.upcase\b/g, ".toUpperCase()").replace(/\.downcase\b/g, ".toLowerCase()").replace(/\.strip\b/g, ".trim()")
+    .replace(/\.first\b(?!\()/g, "[0]").replace(/\.last\b(?!\()/g, ".at(-1)").replace(/\.to_s\b/g, ".toString()").replace(/\.html_safe\b/g, "").replace(/\.reverse\b(?!\()/g, ".reverse()").replace(/\.include\?\(/g, ".includes(");
   // Helpers: a formatter keeps its value; a route names a route; a translation keeps its key; raw marks html.
   for (;;) {
     const m = /(?<![\w.$])([a-z_]\w*[?!]?)\s*\(/.exec(s);
@@ -86,14 +92,29 @@ export function rubyToJs(expr, scope = freshScope()) {
   }
   s = s.replace(/\b([a-z_]\w*)_(path|url)\b(?!\s*\()/g, (m, name, kind) => { scope.note(`${m} is a route helper the server resolved; the port must supply the address, and the endpoint map is where it belongs.`); return m; });
   for (const [alias, js] of scope.aliases) s = s.replace(new RegExp(`(?<![\\w.$])${alias}(?![\\w$])`, "g"), () => js);
-  const restore = (t) => t.replace(/\u0001(\d+)\u0002/g, (mm, i) => restore(scope.holds[Number(i)]));
-  return restore(s);
+  return scope.unhold(s);
+}
+
+/** `expr if cond` or `expr unless cond` at the top level of a line, split. */
+export function splitPostfix(code) {
+  let depth = 0; let quote = null;
+  for (let i = 0; i < code.length; i += 1) {
+    const c = code[i];
+    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
+    if (c === "'" || c === '"') quote = c;
+    else if (c === "(" || c === "[" || c === "{") depth += 1;
+    else if (c === ")" || c === "]" || c === "}") depth -= 1;
+    else if (depth === 0 && i > 0 && /\s/.test(code[i - 1])) {
+      const m = /^(if|unless)\s+([\s\S]+)$/.exec(code.slice(i));
+      if (m && code.slice(0, i).trim()) return { kind: m[1], body: code.slice(0, i).trim(), test: m[2].trim() };
+    }
+  }
+  return null;
 }
 
 /** A Rails helper as the value or markup it stood for. */
 function helper(name, rawArgs, scope, hold) {
-  const unhold = (t) => String(t).replace(/\u0001(\d+)\u0002/g, (mm, i) => unhold(scope.holds[Number(i)]));
-  const args = rawArgs.map(unhold);
+  const args = rawArgs.map(scope.unhold);
   const arg = (i) => (args[i] === undefined ? "null" : rubyToJs(args[i], scope));
   switch (name) {
     case "t": case "translate": {
@@ -131,28 +152,41 @@ function helper(name, rawArgs, scope, hold) {
   }
 }
 
-export function freshScope(note = () => {}) {
-  return { note, holds: [], aliases: new Map(), depth: 0, form: null };
+/** Each `receiver.method` match rewritten with its receiver, the receiver being the balanced path just before the dot. */
+function rewriteReceivers(s, re, rewrite) {
+  let out = s;
+  for (;;) {
+    const m = re.exec(out);
+    re.lastIndex = 0;
+    if (!m) return out;
+    let i = m.index - 1; let depth = 0;
+    for (; i >= 0; i -= 1) {
+      const c = out[i];
+      if (c === ")" || c === "]") depth += 1;
+      else if (c === "(" || c === "[") { if (depth === 0) break; depth -= 1; }
+      else if (depth === 0 && !/[\w$.@\u0001\u0002]/.test(c)) break;
+    }
+    const start = i + 1;
+    const recv = out.slice(start, m.index);
+    const whole = start === 0 && m.index + m[0].length === out.length;
+    out = out.slice(0, start) + rewrite(recv, m[1], whole) + out.slice(m.index + m[0].length);
+  }
 }
 
-/** Lines into a tree by indentation; a brace or bracket left open runs onto the next line. */
+export function freshScope(note = () => {}) {
+  const scope = { note, holds: [], aliases: new Map(), depth: 0, form: null, dir: "" };
+  scope.unhold = (t) => String(t).replace(/\u0001(\d+)\u0002/g, (mm, i) => scope.unhold(scope.holds[Number(i)]));
+  return scope;
+}
+
+/** Lines into a tree by indentation; a brace or bracket left open, or a Ruby line ending in a comma, runs onto the next line. */
 export function parseTree(source) {
-  const root = { indent: -1, line: "", children: [] };
-  const stack = [root];
-  const lines = String(source ?? "").replace(/\r\n/g, "\n").split("\n");
-  for (let n = 0; n < lines.length; n += 1) {
-    if (!lines[n].trim()) continue;
-    const indent = lines[n].match(/^[ \t]*/)[0].replace(/\t/g, "  ").length;
-    let line = lines[n].trim();
+  return parseIndented(source, (line) => {
     const open = /^[%.#][\w.#-]*[({[]/.exec(line);
-    while (open && matchBracket(line, open[0].length - 1, { ticks: false }) < 0 && n + 1 < lines.length) { n += 1; line += " " + lines[n].trim(); }
-    while (/,\s*$/.test(line) && n + 1 < lines.length) { n += 1; line += " " + lines[n].trim(); }
-    const node = { indent, line, children: [], n: n + 1 };
-    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();
-    stack[stack.length - 1].children.push(node);
-    stack.push(node);
-  }
-  return root;
+    if (open && matchBracket(line, open[0].length - 1, { ticks: false }) < 0) return true;
+    // Only a line of Ruby continues on a comma; prose ending in one does not.
+    return /^[-=!&~]/.test(line) && /,\s*$/.test(line);
+  });
 }
 
 /** #{} in text. */
@@ -172,6 +206,7 @@ export function lowerText(text, scope) {
 
 /** A tag line: %tag.class#id{...}(...) and what follows. */
 export function parseTag(line) {
+  if (!/^[%.#]/.test(line)) return null;
   let i = 0; let tag = "div";
   const tm = /^%([\w:-]+)/.exec(line);
   if (tm) { tag = tm[1]; i = tm[0].length; }
@@ -209,8 +244,15 @@ export function lowerAttrs(head, scope) {
   }
   const classes = [...head.classes]; let id = head.id;
   const parts = [];
-  for (const [name, raw] of entries) {
-    const isString = /^(["'])[\s\S]*\1$/.test(raw) && !/#\{/.test(raw);
+  // data: { id: 1 } is data-id="1", as Haml renders it.
+  const flat = entries.flatMap(([name, raw]) => {
+    const nested = /^(data|aria)$/.test(name) && /^\{[\s\S]*\}$/.test(raw.trim());
+    if (!nested) return [[name, raw]];
+    return splitCommas(raw.trim().slice(1, -1), { ticks: false }).map((part) => /^\s*(?::?([\w-]+)|['"]([^'"]+)['"])\s*(?:=>|:)\s*([\s\S]+)$/.exec(part)).filter(Boolean).map((m) => [`${name}-${m[1] ?? m[2]}`, m[3].trim()]);
+  });
+  for (const [name, raw] of flat) {
+    const isString = (/^(["'])[\s\S]*\1$/.test(raw) && !/#\{/.test(raw)) || /^-?\d+(\.\d+)?$/.test(raw.trim());
+    if (/^-?\d+(\.\d+)?$/.test(raw.trim())) { parts.push(`${name}="${raw.trim()}"`); continue; }
     if (name === "class" && isString) { classes.push(...raw.slice(1, -1).split(/\s+/).filter(Boolean)); continue; }
     if (name === "id" && isString) { id = raw.slice(1, -1); continue; }
     if (isString) { parts.push(`${name}="${raw.slice(1, -1).replace(/"/g, "&quot;")}"`); continue; }
@@ -289,10 +331,49 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
       scope.form = previous;
       return "";
     }
-    const field = scope.form && new RegExp(`^${scope.form.var}\\.(\\w+)\\s*\\(?\\s*([\\s\\S]*?)\\)?\\s*$`).exec(code);
-    if (field && HTML_FORM.test(field[1])) return formField(field[1], splitCommas(field[2], { ticks: false }).map((a) => a.trim()).filter(Boolean));
+    const field = scope.form && new RegExp(`^${scope.form.var}\\.(\\w+)\\s*([\\s\\S]*)$`).exec(code);
+    if (field && HTML_FORM.test(field[1])) {
+      let args = field[2].trim();
+      if (args.startsWith("(")) { const end = matchBracket(args, 0, { ticks: false }); args = end > 0 ? args.slice(1, end - 1) + args.slice(end) : args.slice(1); }
+      return formField(field[1], splitCommas(args, { ticks: false }).map((a) => a.trim()).filter(Boolean));
+    }
+    const fields = scope.form && new RegExp(`^${scope.form.var}\\.fields_for\\s+:?(\\w+)[\\s\\S]*\\bdo\\s*\\|(\\w+)\\|\\s*$`).exec(code);
+    if (fields) {
+      const previous = scope.form;
+      scope.form = { var: fields[2], model: previous.model ? `${previous.model}.${fields[1]}` : fields[1] };
+      lowerChildren(node.children);
+      scope.form = previous;
+      return "";
+    }
     const block = /^(.*?)\.each(?:_with_index)?\s+do\s*\|([^|]*)\|\s*$/.exec(code);
     if (block) return eachLoop(block[1], block[2], node, /each_with_index/.test(code));
+    const postfix = splitPostfix(code);
+    if (postfix) {
+      const t = postfix.kind === "if" ? rubyToJs(postfix.test, scope) : `!(${rubyToJs(postfix.test, scope)})`;
+      out.push(`<ng-container ng-if="${attrSafe(t)}">`);
+      scope.depth += 1; const inner = expression(postfix.body, html, node, depthNow); scope.depth -= 1;
+      if (inner) out.push(inner);
+      out.push("</ng-container>");
+      return "";
+    }
+    const doBlock = /^(\w+)\b([\s\S]*?)\s+do\s*(?:\|[^|]*\|)?\s*$/.exec(code);
+    if (doBlock) {
+      const name = doBlock[1];
+      const args = splitCommas(doBlock[2], { ticks: false }).map((a) => a.trim()).filter(Boolean);
+      if (name === "link_to" || name === "button_to") {
+        const href = args[0] !== undefined ? rubyToJs(args[0], scope) : "'#'";
+        out.push(`<a ng-href="{{ ${attrSafe(href)} }}">`); lowerChildren(node.children); out.push("</a>");
+        return "";
+      }
+      if (name === "content_tag") {
+        const tag = (args[0] ?? "'div'").replace(/^:|['"]/g, "");
+        out.push(`<${tag}>`); lowerChildren(node.children); out.push(`</${tag}>`);
+        return "";
+      }
+      scope.note(`\`= ${code.slice(0, 40)}\` wrapped its block in a helper this reader does not know; the block stands and the helper is not in the port.`);
+      lowerChildren(node.children);
+      return "";
+    }
     scope.markup = null; scope.render = null; scope.html = false;
     const js = rubyToJs(code, scope);
     if (scope.render) return renderCall(scope.render, node, depthNow);
@@ -329,7 +410,6 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
     const index = withIndex ? names[1] : null;
     const pair = !withIndex && names.length === 2;
     if (index) scope.aliases.set(index, "$index");
-    const at = out.length;
     out.push(`<ng-container ng-repeat="${attrSafe(pair ? `(${names[0]}, ${names[1]}) in ${list}` : `${item} in ${list}${index ? " track by $index" : ""}`)}">`);
     scope.depth += 1; lowerChildren(node.children); scope.depth -= 1;
     if (index) scope.aliases.delete(index);
@@ -344,10 +424,14 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
     const name = (named ? named[1] : first).replace(/^['"]|['"]$/g, "");
     if (!/^['"]/.test(named ? named[1] : first)) { scope.note(`render ${first.slice(0, 40)} chose its partial at render time; the port must render it itself.`); return ""; }
     if (/locals:|:locals/.test(call.args.join(","))) scope.note(`render "${name}" passed locals into the partial; the port reads them from the same scope.`);
-    if (depthNow >= 6) return "";
-    const body = resolve(name);
-    if (body == null) { scope.note(`render "${name}" names a partial this run does not hold; the page stands without it.`); return ""; }
-    out.push(lowerTree(parseTree(body), scope, resolve, depthNow + 1));
+    if (depthNow >= 6) { scope.note(`render "${name}" renders deeper than this reader follows; a partial that renders itself stops here.`); return ""; }
+    const answer = resolve(name, scope.dir);
+    const found = typeof answer === "string" ? { body: answer } : answer;
+    if (found == null) { scope.note(`render "${name}" names a partial this run does not hold; the page stands without it.`); return ""; }
+    const previousDir = scope.dir;
+    scope.dir = found.dir ?? previousDir;
+    out.push(lowerTree(parseTree(found.body), scope, resolve, depthNow + 1));
+    scope.dir = previousDir;
     return "";
   };
 
@@ -412,15 +496,16 @@ export default {
       const notes = [];
       const note = (t) => { if (!notes.includes(t)) notes.push(t); };
       const bodies = new Map();
-      for (const f of files) bodies.set(f.rel.replace(/^\.\//, ""), await readFile(f.path, "utf8").catch(() => ""));
+      for (const f of files) bodies.set(f.rel.replace(/^\.\//, ""), await readFile(f.path, "utf8").catch(() => { note(`${f.rel} could not be read; it is not in the port.`); return ""; }));
       const bare = (name) => String(name).replace(/^(\.\.?\/)+/, "").replace(/^(?:app\/)?views\//, "").replace(/\.html\.haml$|\.haml$/i, "");
       const keys = [...bodies.keys()];
-      // A partial is asked for as "shared/nav" and lives at shared/_nav.html.haml.
-      const resolve = (name) => {
+      // A partial is asked for as "shared/nav" and lives at shared/_nav.html.haml; a bare "form" lives beside the view that renders it.
+      const resolve = (name, dir = "") => {
         const parts = bare(name).split("/");
         const underscored = [...parts.slice(0, -1), `_${parts[parts.length - 1]}`].join("/");
-        const k = resolveTemplate(keys, underscored, bare) ?? resolveTemplate(keys, name, bare);
-        return k ? bodies.get(k) : null;
+        const beside = parts.length === 1 && dir ? keys.find((k) => bare(k) === `${dir}/${underscored}`) : null;
+        const k = beside ?? resolveTemplate(keys, underscored, bare) ?? resolveTemplate(keys, name, bare);
+        return k ? { body: bodies.get(k), dir: bare(k).split("/").slice(0, -1).join("/") } : null;
       };
       const layoutKey = keys.find((k) => /(^|\/)layouts\/application\.html\.haml$/.test(k));
       let count = 0;
@@ -428,14 +513,16 @@ export default {
         if (/(^|\/)layouts\//.test(key)) { note(`${key} is a layout the pages render inside; it is composed into each of them rather than ported as a screen of its own.`); continue; }
         const file = files.find((f) => f.rel.replace(/^\.\//, "") === key);
         const scope = freshScope(note);
+        scope.dir = bare(key).split("/").slice(0, -1).join("/");
         let template = lowerTree(parseTree(text), scope, resolve);
         const partial = /(^|\/)_[^/]+$/.test(key);
         if (layoutKey && !partial) {
           const layoutScope = freshScope(note);
           layoutScope.yieldMarker = "\u0000PAGE\u0000";
           layoutScope.aliases = scope.aliases;
+          layoutScope.dir = bare(layoutKey).split("/").slice(0, -1).join("/");
           const shell = lowerTree(parseTree(bodies.get(layoutKey)), layoutScope, resolve);
-          template = shell.includes("\u0000PAGE\u0000") ? shell.replace("\u0000PAGE\u0000", template) : template;
+          template = shell.includes("\u0000PAGE\u0000") ? shell.replace("\u0000PAGE\u0000", () => template) : template;
           if (layoutScope.twoWay) scope.twoWay = true;
         }
         const body = /<body\b[^>]*>([\s\S]*)<\/body\s*>/i.exec(template);

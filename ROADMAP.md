@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eleven features across one hundred and twenty seven phases. The statuses are
+Six hundred and twelve features across one hundred and twenty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2358,14 +2358,19 @@ The review cadence held for the ninth time. Inside a query loop every name was p
 **611. input-haml reads Haml from its indentation and composes a page into its layout with its partials** 🔨
 Haml was the template language of a generation of Rails applications: a tree written as indentation, %tag.class#id with a Ruby hash or a bracket list of attributes, text after the tag, = for an expression's value, - for a line of Ruby that shapes the tree, #{} inside text, and the helpers Rails gave a view. input-haml reads the tree from the indentation, a hash or bracket list left open running onto the next line, and lowers it onto the dialect: if with its elsif and else chain negated the way the engine evaluates it, unless as the negated test, case and when with their value lists as the equalities they test, each and each_with_index and for onto ng-repeat with the index as the dialect's own and a pair of block variables as the key and value form, an attribute with an expression as ng-class, ng-href, ng-disabled or ng-attr as its name decides, = as an interpolation and != as bound html, a local set with = substituted where its value is fixed and named where it depends on a branch or a loop, a layout's yield filled by the page (app/views/layouts/application.html.haml is chrome and every page renders inside it), render "shared/nav" resolved to shared/_nav.html.haml and lowered where it is asked for with its locals named, link_to and image_tag and content_tag as the elements they render, form_for and its f.text_field, text_area, collection_select, label and submit as a form with two way models named the way Rails names them. Ruby is spelled as JavaScript outside strings: @ivar is the input it is, a symbol is a string and a symbol index a property, present?, blank?, empty?, any? and nil? are the tests they mean with empty? on a collection the dialect's own empty state, size, upcase, downcase, strip, first, last and to_s are their equivalents, and a string's #{} is a concatenation. number_to_currency, pluralize, time_ago_in_words and the other formatters keep their value unformatted and are named; a route helper (root_path, product_path) is a route the server owns and is named; t(...) keeps its key; a filter (:javascript, :markdown), content_for, a Ruby line the reader cannot read and a helper it does not know are named rather than approximated. .haml reaches the scan and the census, and the same product page written in Haml is the eleventh dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/haml.test.js holds it.
 
+## Phase 128: the tenth review pass
+
+**612. The Haml reader reviewed on its own, ten defects fixed with the inputs that exposed them** 🔨
+The review cadence held for the tenth time. A line of prose under a tag was parsed as a tag, so every multi line paragraph became a div per line; a line that does not begin a tag is text. A sentence ending in a comma ran onto the next line as if it were a Ruby argument list; only a line of Ruby continues on a comma. A block helper other than a form or an each (= link_to ... do, content_tag do) dropped its indented body and printed the do; link_to and content_tag wrap their body in the element they render and any other block helper keeps its body and is named. empty? lowered unbracketed everywhere, so !x.empty? read as (!x)... and inverted the branch; it is bracketed except as the whole test, which the byte identity gate holds. A form field's arguments were cut at a bracket that was never opened, so a select over options_for_select(sizes) lost its close; the argument list reads to its own bracket, and fields_for nests its model. A predicate's receiver stopped at a bracket, so foo(x).present? and items[0].blank? became syntax errors; the receiver is found by walking back over balanced brackets, and to_i, to_f and capitalize ride the same walk. A bare partial name resolved by path suffix across the whole tree, so products/new could be composed with orders' form; a bare name is found beside the view that renders it first, and a partial that renders itself is named where the reader stops following. A postfix if or unless passed into the binding as invalid JavaScript; it wraps the line in the container it means, and &:name is the block that reads one method. A nested data: hash became one attribute holding an object; it is the data-* attributes Haml renders. And the lines into a tree by indentation that Pug and Haml each wrote are one, in dsp-ir/markup.js, each dialect saying only when a line runs on, held to one home. Each fix carries the input that exposed it in test/haml.test.js.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 564 |
+| new in this branch | 565 |
 | planned | 3 |
-| total | 611 |
+| total | 612 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

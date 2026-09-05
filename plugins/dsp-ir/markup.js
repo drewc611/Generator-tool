@@ -35,6 +35,28 @@ export function parseMarkup(source) {
   return root;
 }
 
+/**
+ * Lines into a tree by indentation, for the dialects written that way (Pug,
+ * Haml). `continues(line)` says whether a line is unfinished and the next
+ * line belongs to it, an attribute bracket left open for one.
+ */
+export function parseIndented(source, continues = () => false) {
+  const root = { indent: -1, line: "", children: [] };
+  const stack = [root];
+  const lines = String(source ?? "").replace(/\r\n/g, "\n").split("\n");
+  for (let n = 0; n < lines.length; n += 1) {
+    if (!lines[n].trim()) continue;
+    const indent = lines[n].match(/^[ \t]*/)[0].replace(/\t/g, "  ").length;
+    let line = lines[n].trim();
+    while (continues(line) && n + 1 < lines.length) { n += 1; line += " " + lines[n].trim(); }
+    const node = { indent, line, children: [], n: n + 1 };
+    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();
+    stack[stack.length - 1].children.push(node);
+    stack.push(node);
+  }
+  return root;
+}
+
 export const elements = (nodes) => nodes.filter((n) => n.type === "el");
 /** An element's attribute value by name, case blind, or null. */
 export const attrOf = (el, name) => el.attrs.find((a) => a.name.toLowerCase() === name.toLowerCase())?.value ?? null;

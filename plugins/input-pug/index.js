@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
+import { parseIndented } from "../dsp-ir/markup.js";
 import { attrSafe, matchBracket, readInputs, resolveTemplate, splitCommas } from "../dsp-ir/text.js";
 
 /**
@@ -134,25 +135,12 @@ function splitWordsKeepingValues(text) {
   return out.filter((x) => x.trim());
 }
 
-/** Lines into a tree by indentation. */
+/** Lines into a tree by indentation; an attribute list left open runs onto the next line. */
 export function parseTree(source) {
-  const root = { indent: -1, line: "", children: [] };
-  const stack = [root];
-  const lines = String(source ?? "").replace(/\r\n/g, "\n").split("\n");
-  for (let n = 0; n < lines.length; n += 1) {
-    const raw = lines[n];
-    if (!raw.trim()) continue;
-    const indent = raw.match(/^[ \t]*/)[0].replace(/\t/g, "  ").length;
-    let line = raw.trim();
-    // An attribute list may run over several lines; it closes where its bracket does.
+  return parseIndented(source, (line) => {
     const open = /^(?:\+[\w-]+|[a-zA-Z][\w-]*(?::[\w-]+)?)?(?:[.#][\w-]+)*\(/.exec(line);
-    while (open && matchBracket(line, open[0].length - 1) < 0 && n + 1 < lines.length) { n += 1; line += " " + lines[n].trim(); }
-    const node = { indent, line, children: [], n: n + 1 };
-    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();
-    stack[stack.length - 1].children.push(node);
-    stack.push(node);
-  }
-  return root;
+    return Boolean(open) && matchBracket(line, open[0].length - 1) < 0;
+  });
 }
 
 /** The text of a node's subtree as written, for block text and raw includes. */

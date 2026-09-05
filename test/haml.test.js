@@ -126,3 +126,62 @@ test("a run composes the page into its layout with its partial, ports it, reads 
     await run.cleanup();
   }
 });
+
+test("the tenth review pass: prose is text, a comma continues only Ruby, predicates and conversions find their receiver, empty? brackets when part of a test", () => {
+  assert.equal(lower("%p\n  Hello world\n  and #{name} more"), "<p>Hello world\nand {{ name }} more</p>".replace("\n", ""));
+  assert.equal(lower("%p Thanks for your order,\n%p we ship soon."), "<p>Thanks for your order,</p>\n<p>we ship soon.</p>");
+  assert.equal(lower("%li{ class: 'a',\n  title: 'b' } x"), `<li class="a" title="b">x</li>`);
+  assert.equal(rubyToJs("!@tags.empty?"), "!(!tags || !tags.length)");
+  assert.equal(rubyToJs("a && b.empty?"), "a && (!b || !b.length)");
+  assert.equal(rubyToJs("foo(x).present? && items[0].blank?"), "(!!foo(x) && foo(x).length !== 0) && (!items[0] || !items[0].length)");
+  assert.equal(rubyToJs("@n.to_i + 1"), "Math.trunc(Number(n)) + 1");
+  assert.equal(rubyToJs("name.capitalize"), "(name.charAt(0).toUpperCase() + name.slice(1))");
+  assert.equal(rubyToJs("@tags.map(&:name)"), "tags.map((x) => x.name)");
+});
+
+test("the tenth review pass: block helpers keep their body, a postfix if wraps the line, a field's call argument is whole, data: is data-*, fields_for nests", () => {
+  const notes = [];
+  const out = lower([
+    "= link_to product_path(@p) do", "  %img{ src: 'x.png' }", "  %span Buy",
+    "= content_tag :section do", "  %b in",
+    "= cache @p do", "  %i cached",
+    "= link_to 'Edit', edit_path if admin?",
+    "%p= @x unless hidden",
+    "= form_for @review do |f|", "  = f.select :size, options_for_select(sizes)", "  = f.text_field :name, placeholder: t('.name')", "  = f.fields_for :address do |a|", "    = a.text_field :zip",
+    "%a{ href: x, data: { id: 1, confirm: 'Sure?' } } Del",
+  ].join("\n"), (n) => notes.push(n));
+  assert.equal(out,
+    `<a ng-href="{{ product_path(p) }}"><img src="x.png"><span>Buy</span></a>\n` +
+    `<section><b>in</b></section>\n` +
+    `<i>cached</i>\n` +
+    `<ng-container ng-if="admin?"><a ng-href="{{ edit_path }}">Edit</a></ng-container>\n` +
+    `<p><ng-container ng-if="!(hidden)">{{ x }}</ng-container></p>\n` +
+    `<form method="post"><select name="review[size]" id="review_size" ng-model="review.size"><option ng-repeat="o in options_for_select(sizes)" ng-attr-value="{{ o }}">{{ o }}</option></select><input type="text" name="review[name]" id="review_name" ng-model="review.name"><input type="text" name="review.address[zip]" id="review.address_zip" ng-model="review.address.zip"></form>\n` +
+    `<a ng-href="{{ x }}" data-id="1" data-confirm="Sure?">Del</a>`);
+  assert.ok(notes.some((n) => /cache @p do` wrapped its block in a helper this reader does not know/.test(n)));
+});
+
+test("the tenth review pass: a bare partial name resolves beside the view that renders it, and a partial that renders itself is named", async () => {
+  const { mkdtemp, writeFile, mkdir, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const dir = await mkdtemp(join(tmpdir(), "portamp-haml-"));
+  try {
+    await mkdir(join(dir, "app/views/products"), { recursive: true });
+    await mkdir(join(dir, "app/views/orders"), { recursive: true });
+    await writeFile(join(dir, "app/views/orders/_form.html.haml"), "%form.orders\n");
+    await writeFile(join(dir, "app/views/products/_form.html.haml"), "%form.products\n");
+    await writeFile(join(dir, "app/views/products/new.html.haml"), "= render 'form'\n");
+    await writeFile(join(dir, "app/views/products/_loop.html.haml"), "%b x\n= render 'loop'\n");
+    await writeFile(join(dir, "app/views/products/deep.html.haml"), "= render 'loop'\n");
+    const run = await runPipeline({ src: dir });
+    try {
+      assert.equal(run.error, null);
+      assert.equal(run.ctx.screens.find((s) => s.selector === "products-new").template, `<form class="products"></form>`);
+      assert.ok(run.ctx.report.unverified.some((n) => /renders deeper than this reader follows/.test(n)));
+    } finally {
+      await run.cleanup();
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
