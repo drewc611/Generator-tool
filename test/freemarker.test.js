@@ -70,3 +70,15 @@ test("a run inlines the include, expands the macro, names the machinery and port
     await run.cleanup();
   }
 });
+
+test("a comparison in parentheses, a self closing call before a block call, a list with items and an else, and a ! inside a string are read as FreeMarker reads them", () => {
+  const notes = [];
+  const note = (n) => notes.push(n);
+  assert.equal(lowerFreemarker(`<#if (n > 3)>big</#if>`, note), `<ng-container ng-if="(n > 3)">big</ng-container>`);
+  assert.equal(lowerFreemarker(`<#macro row x>[<#nested>|\${x}]</#macro><@row x="a"/> MIDDLE <@row x="b">body</@row>`, note), `[|{{ "a" }}] MIDDLE [body|{{ "b" }}]`);
+  const listed = lowerFreemarker(`<#list users><ul><#items as u><li>\${u}</li></#items></ul><#else><p>none</p></#list>`, note);
+  assert.equal(listed, `<ul><ng-container ng-repeat="u in users"><li>{{ u }}</li></ng-container></ul><ng-container ng-if="!users || !users.length"><p>none</p></ng-container>`);
+  assert.equal((listed.match(/<ng-container/g) ?? []).length, (listed.match(/<\/ng-container>/g) ?? []).length, "openers and closers balance");
+  assert.equal(fmToJs(`"Done! Next" + x!"d"`, note), `"Done! Next" + (x || "d")`);
+  assert.equal(fmToJs(`{"a": 1}`, note), `{"a": 1}`);
+});

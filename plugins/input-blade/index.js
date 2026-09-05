@@ -26,6 +26,11 @@ const LOOP_META = [[/\$loop->iteration\b/g, "($index + 1)"], [/\$loop->index\b/g
 /** A PHP expression as the JS path it names, outside of strings. */
 export function phpToJs(code, note = () => {}) {
   const parts = String(code).split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/);
+  // 'Hello '.$name: a dot touching a string literal is PHP's concatenation.
+  for (let i = 0; i < parts.length; i += 2) {
+    if (parts[i + 1] !== undefined) parts[i] = parts[i].replace(/\s*\.\s*$/, " + ");
+    if (i > 0) parts[i] = parts[i].replace(/^\s*\.\s*/, " + ");
+  }
   return parts.map((part, i) => {
     if (i % 2) return part;
     let out = part;
@@ -59,7 +64,8 @@ const viewPath = (name) => String(name).replace(/^['"]|['"]$/g, "").replace(/\./
 /** The balanced (...) argument that follows a directive at `at`; returns [inner, endIndex]. */
 function argument(text, at) {
   let i = at;
-  while (i < text.length && /\s/.test(text[i])) i += 1;
+  // Only spaces: `@else` followed by "(No items)" on the next line is prose.
+  while (i < text.length && (text[i] === " " || text[i] === "\t")) i += 1;
   if (text[i] !== "(") return [null, at];
   let depth = 0; let quote = null;
   for (let j = i; j < text.length; j += 1) {
@@ -98,7 +104,14 @@ export function composeBlade(source, resolve, note = () => {}, depth = 0) {
       text = text.replace(/@section\s*\(\s*(['"][^'"]+['"])\s*,\s*([\s\S]*?)\)\s*(?=\n|$)/g, (m, name, value) => { sections.set(viewPath(name).replace(/\.blade\.php$/, ""), { inline: value.trim() }); return ""; });
       text = text.replace(/@section\s*\(\s*(['"][^'"]+['"])\s*\)([\s\S]*?)@(?:endsection|stop|show|append|overwrite)\b/g, (m, name, body) => { sections.set(viewPath(name).replace(/\.blade\.php$/, ""), { body }); return ""; });
       if (text.trim()) note("Markup outside any @section in a view that extends a layout is never rendered by Blade; it was dropped.");
-      const composed = String(layout).replace(/@yield\s*\(\s*(['"][^'"]+['"])\s*(?:,\s*([\s\S]*?))?\)/g, (m, name, fallback) => {
+      const withShows = String(layout).replace(/@section\s*\(\s*(['"][^'"]+['"])\s*\)([\s\S]*?)@show\b/g, (m, name, fallback) => {
+        const key = viewPath(name).replace(/\.blade\.php$/, "");
+        const sec = sections.get(key);
+        if (!sec) return fallback;
+        sections.delete(key);
+        return sec.inline ? `{{ ${sec.inline} }}` : sec.body.replace(/@parent\b/g, fallback);
+      });
+      const composed = withShows.replace(/@yield\s*\(\s*(['"][^'"]+['"])\s*(?:,\s*([\s\S]*?))?\)/g, (m, name, fallback) => {
         const key = viewPath(name).replace(/\.blade\.php$/, "");
         const sec = sections.get(key);
         if (!sec) return fallback ? `{{ ${fallback.trim()} }}` : "";

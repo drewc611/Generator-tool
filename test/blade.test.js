@@ -87,3 +87,13 @@ test("a directive Blade does not know is printed as text, so email addresses and
   const { template } = lowerBlade(`<p>Mail help@example.com (support) now</p>\n<style>@media (max-width: 600px) { .x { display: none } }</style>`, () => {});
   assert.equal(template, `<p>Mail help@example.com (support) now</p>\n<style>@media (max-width: 600px) { .x { display: none } }</style>`);
 });
+
+test("unspaced concatenation, prose after @else, and a layout's @section ... @show are read as Blade reads them", () => {
+  const notes = [];
+  assert.equal(phpToJs(`'Hello '.$name`), `'Hello ' + name`);
+  assert.equal(phpToJs(`$a.' '.$b`), `a + ' ' + b`);
+  assert.equal(lowerBlade(`@if($x)yes@else\n(No items)\n@endif`, () => {}).template, `<ng-container ng-if="x">yes</ng-container><ng-container ng-if="!(x)">\n(No items)\n</ng-container>`);
+  const views = new Map([["layouts/app.blade.php", `<html>@section('sidebar')<p>DEFAULT</p>@show @yield('content')</html>`]]);
+  const composed = composeBlade(`@extends('layouts.app')@section('sidebar')@parent<p>CHILD</p>@endsection@section('content')<p>C</p>@endsection`, (p) => views.get(p) ?? null, (n) => notes.push(n));
+  assert.equal(composed, `<html><p>DEFAULT</p><p>CHILD</p> <p>C</p></html>`, "the child overrides the shown section and @parent splices the default back");
+});

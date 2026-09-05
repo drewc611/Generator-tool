@@ -128,8 +128,27 @@ export function composeRazor(source, resolve, note = () => {}, viewStartLayout =
     for (const name of sections.keys()) note(`@section ${name} has no layout to land in; it was dropped.`);
   }
   if (resolve && depth < 6) {
-    text = text.replace(/@(?:await\s+)?Html\.(?:Partial|PartialAsync|RenderPartial|RenderPartialAsync)\(\s*"([^"]+)"([^)]*)\)\s*;?|<partial\s+name="([^"]+)"[^>]*\/?>/g, (m, a, args, b) => {
-      const name = a ?? b;
+    const partialCall = /@(?:await\s+)?Html\.(?:Partial|PartialAsync|RenderPartial|RenderPartialAsync)\(/g;
+    for (let pm = partialCall.exec(text); pm; pm = partialCall.exec(text)) {
+      const open = pm.index + pm[0].length - 1;
+      const end = matchBracket(text, open, true);
+      if (end < 0) break;
+      const inner = text.slice(open + 1, end - 1);
+      const nameM = /^\s*"([^"]+)"/.exec(inner);
+      const args = nameM ? inner.slice(nameM[0].length) : "";
+      let replacement = "";
+      if (!nameM) note("A partial rendered by an expression rather than a name cannot be inlined; the call was removed.");
+      else {
+        const body = resolve(nameM[1]);
+        if (body == null) { note(`The partial "${nameM[1]}" is not in this run; the tag was removed and the content stands without it.`); }
+        else { if (args.trim()) note(`The partial "${nameM[1]}" was rendered with a model of its own; the port passes it nothing and the partial reads Model as this view's.`); replacement = composeRazor(body, resolve, note, null, depth + 1); }
+      }
+      const tail = /^\s*;/.exec(text.slice(end));
+      text = text.slice(0, pm.index) + replacement + text.slice(end + (tail ? tail[0].length : 0));
+      partialCall.lastIndex = pm.index + replacement.length;
+    }
+    text = text.replace(/<partial\s+name="([^"]+)"[^>]*\/?>/g, (m, b) => {
+      const name = b;
       const body = resolve(name);
       if (body == null) { note(`The partial "${name}" is not in this run; the tag was removed and the content stands without it.`); return ""; }
       if (args && args.trim()) note(`The partial "${name}" was rendered with a model of its own; the port passes it nothing and the partial reads Model as this view's.`);
@@ -165,8 +184,10 @@ export function lowerRazor(source, note = () => {}) {
       if (t[i] === ":") { const nl = t.indexOf("\n", i); lower(t.slice(i + 1, nl < 0 ? t.length : nl)); i = nl < 0 ? t.length : nl; continue; }
       if (t[i] === "(") { const e = matchBracket(t, i, true); if (e < 0) { i = bail(at, "An @( expression"); continue; } out.push(`{{ ${expr(t.slice(i + 1, e - 1).trim())} }}`); i = e; continue; }
       if (t[i] === "{") { const e = matchBracket(t, i, true); if (e < 0) { i = bail(at, "A @{ code block"); continue; } note("A @{ } code block ran C# while rendering; it was not carried and its values are not in the port."); i = e; continue; }
-      const word = /^[A-Za-z_]\w*/.exec(t.slice(i))?.[0];
+      let word = /^[A-Za-z_]\w*/.exec(t.slice(i))?.[0];
       if (!word) { out.push("@"); continue; }
+      // @await Html.PartialAsync(...) or @await Component.InvokeAsync(...): the call is what matters.
+      if (word === "await") { const skip = /^await\s+/.exec(t.slice(i)); i += skip ? skip[0].length : 5; word = /^[A-Za-z_]\w*/.exec(t.slice(i))?.[0]; if (!word) { out.push("@"); continue; } }
       // Directives head the file and take the rest of their line; @using with a ( is a block instead.
       if (/^(using|model|inject|addTagHelper|removeTagHelper|inherits|implements|namespace|functions|helper|layout|page|attribute)$/.test(word) && !(word === "using" && /^\s*\(/.test(t.slice(i + 5)))) {
         if (word === "model") { const nl = t.indexOf("\n", i); note(`@model ${t.slice(i + 5, nl < 0 ? t.length : nl).trim()} names the C# type the controller supplied; the port's Model input carries that shape and this tool does not know it.`); i = nl < 0 ? t.length : nl; continue; }
@@ -189,7 +210,8 @@ export function lowerRazor(source, note = () => {}) {
         i = bodyEnd; continue;
       }
       if (word === "for" || word === "while" || word === "do" || word === "using" || word === "try" || word === "lock") {
-        const open = t.indexOf(word === "do" ? "{" : "(", i); const e = open < 0 ? -1 : word === "do" ? open : matchBracket(t, open, true);
+        const braced = word === "do" || word === "try";
+        const open = t.indexOf(braced ? "{" : "(", i); const e = open < 0 ? -1 : braced ? open : matchBracket(t, open, true);
         const bodyOpen = e < 0 ? -1 : t.indexOf("{", e); const bodyEnd = bodyOpen < 0 ? -1 : matchBracket(t, bodyOpen, false);
         if (bodyEnd < 0) { i = bail(at, `A @${word} block`); continue; }
         note(`@${word} ran a C# loop or block; its body was kept once and what it did is not in the port.`);
@@ -223,6 +245,7 @@ export function lowerRazor(source, note = () => {}) {
         else if (helper === "DisplayNameFor") { const lam = /\(\s*\w+\s*=>\s*\w+\.([\w.]+)\s*\)/.exec(call); out.push(lam ? lam[1].split(".").pop() : ""); note("@Html.DisplayNameFor printed a label from the model's attributes; the property name stands in for it."); }
         else if (helper && NATIVE_HELPERS.test(helper)) note(`@Html.${helper}(...) is a form or link helper the server rendered from the model; the port must build that markup on purpose. It was removed.`);
         else if (word === "Url") note(`\`@${call.slice(0, 40)}\` resolved a route on the server; it is removed and the address belongs in the endpoint map.`);
+        else if (word === "Component") note(`\`@${call.slice(0, 40)}\` invoked a view component the server rendered; the port must build that piece on purpose. It was removed.`);
         else note(`\`@${call.slice(0, 40)}\` is a helper this reader does not know; it was removed.`);
         i = im[1]; continue;
       }

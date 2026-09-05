@@ -31,7 +31,7 @@ export function readKeyboard(text, rel) {
     const tag = m[1].toLowerCase();
     const attrs = ` ${m[2]}`;
     if (!CLICK.test(attrs)) continue;
-    if (NATIVE.has(tag) && !(tag === "a" && !/\s(?:href|ng-href|:href|\[href\]|routerLink)\s*=/.test(attrs))) continue;
+    if (NATIVE.has(tag) && !(tag === "a" && !/\s(?:href|ng-href|:href|\[href\]|routerLink|\[routerLink\]|to|asp-action|asp-page)\s*=/.test(attrs))) continue;
     const lacks = [];
     if (!/\stabindex\s*=/i.test(attrs)) lacks.push("tabindex");
     if (!/\srole\s*=/i.test(attrs)) lacks.push("role");

@@ -51,3 +51,9 @@ test("a run writes KEYBOARD.md naming each unreachable click target and counts i
     await run.cleanup();
   }
 });
+
+test("an anchor routed by a bound routerLink is a link, not an unreachable click target", () => {
+  const found = readKeyboard(`<a [routerLink]="['/x']" (click)="go()">x</a><a routerLink="/y" (click)="go()">y</a><a (click)="go()">z</a>`, "a.html");
+  assert.deepEqual(found.map((f) => f.line), [1]);
+  assert.equal(found.length, 1, "only the anchor with no route at all is a finding");
+});

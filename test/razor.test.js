@@ -91,3 +91,13 @@ test("prose apostrophes, unbalanced brackets, @using lines, email addresses and 
   assert.equal(lowerRazor(`@if (true) {\n@:Hello @Model.Name\n}`, note).template, `<ng-container ng-if="true">\nHello {{ Model.Name }}\n</ng-container>`, "a literal line still evaluates its expressions");
   assert.equal(composeRazor(`@{ Layout = null; var x = new { a = 1 }; }\n<p>body</p>`, null, note), `\n<p>body</p>`, "a code block with nested braces is removed whole");
 });
+
+test("@await calls, @try blocks and a partial with a nested call are read as Razor reads them", () => {
+  const notes = [];
+  const note = (n) => notes.push(n);
+  assert.equal(lowerRazor(`<nav>@await Component.InvokeAsync("Nav")</nav>`, note).template, `<nav></nav>`);
+  assert.ok(notes.some((n) => /view component/.test(n)));
+  assert.equal(lowerRazor(`@try {<p>a</p>} catch (Exception e) {<p>b</p>}<p>c</p>`, note).template.replace(/\s+/g, " ").trim(), `<ng-container><p>a</p></ng-container> catch (Exception e) {<p>b</p>}<p>c</p>`, "the try body is the first block, not a later one");
+  const resolve = (name) => (name === "_Row" ? `<tr>R</tr>` : null);
+  assert.equal(composeRazor(`<table>@Html.Partial("_Row", Model.Items.First())</table>`, resolve, note), `<table><tr>R</tr></table>`, "no stray parenthesis from a nested call");
+});

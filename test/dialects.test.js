@@ -6,18 +6,18 @@ import test from "node:test";
 import { ROOT, runPipeline } from "./helpers.js";
 
 /**
- * The same page written in jinja, Twig, Liquid and Blade produces one React
+ * The same page written in jinja, Twig, Liquid, Blade and FreeMarker produces one React
  * component, one Vue component and one Svelte component, byte for byte, once
  * the two provenance lines that name the source file and its dialect are set
  * aside. That is the only honest way to claim the middle is dialect blind: a
  * comparison that fails out loud rather than a promise.
  */
 
-const DIALECTS = ["jinja", "twig", "liquid", "blade"];
+const DIALECTS = ["jinja", "twig", "liquid", "blade", "freemarker"];
 const PROVENANCE = /^.*(Ported from|Template translated from|<!-- (Ported|Translated)|Source: ).*$\n?/gm;
 const strip = (text) => text.replace(PROVENANCE, "");
 
-test("one page in four server dialects is one component in each target, provenance lines aside", async () => {
+test("one page in five server dialects is one component in each target, provenance lines aside", async () => {
   const outputs = new Map();
   for (const dialect of DIALECTS) {
     const run = await runPipeline({ src: join(ROOT, "test/fixtures/dialects", dialect), vue: true, svelte: true });

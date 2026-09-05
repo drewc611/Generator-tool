@@ -26,15 +26,18 @@ const GLOBALS_SKIP = new Set(["true", "false", "null", "undefined"]);
 
 /** A FreeMarker expression as the JS it names, outside of strings. */
 export function fmToJs(code, note = () => {}) {
-  // x!"none" spans a string, so the default form is rewritten before the
-  // split that keeps strings out of every other rule.
-  const withDefaults = String(code)
-    .replace(/([\w.\[\]()]+)!\s*("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[\w.]+)/g, "($1 || $2)")
-    .replace(/([\w.\[\]()]+)!(?=\s*[}\s)]|$)/g, "($1 || '')");
-  const parts = withDefaults.split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/);
+  const parts = String(code).split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/);
+  // x!"none": the default is the string part that follows the code part, so the
+  // two are joined here, and a ! inside a string stays the prose it is.
+  for (let i = 0; i < parts.length; i += 2) {
+    const tail = /([\w.\[\]()]+)!\s*$/.exec(parts[i]);
+    if (tail && parts[i + 1] !== undefined) { parts[i] = parts[i].slice(0, tail.index) + `(${tail[1]} || ${parts[i + 1]})`; parts[i + 1] = ""; }
+  }
   return parts.map((part, i) => {
     if (i % 2) return part;
-    let out = part;
+    let out = part
+      .replace(/([\w.\[\]()]+)!\s*([\w.]+)/g, "($1 || $2)")
+      .replace(/([\w.\[\]()]+)!(?=\s*[}\s)]|$)/g, "($1 || '')");
     if (/\d+\.\.\d*|\.\.</.test(out)) note(`\`${part.trim().slice(0, 40)}\` is a range; the port repeats over a list it must be given.`);
     out = out
       .replace(/([\w.\[\]()]+)\?\?/g, "($1 != null)")
@@ -55,6 +58,18 @@ export function fmToJs(code, note = () => {}) {
 
 const q = (s) => String(s).replace(/"/g, "'");
 const attrSafe = q;
+
+function matchBrace(text, open) {
+  let depth = 0; let quote = null;
+  for (let i = open; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
+    if (c === '"' || c === "'") quote = c;
+    else if (c === "{") depth += 1;
+    else if (c === "}") { depth -= 1; if (depth === 0) return i + 1; }
+  }
+  return -1;
+}
 
 function splitArgs(text) {
   const out = []; let depth = 0; let quote = null; let start = 0;
@@ -95,8 +110,8 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
     note(`The macro \`<@${name}>\` was expanded at its call site with its arguments substituted textually. Check any body text that shares a parameter's name.`);
     return body;
   };
-  text = text.replace(/<@(\w+)([^>]*?)>([\s\S]*?)<\/@\1>/g, (m, name, args, inner) => expandMacro(name, args, inner));
   text = text.replace(/<@(\w+)([^>]*?)\/>/g, (m, name, args) => expandMacro(name, args, null));
+  text = text.replace(/<@(\w+)((?:[^>/]|\/(?!>))*?)>([\s\S]*?)<\/@\1>/g, (m, name, args, inner) => expandMacro(name, args, inner));
 
   if (resolve && depth < 6) {
     text = text.replace(/<#include\s+["']([^"']+)["'][^>]*>/g, (m, name) => {
@@ -108,15 +123,46 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
 
   const out = [];
   const stack = [];
-  let last = 0;
-  const re = /<#(\w+)([^>]*?)\/?>|<\/#(\w+)\s*>|\$\{([\s\S]*?)\}|#\{([\s\S]*?)\}/g;
+  // A directive's parameters may carry > inside parentheses or a string, so the
+  // tag ends at the first > outside both, not the first > there is.
+  const tagEnd = (from) => {
+    let depth = 0; let quote = null;
+    for (let i = from; i < text.length; i += 1) {
+      const c = text[i];
+      if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
+      if (c === '"' || c === "'") quote = c;
+      else if (c === "(" || c === "[" || c === "{") depth += 1;
+      else if (c === ")" || c === "]" || c === "}") depth -= 1;
+      else if (c === ">" && depth <= 0) return i;
+    }
+    return -1;
+  };
+  const tokens = [];
+  const re = /<#(\w+)|<\/#(\w+)\s*>|\$\{|#\{/g;
   let m;
   while ((m = re.exec(text))) {
-    out.push(text.slice(last, m.index));
-    last = re.lastIndex;
-    if (m[4] !== undefined || m[5] !== undefined) { out.push(`{{ ${fmToJs((m[4] ?? m[5]).trim(), note)} }}`); continue; }
-    if (m[3] !== undefined) {
-      const tag = m[3];
+    if (m[1] !== undefined) {
+      const end = tagEnd(m.index + m[0].length);
+      if (end < 0) { note(`<#${m[1]} never closes; the rest of the file was kept as text.`); break; }
+      const params = text.slice(m.index + m[0].length, end).replace(/\/\s*$/, "");
+      tokens.push({ start: m.index, end: end + 1, open: m[1], params });
+      re.lastIndex = end + 1;
+    } else if (m[2] !== undefined) {
+      tokens.push({ start: m.index, end: m.index + m[0].length, close: m[2] });
+    } else {
+      const end = matchBrace(text, m.index + m[0].length - 1);
+      if (end < 0) { note("An interpolation never closes; the rest of the file was kept as text."); break; }
+      tokens.push({ start: m.index, end, expr: text.slice(m.index + 2, end - 1) });
+      re.lastIndex = end;
+    }
+  }
+  let last = 0;
+  for (const tk of tokens) {
+    out.push(text.slice(last, tk.start));
+    last = tk.end;
+    if (tk.expr !== undefined) { out.push(`{{ ${fmToJs(tk.expr.trim(), note)} }}`); continue; }
+    if (tk.close !== undefined) {
+      const tag = tk.close;
       const frame = stack.at(-1);
       if (tag === "if" || tag === "list" || tag === "items" || tag === "compress" || tag === "escape" || tag === "noescape" || tag === "attempt" || tag === "outputformat" || tag === "autoesc" || tag === "noautoesc") {
         if (!frame) continue;
@@ -130,7 +176,7 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
       }
       continue;
     }
-    const tag = m[1]; const rest = m[2].trim();
+    const tag = tk.open; const rest = tk.params.trim();
     switch (tag) {
       case "if": { const t = fmToJs(rest, note); out.push(`<ng-container ng-if="${attrSafe(t)}">`); stack.push({ kind: "if", tried: [t] }); break; }
       case "elseif": case "else": {
@@ -142,7 +188,7 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
           if (own) frame.tried.push(own);
           out.push(`</ng-container><ng-container ng-if="${attrSafe(t)}">`);
         } else if ((frame?.kind === "list" || frame?.kind === "listOuter") && tag === "else") {
-          if (frame.kind === "list" || frame.opened) out.push("</ng-container>");
+          if (frame.kind === "list") out.push("</ng-container>");
           out.push(`<ng-container ng-if="!${attrSafe(frame.list)} || !${attrSafe(frame.list)}.length">`);
           frame.kind = "if"; frame.tried = [];
         }

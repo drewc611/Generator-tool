@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and ninety four features across one hundred and ten phases. The statuses are
+Five hundred and ninety five features across one hundred and eleven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-824 tests, on Node 18, 20 and 22, and on Windows in CI.
+828 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2269,14 +2269,20 @@ a second review over the analyzers, hosts and scorecards written in this stretch
 FreeMarker was the template language Spring MVC shipped with for a decade: directives as tags with a hash and an expression language of its own for defaults, existence and built ins. input-freemarker lowers each construct that shapes markup: <#if> with its <#elseif> and <#else> chain negated the way the engine evaluates it, <#list> as a loop with its <#else> as the empty state, the key value form kept and the <#list>/<#items> pair read as one loop, <#switch> and <#case> as the equalities they test, ${expr} as interpolation with x!"none" as a default, x?? as an existence test, ?size, ?upper_case, ?lower_case, ?trim, ?first, ?last and ?join as their methods, the formatting built ins dropped because the target formats, and gt, lt, gte and lte as their operators; a built in with no JS spelling and a range are named. A held <#include> is inlined where its tag stood, a macro defined in the file is expanded at its <@call> with its arguments substituted and named, and <#assign>, <#import>, <#function>, <#attempt> and the rest of the server's machinery are removed and named. The data model's top level names are the inputs, read from the expressions and never from the markup. .ftl and .ftlh reach the scan. test/freemarker.test.js holds it.
 
 
+## Phase 111: the third review pass, and a fifth dialect in the proof
+
+**595. Eight more defects fixed with the inputs that exposed them, and FreeMarker joins the byte identical page** 🔨
+a third review over the newest readers found eight defects worth the name. In input-freemarker: a directive whose parameter carried a > inside parentheses, the form the manual documents for a comparison, ended the tag early; a tag now ends at the first > outside parentheses and quotes. A self closing macro call before a block call of the same macro swallowed everything between them as the nested body; self closing calls expand first and a block call must not end in a slash. The else of a list written with items closed a container the items had already closed; it closes nothing now, and the test counts openers against closers. A ! inside a string became a default; defaults are joined to the string part that follows a code part, so "Done! Next" stays prose. In input-blade: PHP's concatenation touching a string literal survived as property access, so 'Hello '.$name reached the port as the name property of a string; a dot touching a string is +. @else followed by parenthesised prose on the next line consumed the prose as its argument; an argument sits at most a space away. A layout's @section ... @show block was never overridden by the child's section, so the override and its @parent were dropped without a note; the child overrides it and @parent splices the default back. In input-razor: @await was read as an expression named await with the call left as page text; the keyword is skipped and a view component call is named. @try looked for a parenthesis it does not have; a partial with a nested call left a stray parenthesis; both matched balanced now. In dsp-keyboard: an anchor routed by Angular's bound [routerLink] was a false positive; it is a link. And the same product page written in FreeMarker produces the same React, Vue and Svelte byte for byte as the four dialects before it, so the proof now holds five. test/freemarker.test.js, test/blade.test.js, test/razor.test.js, test/keyboard.test.js and test/dialects.test.js hold them.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 547 |
+| new in this branch | 548 |
 | planned | 3 |
-| total | 594 |
+| total | 595 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

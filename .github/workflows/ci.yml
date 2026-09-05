@@ -1036,16 +1036,16 @@ jobs:
           grep -q "by handlebars" rd-out/READERS.md || { echo "the handlebars reader was not credited"; exit 1; }
           rm -rf rd-out
 
-      - name: one page in four server dialects is one React component, provenance aside
+      - name: one page in five server dialects is one React component, provenance aside
         run: |
-          for d in jinja twig liquid blade; do
+          for d in jinja twig liquid blade freemarker; do
             node src/cli.js run --src test/fixtures/dialects/$d --out dl-$d >/dev/null
             grep -vE "Ported from|Template translated from" dl-$d/src/features/Product/Product.jsx > dl-$d.jsx
           done
-          for d in twig liquid blade; do
+          for d in twig liquid blade freemarker; do
             cmp dl-jinja.jsx dl-$d.jsx || { echo "the $d port of the same page differs from the jinja port"; exit 1; }
           done
-          rm -rf dl-jinja dl-twig dl-liquid dl-blade dl-*.jsx
+          rm -rf dl-jinja dl-twig dl-liquid dl-blade dl-freemarker dl-*.jsx
 
       - name: the keyboard reader names a click target the keyboard cannot reach
         run: |
@@ -1074,6 +1074,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "594" ]; then
-            echo "ROADMAP.md holds $count entries and claims 594"; exit 1
+          if [ "$count" != "595" ]; then
+            echo "ROADMAP.md holds $count entries and claims 595"; exit 1
           fi
