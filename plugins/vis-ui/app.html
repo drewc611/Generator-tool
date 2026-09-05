@@ -14,12 +14,14 @@
   /* Original artwork in the late 90s skinned player genre. Nothing here is
      traced from, or copied out of, any real player skin. */
   :root {
-    --chassis-hi: #3f3f47; --chassis-lo: #1d1d22; --face: #2b2b31;
-    --edge-hi: #63636f; --edge-lo: #0a0a0c;
-    --lcd: #04120b; --lcd-edge: #0d3a24;
+    /* Black chassis with a dark blue tint; the phosphor greens and amber stay
+       as the readout so the panel reads black and navy with a lit display. */
+    --chassis-hi: #1b2740; --chassis-lo: #070b16; --face: #0d1526;
+    --edge-hi: #2c3f60; --edge-lo: #02030a;
+    --lcd: #030a18; --lcd-edge: #123057;
     --p-hi: #7df3b0; --p-mid: #3fbf7f; --p-dim: #237a52;
     --amber: #f0a830; --amber-dim: #9c6c1d;
-    --sel: #1b3d6b; --ink: #d7d7de; --muted: #8b8b96; --faint: #5d5d68;
+    --sel: #16305c; --ink: #d5dbe8; --muted: #7f8aa3; --faint: #4f5a72;
     --input: #6ee7a8; --dsp: #7dd3fc; --output: #f0a830; --vis: #c4b5fd; --general: #fb7185;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   }
@@ -27,7 +29,7 @@
   html, body { height: 100%; margin: 0; }
   body {
     height: 100vh; overflow: hidden; padding: 5px; gap: 5px;
-    background: #101013; color: var(--ink);
+    background: #04060e; color: var(--ink);
     font: 11px/1.45 var(--mono); letter-spacing: .2px;
     display: grid; grid-template-columns: 276px 1fr;
     grid-template-rows: 42px 128px minmax(0, 1fr) minmax(0, 168px);
@@ -226,8 +228,12 @@
   .theme-key { flex: 0 0 auto; align-self: center; padding: 4px 8px; }
   .sort-key { flex: 0 0 auto; padding: 2px 6px; font-size: 8px; margin-right: 6px; }
   .offline { color: var(--amber); }
-  .spark-box { width: 70px; }
+  .spark-box { width: 70px; position: relative; }
   #spark polyline { fill: none; stroke: var(--amber); stroke-width: 1.5; }
+  /* The run comparison drops below the head as a tooltip so its list never overruns the header bar. */
+  #compare { position: absolute; top: calc(100% + 5px); right: 0; z-index: 40; display: none; width: 214px; text-align: left; padding: 6px 9px; font-size: 9.5px; line-height: 1.5; color: var(--p-dim); background: var(--face); border: 1px solid var(--edge-hi); border-radius: 3px; box-shadow: 0 6px 18px #000a; white-space: normal; }
+  .spark-box:hover #compare[data-ready], .spark-box:focus-within #compare[data-ready] { display: block; }
+  #compare h3 { margin: 0 0 4px; font-size: 8.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--faint); } #compare ul { margin: 0; padding-left: 14px; } #compare li { color: var(--p-hi); } #compare p { margin: 3px 0 0; }
 
   /* the notes deck is tabbed: signals, files, reports */
   .tabs { gap: 3px; justify-content: flex-start; }
@@ -277,8 +283,9 @@
     <div class="sub" id="now-sub"></div>
     <div class="sub offline" id="offline" role="status"></div>
   </div>
-  <div class="sunk gauge spark-box" title="unverified per run, oldest first">
+  <div class="sunk gauge spark-box" tabindex="0" title="unverified per run, oldest first; hover for the change since the previous run">
     <svg id="spark" width="54" height="16" viewBox="0 0 54 16" aria-label="unverified count per run, oldest first"><polyline id="spark-line" points="" /></svg>
+    <aside id="compare" aria-label="comparison with the previous run"></aside>
     <span>trend</span>
   </div>
   <div class="gauges">
@@ -374,7 +381,7 @@
 <script type="module">
 import {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
-  sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn,
+  sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn, compareRuns,
 } from "/lib.js";
 
 const $ = (id) => document.getElementById(id);
@@ -807,7 +814,7 @@ $("run").addEventListener("click", rerun);
 
 function renderAll() {
   renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens();
-  renderEndpoints(); renderUnverified(); renderFiles(); renderReports(); renderTrend();
+  renderEndpoints(); renderUnverified(); renderFiles(); renderReports(); renderTrend(); renderComparison();
 }
 
 // One keymap, decided in lib.js where the suite can read it. Keys inside an
@@ -862,6 +869,21 @@ setInterval(async () => {
     if (await refresh()) $("now-sub").textContent = "refreshed from a newer run";
   } catch { /* the server may be restarting; the next tick asks again */ }
 }, 5000);
+
+// The previous run beside this one, from the one generation the server keeps.
+async function renderComparison() {
+  try {
+    const cmp = compareRuns(run, await fetch("/run.previous.json").then((r) => r.json()));
+    const box = $("compare");
+    if (!cmp || !box) return;
+    const moved = cmp.metrics.filter((m) => m.delta !== 0);
+    box.innerHTML = "<h3>vs the previous run</h3>" +
+      (moved.length ? "<ul>" + moved.map((m) => `<li>${m.name}: ${m.was} → ${m.is}${m.verdict === "level" || m.verdict === "changed" ? "" : ` (${m.verdict})`}</li>`).join("") + "</ul>" : "<p>Nothing moved.</p>") +
+      (cmp.notesClosed.length ? `<p>${cmp.notesClosed.length} note(s) closed.</p>` : "") +
+      (cmp.notesOpened.length ? `<p>${cmp.notesOpened.length} note(s) opened.</p>` : "");
+    box.dataset.ready = "1";
+  } catch { /* no previous run kept yet */ }
+}
 
 // The trend under the readout: the unverified counts of the recorded runs,
 // as a line, with the latest delta in words.

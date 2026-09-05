@@ -1,0 +1,5 @@
+{% load i18n %}
+<nav>
+  <a href="{% url 'shop:index' %}" class="{% if section == 'shop' %}current{% endif %}">{% trans "Shop" %}</a>
+  <a href="{% url 'shop:cart' %}">{% trans "Cart" %}</a>
+</nav>

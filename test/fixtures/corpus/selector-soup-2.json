@@ -1,0 +1,56 @@
+{
+  "label": "selector-soup",
+  "html": "<div id=\"root\"><div id=\"header\"></div><div id=\"list\"></div><div id=\"footer\"></div></div>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/list"
+    }
+  ],
+  "widgets": [
+    {
+      "selector": "#reload",
+      "events": [
+        "click"
+      ],
+      "writes": []
+    },
+    {
+      "selector": "#list",
+      "events": [],
+      "writes": [
+        "html"
+      ]
+    },
+    {
+      "selector": "#footer",
+      "events": [],
+      "writes": [
+        "text"
+      ]
+    },
+    {
+      "selector": "#header .search",
+      "events": [
+        "keyup"
+      ],
+      "writes": []
+    },
+    {
+      "selector": "#list .row",
+      "events": [
+        "click"
+      ],
+      "writes": []
+    },
+    {
+      "selector": "#total",
+      "events": [],
+      "writes": [
+        "text"
+      ]
+    }
+  ],
+  "components": 0,
+  "model": null
+}

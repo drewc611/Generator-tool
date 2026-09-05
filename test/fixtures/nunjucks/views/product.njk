@@ -1,0 +1,11 @@
+{% extends "layout.njk" %}
+{% import "macros.njk" as ui %}
+{% set price = product.price | round(2) %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+  <h1>{{ product.name }}</h1>
+  <p class="price">{{ price }}</p>
+  {% asyncEach tag in product.tags %}<span class="tag">{{ tag }}</span>{% endeach %}
+  {% call ui.card(product) %}<p>{{ product.summary }}</p>{% endcall %}
+  <pre>{% raw %}Use {{ name }} in your template{% endraw %}</pre>
+{% endblock %}

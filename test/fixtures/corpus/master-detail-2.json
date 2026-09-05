@@ -1,0 +1,14 @@
+{
+  "label": "master-detail",
+  "html": "<ul><li *ngFor=\"let p of products\"><a [routerLink]=\"p.id\">{{p.title}}</a></li></ul><a href=\"/all\">all products</a>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/products"
+    },
+    {
+      "method": "GET",
+      "path": "/api/products/${id}"
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { findIssues } from "./findings.js";
 
 /**
@@ -23,8 +25,25 @@ export default {
       }
     });
 
-    on("emit", async (ctx) => {
+    // The report lands at verify, after the emitters, so each finding can be
+    // ranked by the size of the emitted code its fix would touch. A rank is
+    // a measurement of the component on disk, never a guess about effort.
+    on("verify", async (ctx) => {
       if (!ctx.improvements?.length) return;
+      const bySelector = new Map(ctx.screens.map((s) => [s.selector, s]));
+      for (const f of ctx.improvements) {
+        const screen = bySelector.get(f.screen) ?? bySelector.get(String(f.screen).toLowerCase());
+        const cls = screen?.className;
+        const rel = cls ? `src/features/${cls}/${cls}.jsx` : null;
+        f.cost = null;
+        if (rel && ctx.written.includes(rel)) {
+          const text = await readFile(join(ctx.config.out, rel), "utf8").catch(() => "");
+          if (text) {
+            f.cost = text.split("\n").length;
+            f.costOf = rel;
+          }
+        }
+      }
       await ctx.write("IMPROVEMENTS.md", render(ctx.improvements));
     });
   },
@@ -38,12 +57,20 @@ function render(findings) {
     "and what the port does instead. A port that reproduces a defect faithfully",
     "is not a good port.",
     "",
+    "Within each kind the findings are ordered by the size of the emitted",
+    "component the fix would touch, smallest first, because the cheapest fix",
+    "is measured from the code on disk and not guessed. A finding whose",
+    "screen was not emitted is listed last, unranked.",
+    "",
   ];
 
   const byKind = new Map();
   for (const f of findings) {
     if (!byKind.has(f.kind)) byKind.set(f.kind, []);
     byKind.get(f.kind).push(f);
+  }
+  for (const group of byKind.values()) {
+    group.sort((a, b) => (a.cost ?? Infinity) - (b.cost ?? Infinity));
   }
 
   const TITLE = {
@@ -61,6 +88,7 @@ function render(findings) {
       lines.push(`- **\`${f.element}\`** on \`${f.screen}\`, ${f.severity}.`);
       lines.push(`  - Observed: ${f.evidence}`);
       lines.push(`  - Instead: ${f.instead}`);
+      lines.push(f.cost ? `  - Fix lands in \`${f.costOf}\`, ${f.cost} emitted line(s).` : "  - Unranked: the screen was not emitted in this run.");
     }
     lines.push("");
   }

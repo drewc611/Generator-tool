@@ -1,0 +1,10 @@
+<%# The shell express-ejs-layouts wraps every page in; body is the page. %>
+<!DOCTYPE html>
+<html lang="en">
+  <head><title><%= title %> - Shop</title></head>
+  <body>
+    <%- include('partials/nav', { active: section }) %>
+    <main><%- body %></main>
+    <footer><small>&copy; Shop</small></footer>
+  </body>
+</html>

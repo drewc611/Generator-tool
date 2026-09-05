@@ -133,7 +133,7 @@ test("--split loads one module per route and a hover warms it", async () => {
 });
 
 test("the 404 report matches the old server's refusals against the port", async () => {
-  const run = await runPipeline({ src: join(ROOT, "example/legacy-site"), site: true, logs: join(ROOT, "test/fixtures/access.log") });
+  const run = await runPipeline({ src: join(ROOT, "example/legacy-site"), site: true, logs: join(ROOT, "test/fixtures/access-log.txt") });
   try {
     assert.equal(run.error, null);
     const report = await readFile(join(run.out, "LOGS_404.md"), "utf8");

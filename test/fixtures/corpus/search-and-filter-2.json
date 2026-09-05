@@ -1,0 +1,10 @@
+{
+  "label": "search-and-filter",
+  "html": "<input [(ngModel)]=\"term\" placeholder=\"Search jobs\"><select [(ngModel)]=\"location\"></select><select [(ngModel)]=\"level\"></select><ul><li *ngFor=\"let j of jobs\">{{j.title}}</li></ul>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/jobs?term=x&location=y&level=z&sort=recent"
+    }
+  ]
+}

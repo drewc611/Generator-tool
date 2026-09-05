@@ -111,3 +111,29 @@ const api = {
   sparklinePoints, STAGE_KEYS, keyAction, offlineNotice, isTextFile, reportsIn,
 };
 if (typeof window !== "undefined") window.portampLib = api;
+
+/**
+ * Two runs side by side: what moved, which way, and which notes closed. The
+ * verdict is only ever spoken for unverified, because that is the one number
+ * where a direction is a judgment; everything else just changed.
+ */
+export function compareRuns(current, previous) {
+  if (!current || !previous) return null;
+  const count = (v) => (Array.isArray(v) ? v.length : Number(v) || 0);
+  const metrics = ["screens", "endpoints", "unverified", "files"].map((name) => {
+    const was = count(previous[name]);
+    const is = count(current[name]);
+    return {
+      name, was, is,
+      delta: is - was,
+      verdict: name !== "unverified" ? (is === was ? "level" : "changed") : is > was ? "worse" : is < was ? "better" : "level",
+    };
+  });
+  const wasNotes = Array.isArray(previous.unverified) ? previous.unverified : [];
+  const isNotes = Array.isArray(current.unverified) ? current.unverified : [];
+  return {
+    metrics,
+    notesClosed: wasNotes.filter((n) => !isNotes.includes(n)),
+    notesOpened: isNotes.filter((n) => !wasNotes.includes(n)),
+  };
+}

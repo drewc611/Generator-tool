@@ -1,3 +1,4 @@
+import { isElementName } from "../dsp-ir/ir.js";
 import { toVue } from "./print.js";
 import { jsString, pascal, unique } from "../dsp-ir/emit.js";
 
@@ -23,7 +24,7 @@ export default {
       let emitted = 0;
       for (const screen of ctx.screens) {
         const name = pascal(screen.selector) || "Screen";
-        const result = screen.template ? toVue(screen.template) : null;
+        const result = screen.template ? toVue(screen.template, { components: ctx.screens.map((s) => s.selector) }) : null;
         const collection = result?.collections[0] ?? "data";
         const props = unique([...screen.inputs, ...(result?.reads ?? []), "loading", "error"]);
         const emits = unique([...screen.outputs, "retry"]);
@@ -32,7 +33,7 @@ export default {
         // Vue the kebab tag resolves the moment its component is imported,
         // so resolving a reference costs exactly one import line.
         const referenced = ctx.screens
-          .filter((other) => other !== screen && result?.markup && new RegExp(`<${other.selector}[\\s>/]`).test(result.markup))
+          .filter((other) => other !== screen && !isElementName(other.selector) && result?.markup && new RegExp(`<${other.selector}[\\s>/]`).test(result.markup))
           .map((other) => pascal(other.selector) || "Screen");
 
         await ctx.write(`src/features/${name}/${name}.vue`, COMPONENT({ name, props, emits, result, collection, screen, referenced: unique(referenced) }));
@@ -56,6 +57,7 @@ const COMPONENT = ({ name, props, emits, result, collection, screen, referenced 
 
   return `<script setup>
 ${models.length ? 'import { ref } from "vue";\n' : ""}${imports ? imports + "\n" : ""}// Ported from ${screen.file} by portamp.
+// Template translated from ${screen.templateOrigin ?? "the decorator"}.
 //
 // Every state below is present on purpose. Delete one only when you have
 // checked the legacy screen genuinely cannot reach it.

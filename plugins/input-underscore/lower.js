@@ -1,3 +1,5 @@
+import { attrSafe } from "../dsp-ir/text.js";
+
 /**
  * Underscore template syntax, lowered onto the attribute dialect.
  *
@@ -12,7 +14,6 @@
  * that dissolves, loops as ng-repeat.
  */
 
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 
 export function lowerUnderscore(source, note = () => {}) {
   const text = String(source ?? "");
@@ -39,14 +40,23 @@ export function lowerUnderscore(source, note = () => {}) {
       continue;
     }
 
-    const each = /^_\.each\s*\(\s*([\w$.]+)\s*,\s*function\s*\(\s*([\w$]+)(?:\s*,\s*([\w$]+))?\s*\)\s*\{$/.exec(code);
-    const forEach = /^([\w$.]+)\.forEach\s*\(\s*function\s*\(\s*([\w$]+)(?:\s*,\s*([\w$]+))?\s*\)\s*\{$/.exec(code);
+    // function (x) { and (x) => { and x => { open the same callback.
+    const callback = code.replace(/\(\s*(\[?[\w$,\s]+\]?)\s*\)\s*=>\s*\{$/, "function ($1) {").replace(/([\w$]+)\s*=>\s*\{$/, "function ($1) {");
+    // The list may be a call such as Object.keys(o); Object.entries(o).forEach(function ([k, v]) { is the (key, value) loop over an object.
+    const each = /^_\.each\s*\(\s*([\w$.]+(?:\([^()]*\))?)\s*,\s*function\s*\(\s*([\w$]+)(?:\s*,\s*([\w$]+))?\s*\)\s*\{$/.exec(callback);
+    const forEach = /^([\w$.]+(?:\([^()]*\))?)\.forEach\s*\(\s*function\s*\(\s*([\w$]+)(?:\s*,\s*([\w$]+))?\s*\)\s*\{$/.exec(callback);
+    const entries = /^Object\.entries\(\s*([\w$.]+)\s*\)\.forEach\s*\(\s*function\s*\(\s*\[\s*([\w$]+)\s*,\s*([\w$]+)\s*\]\s*\)\s*\{$/.exec(callback);
     const loop = each ?? forEach;
+    if (entries) {
+      out.push(`<ng-container ng-repeat="${attrSafe(`(${entries[2]}, ${entries[3]}) in ${entries[1]}`)}">`);
+      stack.push({ kind: "each" });
+      continue;
+    }
     if (loop) {
       const list = each ? each[1] : forEach[1];
-      if (loop[3]) note(`The loop over \`${list}\` used an index argument. AngularJS's dialect carries the item alone; rewire the index in the port.`);
-      out.push(`<ng-container ng-repeat="${loop[2]} in ${attrSafe(list)}">`);
-      stack.push({ kind: "each" });
+      // The dialect spells the index $index; the body's reads of its own name are spelled so when the loop closes.
+      out.push(`<ng-container ng-repeat="${loop[2]} in ${attrSafe(list)}${loop[3] ? " track by $index" : ""}">`);
+      stack.push({ kind: "each", index: loop[3] ?? null, opener: out.length - 1, inner: [] });
       continue;
     }
 
@@ -59,6 +69,7 @@ export function lowerUnderscore(source, note = () => {}) {
 
     const elseIf = /^\}\s*else\s+if\s*\(([\s\S]+)\)\s*\{$/.exec(code);
     const elseBare = /^\}\s*else\s*\{$/.exec(code);
+    if ((elseIf || elseBare) && stack.length && stack[stack.length - 1].kind === "plain") continue;
     if ((elseIf || elseBare) && stack.length && stack[stack.length - 1].kind === "if") {
       const frame = stack[stack.length - 1];
       const nots = frame.tried.map((c) => `!(${c})`);
@@ -70,10 +81,31 @@ export function lowerUnderscore(source, note = () => {}) {
     }
 
     if (/^\}\s*\)?;?$/.test(code)) {
-      if (stack.length) { stack.pop(); out.push("</ng-container>"); }
+      if (stack.length) {
+        const frame = stack.pop();
+        // A construct the lowering dropped owns its closer; the closer closes nothing the lowering opened.
+        if (frame.kind === "plain") continue;
+        if (frame.index) {
+          // The index inside the loop's own span is $index; inside a loop nested within it, the dialect reaches the
+          // outer index through $parent, one per level of nesting.
+          const safe = frame.index.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const spans = /\{\{[\s\S]*?\}\}|\bng-[\w-]+="[^"]*"/g;
+          const depthAt = (i) => frame.inner.filter((r) => i > r.start && i < r.end).reduce((d, r) => Math.max(d, r.depth), 0);
+          for (let i = frame.opener + 1; i < out.length; i += 1) {
+            const spelled = `${"$parent.".repeat(depthAt(i))}$index`;
+            out[i] = out[i].replace(spans, (span) => span.replace(new RegExp(`(?<![\\w.$])${safe}(?![\\w$])`, "g"), spelled));
+          }
+        }
+        out.push("</ng-container>");
+        // The closed loop's range, and every loop nested in it one level deeper, is known to the loop that encloses it.
+        const parent = [...stack].reverse().find((f) => f.kind === "each");
+        if (parent && frame.kind === "each") parent.inner.push({ start: frame.opener, end: out.length - 1, depth: 1 }, ...frame.inner.map((r) => ({ ...r, depth: r.depth + 1 })));
+      }
       continue;
     }
 
+    // An opener the lowering does not know (while, switch, try, a destructuring for) owns the closer that follows it.
+    if (/\{$/.test(code)) stack.push({ kind: "plain" });
     note(`A template construct could not be carried across and was removed: \`<% ${code} %>\`.`);
   }
   out.push(text.slice(last));

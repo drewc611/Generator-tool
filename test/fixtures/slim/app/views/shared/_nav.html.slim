@@ -1,0 +1,5 @@
+/ the shared navigation
+nav
+  = link_to "Home", root_path
+  - if current_user
+    span.who = current_user.name

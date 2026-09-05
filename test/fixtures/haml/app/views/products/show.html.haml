@@ -1,0 +1,39 @@
+- content_for :title do
+  = @product.name
+- low = 5
+/ a plain html comment
+%h1= @product.name
+- if @product.stock == 0
+  %p.out= t(".sold_out")
+- elsif @product.stock < low
+  %p.low Only #{@product.stock} left
+- else
+  %p In stock
+%p.price= "#{number_to_currency(@product.price)} #{currency.upcase}"
+%ul.tags
+  - @product.tags.each_with_index do |tag, i|
+    %li{ class: (i == 0 ? "first" : ""), "data-id" => tag.id }
+      = "#{i + 1}/#{@product.tags.size}: #{tag.name}"
+  - if @product.tags.empty?
+    %li.none No tags
+- case @product.type
+- when "shoe", "boot"
+  %span.badge Footwear
+- when "hat"
+  %span.badge Headwear
+- else
+  %span.badge= @product.type
+.description!= @product.description_html
+%p.q Search: #{params[:q]}
+= link_to "Buy", cart_add_path(id: @product.id), class: "buy", disabled: @product.stock == 0
+= image_tag "logo.png", alt: "Shop"
+= form_for @review, url: reviews_path do |f|
+  = f.label :rating, "Rating"
+  = f.number_field :rating
+  = f.text_area :body
+  = f.collection_select :size, sizes, :id, :label
+  = f.submit "Send"
+= render partial: "shared/promo", locals: { code: "SAVE10" }
+:javascript
+  track("view");
+%p Free shipping on every order.

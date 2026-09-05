@@ -1,0 +1,29 @@
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loader {
+  animation: spin 1s linear infinite;
+}
+
+.button {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media print {
+  nav, header, footer, .no-print {
+    display: none;
+  }
+  body {
+    color: black;
+    background: white;
+  }
+  a[href]::after {
+    content: " (" attr(href) ")";
+  }
+}

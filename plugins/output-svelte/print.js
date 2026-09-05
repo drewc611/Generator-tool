@@ -144,7 +144,7 @@ function print(node, depth) {
   }
 }
 
-export function toSvelte(html, { dialect } = {}) {
-  const ir = buildIr(html, { dialect });
+export function toSvelte(html, { dialect, components = [] } = {}) {
+  const ir = buildIr(html, { dialect, components });
   return { markup: print(ir.root, 1) || "  <!-- nothing to render -->", ...ir };
 }

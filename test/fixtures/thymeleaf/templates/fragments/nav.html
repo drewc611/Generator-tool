@@ -1,0 +1,9 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <nav th:fragment="nav(who)">
+    <a th:href="@{/}" href="index.html" th:text="#{nav.home}">Home</a>
+    <span class="who" th:if="${who != null}" th:text="${who.name}">Jane</span>
+  </nav>
+  <small th:fragment="legal">All rights reserved.</small>
+</body>
+</html>

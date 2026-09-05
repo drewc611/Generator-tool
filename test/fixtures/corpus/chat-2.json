@@ -1,0 +1,14 @@
+{
+  "label": "chat",
+  "html": "<ul><li *ngFor=\"let m of thread\">{{m.body}}</li></ul><form (submit)=\"reply()\"><input [(ngModel)]=\"text\" placeholder=\"Reply\"><button type=\"submit\">Send</button></form>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/thread"
+    },
+    {
+      "method": "POST",
+      "path": "/api/thread"
+    }
+  ]
+}

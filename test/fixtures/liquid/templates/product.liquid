@@ -1,0 +1,17 @@
+{% comment %} the product page {% endcomment %}
+{% assign has_variants = product.variants.size > 1 %}
+<h1>{{ product.title }}</h1>
+{% render 'price' %}
+{% unless product.available %}<p class="sold-out">Sold out</p>{% endunless %}
+{% case product.type %}
+  {% when 'Shoe', 'Boot' %}<p>Footwear</p>
+  {% else %}<p>Other</p>
+{% endcase %}
+<ul>
+  {% for v in product.variants limit: 3 %}
+    <li>{{ v.title | default: 'Default' }}</li>
+  {% else %}
+    <li class="empty">None</li>
+  {% endfor %}
+</ul>
+{% form 'product', product %}<button type="submit">Add</button>{% endform %}

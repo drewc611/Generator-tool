@@ -1,0 +1,31 @@
+extends layout
+
+mixin badge(text)
+  span.badge= text
+
+block content
+  //- the product page
+  - var discounted = product.price < product.list
+  h1= product.name
+  if product.stock === 0
+    p.out Sold out
+  else if product.stock < 5
+    p.low Only #{product.stock} left
+  else
+    p In stock
+  ul
+    each tag, i in product.tags
+      li(class=tag.hot ? "hot" : "") #{i}: #{tag.name}
+    else
+      li.none No tags
+  case product.type
+    when "shoe"
+      p Footwear
+    default
+      p Other
+  +badge(product.type)
+  a.buy(href=product.url, disabled=!product.available) Buy
+  p.note !{product.descriptionHtml}
+  p.
+    Free shipping
+    on every order.

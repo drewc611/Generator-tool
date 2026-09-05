@@ -84,22 +84,22 @@ test("discovery loads every plugin that ships", async () => {
   await k.discover({ builtinDir: BUILTIN });
   const names = k.plugins.map((p) => p.name).sort();
   assert.deepEqual(names, [
-    "dsp-a11y", "dsp-apimap", "dsp-apistyle", "dsp-archetype", "dsp-assets", "dsp-auth", "dsp-behavior",
-    "dsp-boundaries", "dsp-cognitive", "dsp-css", "dsp-dates",
-    "dsp-deadcode", "dsp-diff", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-era", "dsp-flags", "dsp-forms",
-    "dsp-i18n", "dsp-improve",
-    "dsp-ir", "dsp-modernize", "dsp-perf", "dsp-permissions", "dsp-routes", "dsp-state", "dsp-tokens",
+    "dsp-a11y", "dsp-analytics", "dsp-apimap", "dsp-apistyle", "dsp-archetype", "dsp-assets", "dsp-async", "dsp-auth", "dsp-behavior",
+    "dsp-boundaries", "dsp-cognitive", "dsp-complexity", "dsp-components", "dsp-console", "dsp-cookies", "dsp-css", "dsp-dates",
+    "dsp-deadcode", "dsp-deps", "dsp-diff", "dsp-dom", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-env", "dsp-era", "dsp-events", "dsp-flags", "dsp-focus", "dsp-fonts", "dsp-forms", "dsp-globals",
+    "dsp-i18n", "dsp-iframes", "dsp-images", "dsp-imports", "dsp-improve", "dsp-inline",
+    "dsp-ir", "dsp-keyboard", "dsp-labels", "dsp-landmarks", "dsp-learn", "dsp-magic", "dsp-media", "dsp-modernize", "dsp-motion", "dsp-observers", "dsp-perf", "dsp-permissions", "dsp-platform", "dsp-print", "dsp-props", "dsp-render-blocking", "dsp-routes", "dsp-security", "dsp-seo", "dsp-state", "dsp-storage", "dsp-supplychain", "dsp-tables", "dsp-timers", "dsp-tokens",
     "dsp-uplift", "dsp-weight",
-    "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-scaffold", "general-watch",
-    "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-explore",
-    "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-knockout",
-    "input-openapi", "input-pdf", "input-record", "input-shots", "input-static", "input-underscore", "input-vue",
-    "output-adr", "output-alpine", "output-angular", "output-cem", "output-ci", "output-curl",
-    "output-design-tokens", "output-fixtures", "output-forms", "output-html", "output-i18n", "output-lit",
-    "output-migration", "output-msw",
-    "output-openapi", "output-postman", "output-preact", "output-react", "output-readme", "output-site", "output-solid",
-    "output-storybook", "output-svelte", "output-tailwind",
-    "output-tests", "output-vue", "vis-coverage", "vis-equivalence", "vis-parity", "vis-timeline", "vis-ui",
+    "general-agents", "general-architect", "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-publish", "general-scaffold", "general-size", "general-watch",
+    "input-alpine", "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-blade", "input-cfml", "input-django", "input-ejs", "input-ember", "input-explore", "input-freemarker", "input-haml",
+    "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-jsp", "input-knockout",
+    "input-liquid", "input-lit", "input-marko", "input-mithril", "input-openapi", "input-pdf", "input-polymer", "input-pug", "input-razor", "input-react", "input-record", "input-riot", "input-shots", "input-slim", "input-smarty", "input-static", "input-stencil", "input-svelte", "input-thymeleaf", "input-twig", "input-twirl", "input-underscore", "input-velocity", "input-vue", "input-webcomponents", "input-xslt",
+    "output-adr", "output-alpine", "output-angular", "output-astro", "output-aws", "output-azure", "output-caddy", "output-cem", "output-ci", "output-cloudflare", "output-codemod", "output-curl", "output-cypress",
+    "output-design-tokens", "output-dockerfile", "output-eleventy", "output-fixtures", "output-forms", "output-gcp", "output-html", "output-i18n", "output-lit",
+    "output-migration", "output-msw", "output-netlify", "output-next", "output-nginx", "output-nuxt",
+    "output-openapi", "output-playwright", "output-postman", "output-preact", "output-qwik", "output-react", "output-readme", "output-remix", "output-site", "output-solid",
+    "output-storybook", "output-svelte", "output-sveltekit", "output-tailwind",
+    "output-tests", "output-types", "output-vercel", "output-vue", "vis-a11y", "vis-coverage", "vis-equivalence", "vis-graph", "vis-lifecycle", "vis-parity", "vis-perf", "vis-readers", "vis-roundtrip", "vis-security", "vis-timeline", "vis-transformer", "vis-ui",
   ]);
   for (const p of k.plugins) assert.ok(CLASSES.includes(p.class), `${p.name} has a real class`);
 });

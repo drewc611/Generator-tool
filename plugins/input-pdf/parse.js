@@ -195,7 +195,7 @@ function parseToUnicode(cmapText) {
   return { map, codeBytes };
 }
 
-function fontDecoder(fontDict, resolve, getStream, problems) {
+function fontDecoder(fontDict, resolve, getStream) {
   const font = resolve(fontDict) ?? {};
   const toUni = resolve(font.ToUnicode);
   if (toUni) {
@@ -226,7 +226,7 @@ const mul = (m, n) => [
   m[4] * n[0] + m[5] * n[2] + n[4], m[4] * n[1] + m[5] * n[3] + n[5],
 ];
 
-function extractText(content, fonts, problems, counters) {
+function extractText(content, fonts, counters) {
   const texts = [];
   const lex = new Lexer(content);
   const stack = [];
@@ -389,7 +389,7 @@ export function readPdf(buffer) {
   const pages = pageDicts.map((page) => {
     const fonts = new Map();
     const fontDict = resolve(resolve(page.Resources)?.Font) ?? {};
-    for (const [name, ref] of Object.entries(fontDict)) fonts.set(name, fontDecoder(ref, resolve, getStream, problems));
+    for (const [name, ref] of Object.entries(fontDict)) fonts.set(name, fontDecoder(ref, resolve, getStream));
 
     const content = [resolve(page.Contents) instanceof Array ? resolve(page.Contents) : [page.Contents]]
       .flat().filter(Boolean)
@@ -407,7 +407,7 @@ export function readPdf(buffer) {
       else links.push({ internal: true });
     }
 
-    return { lines: linesOf(extractText(content, fonts, problems, counters)), links };
+    return { lines: linesOf(extractText(content, fonts, counters)), links };
   });
 
   const outline = [];

@@ -1,0 +1,30 @@
+<user-list>
+  <h2>{ title }</h2>
+  <ul>
+    <li each={ user in users }>
+      { user.name }
+      <button onclick={ remove }>remove</button>
+    </li>
+  </ul>
+  <p if={ loading }>Loading…</p>
+  <img src={ logo } alt="logo">
+  <span class="tag { active }">tag</span>
+
+  <script>
+    export default {
+      onMounted() {
+        fetch("/api/users");
+      },
+      remove() {
+        this.trigger("removed");
+      },
+      get title() {
+        return opts.heading;
+      }
+    }
+  </script>
+
+  <style>
+    h2 { color: rebeccapurple; }
+  </style>
+</user-list>

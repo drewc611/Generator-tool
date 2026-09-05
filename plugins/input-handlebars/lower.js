@@ -1,3 +1,5 @@
+import { attrSafe } from "../dsp-ir/text.js";
+
 /**
  * Handlebars, lowered onto the attribute dialect.
  *
@@ -12,7 +14,6 @@
  * were in.
  */
 
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 
 export function lowerHandlebars(source, note = () => {}, resolvePartial = null, depth = 0) {
   let text = String(source ?? "").replace(/\{\{!--[\s\S]*?--\}\}/g, "").replace(/\{\{![\s\S]*?\}\}/g, "");

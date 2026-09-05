@@ -10,8 +10,8 @@ jobs:
     runs-on: windows-latest
     defaults: { run: { shell: bash } }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm test
       - run: npm run demo
@@ -23,14 +23,14 @@ jobs:
       matrix:
         node: [18, 20, 22]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v7
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: '${{ matrix.node }}' }
 
+      # Fixtures are the legacy source the tool reads, not the tool: an Ember
+      # fixture carries decorators Node cannot run, and that is the point of it.
       - name: syntax check every source file
-        run: for f in $(find src plugins test -name '*.js'); do node --check "$f"; done
+        run: for f in $(find src plugins test -name '*.js' -not -path '*/fixtures/*'); do node --check "$f"; done
 
       - name: the core names no framework
         run: |
@@ -65,8 +65,10 @@ jobs:
       # honesty debt is counted and bounded, not merely listed.
       - name: the demo holds offline and under the unverified ceiling
         run: |
+          # 15, not 14: dsp-learn adds one honest unverified item, its learned
+          # archetype reading, which is a proposal for a person to confirm.
           node src/cli.js run --src example/legacy --shots example/screenshots \
-            --out /tmp/gated-demo --offline --max-unverified 14
+            --out /tmp/gated-demo --offline --max-unverified 15
           test -s /tmp/gated-demo/PORT_NOTES.md
 
       # The console is part of the run, not beside it: boot it against the
@@ -408,6 +410,307 @@ jobs:
           diff -r det-a det-b
           rm -rf det-a det-b
 
+      - name: a repeated block lifts into one shared component every target composes
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out comp-out --site true --components true
+          test -d comp-out/src/features/PortJoinTheNewsletter || { echo "the shared component was not extracted"; exit 1; }
+          grep -q "PortJoinTheNewsletter" comp-out/src/features/About/About.jsx || { echo "the page did not compose the component"; exit 1; }
+          if grep -q "Join the newsletter" comp-out/src/features/About/About.jsx; then echo "the repeated markup is still inline"; exit 1; fi
+          node --check comp-out/serve.js
+          rm -rf comp-out
+
+      - name: blocks that share a shape but differ in words are proposed as one with props
+        run: |
+          node src/cli.js run --src test/fixtures/variant-cards --out props-out --site true
+          test -f props-out/PROPS.md || { echo "PROPS.md was not written"; exit 1; }
+          grep -qE "href.{0,3}attribute" props-out/PROPS.md || { echo "the varying href was not proposed as a prop"; exit 1; }
+          if ls props-out/src/features 2>/dev/null | grep -qE "PortShape|PortThe"; then echo "a parameterized proposal was lifted, but it must not be"; exit 1; fi
+          rm -rf props-out
+
+      - name: a Polymer element and a Riot tag port through the unchanged pipeline
+        run: |
+          node src/cli.js run --src test/fixtures/polymer --out poly-out
+          grep -q "user.roles.map(" poly-out/src/features/UserCard/UserCard.jsx || { echo "the dom-repeat did not become a loop"; exit 1; }
+          if grep -qE "\[\[|dom-repeat" poly-out/src/features/UserCard/UserCard.jsx; then echo "Polymer syntax leaked into the port"; exit 1; fi
+          node src/cli.js run --src test/fixtures/riot --out riot-out
+          grep -q "users.map(" riot-out/src/features/UserList/UserList.jsx || { echo "the each did not become a loop"; exit 1; }
+          if grep -qE "each=|onclick=" riot-out/src/features/UserList/UserList.jsx; then echo "Riot syntax leaked into the port"; exit 1; fi
+          rm -rf poly-out riot-out
+
+      - name: the Qwik and Astro targets emit what each framework requires
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out t-out --qwik true --astro true
+          grep -q "component\$((props) =>" t-out/src/qwik/AppOrders/AppOrders.jsx || { echo "qwik component wrapper missing"; exit 1; }
+          grep -q "value={query.value}" t-out/src/qwik/AppOrders/AppOrders.jsx || { echo "qwik signal read missing"; exit 1; }
+          # Every handler prop must carry its $, or Qwik rejects the build.
+          if grep -qE " on(Click|Change|Input|Blur)=\{" t-out/src/qwik/AppOrders/AppOrders.jsx; then echo "a qwik handler lost its \$"; exit 1; fi
+          grep -q 'import AppOrders from "../features/AppOrders/AppOrders.jsx"' t-out/src/astro/AppOrders.astro || { echo "astro island does not import the component"; exit 1; }
+          grep -q "client:load" t-out/src/astro/AppOrders.astro || { echo "astro island is not hydrated"; exit 1; }
+          rm -rf t-out
+
+      - name: the machine facing signals and the trackers are read, values withheld
+        run: |
+          node src/cli.js run --src test/fixtures/seo-site --out m-out
+          grep -q "Organization" m-out/SEO.md || { echo "structured data not read"; exit 1; }
+          grep -q "no <title>" m-out/SEO.md || { echo "an SEO gap was not named"; exit 1; }
+          grep -q "Facebook Pixel" m-out/ANALYTICS.md || { echo "a tracker was not found"; exit 1; }
+          if grep -qE "ABC1234567|123456789012345" m-out/ANALYTICS.md; then echo "a full tracking id was printed"; exit 1; fi
+          rm -rf m-out
+
+      - name: portamp reads what it writes, and the round trip holds
+        run: |
+          node src/cli.js run --src test/fixtures/react-app --out rt-out
+          grep -q "product-card" rt-out/ROUNDTRIP.md || { echo "the React component was not read"; exit 1; }
+          if grep -q "drifted" rt-out/ROUNDTRIP.md; then echo "a React source did not round trip"; exit 1; fi
+          # The example's own screen must round trip without drift.
+          node src/cli.js run --src example/legacy --shots example/screenshots --out rt2-out
+          grep -q "app-orders" rt2-out/ROUNDTRIP.md || { echo "the screen was not round tripped"; exit 1; }
+          if grep -q "drifted" rt2-out/ROUNDTRIP.md; then echo "the emitted React did not read back to its own structure"; exit 1; fi
+          rm -rf rt-out rt2-out
+
+      - name: the asset weight is measured and proposed, never applied
+        run: |
+          node src/cli.js run --src test/fixtures/assets-site --out a-out
+          grep -q "hero.jpg" a-out/IMAGES.md || { echo "an image was not weighed"; exit 1; }
+          grep -q 'loading="lazy"' a-out/IMAGES.md || { echo "a lazy loading proposal was not named"; exit 1; }
+          grep -q "Legacy Serif" a-out/FONTS.md || { echo "a font face was not read"; exit 1; }
+          grep -qiE "woff2|invisible|dropped" a-out/FONTS.md || { echo "a font gap was not named"; exit 1; }
+          rm -rf a-out
+
+      - name: the modes the old app forgot are read, cookie values withheld
+        run: |
+          node src/cli.js run --src test/fixtures/modes-site --out mo-out
+          grep -q "not honoured" mo-out/MOTION.md || { echo "the unstilled motion was not flagged"; exit 1; }
+          grep -qiE "media print|hides chrome" mo-out/PRINT.md || { echo "the print styles were not read"; exit 1; }
+          grep -q "session_id" mo-out/COOKIES.md || { echo "a cookie was not named"; exit 1; }
+          if grep -qE "abc123|xyz789" mo-out/COOKIES.md; then echo "a cookie value was printed"; exit 1; fi
+          rm -rf mo-out
+
+      - name: the meta-frameworks arrange Vue and Svelte, importing not copying
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out mf-out --site true --vue true --nuxt true --svelte true --sveltekit true
+          grep -q "src/features/About/About.vue" mf-out/nuxt/pages/about.vue || { echo "nuxt did not import the emitted Vue"; exit 1; }
+          grep -q "statusCode: 301" mf-out/nuxt/nuxt.config.ts || { echo "nuxt lost the redirect map"; exit 1; }
+          grep -q "src/features/About/About.svelte" mf-out/sveltekit/src/routes/about/+page.svelte || { echo "sveltekit did not import the emitted Svelte"; exit 1; }
+          node --check mf-out/sveltekit/src/hooks.server.js
+          grep -q "throw redirect(301" mf-out/sveltekit/src/hooks.server.js || { echo "sveltekit lost the redirect hook"; exit 1; }
+          rm -rf mf-out
+
+      - name: the port is weighed and drawn, and --max-kb is a real budget
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out sz-out
+          grep -q "Component code:" sz-out/SIZE.md || { echo "the port was not weighed"; exit 1; }
+          grep -q "flowchart LR" sz-out/GRAPH.md || { echo "the graph was not drawn"; exit 1; }
+          rm -rf sz-out
+          # A tenth of a kilobyte cannot hold the components, so the budget fires.
+          if node src/cli.js run --src example/legacy --shots example/screenshots --out sz2-out --max-kb 0.1; then
+            echo "the size budget did not fire"; exit 1
+          fi
+          rm -rf sz2-out
+
+      - name: the port's sharp edges and its third party code are named, values withheld
+        run: |
+          node src/cli.js run --src test/fixtures/security-site --out def-out
+          grep -q "noopener" def-out/SECURITY.md || { echo "the tabnabbing fix was not proposed"; exit 1; }
+          grep -qE "eval|innerHTML|document.write" def-out/SECURITY.md || { echo "a script finding was missed"; exit 1; }
+          grep -q "cdn.jsdelivr.net" def-out/SUPPLYCHAIN.md || { echo "an external dependency was not inventoried"; exit 1; }
+          grep -qi "integrity" def-out/SUPPLYCHAIN.md || { echo "SRI was not reported"; exit 1; }
+          rm -rf def-out
+
+      - name: the port deploys as a container and behind nginx and caddy, redirects carried
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out home-out --site true --dockerfile true --nginx true --caddy true
+          grep -q "serve.js" home-out/Dockerfile || { echo "the Dockerfile does not run serve.js"; exit 1; }
+          if grep -qE "^\s*RUN\s+npm\s+(ci|install)" home-out/Dockerfile; then echo "the image invented an install the port does not need"; exit 1; fi
+          test "$(grep -c 'return 301' home-out/nginx/nginx.conf)" -ge 1 || { echo "nginx lost the redirect map"; exit 1; }
+          grep -q "try_files" home-out/nginx/nginx.conf || { echo "nginx has no SPA fallback"; exit 1; }
+          test "$(grep -cE 'redir \S+ \S+ 301' home-out/caddy/Caddyfile)" -ge 1 || { echo "caddy lost the redirect map"; exit 1; }
+          grep -q "file_server" home-out/caddy/Caddyfile || { echo "caddy does not serve the export"; exit 1; }
+          rm -rf home-out
+
+      - name: the AWS deploy plan is emitted, carries the redirects, and takes no secrets
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out aws-out --site true --aws true
+          test -f aws-out/aws/main.tf || { echo "no terraform plan was written"; exit 1; }
+          node --check aws-out/aws/cloudfront-redirects.js || { echo "the CloudFront function does not parse"; exit 1; }
+          grep -qiE "cloudfront|s3" aws-out/aws/main.tf || { echo "the plan names no S3 or CloudFront"; exit 1; }
+          if grep -rniE "AKIA[0-9A-Z]{12,}|aws_secret_access_key\s*=\s*[\"'][^\"']" aws-out/aws; then echo "the plan leaked a credential"; exit 1; fi
+          rm -rf aws-out
+          node src/cli.js run --src test/fixtures/repeat-site --out noaws-out --site true
+          test -d noaws-out/aws && { echo "the aws plan ran unrequested"; exit 1; }
+          rm -rf noaws-out
+
+      - name: the GCP and Azure deploy plans emit, carry the redirects, and take no secrets
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out gcp-out --site true --gcp true
+          test -f gcp-out/gcp/main.tf || { echo "no gcp terraform plan"; exit 1; }
+          grep -qiE "storage|cdn" gcp-out/gcp/main.tf || { echo "the gcp plan names no storage or CDN"; exit 1; }
+          if grep -rniE "private_key|BEGIN [A-Z ]*PRIVATE KEY|service_account.*key" gcp-out/gcp; then echo "the gcp plan leaked a credential"; exit 1; fi
+          rm -rf gcp-out
+          node src/cli.js run --src test/fixtures/repeat-site --out az-out --site true --azure true
+          test -f az-out/azure/main.tf || { echo "no azure terraform plan"; exit 1; }
+          grep -qiE "storage|front_?door|cdn" az-out/azure/main.tf || { echo "the azure plan names no storage or Front Door"; exit 1; }
+          if grep -rniE "AccountKey=|DefaultEndpointsProtocol=.*AccountKey|SharedAccessSignature" az-out/azure; then echo "the azure plan leaked a connection string"; exit 1; fi
+          rm -rf az-out
+          node src/cli.js run --src test/fixtures/repeat-site --out nocloud-out --site true
+          if [ -d nocloud-out/gcp ] || [ -d nocloud-out/azure ]; then echo "a cloud plan ran unrequested"; exit 1; fi
+          rm -rf nocloud-out
+
+      - name: the Cloudflare, Vercel and Netlify deploy plans emit their redirects and take no secrets
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out host-out --site true --cloudflare true --vercel true --netlify true
+          grep -q "301" host-out/cloudflare/_redirects || { echo "the cloudflare redirects are missing"; exit 1; }
+          grep -q "permanent" host-out/vercel/vercel.json || { echo "the vercel permanent redirects are missing"; exit 1; }
+          node -e "JSON.parse(require('fs').readFileSync('host-out/vercel/vercel.json','utf8'))" || { echo "vercel.json is not valid JSON"; exit 1; }
+          grep -q "301" host-out/netlify/_redirects || { echo "the netlify redirects are missing"; exit 1; }
+          if grep -rniE "CLOUDFLARE_API_TOKEN\s*=\s*[\"'][A-Za-z0-9_-]{20,}|VERCEL_TOKEN\s*=\s*[\"'][A-Za-z0-9]|NETLIFY_AUTH_TOKEN\s*=\s*[\"'][A-Za-z0-9]" host-out; then echo "a host plan leaked a token"; exit 1; fi
+          rm -rf host-out
+          node src/cli.js run --src test/fixtures/repeat-site --out nohost-out --site true
+          if [ -d nohost-out/cloudflare ] || [ -d nohost-out/vercel ] || [ -d nohost-out/netlify ]; then echo "a host plan ran unrequested"; exit 1; fi
+          rm -rf nohost-out
+
+      - name: the debug output and the global pollution are named, not deleted
+        run: |
+          node src/cli.js run --src test/fixtures/debt-site --out cln-out
+          grep -qE "console\.(log|debug|warn)" cln-out/CONSOLE.md || { echo "a console call was missed"; exit 1; }
+          grep -q "debugger" cln-out/CONSOLE.md || { echo "a debugger statement was missed"; exit 1; }
+          grep -qE "APP_CONFIG|trackEvent" cln-out/GLOBALS.md || { echo "a global assignment was missed"; exit 1; }
+          grep -q "wobble" cln-out/GLOBALS.md || { echo "the jQuery plugin was missed"; exit 1; }
+          rm -rf cln-out
+
+      - name: the port carries a type surface and an end to end suite
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out ty-out --types true
+          grep -q "interface AppOrdersProps" ty-out/src/types/props.d.ts || { echo "the prop interface is missing"; exit 1; }
+          if grep -qE ":\s*any\b" ty-out/src/types/props.d.ts; then echo "any leaked into the types"; exit 1; fi
+          grep -q "type ApiPath" ty-out/src/types/api.d.ts || { echo "the endpoint union is missing"; exit 1; }
+          rm -rf ty-out
+          node src/cli.js run --src test/fixtures/repeat-site --out cy-out --site true --cypress true
+          grep -q "cy.visit(" cy-out/cypress/e2e/routes.cy.js || { echo "the route walk is missing"; exit 1; }
+          grep -q "cy.location" cy-out/cypress/e2e/redirects.cy.js || { echo "the redirect assertions are missing"; exit 1; }
+          for f in cy-out/cypress.config.js cy-out/cypress/e2e/*.cy.js; do node --check "$f"; done
+          rm -rf cy-out
+
+      - name: the landmark structure and the unlabelled controls are named
+        run: |
+          node src/cli.js run --src test/fixtures/a11y-site --out a11-out
+          grep -qi "main" a11-out/LANDMARKS.md || { echo "the landmark audit is missing"; exit 1; }
+          grep -qE "username|remember|team" a11-out/LABELS.md || { echo "an unlabelled control was missed"; exit 1; }
+          grep -qi "placeholder" a11-out/LABELS.md || { echo "the placeholder note is missing"; exit 1; }
+          rm -rf a11-out
+
+      - name: what blocks first paint and what is inline are named
+        run: |
+          node src/cli.js run --src test/fixtures/paint-site --out paint-out
+          grep -q "analytics.js" paint-out/RENDER.md || { echo "a blocking script was missed"; exit 1; }
+          grep -qi "import" paint-out/RENDER.md || { echo "the css import was missed"; exit 1; }
+          grep -qiE "CSP|token|theme" paint-out/INLINE.md || { echo "the inline framing is missing"; exit 1; }
+          rm -rf paint-out
+
+      - name: the tangled functions and the magic values are named
+        run: |
+          node src/cli.js run --src test/fixtures/shape-site --out shape-out
+          grep -q "process" shape-out/COMPLEXITY.md || { echo "the tangled function was missed"; exit 1; }
+          grep -qi "approximation" shape-out/COMPLEXITY.md || { echo "the numbers do not say they are approximate"; exit 1; }
+          grep -q "4999" shape-out/MAGIC.md || { echo "a magic threshold was missed"; exit 1; }
+          grep -q "PENDING_REVIEW" shape-out/MAGIC.md || { echo "a magic status string was missed"; exit 1; }
+          rm -rf shape-out
+
+      - name: the module graph and its cycles, and the async to straighten, are named
+        run: |
+          node src/cli.js run --src test/fixtures/wiring-site --out wiring-out
+          grep -qiE "cycle" wiring-out/IMPORTS.md || { echo "the import cycle section is missing"; exit 1; }
+          grep -q "billing.js" wiring-out/IMPORTS.md || { echo "an internal edge was missed"; exit 1; }
+          grep -qiE "callback|promise|await" wiring-out/ASYNC.md || { echo "the async findings are missing"; exit 1; }
+          rm -rf wiring-out
+
+      - name: the transformer runs on request and the codemod moves only what it proves
+        run: |
+          node src/cli.js run --src test/fixtures/codemod-site --out tf-out --transformer true --codemod true
+          test -f tf-out/ATTENTION.md || { echo "the transformer wrote no attention"; exit 1; }
+          grep -qiE "attention|head" tf-out/ATTENTION.md || { echo "the attention drawing is missing"; exit 1; }
+          test -f tf-out/codemod/cart.js || { echo "the codemod wrote no transformed file"; exit 1; }
+          grep -q "import" tf-out/codemod/cart.js || { echo "a require was not lifted to import"; exit 1; }
+          grep -qiE "refus|dynamic" tf-out/CODEMOD.md || { echo "the dynamic require refusal is missing"; exit 1; }
+          rm -rf tf-out
+          node src/cli.js run --src test/fixtures/codemod-site --out plain-out
+          test -f plain-out/ATTENTION.md && { echo "the transformer ran unrequested"; exit 1; }
+          test -d plain-out/codemod && { echo "the codemod ran unrequested"; exit 1; }
+          rm -rf plain-out
+
+      - name: the transformer trains and proves it learned
+        run: |
+          node src/cli.js run --src test/fixtures/codemod-site --out train-out --train true
+          test -f train-out/TRAINING.md || { echo "training wrote no report"; exit 1; }
+          grep -qiE "loss" train-out/TRAINING.md || { echo "the loss curve is missing"; exit 1; }
+          grep -qE "100%" train-out/TRAINING.md || { echo "the learned accuracy is missing"; exit 1; }
+          grep -qiE "the legacy app into react" train-out/TRAINING.md || { echo "the learned sequence is missing"; exit 1; }
+          rm -rf train-out
+          node src/cli.js run --src test/fixtures/codemod-site --out notrain-out
+          test -f notrain-out/TRAINING.md && { echo "training ran unrequested"; exit 1; }
+          rm -rf notrain-out
+
+      - name: the transformer memorizes arithmetic and generalizes an algorithm, honestly
+        run: |
+          node src/cli.js run --src test/fixtures/codemod-site --out math-out --train-math true --train-reverse true
+          test -f math-out/MATH.md || { echo "no math report"; exit 1; }
+          test -f math-out/REVERSE.md || { echo "no reverse report"; exit 1; }
+          grep -qiE "memoriz" math-out/MATH.md || { echo "the math report does not state the memorization honestly"; exit 1; }
+          grep -qiE "generaliz" math-out/REVERSE.md || { echo "the reverse report does not claim generalization"; exit 1; }
+          grep -qiE "held out" math-out/REVERSE.md || { echo "the reverse report has no held out grade"; exit 1; }
+          rm -rf math-out
+          node src/cli.js run --src test/fixtures/codemod-site --out nomath-out
+          if [ -f nomath-out/MATH.md ] || [ -f nomath-out/REVERSE.md ]; then echo "a math task ran unrequested"; exit 1; fi
+          rm -rf nomath-out
+
+      - name: the transformer learns to sort and generalizes, honestly
+        run: |
+          node src/cli.js run --src test/fixtures/codemod-site --out sort-out --train-sort true
+          test -f sort-out/SORT.md || { echo "no sort report"; exit 1; }
+          grep -qiE "held out" sort-out/SORT.md || { echo "the sort report has no held out grade"; exit 1; }
+          grep -qiE "generaliz|partial" sort-out/SORT.md || { echo "the sort report does not state the honest verdict"; exit 1; }
+          rm -rf sort-out
+          node src/cli.js run --src test/fixtures/codemod-site --out nosort-out
+          if [ -f nosort-out/SORT.md ]; then echo "the sort task ran unrequested"; exit 1; fi
+          rm -rf nosort-out
+
+      - name: the multi head model trains and reports whether the heads helped
+        run: |
+          node src/cli.js run --src test/fixtures/codemod-site --out mh-out --train-reverse-mh true
+          test -f mh-out/REVERSE_MULTIHEAD.md || { echo "no multi head report"; exit 1; }
+          grep -qiE "held out" mh-out/REVERSE_MULTIHEAD.md || { echo "the multi head report has no held out grade"; exit 1; }
+          grep -qiE "head" mh-out/REVERSE_MULTIHEAD.md || { echo "the multi head report does not name the heads"; exit 1; }
+          rm -rf mh-out
+          node src/cli.js run --src test/fixtures/codemod-site --out nomh-out
+          if [ -f nomh-out/REVERSE_MULTIHEAD.md ]; then echo "the multi head task ran unrequested"; exit 1; fi
+          rm -rf nomh-out
+
+      - name: the cloud architect refuses to reach the network without live authorization
+        run: |
+          # A billable live call to an external model must be refused by default,
+          # never made silently. --architect without --allow-live must fail the run.
+          if node src/cli.js run --src test/fixtures/codemod-site --out arch-out --architect true; then
+            echo "general-architect reached the network without --allow-live"; exit 1
+          fi
+          test -f arch-out/ARCHITECTURE.md && { echo "it wrote a proposal it was not authorized to fetch"; exit 1; }
+          rm -rf arch-out
+          node src/cli.js run --src test/fixtures/codemod-site --out noarch-out
+          test -f noarch-out/ARCHITECTURE.md && { echo "the architect ran unrequested"; exit 1; }
+          rm -rf noarch-out
+
+      - name: the agent system refuses to reach the network without live authorization
+        run: |
+          # A multi agent RAG pass over a real model is billable and live; it
+          # must be refused by default, not made silently.
+          if node src/cli.js run --src test/fixtures/codemod-site --out agents-out --agents true; then
+            echo "general-agents reached the network without --allow-live"; exit 1
+          fi
+          test -f agents-out/AGENTS.md && { echo "it wrote an agent report it was not authorized to fetch"; exit 1; }
+          rm -rf agents-out
+          node src/cli.js run --src test/fixtures/codemod-site --out noagents-out
+          test -f noagents-out/AGENTS.md && { echo "the agents ran unrequested"; exit 1; }
+          rm -rf noagents-out
+
       - name: the ceiling gate fails a run over it, and only when asked
         run: |
           if node src/cli.js run --src example/legacy --out ceiling-out --max-unverified 0; then
@@ -416,9 +719,460 @@ jobs:
           node src/cli.js run --src example/legacy --out ceiling-out
           rm -rf ceiling-out
 
+      - name: the learned archetype reading lands beside the rule based one, honestly
+        run: |
+          node src/cli.js run --src example/legacy --shots example/screenshots --out learn-out
+          test -f learn-out/LEARNED.md || { echo "no learned report"; exit 1; }
+          grep -qiE "leave one out|held out" learn-out/LEARNED.md || { echo "the learned report has no held out accuracy"; exit 1; }
+          grep -qiE "robustness" learn-out/LEARNED.md || { echo "the learned report has no robustness figure"; exit 1; }
+          grep -qE "ARCHITECTURE\.md" learn-out/LEARNED.md || { echo "the learned report does not point at the rule based reading"; exit 1; }
+          rm -rf learn-out
+
+      - name: a svelte component ports through the shared dialect to react
+        run: |
+          mkdir -p sv-src
+          printf '%s\n' '<script>export let rows = [];</script>' '<ul>{#each rows as r}<li>{r.name}</li>{/each}</ul>' > sv-src/List.svelte
+          node src/cli.js run --src sv-src --out sv-out
+          grep -q "Ported from List.svelte" sv-out/src/features/List/List.jsx || { echo "svelte was not read into a component"; exit 1; }
+          grep -q "rows.map" sv-out/src/features/List/List.jsx || { echo "the each did not become a react map"; exit 1; }
+          rm -rf sv-src sv-out
+
+      - name: a lit component ports through the shared dialect to react
+        run: |
+          mkdir -p lit-src
+          printf '%s\n' 'import { LitElement, html } from "lit";' 'class Cards extends LitElement {' '  static properties = { cards: { type: Array } };' '  render(){ return html`<ul>${this.cards.map((c) => html`<li>${c.name}</li>`)}</ul>`; }' '}' > lit-src/Cards.js
+          node src/cli.js run --src lit-src --out lit-out
+          grep -q "Ported from Cards.js" lit-out/src/features/Cards/Cards.jsx || { echo "lit was not read into a component"; exit 1; }
+          grep -q "cards.map" lit-out/src/features/Cards/Cards.jsx || { echo "the lit map did not become a react map"; exit 1; }
+          rm -rf lit-src lit-out
+
+      - name: an alpine island ports through the shared dialect to react
+        run: |
+          mkdir -p al-src
+          printf '%s\n' '<div x-data="{ items: [] }" id="board">' '  <template x-for="item in items"><li x-text="item"></li></template>' '</div>' > al-src/board.html
+          node src/cli.js run --src al-src --out al-out
+          grep -q "items.map" al-out/src/features/BoardApp/BoardApp.jsx || { echo "the x-for did not become a react map"; exit 1; }
+          rm -rf al-src al-out
+
+      - name: the storage reader names the keys a page uses and never a value
+        run: |
+          mkdir -p store-src
+          printf '%s\n' '<div></div>' '<script>localStorage.setItem("theme", secret); const t = sessionStorage.getItem("csrf");</script>' > store-src/page.html
+          node src/cli.js run --src store-src --out store-out
+          test -f store-out/STORAGE.md || { echo "no storage report"; exit 1; }
+          grep -q "theme" store-out/STORAGE.md || { echo "the storage key was not named"; exit 1; }
+          if grep -q "secret" store-out/STORAGE.md; then echo "a value leaked into the storage report"; exit 1; fi
+          rm -rf store-src store-out
+
+      - name: the timers reader names an uncleared loop
+        run: |
+          mkdir -p timer-src
+          printf '%s\n' 'setInterval(poll, 1000); requestAnimationFrame(frame);' > timer-src/loop.js
+          node src/cli.js run --src timer-src --out timer-out
+          test -f timer-out/TIMERS.md || { echo "no timers report"; exit 1; }
+          grep -q "setInterval" timer-out/TIMERS.md || { echo "the interval was not named"; exit 1; }
+          grep -q "no .clearInterval. in this file" timer-out/TIMERS.md || { echo "the uncleared interval was not flagged"; exit 1; }
+          rm -rf timer-src timer-out
+
+      - name: a stencil component ports through the shared dialect to react
+        run: |
+          mkdir -p st-src
+          printf '%s\n' 'import { Component, Prop, h } from "@stencil/core";' '@Component({ tag: "my-list" })' 'export class MyList {' '  @Prop() rows: any[] = [];' '  render() { return (<ul>{this.rows.map((r) => (<li>{r.name}</li>))}</ul>); }' '}' > st-src/MyList.tsx
+          node src/cli.js run --src st-src --out st-out
+          grep -q "Ported from MyList.tsx" st-out/src/features/MyList/MyList.jsx || { echo "stencil was not read into a component"; exit 1; }
+          grep -q "rows.map" st-out/src/features/MyList/MyList.jsx || { echo "the stencil map did not become a react map"; exit 1; }
+          rm -rf st-src st-out
+
+      - name: the events reader names an unremoved listener
+        run: |
+          mkdir -p ev-src
+          printf '%s\n' '<script>window.addEventListener("resize", onResize);</script>' > ev-src/page.html
+          node src/cli.js run --src ev-src --out ev-out
+          test -f ev-out/EVENTS.md || { echo "no events report"; exit 1; }
+          grep -q "resize" ev-out/EVENTS.md || { echo "the listener was not named"; exit 1; }
+          grep -q "no matching .removeEventListener. in this file" ev-out/EVENTS.md || { echo "the unremoved listener was not flagged"; exit 1; }
+          rm -rf ev-src ev-out
+
+      - name: the observers reader names an undisconnected observer
+        run: |
+          mkdir -p ob-src
+          printf '%s\n' '<script>const io = new IntersectionObserver(onSee); io.observe(el);</script>' > ob-src/page.html
+          node src/cli.js run --src ob-src --out ob-out
+          test -f ob-out/OBSERVERS.md || { echo "no observers report"; exit 1; }
+          grep -q "IntersectionObserver" ob-out/OBSERVERS.md || { echo "the observer was not named"; exit 1; }
+          grep -q "no .disconnect" ob-out/OBSERVERS.md || { echo "the unclosed observer was not flagged"; exit 1; }
+          rm -rf ob-src ob-out
+
+      - name: the focus reader names a positive tabindex
+        run: |
+          mkdir -p fo-src
+          printf '%s\n' '<div tabindex="3">jumps the queue</div>' > fo-src/page.html
+          node src/cli.js run --src fo-src --out fo-out
+          test -f fo-out/FOCUS.md || { echo "no focus report"; exit 1; }
+          grep -q "tabindex 3" fo-out/FOCUS.md || { echo "the positive tabindex was not named"; exit 1; }
+          rm -rf fo-src fo-out
+
+      - name: the media reader names an uncaptioned video
+        run: |
+          mkdir -p me-src
+          printf '%s\n' '<video src="clip.mp4" autoplay></video>' > me-src/page.html
+          node src/cli.js run --src me-src --out me-out
+          test -f me-out/MEDIA.md || { echo "no media report"; exit 1; }
+          grep -q "no captions track" me-out/MEDIA.md || { echo "the uncaptioned video was not flagged"; exit 1; }
+          rm -rf me-src me-out
+
+      - name: the tables reader names an uncaptioned data table
+        run: |
+          mkdir -p ta-src
+          printf '%s\n' '<table><tr><th scope="col">Q</th></tr><tr><td>1</td></tr></table>' > ta-src/page.html
+          node src/cli.js run --src ta-src --out ta-out
+          test -f ta-out/TABLES.md || { echo "no tables report"; exit 1; }
+          grep -q "no caption" ta-out/TABLES.md || { echo "the uncaptioned table was not flagged"; exit 1; }
+          rm -rf ta-src ta-out
+
+      - name: the iframes reader names an untitled iframe
+        run: |
+          mkdir -p if-src
+          printf '%s\n' '<iframe src="https://widget.vendor.com/w"></iframe>' > if-src/page.html
+          node src/cli.js run --src if-src --out if-out
+          test -f if-out/IFRAMES.md || { echo "no iframes report"; exit 1; }
+          grep -q "no title" if-out/IFRAMES.md || { echo "the untitled iframe was not flagged"; exit 1; }
+          rm -rf if-src if-out
+
+      - name: the accessibility scorecard gathers the axes
+        run: |
+          mkdir -p ax-src
+          printf '%s\n' '<video src="clip.mp4"></video><iframe src="https://v.com/x"></iframe>' > ax-src/page.html
+          node src/cli.js run --src ax-src --out ax-out
+          test -f ax-out/ACCESSIBILITY.md || { echo "no accessibility scorecard"; exit 1; }
+          grep -q "item(s) flagged across" ax-out/ACCESSIBILITY.md || { echo "the scorecard did not tally"; exit 1; }
+          rm -rf ax-src ax-out
+
+      - name: the custom-element reader lowers a vanilla component
+        run: |
+          mkdir -p wc-src
+          printf '%s\n' 'class XCard extends HTMLElement { static get observedAttributes(){return ["title"];} connectedCallback(){ this.innerHTML = `<h2>${this.title}</h2>`; } } customElements.define("x-card", XCard);' > wc-src/card.js
+          node src/cli.js run --src wc-src --out wc-out
+          test -d wc-out/src || { echo "no port emitted"; exit 1; }
+          grep -rq "XCard" wc-out/src || { echo "the custom element was not ported"; exit 1; }
+          rm -rf wc-src wc-out
+
+      - name: the security scorecard gathers the concerns
+        run: |
+          mkdir -p sc-src
+          printf '%s\n' '<a href="x" onclick="go()">x</a><script src="https://cdn.example.com/a.js"></script>' > sc-src/page.html
+          node src/cli.js run --src sc-src --out sc-out
+          test -f sc-out/SECURITY_SCORECARD.md || { echo "no security scorecard"; exit 1; }
+          grep -q "item(s) flagged across" sc-out/SECURITY_SCORECARD.md || { echo "the scorecard did not tally"; exit 1; }
+          rm -rf sc-src sc-out
+
+      - name: the performance scorecard gathers the concerns and shows weight
+        run: |
+          mkdir -p pf-src
+          printf '%s\n' '<head><script src="a.js"></script></head><body><img src="hero.jpg"></body>' > pf-src/page.html
+          node src/cli.js run --src pf-src --out pf-out
+          test -f pf-out/PERFORMANCE.md || { echo "no performance scorecard"; exit 1; }
+          grep -q "item(s) flagged across" pf-out/PERFORMANCE.md || { echo "the scorecard did not tally"; exit 1; }
+          grep -q "not summed" pf-out/PERFORMANCE.md || { echo "the port's weight was summed into the items"; exit 1; }
+          rm -rf pf-src pf-out
+
+      - name: publish-check proves the package packs clean, and never publishes
+        run: |
+          node src/cli.js publish-check
+          grep -q '"publish"' plugins/general-publish/index.js && { echo "publish-check must never invoke npm publish"; exit 1; } || true
+
+      - name: --max-security fails a leaky page at zero and passes it under a real ceiling
+        run: |
+          mkdir -p mx-src
+          printf '%s\n' '<a href="x" onclick="go()">x</a><script src="https://cdn.example.com/a.js"></script>' > mx-src/page.html
+          if node src/cli.js run --src mx-src --out mx-out --max-security 0 2>mx-err.txt; then echo "a ceiling of zero did not fail the leaky page"; exit 1; fi
+          grep -q "security item(s) against a ceiling of 0" mx-err.txt || { echo "the failure did not name the ceiling"; exit 1; }
+          rm -rf mx-out
+          node src/cli.js run --src mx-src --out mx-out --max-security 99 || { echo "a real ceiling failed a page under it"; exit 1; }
+          rm -rf mx-src mx-out mx-err.txt
+
+      - name: --max-perf fails a heavy page at zero and passes it under a real ceiling
+        run: |
+          mkdir -p mp-src
+          printf '%s\n' '<html><head><script src="a.js"></script></head><body><img src="hero.jpg"></body></html>' > mp-src/page.html
+          if node src/cli.js run --src mp-src --out mp-out --max-perf 0 2>mp-err.txt; then echo "a ceiling of zero did not fail the heavy page"; exit 1; fi
+          grep -q "performance item(s) against a ceiling of 0" mp-err.txt || { echo "the failure did not name the ceiling"; exit 1; }
+          rm -rf mp-out
+          node src/cli.js run --src mp-src --out mp-out --max-perf 99 || { echo "a real ceiling failed a page under it"; exit 1; }
+          rm -rf mp-src mp-out mp-err.txt
+
+      - name: the lifecycle scorecard gathers the teardown axes
+        run: |
+          mkdir -p lc-src
+          printf '%s\n' 'window.addEventListener("resize", onResize); setInterval(tick, 1000);' > lc-src/widget.js
+          node src/cli.js run --src lc-src --out lc-out
+          test -f lc-out/LIFECYCLE_SCORECARD.md || { echo "no lifecycle scorecard"; exit 1; }
+          grep -q "leak(s) flagged across" lc-out/LIFECYCLE_SCORECARD.md || { echo "the scorecard did not tally"; exit 1; }
+          rm -rf lc-src lc-out
+
+      - name: --max-leaks fails a leaky script at zero and passes it under a real ceiling
+        run: |
+          mkdir -p ml-src
+          printf '%s\n' 'window.addEventListener("resize", onResize); setInterval(tick, 1000); const io = new IntersectionObserver(onSee);' > ml-src/widget.js
+          if node src/cli.js run --src ml-src --out ml-out --max-leaks 0 2>ml-err.txt; then echo "a ceiling of zero did not fail the leaky script"; exit 1; fi
+          grep -q "leak(s) against a ceiling of 0" ml-err.txt || { echo "the failure did not name the ceiling"; exit 1; }
+          rm -rf ml-out
+          node src/cli.js run --src ml-src --out ml-out --max-leaks 99 || { echo "a real ceiling failed a script under it"; exit 1; }
+          rm -rf ml-src ml-out ml-err.txt
+
+      - name: the eleventy target arranges the site with its redirects
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out el-out --site true --eleventy true
+          test -f el-out/eleventy/_includes/layout.njk || { echo "no eleventy layout"; exit 1; }
+          test -f el-out/eleventy/pages/about.njk || { echo "no eleventy page"; exit 1; }
+          grep -q "{% raw %}" el-out/eleventy/pages/about.njk || { echo "the ported markup is not wrapped in raw"; exit 1; }
+          grep -q "301" el-out/eleventy/pages/_redirects.njk || { echo "eleventy lost the redirect map"; exit 1; }
+          rm -rf el-out
+
+      - name: the ember reader ports a component and hands plain handlebars to its own reader
+        run: |
+          node src/cli.js run --src test/fixtures/ember --out em-out
+          test -f em-out/src/features/UserCard/UserCard.jsx || { echo "the Ember component was not ported"; exit 1; }
+          test -f em-out/src/features/Plain/Plain.jsx || { echo "the plain .hbs template was not ported"; exit 1; }
+          grep -q "ng-repeat" em-out/src/features/UserCard/UserCard.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          rm -rf em-out
+
+      - name: the env reader names every key and repeats no value
+        run: |
+          node src/cli.js run --src test/fixtures/env-app --out en-out
+          test -f en-out/ENV.md || { echo "no ENV.md"; exit 1; }
+          test -f en-out/.env.example || { echo "no .env.example"; exit 1; }
+          grep -q "^VITE_SENTRY_DSN=$" en-out/.env.example || { echo "the undeclared key is missing or carries a value"; exit 1; }
+          grep -rq "localhost:9999" en-out && { echo "a value from the live .env leaked into the port"; exit 1; } || true
+          rm -rf en-out
+
+      - name: the dependency reader dates a library by what its project published
+        run: |
+          node src/cli.js run --src test/fixtures/deps-app --out dp-out
+          test -f dp-out/DEPENDENCIES.md || { echo "no DEPENDENCIES.md"; exit 1; }
+          grep -q "end of life since 2021-12-31" dp-out/DEPENDENCIES.md || { echo "AngularJS was not dated"; exit 1; }
+          grep -q "not assessed" dp-out/DEPENDENCIES.md || { echo "an unknown library was not marked not assessed"; exit 1; }
+          rm -rf dp-out
+
+      - name: the mithril reader walks hyperscript onto React, with the child event wired
+        run: |
+          node src/cli.js run --src test/fixtures/mithril --out mi-out
+          test -f mi-out/src/features/OrderList/OrderList.jsx || { echo "the Mithril component was not ported"; exit 1; }
+          grep -q "onClear={() => onClear(order)}" mi-out/src/features/OrderList/OrderList.jsx || { echo "the child component's event was not wired"; exit 1; }
+          grep -q "ng-" mi-out/src/features/OrderList/OrderList.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          rm -rf mi-out
+
+      - name: the platform reader names a removed API and what replaced it
+        run: |
+          node src/cli.js run --src test/fixtures/platform-app --out pf-out
+          test -f pf-out/PLATFORM.md || { echo "no PLATFORM.md"; exit 1; }
+          grep -q "Web SQL (openDatabase)" pf-out/PLATFORM.md || { echo "Web SQL was not named"; exit 1; }
+          grep -q "IndexedDB" pf-out/PLATFORM.md || { echo "the replacement was not named"; exit 1; }
+          rm -rf pf-out
+
+      - name: the marko reader lowers control tags and bare bindings onto React
+        run: |
+          node src/cli.js run --src test/fixtures/marko --out mk-out
+          test -f mk-out/src/features/UserCard/UserCard.jsx || { echo "the Marko component was not ported"; exit 1; }
+          grep -q "onClear=" mk-out/src/features/UserCard/UserCard.jsx || { echo "the child component's event was not wired"; exit 1; }
+          grep -q "ng-" mk-out/src/features/UserCard/UserCard.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          rm -rf mk-out
+
+      - name: the liquid reader wraps a template in its layout and inlines its sections
+        run: |
+          node src/cli.js run --src test/fixtures/liquid --out lq-out
+          test -f lq-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the Liquid template was not ported"; exit 1; }
+          grep -q "<header" lq-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the layout's header section was not composed in"; exit 1; }
+          grep -qE "ng-|\{%" lq-out/src/features/TemplatesProduct/TemplatesProduct.jsx && { echo "the dialect or a liquid tag leaked into the React output"; exit 1; } || true
+          rm -rf lq-out
+
+      - name: the DOM reader measures a wide and a deep page against the published thresholds
+        run: |
+          node src/cli.js run --src test/fixtures/dom-site --out dm-out
+          test -f dm-out/DOM.md || { echo "no DOM.md"; exit 1; }
+          grep -q "over 60" dm-out/DOM.md || { echo "the wide parent was not flagged"; exit 1; }
+          grep -q "over 32" dm-out/DOM.md || { echo "the deep nest was not flagged"; exit 1; }
+          grep -q "DOM size" dm-out/PERFORMANCE.md || { echo "the scorecard has no DOM axis"; exit 1; }
+          rm -rf dm-out
+
+      - name: the playwright suite walks the routes and starts the port's own server
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out pw-out --site true --playwright true
+          grep -q "page.goto(" pw-out/tests/e2e/routes.spec.js || { echo "the route walk is missing"; exit 1; }
+          grep -q "toHaveURL" pw-out/tests/e2e/redirects.spec.js || { echo "the redirect assertions are missing"; exit 1; }
+          grep -q "npm run serve" pw-out/playwright.config.js || { echo "the config does not start the port's server"; exit 1; }
+          for f in pw-out/playwright.config.js pw-out/tests/e2e/*.spec.js; do node --check "$f"; done
+          rm -rf pw-out
+
+      - name: the twig reader composes a page into its layout through the jinja lowering
+        run: |
+          node src/cli.js run --src test/fixtures/twig --out tw-out
+          test -f tw-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the Twig template was not ported"; exit 1; }
+          grep -q "<nav" tw-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the layout's include was not composed in"; exit 1; }
+          grep -qE "ng-|\{%" tw-out/src/features/TemplatesProduct/TemplatesProduct.jsx && { echo "the dialect or a twig tag leaked into the React output"; exit 1; } || true
+          rm -rf tw-out
+
+      - name: the django reader rides the jinja lowering, composes the page into its base and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/django --out dj-out
+          test -f dj-out/src/features/ShopDetail/ShopDetail.jsx || { echo "the Django page was not ported"; exit 1; }
+          grep -q "<nav" dj-out/src/features/ShopDetail/ShopDetail.jsx || { echo "the base's nav include was not composed in"; exit 1; }
+          grep -qE "\{%|forloop|ng-" dj-out/src/features/ShopDetail/ShopDetail.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          grep -q "composed into screens as a layout or partial | 1" dj-out/READERS.md || { echo "the base was not counted as composed"; exit 1; }
+          rm -rf dj-out
+
+      - name: the ejs reader rides the underscore lowering, composes the page into layout.ejs and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/ejs --out ej-out
+          test -f ej-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the EJS page was not ported"; exit 1; }
+          grep -q "<nav" ej-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the layout's nav include was not composed in"; exit 1; }
+          # The page deliberately carries the literal "<%= this %>" an author wrote as <%%= this %%>; a leak is a tag with code in it.
+          grep -qE "forEach|include\(|ng-|<%[-=_#]?\s*(if\b|for\b|\}|product|related|section|csrfToken)" ej-out/src/features/ProductsShow/ProductsShow.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          grep -q "composed into screens as a layout or partial | 1" ej-out/READERS.md || { echo "the layout was not counted as composed"; exit 1; }
+          rm -rf ej-out
+
+      - name: the xslt reader lowers a stylesheet onto React with the document as its input
+        run: |
+          node src/cli.js run --src test/fixtures/xslt --out xs-out
+          test -f xs-out/src/features/Catalog/Catalog.jsx || { echo "the stylesheet was not ported"; exit 1; }
+          grep -q "data.catalog.item.map(" xs-out/src/features/Catalog/Catalog.jsx || { echo "the for-each did not become a loop"; exit 1; }
+          grep -qE "ng-|xsl:" xs-out/src/features/Catalog/Catalog.jsx && { echo "the dialect or xsl leaked into the React output"; exit 1; } || true
+          rm -rf xs-out
+
+      - name: the blade reader composes a view into its layout and ports it once
+        run: |
+          node src/cli.js run --src test/fixtures/blade --out bl-out
+          test -f bl-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the Blade view was not ported"; exit 1; }
+          grep -q "<nav" bl-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the layout's partial was not composed in"; exit 1; }
+          grep -qE "ng-|@endsection|@csrf" bl-out/src/features/ProductsShow/ProductsShow.jsx && { echo "the dialect or a directive leaked into the React output"; exit 1; } || true
+          rm -rf bl-out
+
+      - name: the readers census credits each reader and names unclaimed markup
+        run: |
+          node src/cli.js run --src test/fixtures/ember --out rd-out
+          test -f rd-out/READERS.md || { echo "no READERS.md"; exit 1; }
+          grep -q "by ember" rd-out/READERS.md || { echo "the ember reader was not credited"; exit 1; }
+          grep -q "by handlebars" rd-out/READERS.md || { echo "the handlebars reader was not credited"; exit 1; }
+          rm -rf rd-out
+
+      - name: one page in twelve server dialects is one React component, provenance aside
+        run: |
+          for d in jinja twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl django ejs nunjucks; do
+            node src/cli.js run --src test/fixtures/dialects/$d --out dl-$d >/dev/null
+            grep -vE "Ported from|Template translated from" dl-$d/src/features/Product/Product.jsx > dl-$d.jsx
+          done
+          for d in twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl django ejs nunjucks; do
+            cmp dl-jinja.jsx dl-$d.jsx || { echo "the $d port of the same page differs from the jinja port"; exit 1; }
+          done
+          rm -rf dl-jinja dl-twig dl-liquid dl-blade dl-freemarker dl-velocity dl-thymeleaf dl-smarty dl-jsp dl-cfml dl-haml dl-slim dl-twirl dl-django dl-ejs dl-nunjucks dl-*.jsx
+
+      - name: the keyboard reader names a click target the keyboard cannot reach
+        run: |
+          node src/cli.js run --src test/fixtures/keyboard-site --out kb-out
+          test -f kb-out/KEYBOARD.md || { echo "no KEYBOARD.md"; exit 1; }
+          grep -q "lacks tabindex, role, key handler" kb-out/KEYBOARD.md || { echo "the div with a click was not named"; exit 1; }
+          grep -q "open(1)" kb-out/KEYBOARD.md && { echo "handler code leaked into the report"; exit 1; } || true
+          rm -rf kb-out
+
+      - name: the razor reader composes a view into the layout _ViewStart names and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/razor --out rz-out
+          test -f rz-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the Razor view was not ported"; exit 1; }
+          grep -q "<nav" rz-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the layout's partial was not composed in"; exit 1; }
+          grep -qE "ng-|@Model|RenderBody" rz-out/src/features/ProductsShow/ProductsShow.jsx && { echo "the dialect or razor leaked into the React output"; exit 1; } || true
+          rm -rf rz-out
+
+      - name: the freemarker reader inlines an include, expands a macro and ports the template
+        run: |
+          node src/cli.js run --src test/fixtures/freemarker --out fm-out
+          test -f fm-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the FreeMarker template was not ported"; exit 1; }
+          grep -q "<nav" fm-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the include was not inlined"; exit 1; }
+          grep -qE "ng-|<#" fm-out/src/features/TemplatesProduct/TemplatesProduct.jsx && { echo "the dialect or a directive leaked into the React output"; exit 1; } || true
+          rm -rf fm-out
+
+      - name: the velocity reader composes a page into its layout, inlines the parse and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/velocity --out vm-out
+          test -f vm-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the Velocity template was not ported"; exit 1; }
+          grep -q "<nav" vm-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the layout's parse was not composed in"; exit 1; }
+          grep -qE "ng-|#end|#if" vm-out/src/features/TemplatesProduct/TemplatesProduct.jsx && { echo "the dialect or a directive leaked into the React output"; exit 1; } || true
+          rm -rf vm-out
+
+      - name: the pug reader composes a view into the layout it extends and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/pug --out pg-out
+          test -f pg-out/src/features/Product/Product.jsx || { echo "the Pug template was not ported"; exit 1; }
+          grep -q "<nav" pg-out/src/features/Product/Product.jsx || { echo "the layout's include was not composed in"; exit 1; }
+          grep -qE "ng-|#\{" pg-out/src/features/Product/Product.jsx && { echo "the dialect or an interpolation leaked into the React output"; exit 1; } || true
+          rm -rf pg-out
+
+      - name: the thymeleaf reader composes a page into its layout and fragments and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/thymeleaf --out th-out
+          test -f th-out/src/features/Product/Product.jsx || { echo "the Thymeleaf template was not ported"; exit 1; }
+          grep -q "<nav" th-out/src/features/Product/Product.jsx || { echo "the layout's fragment was not composed in"; exit 1; }
+          grep -q "Layout default content" th-out/src/features/Product/Product.jsx && { echo "the layout's default content survived the decoration"; exit 1; } || true
+          grep -qE "ng-|th:|\[\[" th-out/src/features/Product/Product.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          grep -q "track(" th-out/src/features/Product/Product.jsx && { echo "a th:onclick script leaked into the port"; exit 1; } || true
+          rm -rf th-out
+
+      - name: the smarty reader composes a template into the layout it extends and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/smarty --out sm-out
+          test -f sm-out/src/features/Product/Product.jsx || { echo "the Smarty template was not ported"; exit 1; }
+          grep -q "<nav" sm-out/src/features/Product/Product.jsx || { echo "the layout's include was not composed in"; exit 1; }
+          grep -qE "ng-|\{if |\{foreach |\{/|\{\\$[a-z]+\." sm-out/src/features/Product/Product.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          rm -rf sm-out
+
+      - name: the jsp reader composes a page with its includes and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/jsp --out jp-out
+          test -f jp-out/src/features/Product/Product.jsx || { echo "the JSP page was not ported"; exit 1; }
+          grep -q "<nav" jp-out/src/features/Product/Product.jsx || { echo "the dynamic include was not composed in"; exit 1; }
+          grep -qE "ng-|<c:|<fmt:|<%" jp-out/src/features/Product/Product.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          grep -q "visits = 1" jp-out/src/features/Product/Product.jsx && { echo "a scriptlet leaked into the port"; exit 1; } || true
+          rm -rf jp-out
+
+      - name: the cfml reader composes a page with its include and ports it, the query named and never carried
+        run: |
+          node src/cli.js run --src test/fixtures/cfml --out cf-out
+          test -f cf-out/src/features/Product/Product.jsx || { echo "the ColdFusion page was not ported"; exit 1; }
+          grep -q "<nav" cf-out/src/features/Product/Product.jsx || { echo "the include was not composed in"; exit 1; }
+          grep -qE "ng-|<cf|SELECT body" cf-out/src/features/Product/Product.jsx && { echo "the dialect or the SQL leaked into the React output"; exit 1; } || true
+          grep -q "ran SQL on the server" cf-out/PORT_NOTES.md || { echo "the query was not named"; exit 1; }
+          rm -rf cf-out
+
+      - name: the haml reader composes a page into its layout with its partial and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/haml --out hm-out
+          test -f hm-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the Haml page was not ported"; exit 1; }
+          grep -q "<nav" hm-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the layout's partial was not composed in"; exit 1; }
+          grep -qE "ng-|%h1|#\{" hm-out/src/features/ProductsShow/ProductsShow.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          grep -q 'track("view")' hm-out/src/features/ProductsShow/ProductsShow.jsx && { echo "a javascript filter leaked into the port"; exit 1; } || true
+          rm -rf hm-out
+
+      - name: the slim reader rides the haml lowering, composes the page into its layout and ports it
+        run: |
+          node src/cli.js run --src test/fixtures/slim --out sl-out
+          test -f sl-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the Slim page was not ported"; exit 1; }
+          grep -q "<nav" sl-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the layout's partial was not composed in"; exit 1; }
+          grep -qE "ng-|#\{" sl-out/src/features/ProductsShow/ProductsShow.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          grep -q 'track("view")' sl-out/src/features/ProductsShow/ProductsShow.jsx && { echo "an embedded engine leaked into the port"; exit 1; } || true
+          rm -rf sl-out
+
+      - name: the twirl reader applies the layout as a call, inlines the partials and ports the page
+        run: |
+          node src/cli.js run --src test/fixtures/twirl --out tw-out
+          test -f tw-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the Twirl page was not ported"; exit 1; }
+          grep -q "<nav" tw-out/src/features/ProductsShow/ProductsShow.jsx || { echo "the layout's nav partial was not composed in"; exit 1; }
+          grep -qE "@(if|for|main|import|helper|messages)\b|\.getOrElse \{|ng-" tw-out/src/features/ProductsShow/ProductsShow.jsx && { echo "the dialect leaked into the React output"; exit 1; } || true
+          grep -q "product.description != null" tw-out/src/features/ProductsShow/ProductsShow.jsx || { echo ".map with .getOrElse was not read as a presence test"; exit 1; }
+          grep -q "composed into screens as a layout or partial | 1" tw-out/READERS.md || { echo "the layout was not counted as composed"; exit 1; }
+          rm -rf tw-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "411" ]; then
-            echo "ROADMAP.md holds $count entries and claims 411"; exit 1
+          if [ "$count" != "625" ]; then
+            echo "ROADMAP.md holds $count entries and claims 625"; exit 1
           fi

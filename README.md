@@ -7,8 +7,16 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 86 plugins, and the literal output of
+lines of core, no runtime dependencies, 181 plugins, and the literal output of
 `npm run demo`.</sub>
+
+![node --test running the portamp suite: 928 passing, 929 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the Ember, Mithril, Marko, Liquid, Twig and XSLT readers](media/test-run.png)
+
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 928
+tests pass across 123 test files with `node --test` and no framework, and
+CodeQL's javascript-security-extended query finds nothing. CI reruns the same
+suite on Node 18, 20 and 22 and on Windows, and asserts the same screen written
+in two dialects emits byte identical output across all four targets.</sub>
 
 ## Why it looks like that
 
@@ -26,9 +34,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 86 plugin(s)
+node src/cli.js plugins      # 181 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 494 tests, node --test, no framework
+npm test                     # 929 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -42,13 +50,13 @@ plan      3 distinct endpoint(s)
 emit      1 token pair(s) under AA, 0 of them badly
           1 component(s) emitted, 1 template(s) translated
           states suite written; it reads the emitted components back
-verify    parity report written, 11 item(s) unverified
+verify    parity report written, 14 item(s) unverified
 
-done  28 file(s) written to ./out
-      11 item(s) could not be verified, see PORT_NOTES.md
+done  34 file(s) written to ./out
+      14 item(s) could not be verified, see PORT_NOTES.md
 ```
 
-Eleven unverified items on a tiny example is the tool working, not failing.
+Fourteen unverified items on a tiny example is the tool working, not failing.
 Each one is a thing it declined to guess.
 
 ## The size of it
@@ -60,9 +68,9 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 19,886 lines of JavaScript |
-| Tests | 5,743 lines, 494 cases |
-| Source on disk | src 44 KB, plugins 1.4 MB |
+| Every line of the tool | 41,293 lines of JavaScript in src and plugins |
+| Tests | 13,641 lines, 929 cases across 123 files |
+| Source on disk | src 27 KB, plugins 1.9 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
@@ -71,11 +79,12 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across three hundred features, and every
+The core grew from 527 lines to 718 across six hundred and twenty five features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
-holds this table to the real numbers so the claim cannot quietly rot.
+holds this table to the real numbers, the volatile rows to within three
+percent, so the claim cannot quietly rot.
 
 The artwork in this README lives in `media/`, which is deliberately outside the
 `files` list in `package.json`. Pictures are for the repository. They have no
@@ -111,9 +120,138 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The ten it ships with
+## The 181 it ships with
 
-![The plugin rack: 86 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 181 plugins listed by class, with what each one does](media/plugin-rack.svg)
+
+## Yes, there is a transformer in it
+
+Two of them, in fact, because the word means two things and both fit the rule
+that everything interesting lives in a plugin the core cannot name.
+
+`vis-transformer` is the neural network kind: a real self attention forward
+pass in pure JavaScript, no dependency. Token embeddings, sinusoidal positions,
+multi head scaled dot product attention, softmax, residual and layernorm, a
+feed forward block. The softmax, the layernorm and the attention are held to
+known answer values by test, the weights are seeded so two runs are byte
+identical, and it runs over a fixed declared sentence, so it makes no claim
+about your app. Run it with `--transformer true` and it draws its attention:
+
+![vis-transformer: four heads of self attention over a fixed sentence, drawn as heatmaps, every row summing to one](media/transformer.png)
+
+The weights are untrained here, which is exactly why the attention is near
+uniform. That is the honest picture of an untrained transformer, and it is the
+point: the blind core loaded a transformer the same way it loads every plugin,
+and still has no idea what one is.
+
+And then it learns. Run it with `--train true` and the backward pass, its
+gradients proven correct against a numerical check, drives gradient descent on
+a next token task until the loss falls from about two to a thousandth and every
+position's top logit is its target:
+
+![vis-transformer trained: the cross entropy loss falling to near zero over 800 steps and a table showing it predicts the legacy app into react exactly](media/training.png)
+
+It overfits one fixed sequence on purpose, so it is a proof the training loop is
+correct, not a general language model, and it says so. The gradient check, a max
+relative error under a thousandth between the analytic and numerical gradients,
+is what makes "it learned" a fact rather than a hope. Around twenty four hundred
+parameters, learning to continue `port` into `the legacy app into react`.
+
+And it does more than memorize one sequence. The honest question for a model
+this size is not whether the loss falls but whether it learned a rule or just
+the examples, so it is graded on a held out split it never trained on. Run
+`--train-reverse true` and `--train-math true`:
+
+![vis-transformer graded on held out data: sequence reversal generalizes to 91% on sequences it never saw, addition modulo 7 memorizes the training table but scores 0% held out](media/transformer-learns.png)
+
+Sequence reversal is a rule about positions, not tokens, so the block learns it
+from some sequences and applies it to ones it never saw: `91%` held out against
+a `0.8%` guess. That is genuine generalization, an algorithm rather than a
+table. Addition modulo 7 is the honest counterexample: it fits the training
+table perfectly and scores at chance on held out pairs, because generalizing
+modular addition needs a longer regime than a demo this size runs. Both numbers
+are measured on held out data and REVERSE.md and MATH.md state them plainly,
+the win and the limit alike, because a held out number quietly rounded up is
+the one lie this tool exists to refuse.
+
+Sorting is the harder rule, because it must preserve how many of each duplicate
+a sequence carries rather than move fixed positions. Run `--train-sort true` and
+the block fits the training sequences completely and sorts held out ones it
+never saw:
+
+![vis-transformer learning to reverse and to sort: two loss curves falling to near zero, and held out accuracy of 89% for reversal and 96% for sort, each hundreds of times above the chance a guess would score](media/generalization.png)
+
+Sort reaches `96%` held out against a `0.39%` guess, so the block learned to
+sort sequences it never trained on rather than memorize the table, its
+gradients checked to under a thousandth like every other path. It is still a
+roughly twenty four hundred parameter one block model, not a general reasoner,
+but reversal and sort are two algorithms it genuinely learned and applied to
+inputs it had never seen.
+
+`output-codemod` is the other kind, a code transformer: it lifts CommonJS to ES
+modules, performing only the rewrites it can prove from the shape of the line
+and refusing the rest, a dynamic `require` left verbatim and named in
+CODEMOD.md rather than guessed. Run it with `--codemod true`.
+
+## Deploy the port to any of six clouds
+
+The site engine already writes a full application and a zero dependency server.
+Six output targets turn that same site model into infrastructure as code, each a
+deterministic plan the user reviews and applies with their own credentials. None
+of them takes a secret; taking a credential is what the secret gate refuses.
+
+| target | hosting | the 301 map becomes | you apply with | flag |
+| --- | --- | --- | --- | --- |
+| AWS | S3 + CloudFront | a CloudFront function | the `aws` CLI | `--aws true` |
+| Google Cloud | Cloud Storage + Cloud CDN | URL map redirect rules | `gcloud` / `gsutil` | `--gcp true` |
+| Azure | Storage static site + Front Door | Front Door rules | the `az` CLI | `--azure true` |
+| Cloudflare | Pages | a `_redirects` file | `wrangler` | `--cloudflare true` |
+| Vercel | Vercel | `vercel.json` redirects | the `vercel` CLI | `--vercel true` |
+| Netlify | Netlify | a `_redirects` file | the `netlify` CLI | `--netlify true` |
+
+Each emits the host's own config, a deploy script that reads your own configured
+credentials from the environment, the flattened redirect map so every retired
+address keeps answering, and a README that names DNS, the certificate and the
+account's own specifics as yours to fill in rather than guessing them. It knows
+how to architect the hosting because the rules are written and tested, not
+learned.
+
+## Ask a real model for the architecture, securely
+
+The six targets above are rules portamp wrote. When the design question is
+harder than rules, `general-architect` asks a genuine frontier model through the
+Anthropic API to propose an architecture for the app the run just read, built
+from its real endpoints and routes. It is honest about what it is: the answer is
+the external model's, not portamp's own transformer, and `ARCHITECTURE.md` marks
+every word of it unverified, a proposal a human architect must prove.
+
+It never asks you to hand over a key. The key lives only in your own
+environment; portamp reads it at the moment of the call and never prints, stores
+or commits it. The call is a live, billable one, so it is refused by default and
+runs only when you open both gates and attest who you are calling:
+
+```bash
+export ANTHROPIC_API_KEY=...           # stays in your shell; portamp never sees it leave
+node src/cli.js run --src ./app --out ./port \
+  --architect true --allow-live true --allow-billable true \
+  --architect-ask "Design this for 50k daily users on AWS, and note the GCP and Azure differences."
+```
+
+Without `--allow-live` the run refuses rather than reaching the network, the
+same refusal every live plugin gives. portamp's own transformer cannot design a
+system and does not pretend to; this is the honest bridge to a model that can.
+
+When one opinion is not enough, `general-agents` runs a small system of agents
+over the port's own reports. It is retrieval augmented: a dependency free BM25
+style ranker pulls the passages relevant to a question from the reports the run
+already wrote (that is the retrieval, over the tool's own words, no vector
+database), and hands each to a specialised agent, an architect, a security
+reviewer, a cost analyst and a reliability engineer, each a call to a real
+model with its own role. A synthesiser agent reconciles them into one
+recommendation. `AGENTS.md` shows which report fed each agent, so the retrieval
+is auditable, and marks the whole thing unverified. Same gates, same key
+handling as above; run it with `--agents true --allow-live true --allow-billable
+true`.
 
 ## What a translation looks like
 
@@ -202,10 +340,16 @@ framework at all needed nothing upstream to change.
 
 ## It reads what your decade actually shipped
 
-Angular, AngularJS, Vue, Knockout, Backbone, jQuery, a facelets tree, a
-WebForms tree, an OpenAPI document, or a running app with no source at all.
-Each reader turns its world into the same middle, which is why the emitters
-never learned any of their names.
+Angular, AngularJS, Vue, Svelte, Lit, Alpine, Knockout, Backbone, jQuery,
+Polymer, Riot, React, a facelets tree, a WebForms tree, an OpenAPI document, or
+a running app with no source at all. Each reader turns its world into the same middle,
+which is why the emitters never learned any of their names. Svelte's `{#each}`
+and `{#if}` blocks become transparent containers the middle sees through, its
+`on:event` an event and its `bind:value` a two way model; Lit's `html` template
+comes across the same way, `@event` an event, `?disabled` a directive, `.value`
+a model and `${list.map(...)}` a loop, so a Lit component reads back into the
+same middle it was emitted from. A screen ports on to React or Vue with nothing
+target specific added.
 
 And it writes this decade back out: React, Vue, Svelte, modern Angular with
 the block syntax, Lit, or a custom element that depends on nothing, plus the
@@ -274,6 +418,44 @@ counted, never faked: an encrypted file is refused by name, an exotic
 stream filter is skipped and said, and a glyph with no text mapping is a
 number in `DOCS.md`, not a lookalike character.
 
+## The port stops repeating itself
+
+Every emitter writes one component per screen, so a block three pages
+carried verbatim becomes three copies of the same code. `dsp-components`
+finds those repeats — block-level fragments that recur byte for byte across
+two or more screens, found by counting each tag's own opens and closes so a
+nested block never ends its parent early — and with `--components true`
+lifts each static one into a single shared component the pages compose from:
+
+```bash
+node src/cli.js run --src ./site --out ./port --site true --components true
+```
+
+The extraction is framework blind by construction, not by a special case.
+It adds the shared block to the run as a component and rewrites the pages to
+name it; every target already resolves a tag naming another screen to that
+component, so React, Vue, Svelte and the custom element all pick up
+`<PortJoinTheNewsletter />` with nothing target-specific added — the whole
+thesis of the tool, demonstrated by a feature that touched no printer.
+
+It performs only the safe case. A repeat that binds or interpolates reads
+screen-local state a shared component would not have, so parameterizing it
+is a guess about what varies; those are named in `COMPONENTS.md` and left
+for a person, exactly like every other proposal the tool declines to
+perform. Nested repeats collapse to the largest, two runs write byte-
+identical components, and the catalog is written flag or no flag, because
+knowing the repeats exist is worth as much as removing them.
+
+The commoner repeat is not byte identical, though: two cards or two rows
+with the same structure and different words. `dsp-props` finds those. It
+reduces each block to its skeleton — the markup with every text and
+attribute value blanked to a marker — groups the blocks that share a
+skeleton across screens, and where the blanked slots disagree names each
+disagreeing slot as a prop with the values it observed. A shape whose every
+slot agrees is an exact repeat and left to `dsp-components`; the rest land
+in `PROPS.md` as parameterized proposals, named and never lifted, because
+which slots are allowed to vary is a decision about the product.
+
 ## On your desk and in your pocket
 
 The console is an installable app now, in both senses that actually make sense
@@ -324,6 +506,27 @@ Matched 3 of 4 signals, 75%.
 
 When two readings land within twenty points the report says so and sets out
 both, rather than picking one and sounding certain.
+
+`dsp-learn` reads the same screen a second way, with a model instead of rules. It
+turns each screen into a vector of the features the rules already trust and trains
+a nearest prototype classifier on twenty two labelled archetype miniatures, two per
+class, so a new screen is placed by its nearest exemplar in a standardization
+learned from the corpus rather than by which rules happened to fire. `LEARNED.md`
+ranks every archetype by distance with a softmax confidence, and reports a real
+held out number: two exemplars per class make a leave one out cross validation
+defined, so it leaves each out in turn, retrains on the rest, and scores whether
+it gets the unseen one right, naming the ones it missed and keeping the robustness
+curve beside it.
+
+```
+[dsp-learn] learned reading: crud-table (18%), leave one out 95% over 22 exemplars
+```
+
+The two readings are meant to be read together. When the learned model and the
+rules agree that is worth more than either alone; where they disagree, `LEARNED.md`
+says the disagreement is the thing to look at, and marks the whole reading a
+proposal, because a model can be confidently wrong most easily on an app whose
+shape sits between two archetypes.
 
 Then `dsp-modernize` turns the reading into a plan, and every decision names the
 thing in the old app that makes it necessary, so you can disagree with the
@@ -804,9 +1007,9 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): four hundred and eleven features in
-thirty two phases, forty four shipped, three hundred and forty three new in the
-current branch, twenty four planned, every status honest. Each open one names
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and twenty five features in
+one hundred and forty one phases, forty four shipped, five hundred and seventy eight new in the
+current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
 portamp is a proprietary product. All rights reserved — see [LICENSE](LICENSE).

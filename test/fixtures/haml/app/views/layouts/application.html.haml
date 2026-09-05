@@ -1,0 +1,11 @@
+!!!
+%html
+  %head
+    %title= content_for?(:title) ? yield(:title) : "Shop"
+    = stylesheet_link_tag "application"
+  %body
+    = render "shared/nav"
+    %main
+      = yield
+    %footer
+      %small &copy; #{Time.now.year} Shop

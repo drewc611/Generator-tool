@@ -159,8 +159,8 @@ function print(node, depth, ctx) {
   }
 }
 
-export function toHtml(html, { dialect } = {}) {
-  const ir = buildIr(html, { dialect });
+export function toHtml(html, { dialect, components = [] } = {}) {
+  const ir = buildIr(html, { dialect, components });
   const handlers = [];
   const scopes = [];
   const ctx = {

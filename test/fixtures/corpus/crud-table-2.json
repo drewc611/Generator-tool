@@ -1,0 +1,18 @@
+{
+  "label": "crud-table",
+  "html": "<table><tr *ngFor=\"let u of users\"><td>{{u.name}}</td><td><button (click)=\"edit(u)\">Edit</button><button (click)=\"remove(u)\">Delete</button></td></tr></table>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/users"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/users/${id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/users/${id}"
+    }
+  ]
+}

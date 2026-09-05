@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><title>{% block title %}Shop{% endblock %}</title></head>
+  <body>
+    <script>window.cfg = { debug: false };</script>
+    {% include "partials/nav.njk" %}
+    <main>{% block content %}{% endblock %}</main>
+  </body>
+</html>

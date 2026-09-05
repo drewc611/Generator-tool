@@ -1,0 +1,22 @@
+{{!-- A card of users, the shapes an Ember component uses every day. --}}
+<div class="card {{if this.busy 'is-busy'}}">
+  <h2>{{@title}}</h2>
+  {{#if this.loading}}
+    <p>Loading</p>
+  {{else if this.error}}
+    <p class="err">{{this.error}}</p>
+  {{else}}
+    <ul>
+      {{#each @users as |user idx|}}
+        <li {{on "click" (fn this.pick user)}}>{{idx}} {{user.name}}</li>
+      {{else}}
+        <li>No users</li>
+      {{/each}}
+    </ul>
+  {{/if}}
+  <Input @value={{this.query}} placeholder="Search" />
+  <button disabled={{this.busy}} {{on "click" this.save}}>Save</button>
+  <button {{action "cancel"}}>Cancel</button>
+  <UserBadge @user={{this.selected}} @onPick={{this.pick}} />
+  {{yield}}
+</div>

@@ -1,0 +1,17 @@
+{
+  "label": "editor",
+  "html": "<h1>{{note.title}}</h1><div contenteditable=\"true\">{{note.body}}</div><button (click)=\"save()\">Save draft</button><span *ngIf=\"savedAt\">Autosaved</span>",
+  "calls": [
+    {
+      "method": "PUT",
+      "path": "/api/notes/:id"
+    }
+  ],
+  "model": {
+    "screens": [
+      {
+        "kind": "document"
+      }
+    ]
+  }
+}

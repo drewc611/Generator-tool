@@ -25,6 +25,13 @@ import { jsString } from "./emit.js";
 // `slot` never means anything else in an Angular template and `ng-content`
 // never appears in a Vue one, so these do not need the dialect to be known.
 const SLOT = new Set(["ng-content", "slot"]);
+// A screen may be named like an element (a partial called nav.tpl); an
+// element is never a reference to it, or every <nav> would become the screen.
+/** The html node an element carries as its only content, or null: the one shape every printer puts on the element itself. */
+export const boundHtml = (node) => (node?.kind === "element" && node.tag && node.children.length === 1 && node.children[0].kind === "html" ? node.children[0] : null);
+
+export const HTML_ELEMENTS = new Set(["a", "abbr", "address", "area", "article", "aside", "audio", "b", "base", "bdi", "bdo", "blockquote", "body", "br", "button", "canvas", "caption", "cite", "code", "col", "colgroup", "data", "datalist", "dd", "del", "details", "dfn", "dialog", "div", "dl", "dt", "em", "embed", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "iframe", "img", "input", "ins", "kbd", "label", "legend", "li", "link", "main", "map", "mark", "menu", "meta", "meter", "nav", "noscript", "object", "ol", "optgroup", "option", "output", "p", "picture", "pre", "progress", "q", "rp", "rt", "ruby", "s", "samp", "script", "search", "section", "select", "slot", "small", "source", "span", "strong", "style", "sub", "summary", "sup", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "title", "tr", "track", "u", "ul", "var", "video", "wbr", "svg", "path", "g", "circle", "rect", "line", "polygon", "polyline", "text", "use", "defs", "symbol"]);
+export const isElementName = (name) => HTML_ELEMENTS.has(String(name).toLowerCase());
 const TRANSPARENT = new Set(["ng-container", "ng-template", "template"]);
 
 export const DIALECTS = {
@@ -49,7 +56,7 @@ export const DIALECTS = {
       return null;
     },
     text: (n) => (/^(?:data-)?ng-bind$/.test(n) ? "expr" : /^(?:data-)?ng-bind-template$/.test(n) ? "template" : null),
-    event: (n) => /^(?:data-)?ng-(click|change|submit|blur|focus|keyup|keydown|mouseover|mouseout|dblclick)$/.exec(n)?.[1] ?? null,
+    event: (n) => /^(?:data-)?ng-(click|change|input|submit|blur|focus|keyup|keydown|keypress|mouseover|mouseout|mouseenter|mouseleave|mousedown|mouseup|mousemove|dblclick|paste|copy|cut)$/.exec(n)?.[1] ?? null,
     html: (n) => n === "ng-bind-html",
     // ng-show and ng-hide are the same directive with the test inverted.
     show: (n) => (n === "ng-show" ? "show" : n === "ng-hide" ? "hide" : false),
@@ -247,25 +254,36 @@ function rootIdentifiers(code) {
   // A word inside a string is text, not a name.
   const bare = String(code).replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/g, '""');
   const found = [];
-  const re = /(\.\s*)?\b([A-Za-z_$][\w$]*)\b(\s*:)?/g;
+  // $index, $ctrl, $root and the rest are the scope's own machinery, never a
+  // prop; the boundary must see the $ or the name after it reads as one.
+  const re = /(\.\s*)?(?<![\w$])([A-Za-z_$][\w$]*)(?![\w$])(\s*:)?/g;
   let m;
   while ((m = re.exec(bare))) {
-    if (m[1] || m[3] || GLOBALS.has(m[2])) continue;
+    if (m[1] || GLOBALS.has(m[2]) || m[2].startsWith("$")) continue;
+    // A name before a colon is an object key only after { or , ; in a ? b : c it is the then branch.
+    if (m[3] && /[{,]\s*$/.test(bare.slice(0, m.index))) continue;
     found.push(m[2]);
   }
   return found;
 }
 
-export function buildIr(html, { dialect } = {}) {
+export function buildIr(html, { dialect, components = [] } = {}) {
   const d = dialect ?? detectDialect(html);
+  // The run's own screens by tag, so an event wired on one is read as its output
+  // even when its name has no hyphen. The IR learns the names, not the frameworks.
+  const known = new Set([...components].map((c) => String(c).toLowerCase()).filter((c) => !HTML_ELEMENTS.has(c)));
   const notes = [];
   const models = new Set();
   const reads = new Set();
   const locals = new Set();
   const lists = new Set();
 
+  // The line the converter is currently standing on, so a note can say where
+  // it came from. The parser stamped every node; convert() moves the cursor.
+  const where = { line: null };
   const note = (text) => {
-    if (!notes.includes(text)) notes.push(text);
+    const said = where.line ? `line ${where.line}: ${text}` : text;
+    if (!notes.includes(said)) notes.push(said);
   };
 
   const expr = (raw) => {
@@ -307,7 +325,7 @@ export function buildIr(html, { dialect } = {}) {
   // A named <ng-template #ref> is content waiting for a reference. Harvested
   // before conversion so an else branch can resolve to it wherever it sits.
   const templates = harvestTemplates(tree);
-  const clean = convertList(tree, d, { expr, note, models, locals, lists, templates }, null);
+  const clean = convertList(tree, d, { expr, note, models, locals, lists, templates, where, known }, null);
   const root = clean.length === 1 ? clean[0] : { kind: "fragment", children: clean };
 
   const modelRoots = new Set([...models].map((m) => m.split(".")[0]));
@@ -405,6 +423,7 @@ function convertList(nodes, d, ctx, sw) {
 }
 
 function convert(node, d, ctx) {
+  if (node.line && ctx.where) ctx.where.line = node.line;
   if (node.type === "comment") return { kind: "comment", text: node.text };
   if (node.type === "text") {
     const parts = interpolate(node.text, ctx.expr);
@@ -441,6 +460,10 @@ function convert(node, d, ctx) {
 
   if (structural.html !== undefined) {
     ctx.note(`<${node.tag}> injected raw markup. It is kept, and it is the same trust decision under whatever name the target gives it.`);
+    // What stood inside the element never renders: the binding replaces it, so it is neither read nor noted.
+    if (node.children.some((c) => c.type !== "text" || c.text?.trim())) ctx.note(`<${node.tag}> held placeholder content beside its html binding; the binding replaces it and it was dropped.`);
+    node.children = [];
+    if (node.tag && VOID.has(node.tag.toLowerCase())) { ctx.note(`<${node.tag}> is a void element and can hold no html; the binding was dropped.`); delete structural.html; }
   }
 
   // A switch names its subject on the container and its values on the
@@ -460,9 +483,14 @@ function convert(node, d, ctx) {
     else ctx.note(`<${node.tag}> switches on nothing readable; its cases render unconditionally.`);
   }
 
-  const element = structural.html !== undefined
-    ? { kind: "html", expression: ctx.expr(structural.html) }
-    : buildElement(node, d, ctx, childSw);
+  // Bound html replaces the element's children, never the element: the tag
+  // and its attributes are the author's and every target keeps them.
+  const element = buildElement(node, d, ctx, childSw);
+  if (structural.html !== undefined) {
+    // A control's value is its content; a model and bound html cannot both be, so the model stays.
+    if (element.model) ctx.note(`<${node.tag}> binds both a model and html; a control's value is its content, so the html binding was dropped.`);
+    else element.children = [{ kind: "html", expression: ctx.expr(structural.html) }];
+  }
 
   let out = element;
 
@@ -471,6 +499,7 @@ function convert(node, d, ctx) {
     if (!loop) {
       ctx.note(`Could not read the loop on <${node.tag}>: \`${structural.each}\`. Kept as a plain element.`);
     } else if (d.loopWrapsChildren && element.kind === "element") {
+      if (boundHtml(element)) ctx.note(`<${node.tag}> both repeats its children and binds html per row; the html has no row element of its own, so each row is a div carrying it.`);
       ctx.locals.add(loop.item);
       if (loop.index) ctx.locals.add(loop.index);
       const list = loopList(loop, ctx);
@@ -525,7 +554,7 @@ function convert(node, d, ctx) {
   // repeated row tests each row. The condition moves inside the loop, where
   // its row exists; outside it would reference a name nothing defines.
   if (structural.when !== undefined && structural.each !== undefined && d.name === "angularjs" && out.kind === "each") {
-    out.children = [{ kind: "when", test: ctx.expr(String(structural.when)), children: out.children }];
+    out.children = [{ kind: "when", test: ctx.expr(String(structural.when)), line: node.line ?? null, children: out.children }];
     return out;
   }
 
@@ -549,7 +578,7 @@ function convert(node, d, ctx) {
     if (thenRef && !thenBody) {
       ctx.note(`<${node.tag}> renders \`then ${thenRef[1]}\`, and no <ng-template #${thenRef[1]}> is in this markup. The element's own content is used.`);
     }
-    out = { kind: "when", test, children: thenBody ?? [out] };
+    out = { kind: "when", test, line: node.line ?? null, children: thenBody ?? [out] };
 
     if (elseRef) {
       const elseBody = resolve(elseRef[1]);
@@ -706,13 +735,32 @@ function buildElement(node, d, ctx, sw = null) {
       continue;
     }
 
-    if (name.toLowerCase() === "class") { staticClass = value ?? ""; continue; }
+    if (name.toLowerCase() === "class") {
+      // class="card {{ i == 0 ? 'first' : '' }}": the literal words are the static class, each interpolation an expression class.
+      if (/\{\{/.test(value ?? "")) {
+        const parts = interpolate(value, ctx.expr);
+        staticClass = parts.filter((p) => p.literal !== undefined).map((p) => p.literal.trim()).filter(Boolean).join(" ");
+        for (const p of parts) if (p.expression !== undefined) classes.push({ kind: "expression", expression: p.expression });
+        continue;
+      }
+      staticClass = value ?? ""; continue;
+    }
     if (name.toLowerCase() === "style") {
       // An empty style attribute is consumed too: passed through as a plain
       // attribute it reaches react as a string prop, which throws.
       if (value) for (const e of styleEntries(value)) styles.push({ kind: "declaration", property: e.property, literal: e.value });
       continue;
     }
+    // Every directive spelling is claimed above, so an ng-<name> still here on
+    // a custom tag is the child component's own output wired at this call
+    // site: <user-badge ng-pick="choose(u)"> means the child's pick callback.
+    // The dialect's fixed event list is for elements, whose events are known.
+    const childEvent = d.name === "angularjs" && (node.tag.includes("-") || ctx.known.has(node.tag.toLowerCase())) ? /^(?:data-)?ng-([a-z][\w-]*)$/.exec(name) : null;
+    if (childEvent && value) {
+      events.push({ name: childEvent[1], handler: ctx.expr(value), modifiers: [] });
+      continue;
+    }
+
     // Plain HTML had events before any framework did. An inline onclick is
     // an event in every dialect, and a javascript: href was never a location,
     // so both become the handler they always were.
@@ -786,6 +834,7 @@ function buildElement(node, d, ctx, sw = null) {
     tag: TRANSPARENT.has(tag) ? null : tagOf(node.tag),
     tagExpression,
     void: VOID.has(tag),
+    line: node.line ?? null,
     attrs, classes, styles, events, model, modelKind,
     modelModifiers,
     children: textParts ? [{ kind: "text", parts: textParts }]

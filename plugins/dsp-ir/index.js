@@ -17,7 +17,7 @@ export default {
       ctx.ir = withTemplates.map((screen) => {
         // A reader that knows what it read says so; sniffing is only for
         // markup that arrived with no owner.
-        const ir = buildIr(screen.template, { dialect: DIALECTS[screen.dialect] });
+        const ir = buildIr(screen.template, { dialect: DIALECTS[screen.dialect], components: ctx.screens.map((s) => s.selector) });
         screen.ir = ir;
         return { selector: screen.selector, ...ir };
       });

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><title>keyboard site</title></head>
+<body><main>
+  <h1>Orders</h1>
+  <div class="card" onclick="open(1)">Open order 1</div>
+  <span ng-click="pick(2)" tabindex="0">Pick order 2</span>
+  <div role="button" tabindex="0" onclick="save()">Save</div>
+  <div role="button" tabindex="0" onclick="close()" onkeydown="if(event.key==='Enter')close()">Close</div>
+  <button onclick="refresh()">Refresh</button>
+  <a href="/orders" onclick="track()">All orders</a>
+  <a onclick="menu()">Menu</a>
+</main></body></html>

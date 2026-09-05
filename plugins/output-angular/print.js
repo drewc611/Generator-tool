@@ -1,6 +1,7 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { boundHtml, buildIr } from "../dsp-ir/ir.js";
 import { VOID } from "../dsp-ir/parse.js";
 import { singleQuoted } from "../dsp-ir/emit.js";
+import { attrSafe } from "../dsp-ir/text.js";
 
 /**
  * The Angular printer, which closes a loop: portamp reads the old Angular
@@ -14,7 +15,6 @@ import { singleQuoted } from "../dsp-ir/emit.js";
  */
 
 const pad = (depth) => "  ".repeat(depth);
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 
 function classAttribute(classes, out) {
   const literal = classes.filter((c) => c.kind === "literal").map((c) => c.value).join(" ").trim();
@@ -94,9 +94,11 @@ function print(node, depth) {
     case "element": {
       if (!node.tag) return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
       const props = attributes(node);
+      const html = boundHtml(node);
+      if (html) props.push(`[innerHTML]="${attrSafe(html.expression)}"`);
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
       if (VOID.has(node.tag.toLowerCase())) return `${indent}${open} />`;
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = html ? [] : node.children.map((c) => print(c, depth + 1)).filter(Boolean);
       if (!children.length) return `${indent}${open}></${node.tag}>`;
       return [`${indent}${open}>`, ...children, `${indent}</${node.tag}>`].join("\n");
     }

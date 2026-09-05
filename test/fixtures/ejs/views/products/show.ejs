@@ -1,0 +1,25 @@
+<h1><%= product.name %></h1>
+<%- product.descriptionHtml %>
+<% if (product.stock === 0) { -%>
+  <p class="out">Sold out</p>
+<% } else if (product.stock < 5) { -%>
+  <p class="low">Only <%= product.stock %> left</p>
+<% } else { -%>
+  <p>In stock</p>
+<% } -%>
+<ul class="tags">
+  <% product.tags.forEach(function (tag, i) { %>
+    <li><%= i + 1 %>. <%= tag %></li>
+  <% }); %>
+</ul>
+<dl><% for (const key in product.specs) { %><dt><%= key %></dt><dd><%= product.specs[key] %></dd><% } %></dl>
+<section class="related">
+  <% for (let i = 0; i < related.length; i++) { %>
+    <%- include('../partials/card', { item: related[i] }) %>
+  <% } %>
+</section>
+<p>Template tags look like <%%= this %%> in EJS.</p>
+<form method="post" action="/orders/<%= product.id %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <button type="submit">Buy</button>
+</form>

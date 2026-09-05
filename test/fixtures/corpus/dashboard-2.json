@@ -1,0 +1,18 @@
+{
+  "label": "dashboard",
+  "html": "<h2>Active users</h2><canvas></canvas><h2>Sessions</h2><svg></svg><h2>Bounce rate</h2><canvas></canvas><h2>Conversions</h2>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/stats/active"
+    },
+    {
+      "method": "GET",
+      "path": "/api/stats/sessions"
+    },
+    {
+      "method": "GET",
+      "path": "/api/stats/bounce"
+    }
+  ]
+}

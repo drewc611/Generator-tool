@@ -1,4 +1,4 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { boundHtml, buildIr } from "../dsp-ir/ir.js";
 import { singleQuoted } from "../dsp-ir/emit.js";
 
 /**
@@ -148,8 +148,10 @@ function print(node, depth) {
     case "element": {
       const tag = node.tag ?? "template";
       const props = [...(node.directives ?? []), ...attributes(node)];
+      const html = boundHtml(node);
+      if (html) props.push(`v-html="${attrValue(html.expression)}"`);
       const open = `<${tag}${props.length ? " " + props.join(" ") : ""}`;
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = html ? [] : node.children.map((c) => print(c, depth + 1)).filter(Boolean);
       if (node.void) return `${indent}${open} />`;
       if (!children.length) return `${indent}${open}></${tag}>`;
       return [`${indent}${open}>`, ...children, `${indent}</${tag}>`].join("\n");
@@ -172,7 +174,7 @@ function withDirective(node, directive) {
   return { ...node, directives: [directive] };
 }
 
-export function toVue(html, { dialect } = {}) {
-  const ir = buildIr(html, { dialect });
+export function toVue(html, { dialect, components = [] } = {}) {
+  const ir = buildIr(html, { dialect, components });
   return { markup: print(ir.root, 2) || "    <!-- nothing to render -->", ...ir };
 }

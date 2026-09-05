@@ -73,6 +73,23 @@ export default {
         }
       }
 
+      // Several sessions of the same app measure more than one: every
+      // exploration*.json in the directory joins ctx.sources.explorations,
+      // and downstream merges report agreement instead of averaging.
+      const sessionFiles = entries.filter((e) => /^exploration.*\.json$/i.test(e)).sort();
+      if (sessionFiles.length > 1 || (sessionFiles.length === 1 && !ctx.sources.exploration)) {
+        const sessions = [];
+        for (const name of sessionFiles) {
+          const raw = await readFile(join(ctx.config.shots, name), "utf8").catch(() => null);
+          if (!raw) continue;
+          try { sessions.push(JSON.parse(raw)); } catch { log.warn(`${name} is not readable json, ignoring it`); }
+        }
+        if (sessions.length > 1) {
+          ctx.sources.explorations = sessions;
+          log.info(`${sessions.length} recorded session(s); measurements merge with disagreement kept`);
+        }
+      }
+
       const covered = new Set(ctx.sources.screenshots.map((s) => s.state));
       const missing = ["empty", "error", "loading"].filter((s) => !covered.has(s));
       log.info(`${ctx.sources.screenshots.length} screenshot(s), states: ${[...covered].join(", ") || "none"}`);
