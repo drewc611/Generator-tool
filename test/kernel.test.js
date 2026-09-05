@@ -95,7 +95,7 @@ test("discovery loads every plugin that ships", async () => {
     "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-knockout",
     "input-lit", "input-openapi", "input-pdf", "input-polymer", "input-react", "input-record", "input-riot", "input-shots", "input-static", "input-stencil", "input-svelte", "input-underscore", "input-vue", "input-webcomponents",
     "output-adr", "output-alpine", "output-angular", "output-astro", "output-aws", "output-azure", "output-caddy", "output-cem", "output-ci", "output-cloudflare", "output-codemod", "output-curl", "output-cypress",
-    "output-design-tokens", "output-dockerfile", "output-fixtures", "output-forms", "output-gcp", "output-html", "output-i18n", "output-lit",
+    "output-design-tokens", "output-dockerfile", "output-eleventy", "output-fixtures", "output-forms", "output-gcp", "output-html", "output-i18n", "output-lit",
     "output-migration", "output-msw", "output-netlify", "output-next", "output-nginx", "output-nuxt",
     "output-openapi", "output-postman", "output-preact", "output-qwik", "output-react", "output-readme", "output-remix", "output-site", "output-solid",
     "output-storybook", "output-svelte", "output-sveltekit", "output-tailwind",

@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy two features across eighty eight phases. The statuses are
+Five hundred and seventy three features across eighty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-747 tests, on Node 18, 20 and 22, and on Windows in CI.
+750 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2137,14 +2137,20 @@ a component port has to tear down what the old page only set up, and three plugi
 the sanitation pass the contract asks for after a sprint, and the gate that makes the next one unnecessary. The README swore to 137 plugins and 651 tests while 153 shipped and 745 ran, and its size table carried a line count with no measure that still produced it; only the core's 718 was ever held by a test, which is exactly why the rest rotted. Every figure is trued up and each row is now defined by the measure that produces it: the tool's lines are the .js under src and plugins, the sizes are byte sums rather than du blocks so Windows counts the same, and the plugin and test file counts are read off the tree. test/hygiene.test.js holds the plugin count exactly, everywhere the README states it, and the test file count exactly; the two rows that move on every commit are held to within three percent, a tolerance the test and the README both name, because an exact gate would fail every push and the practice is to true them up at a sprint's end. Nothing was rounded to a nicer number.
 
 
+## Phase 89: the site with no framework at all
+
+**573. output-eleventy arranges the site as an Eleventy project** 🔨
+the site engine arranges a folder of old pages into Next, Remix, Astro, Nuxt and SvelteKit; output-eleventy adds Eleventy, the most common destination for exactly that folder because it needs no client framework at all. The lifted chrome becomes _includes/layout.njk with the page's title and description in the head, one template per route carries that screen's markup printed to static HTML by the same printer output-html proves, with the route as its permalink, and the redirect map lands as _data/redirects.json plus a template that writes _redirects at the site root, the file Netlify and Cloudflare Pages read and the same flattened map every other host target carries. The ported markup is wrapped in Nunjucks raw blocks, because Eleventy's default engine would otherwise read the page's own interpolations as its variables and render them empty. Eleventy runs nothing on the client, so a screen that carries handlers, two way bindings or events is arranged as its static markup and named in the notes and the README rather than flattened silently; the port owner decides whether it stays static or lives as an Astro island. Gated by --eleventy and a site model; nothing is translated twice. test/eleventy.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 525 |
+| new in this branch | 526 |
 | planned | 3 |
-| total | 572 |
+| total | 573 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

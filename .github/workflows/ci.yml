@@ -918,9 +918,18 @@ jobs:
           node src/cli.js run --src ml-src --out ml-out --max-leaks 99 || { echo "a real ceiling failed a script under it"; exit 1; }
           rm -rf ml-src ml-out ml-err.txt
 
+      - name: the eleventy target arranges the site with its redirects
+        run: |
+          node src/cli.js run --src test/fixtures/repeat-site --out el-out --site true --eleventy true
+          test -f el-out/eleventy/_includes/layout.njk || { echo "no eleventy layout"; exit 1; }
+          test -f el-out/eleventy/pages/about.njk || { echo "no eleventy page"; exit 1; }
+          grep -q "{% raw %}" el-out/eleventy/pages/about.njk || { echo "the ported markup is not wrapped in raw"; exit 1; }
+          grep -q "301" el-out/eleventy/pages/_redirects.njk || { echo "eleventy lost the redirect map"; exit 1; }
+          rm -rf el-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "572" ]; then
-            echo "ROADMAP.md holds $count entries and claims 572"; exit 1
+          if [ "$count" != "573" ]; then
+            echo "ROADMAP.md holds $count entries and claims 573"; exit 1
           fi

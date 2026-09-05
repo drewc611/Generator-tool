@@ -7,13 +7,13 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 153 plugins, and the literal output of
+lines of core, no runtime dependencies, 154 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 746 passing, 747 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer, the learned archetype model and the Svelte, Lit, Alpine and Stencil readers](media/test-run.png)
+![node --test running the portamp suite: 749 passing, 750 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer, the learned archetype model and the Svelte, Lit, Alpine and Stencil readers](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 746
-tests pass across 90 test files with `node --test` and no framework, and
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 749
+tests pass across 91 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing. CI reruns the same
 suite on Node 18, 20 and 22 and on Windows, and asserts the same screen written
 in two dialects emits byte identical output across all four targets.</sub>
@@ -34,9 +34,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 153 plugin(s)
+node src/cli.js plugins      # 154 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 747 tests, node --test, no framework
+npm test                     # 750 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -69,7 +69,7 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | --- | --- |
 | Core | **718 lines** across four files |
 | Every line of the tool | 32,825 lines of JavaScript in src and plugins |
-| Tests | 10,122 lines, 747 cases across 90 files |
+| Tests | 10,122 lines, 750 cases across 91 files |
 | Source on disk | src 27 KB, plugins 1.4 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -120,9 +120,9 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The 153 it ships with
+## The 154 it ships with
 
-![The plugin rack: 153 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 154 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## Yes, there is a transformer in it
 
