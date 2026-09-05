@@ -79,8 +79,10 @@ function print(node, depth) {
     case "element": {
       if (!node.tag) return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
       const attrs = attributes(node);
+      const html = node.children.length === 1 && node.children[0].kind === "html" ? node.children[0] : null;
+      if (html) attrs.push(`x-html="${esc(html.expression)}"`);
       const open = `<${node.tag}${attrs.length ? " " + attrs.join(" ") : ""}`;
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = html ? [] : node.children.map((c) => print(c, depth + 1)).filter(Boolean);
       if (node.void) return `${indent}${open}>`;
       if (!children.length) return `${indent}${open}></${node.tag}>`;
       return [`${indent}${open}>`, ...children, `${indent}</${node.tag}>`].join("\n");

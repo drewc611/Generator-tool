@@ -94,9 +94,11 @@ function print(node, depth) {
     case "element": {
       if (!node.tag) return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
       const props = attributes(node);
+      const html = node.children.length === 1 && node.children[0].kind === "html" ? node.children[0] : null;
+      if (html) props.push(`[innerHTML]="${attrSafe(html.expression)}"`);
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
       if (VOID.has(node.tag.toLowerCase())) return `${indent}${open} />`;
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = html ? [] : node.children.map((c) => print(c, depth + 1)).filter(Boolean);
       if (!children.length) return `${indent}${open}></${node.tag}>`;
       return [`${indent}${open}>`, ...children, `${indent}</${node.tag}>`].join("\n");
     }

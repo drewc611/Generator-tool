@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and sixteen features across one hundred and thirty two phases. The statuses are
+Six hundred and seventeen features across one hundred and thirty three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2383,14 +2383,19 @@ A Twirl template is a Scala function whose body is markup: its parameters declar
 **616. The Twirl reader read again** 🔨
 A review pass over input-twirl, each finding fixed with the input that exposed it as a test. A licence comment before the header made the header leak into the page as an interpolation and lose its types; the comment is dropped and the header read. Aliases were substituted one after another on the already substituted text, so a partial called with `(related.head, product.related)` rewrote `product` twice; every alias is now one pass. `getOrElse` and `get` assumed an Option, so a Map's `getOrElse(k, d)` became a comma expression and `get(k)` a call; the argument list is read after the receiver, and two arguments index the map. `isEmpty` and `nonEmpty` were always a length test, which inverted the condition on an Option of a value; the declared type decides, and an Option of anything without a length is a presence test. `.map` decided loop or presence by the root's declared type, not the receiver's, and `@for` never consulted a type at all; the receiver's own declaration decides and a declared Option in a `@for` runs once when present. A layout call whose first argument was a literal, or that passed a second argument group, fell through to interpolation with its braces in the page; both are calls, and the extra group is named as unbound. A child scope did not carry the layout's content marker, so a layout rendering `@content` inside a `@defining` was judged never to render it and dropped; the marker travels with the scope, as the two way flag now does, so a field inside a loop makes the screen two way. A form passed into a partial under another parameter name bound its fields to the partial's local name; the alias is applied. The attribute test stripped only `@if` spans, so an earlier `@(a > 1)` in the same tag put an element inside an attribute; every Twirl span is stripped. A typed lambda, `{ (p: Product) => }`, leaked its header as text; the types are read past. And the notes carried argument text, a code block's body, a pattern's arguments and a format string, any of which could be a value; each now names positions, declared names and the extractor alone. input-static's ownership marks were words after an @, so a page carrying an e-mail address was left to no reader; they are Twirl's shapes. test/twirl.test.js holds it.
 
+## Phase 133: bound html keeps its element
+
+**617. An element that binds html stays the author's element in every target, and the round trip reads back what the printers write** 🔨
+`<p class="note" ng-bind-html="x">` became a bare html node in the IR, so every target printed a `<div>` the author never wrote and lost the `<p>` and its class; React nested that div inside the parent, which is invalid inside a paragraph, and the round trip counted the extra element and reported eight fixtures drifted. The element now stays, with the html as its only child, and each target carries it its own way: React as `dangerouslySetInnerHTML` on the element, Vue as `v-html`, Angular as `[innerHTML]`, Alpine as `x-html`, Solid as `innerHTML`, Svelte as `{@html}` inside the element and Lit as `unsafeHTML` inside it. The React reader reads that prop back as the dialect's binding, reads a textarea, a select and a checkbox bound with onChange as the models they are (an attribute list is read past the `>` inside an arrow handler), and reads `Object.entries(map).map(([key, value]) => ...)` as the (key, value) loop the printer wrote for an object; the Svelte reader reads `{#each Object.entries(map) as [key, value]}` the same way. Every dialect fixture now round trips with no drift, and test/boundhtml.test.js holds the element in seven targets, the read-back, and the three fixtures that drifted most.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 569 |
+| new in this branch | 570 |
 | planned | 3 |
-| total | 616 |
+| total | 617 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

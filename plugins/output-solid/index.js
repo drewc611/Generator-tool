@@ -140,8 +140,10 @@ function print(node, depth, ctx) {
         return children.join("\n");
       }
       const props = attributes(node, ctx);
+      const html = node.children.length === 1 && node.children[0].kind === "html" ? node.children[0] : null;
+      if (html) props.push(`innerHTML={${q(html.expression)}}`);
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
-      const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
+      const children = html ? [] : node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
       if (!children.length) return `${indent}${open} />`;
       return [`${indent}${open}>`, ...children, `${indent}</${node.tag}>`].join("\n");
     }

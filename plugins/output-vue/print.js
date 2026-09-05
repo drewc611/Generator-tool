@@ -148,8 +148,9 @@ function print(node, depth) {
     case "element": {
       const tag = node.tag ?? "template";
       const props = [...(node.directives ?? []), ...attributes(node)];
+      if (node.children.length === 1 && node.children[0].kind === "html") props.push(`v-html="${attrValue(node.children[0].expression)}"`);
       const open = `<${tag}${props.length ? " " + props.join(" ") : ""}`;
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = node.children.length === 1 && node.children[0].kind === "html" ? [] : node.children.map((c) => print(c, depth + 1)).filter(Boolean);
       if (node.void) return `${indent}${open} />`;
       if (!children.length) return `${indent}${open}></${tag}>`;
       return [`${indent}${open}>`, ...children, `${indent}</${tag}>`].join("\n");

@@ -70,16 +70,18 @@ export function lowerReact(jsx, note = () => {}) {
     if (end === -1) { out += c; i += 1; continue; }
     const inner = jsx.slice(i + 1, end).trim();
 
-    // The list may be a call chain, related.slice(0, 3).map(...), as long as each call's arguments hold no bracket of their own.
-    const loop = /^([\w.$]+(?:\([^()]*\))?(?:\.[\w$]+(?:\([^()]*\))?)*)\s*\.\s*map\s*\(\s*\(?\s*([\w$]+)\s*(?:,\s*[\w$]+\s*)?\)?\s*=>\s*([\s\S]*)$/.exec(inner);
+    // The list may be a call chain, related.slice(0, 3).map(...), as long as each call's arguments hold no bracket of their own,
+    // and Object.entries(map).map(([key, value]) => ...) is the (key, value) loop the printer wrote for an object.
+    const loop = /^(Object\.entries\()?([\w.$]+(?:\([^()]*\))?(?:\.[\w$]+(?:\([^()]*\))?)*)\)?\s*\.\s*map\s*\(\s*\(?\s*(?:\[\s*([\w$]+)\s*,\s*([\w$]+)\s*\]|([\w$]+))\s*(?:,\s*[\w$]+\s*)?\)?\s*=>\s*([\s\S]*)$/.exec(inner);
+    if (loop) { loop.list = loop[2]; loop.head = loop[3] ? `(${loop[3]}, ${loop[4]})` : loop[5]; loop.body = loop[6]; }
     const cond = /^([^&]+?)\s*&&\s*([\s\S]*)$/.exec(inner);
 
-    if (loop && /<[a-zA-Z]/.test(loop[3])) {
+    if (loop && /<[a-zA-Z]/.test(loop.body)) {
       // The arrow body wraps the JSX in one paren and .map() adds its own, so
       // strip every trailing paren, not just one. key is dropped before the
       // recursion so its expression is never read as interpolation.
-      const body = dropKey(loop[3].replace(/^\(\s*/, "").replace(/[\s)]+$/, "").trim());
-      out += injectAttr(lowerReact(body, note), `ng-repeat="${loop[2]} in ${loop[1]}"`);
+      const body = dropKey(loop.body.replace(/^\(\s*/, "").replace(/[\s)]+$/, "").trim());
+      out += injectAttr(lowerReact(body, note), `ng-repeat="${loop.head} in ${loop.list}"`);
     } else if (cond && /<[a-zA-Z]/.test(cond[2])) {
       const body = cond[2].replace(/^\(\s*/, "").replace(/[\s)]+$/, "").trim();
       out += injectAttr(lowerReact(body, note), `ng-if="${cond[1].trim()}"`);
@@ -106,12 +108,16 @@ export function lowerBody(jsx, note = () => {}) {
     .replace(/\s+style=\{\{[\s\S]*?\}\}/g, () => { note("A style prop was dropped; the dialect carries structure, not inline style."); return ""; })
     .replace(/\bclassName=/g, "class=");
 
-  // An input that binds value and onChange is a two way model.
-  text = text.replace(/<input\b([^>]*)>/g, (m, attrs) => {
-    const value = /\bvalue=\{([\w.$]+)\}/.exec(attrs);
+  // Bound html on an element is the dialect's own binding.
+  text = text.replace(/\s+dangerouslySetInnerHTML=\{\{\s*__html:\s*([\s\S]*?)\s*\}\}/g, (m, expr) => ` ng-bind-html="${expr.replace(/"/g, "'")}"`);
+
+  // An input, textarea or select that binds value (or checked) and onChange is a two way model.
+  // A handler's arrow carries a >, so an attribute list is read as text outside braces and whole brace groups.
+  text = text.replace(/<(input|textarea|select)\b((?:[^>{]|\{[^{}]*\})*)>/g, (m, tag, attrs) => {
+    const value = /\b(?:value|checked)=\{([\w.$]+)\}/.exec(attrs);
     if (value && /\bonChange=/.test(attrs)) {
-      const rest = attrs.replace(/\bvalue=\{[\w.$]+\}/, "").replace(/\bonChange=\{[^}]*\}/, "").trim();
-      return `<input ng-model="${value[1]}"${rest ? " " + rest : ""}>`;
+      const rest = attrs.replace(/\b(?:value|checked)=\{[\w.$]+\}/, "").replace(/\bonChange=\{[^}]*\}/, "").replace(/\s+/g, " ").trim();
+      return `<${tag} ng-model="${value[1]}"${rest ? " " + rest : ""}>`;
     }
     return m;
   });

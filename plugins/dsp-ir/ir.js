@@ -476,9 +476,10 @@ function convert(node, d, ctx) {
     else ctx.note(`<${node.tag}> switches on nothing readable; its cases render unconditionally.`);
   }
 
-  const element = structural.html !== undefined
-    ? { kind: "html", expression: ctx.expr(structural.html) }
-    : buildElement(node, d, ctx, childSw);
+  // Bound html replaces the element's children, never the element: the tag
+  // and its attributes are the author's and every target keeps them.
+  const element = buildElement(node, d, ctx, childSw);
+  if (structural.html !== undefined) element.children = [{ kind: "html", expression: ctx.expr(structural.html) }];
 
   let out = element;
 

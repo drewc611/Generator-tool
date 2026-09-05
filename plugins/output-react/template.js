@@ -233,6 +233,8 @@ function print(node, depth, ctx) {
 
       const props = attributes(node, ctx);
       const open = `<${tag}${props.length ? " " + props.join(" ") : ""}`;
+      // Bound html is the element's own prop; a nested div would be an element the author never wrote.
+      if (node.children.length === 1 && node.children[0].kind === "html") return `${indent}${open} dangerouslySetInnerHTML={{ __html: ${node.children[0].expression} }} />`;
       const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
       if (!children.length) return `${indent}${open} />`;
       return [`${indent}${open}>`, ...children, `${indent}</${tag}>`].join("\n");

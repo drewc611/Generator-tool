@@ -153,12 +153,14 @@ function lowerBlocks(markup, note) {
       out += "</ng-container>";
       stack.pop();
     } else if (kind === "#" && keyword === "each") {
-      // {#each LIST as ITEM, IDX (KEY)} -> ng-repeat, dropping the key the dialect does not carry.
-      const each = /^([\s\S]+?)\s+as\s+([\w$]+)(?:\s*,\s*([\w$]+))?\s*(?:\(([\s\S]+)\))?\s*$/.exec(rest);
-      if (!each) { note(`\`{#each ${rest}}\` could not be read as a loop; it was left as written.`); out += m[0]; }
+      // {#each LIST as ITEM, IDX (KEY)} -> ng-repeat, dropping the key the dialect does not carry;
+      // {#each Object.entries(MAP) as [KEY, VALUE]} is the (key, value) loop over an object.
+      const each = /^([\s\S]+?)\s+as\s+(?:\[\s*([\w$]+)\s*,\s*([\w$]+)\s*\]|([\w$]+))(?:\s*,\s*([\w$]+))?\s*(?:\(([\s\S]+)\))?\s*$/.exec(rest);
+      const entries = each ? /^Object\.entries\(([\s\S]+)\)$/.exec(each[1].trim()) : null;
+      if (!each || (each[2] && !entries)) { note(`\`{#each ${rest}}\` could not be read as a loop; it was left as written.`); out += m[0]; }
       else {
-        if (each[3]) note(`the each index \`${each[3]}\` maps to $index in the dialect.`);
-        out += `<ng-container ng-repeat="${each[2]} in ${each[1].trim()}">`;
+        if (each[5]) note(`the each index \`${each[5]}\` maps to $index in the dialect.`);
+        out += `<ng-container ng-repeat="${entries ? `(${each[2]}, ${each[3]}) in ${entries[1].trim()}` : `${each[4]} in ${each[1].trim()}`}">`;
         stack.push({ type: "each" });
       }
     } else if (kind === "/" && keyword === "each") {
