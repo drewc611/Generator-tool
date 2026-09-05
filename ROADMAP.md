@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and six features across one hundred and twenty two phases. The statuses are
+Six hundred and seven features across one hundred and twenty three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2333,14 +2333,19 @@ The Smarty fixture's partial is nav.tpl, and a partial is also a screen of its o
 **606. tools/ci-local.mjs runs the workflow's exercise steps locally and names the first that fails** 🔨
 The suite proves what the tests assert; the workflow's hundred odd exercise steps prove what the emitted files hold, with grep and cmp over real runs, and those only ran on the server. 9.69 was caught by one of them after the suite had passed here, which is the wrong order. tools/ci-local.mjs reads the workflow file, whose shape is regular (a named step and its run, one line or a block), and runs the check job's steps in order with bash under set -e and pipefail, printing ok or FAIL per step with the failing step's last lines, stopping at the first failure unless told to keep going. Steps are chosen by name (--only smarty), skipped by name or by a word in their script (--skip "npm test"), listed (--list), the one step that reaches the network to install the optional reader is skipped unless named, and the three that can only pass with that reader installed are skipped and say so when it is not. The parser is held to the workflow: a test counts the named steps in the file and asserts every one was parsed with its run, so a step written in a shape the parser does not read fails the suite rather than being silently skipped; another runs a real step of this repository's workflow from the command line. npm run ci-local is the script and the run it playbook names it. test/ci-local.test.js holds it.
 
+## Phase 123: the enterprise Java page
+
+**607. input-jsp reads JSP with the standard tag library, and the markup tree Thymeleaf and JSP share has one home** 🔨
+JSP with JSTL was the enterprise Java page for twenty years: HTML with <c:if>, <c:choose>, <c:forEach> and <c:out> around it, the expression language's ${...} inside it, <fmt:> for messages and formats, fn: functions, jsp: actions, the directives that name tag libraries and include other pages, and the scriptlets that ran Java where a tag would not do. input-jsp lowers the tags onto the dialect: c:if onto ng-if, c:choose with its when and otherwise onto the chain negated the way the container evaluates it, c:forEach with its varStatus onto ng-repeat with index, count, first and last as arithmetic on $index and a bounded range named, c:out onto an interpolation, a default folded in, or bound html when escapeXml is false, c:set onto a substituted alias where the value is fixed and named where it depends on a branch or reads itself, c:url with its params onto the address it builds, a static include (<%@ include %>) and a dynamic one (<jsp:include>) onto the page they name with passed params named, jsp:getProperty onto its read, and the Spring form tags (form:form with its model, input, textarea, select with items, checkboxes, label, errors named) onto a two way model with the name and id the tag would have rendered. EL is spelled as JavaScript outside strings (and, or, not, eq, empty, the fn: functions with an exact equivalent rewritten), a formatter (fmt:formatNumber, fmt:formatDate) keeps its value unformatted and is named, a message key (fmt:message, spring:message) is kept as its key, an implicit object (param, sessionScope, pageContext) is named as context the port must supply, and a tag from a library the reader does not know is named with its content standing. A scriptlet is named and never carried; a Java expression (<%= %>) is kept as written inside an interpolation and named; a .jspf fragment is composed, not ported as a screen. The markup tree the Thymeleaf reader built is now dsp-ir/markup.js, one parser both readers import and the hygiene gate holds to one home. JSTL pages leave input-static's hands, .jspf and .jspx reach the scan, and the same product page written in JSP is the ninth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/jsp.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 559 |
+| new in this branch | 560 |
 | planned | 3 |
-| total | 606 |
+| total | 607 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

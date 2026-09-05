@@ -92,7 +92,7 @@ test("discovery loads every plugin that ships", async () => {
     "dsp-uplift", "dsp-weight",
     "general-agents", "general-architect", "general-authorization", "general-doctor", "general-history", "general-license", "general-policy", "general-publish", "general-scaffold", "general-size", "general-watch",
     "input-alpine", "input-angular", "input-angularjs", "input-aspnet", "input-backbone", "input-blackbox", "input-blade", "input-ember", "input-explore", "input-freemarker",
-    "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-knockout",
+    "input-handlebars", "input-jinja", "input-jquery", "input-jsf", "input-jsp", "input-knockout",
     "input-liquid", "input-lit", "input-marko", "input-mithril", "input-openapi", "input-pdf", "input-polymer", "input-pug", "input-razor", "input-react", "input-record", "input-riot", "input-shots", "input-smarty", "input-static", "input-stencil", "input-svelte", "input-thymeleaf", "input-twig", "input-underscore", "input-velocity", "input-vue", "input-webcomponents", "input-xslt",
     "output-adr", "output-alpine", "output-angular", "output-astro", "output-aws", "output-azure", "output-caddy", "output-cem", "output-ci", "output-cloudflare", "output-codemod", "output-curl", "output-cypress",
     "output-design-tokens", "output-dockerfile", "output-eleventy", "output-fixtures", "output-forms", "output-gcp", "output-html", "output-i18n", "output-lit",

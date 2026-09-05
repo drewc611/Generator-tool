@@ -80,8 +80,9 @@ export function readInputs(template, { skip = [] } = {}) {
     ...[...template.matchAll(/\{\{([\s\S]*?)\}\}/g)].map((m) => m[1]),
     ...[...template.matchAll(/\sng-[\w-]+="([^"]*)"/g)].map((m) => m[1].replace(/^\(?[\w$]+(?:,\s*[\w$]+)?\)?\s+in\s+/, "").replace(/\s+track by [\s\S]*$/, ""))
       // ng-href="/cart/{{ id }}" is an address around an expression; only the expression reads.
-      .map((v) => (v.includes("{{") ? [...v.matchAll(/\{\{([\s\S]*?)\}\}/g)].map((m) => m[1]).join("\n") : v)),
-  ].join("\n");
+      .map((v) => (v.includes("{{") ? [...v.matchAll(/\{\{([\s\S]*?)\}\}/g)].map((m) => m[1]).join(";\n") : v)),
+    // Joined as statements: an expression that opens with ( must not make the name before it look like a call.
+  ].join(";\n");
   const locals = new Set([...template.matchAll(/ng-repeat="\(?(\w+)(?:,\s*(\w+))?\)?\s+in/g)].flatMap((m) => [m[1], m[2]].filter(Boolean)));
   // {{ body | limitTo:count }} names a filter after its pipe, not a local, but its argument reads; || is JS and stays.
   const bare = expressions.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`[^`]*`/g, "").replace(/(?<!\|)\|(?!\|)\s*\w+/g, " ");

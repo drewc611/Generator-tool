@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
+import { cloneNode, elements, parseMarkup, VOID_ELEMENTS } from "../dsp-ir/markup.js";
 import { stripScripts, stripStyles } from "../dsp-ir/scan.js";
 import { attrSafe, matchBracket, readInputs, splitCommas } from "../dsp-ir/text.js";
 
@@ -27,7 +28,7 @@ import { attrSafe, matchBracket, readInputs, splitCommas } from "../dsp-ir/text.
  * th:onclick that built script from data is named, never carried.
  */
 
-const VOID = new Set(["img", "input", "br", "hr", "meta", "link", "area", "base", "col", "embed", "source", "track", "wbr"]);
+const VOID = VOID_ELEMENTS;
 const BOOL = new Set(["disabled", "checked", "selected", "readonly", "required", "hidden", "multiple", "open", "autofocus"]);
 const OPS = { and: "&&", or: "||", eq: "==", ne: "!=", neq: "!=", gt: ">", lt: "<", ge: ">=", le: "<=", div: "/", mod: "%" };
 const CONTEXT = /#(authentication|authorization|request|session|servletContext|locale|httpServletRequest|httpSession|vars|ctx|root|execInfo|messages|uris|conversions|temporals|calendars|ids|dates|numbers)\b(?!\.\w+\()/g;
@@ -243,41 +244,16 @@ function stripComments(text) {
   return out;
 }
 
-/** Markup into a tree of elements, text and comments, prototype only comments unwrapped. */
+/** Markup into a tree of elements and text, prototype only comments unwrapped, the rest of the comments gone. */
 export function parseHtml(source) {
-  const text = stripComments(String(source ?? "")).replace(/<!DOCTYPE[^>]*>/gi, "");
-  const root = { type: "root", children: [] };
-  const stack = [root];
-  // Names and unquoted values exclude the quote characters, so the three value
-  // shapes never overlap and the attribute list matches in one pass.
-  const re = /<\/([\w:-]+)\s*>|<([\w:-]+)((?:\s+[^\s=>/"']+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>"']+))?)*)\s*(\/?)>/g;
-  let last = 0; let m;
-  while ((m = re.exec(text))) {
-    if (m.index > last) stack[stack.length - 1].children.push({ type: "text", text: text.slice(last, m.index) });
-    last = re.lastIndex;
-    if (m[1]) {
-      const tag = m[1].toLowerCase();
-      const at = stack.findLastIndex((n) => n.type === "el" && n.tag === tag);
-      if (at > 0) stack.length = at;
-      continue;
-    }
-    const tag = m[2].toLowerCase();
-    const attrs = [];
-    for (const a of m[3].matchAll(/([^\s=/>"']+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+)))?/g)) attrs.push({ name: a[1], value: a[2] ?? a[3] ?? a[4] ?? null });
-    const el = { type: "el", tag, attrs, children: [] };
-    stack[stack.length - 1].children.push(el);
-    if (!VOID.has(tag) && !m[4]) stack.push(el);
-  }
-  if (last < text.length) stack[stack.length - 1].children.push({ type: "text", text: text.slice(last) });
-  return root;
+  return parseMarkup(stripComments(String(source ?? "")).replace(/<!DOCTYPE[^>]*>/gi, ""));
 }
 
-const clone = (n) => JSON.parse(JSON.stringify(n));
+const clone = cloneNode;
 const thName = (name) => { const m = /^(?:th:|data-th-)([\w-]+)$/.exec(name); return m ? m[1] : null; };
 const layoutName = (name) => { const m = /^(?:layout:|data-layout-)([\w-]+)$/.exec(name); return m ? m[1] : null; };
 const getTh = (el, name) => el.attrs.find((a) => thName(a.name) === name)?.value ?? null;
 const hasTh = (el, name) => el.attrs.some((a) => thName(a.name) === name);
-const elements = (nodes) => nodes.filter((n) => n.type === "el");
 
 /** Every th:fragment in a tree, by name, with its parameter list. */
 export function collectFragments(root) {
