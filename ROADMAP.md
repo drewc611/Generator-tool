@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy nine features across ninety five phases. The statuses are
+Five hundred and eighty features across ninety six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-782 tests, on Node 18, 20 and 22, and on Windows in CI.
+788 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2179,14 +2179,20 @@ the browser a legacy front end was written for is gone, and some of what it call
 Marko writes control flow as tags and bindings as bare attributes, and every one has an exact spelling in the dialect: <if>, <else-if> and <else> become ng-if blocks with the chain negated the way the runtime evaluates it, <for|row, i| of=rows> becomes ng-repeat with track by $index and the index renamed in its body, <for|k, v| in=obj> the (key, value) form, a bare attribute value becomes ng-class, ng-style, ng-disabled, ng-href or ng-attr as its name decides, on-click("pick", row) becomes ng-click with its method and arguments, ${expr} an interpolation and $!{expr} bound html, and <section.card#main> carries its class and id on the tag name. The class in the file or component.js beside it supplies the inputs, the input.x reads rewritten to the input itself, and the outputs from this.emit; fetch calls reach the API surface. The concise indentation syntax, a dynamic tag, <include>, <await>, <macro>, a spread and an inline $ statement are named rather than approximated. The dialect's event list grows to the events AngularJS itself shipped plus input, which three readers already spelled ng-input with nowhere for it to land. Beside it a sanitation pass: PORT_README.md described twelve of the ninety two reports a run can write; it now describes every one, and a hygiene gate fails the suite when a plugin writes a report the README cannot name. test/marko.test.js holds the reader and test/hygiene.test.js the index.
 
 
+## Phase 96: the theme that wraps every page
+
+**580. input-liquid lowers Liquid themes onto the dialect, composed the way the server composed them** 🔨
+Liquid is the jinja shape with its own words, and a Shopify or Jekyll theme is a layout that wraps every template, sections that declare their settings in a schema, and snippets rendered by name. input-liquid lowers each construct with an exact spelling: if, elsif and else with the chain negated the way the runtime evaluates it, unless as the negated test, case and when as the equalities they test with the else as their negation, for with its else as the empty state, and and or and contains and blank and empty and nil and size and first and last as their JS, filters with an exact spelling rewritten (upcase, downcase, size, default, append, prepend, plus, minus, times, divided_by, join, first, last, truncate, strip) and any other kept as written so the translator names it too. A template is wrapped in layout/theme.liquid at content_for_layout the way the server did and the body is what becomes the screen; a section or snippet the run holds is inlined at its tag and a missing one is named; a section's schema settings are its inputs and travel with it into the template it is inlined into; the platform objects a screen reads (product, collection, cart, shop, customer, routes and the rest) are its inputs, read from its expressions and never from its markup, so a search input does not invent a search object. assign, capture, cycle, increment, paginate, a loop's limit or offset, a render's arguments, a javascript block and the platform's content_for_header have no client equivalent and are named through the notes. A form posts to the platform and is kept as a form whose action the endpoint map must be given. test/liquid.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 532 |
+| new in this branch | 533 |
 | planned | 3 |
-| total | 579 |
+| total | 580 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
