@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and sixty three features across seventy nine phases. The statuses are
+Five hundred and sixty four features across eighty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-700 tests, on Node 18, 20 and 22, and on Windows in CI.
+703 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2089,15 +2089,20 @@ an iframe drops a whole other document into the page, and a port inherits two th
 **563. vis-a11y gathers the accessibility axes into one scorecard** 🔨
 the port's accessibility is read by seven plugins, each on its own axis: dsp-landmarks (regions), dsp-labels (control names), dsp-a11y (contrast and target size), dsp-focus (the keyboard), dsp-media (captions), dsp-tables (grids) and dsp-iframes (embedded documents), each writing its own report. A port owner who wants the whole picture opens seven files. vis-a11y reads what those plugins left on the context and writes ACCESSIBILITY.md, one table of every axis with the count it reported and exactly what that count is. It invents nothing: every number is another plugin's, an axis whose plugin did not run is named "not measured" rather than scored zero, and it writes nothing when none ran. It is a count, not a grade; portamp does not know which gap matters most to this product, so it does not rank them. It does not collide with dsp-a11y's own A11Y.md. test/a11y-scorecard.test.js holds it.
 
+## Phase 80: a third host for the port
+
+**564. output-caddy serves the export with automatic HTTPS** 🔨
+the host-target family already wraps the port in a Dockerfile around its own serve.js and in an nginx server block over the static export; output-caddy adds Caddy, the server that provisions and renews its own TLS certificate with no configuration. It writes a Caddyfile that serves the export from /srv, answers every retired address with the same 301 the app enforces, falls client routes back to index.html, and carries the same safe headers and immutable-asset caching the nginx block does. Like every other host target the redirect map is not invented: it is the flattened map the run produced, the same one nginx.conf, _redirects, vercel.json and netlify.toml carry in their own spellings, and a test asserts Caddy and nginx emit the same number of 301s. It is gated by --caddy and a site model, and ports nothing twice. test/caddy.test.js holds it.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 516 |
+| new in this branch | 517 |
 | planned | 3 |
-| total | 563 |
+| total | 564 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

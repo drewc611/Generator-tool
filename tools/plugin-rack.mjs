@@ -105,6 +105,7 @@ const DOES = {
   "output-sveltekit": "the site as SvelteKit routes, old addresses answered from the server hook",
   "output-dockerfile": "the port in a container: the zero dependency serve.js wrapped, nothing to install",
   "output-nginx": "an nginx server block that serves the export and answers every old address with its 301",
+  "output-caddy": "a Caddyfile that serves the export with automatic HTTPS and the same redirect map as 301s",
   "output-types": "TypeScript prop interfaces per screen and the endpoint paths as a union",
   "output-vercel": "a Vercel deploy plan, the redirects as permanent rules in vercel.json",
   "output-cypress": "an end to end suite that walks every route and asserts the redirects land",

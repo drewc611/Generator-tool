@@ -515,13 +515,15 @@ jobs:
           grep -qi "integrity" def-out/SUPPLYCHAIN.md || { echo "SRI was not reported"; exit 1; }
           rm -rf def-out
 
-      - name: the port deploys as a container and behind nginx, redirects carried
+      - name: the port deploys as a container and behind nginx and caddy, redirects carried
         run: |
-          node src/cli.js run --src test/fixtures/repeat-site --out home-out --site true --dockerfile true --nginx true
+          node src/cli.js run --src test/fixtures/repeat-site --out home-out --site true --dockerfile true --nginx true --caddy true
           grep -q "serve.js" home-out/Dockerfile || { echo "the Dockerfile does not run serve.js"; exit 1; }
           if grep -qE "^\s*RUN\s+npm\s+(ci|install)" home-out/Dockerfile; then echo "the image invented an install the port does not need"; exit 1; fi
           test "$(grep -c 'return 301' home-out/nginx/nginx.conf)" -ge 1 || { echo "nginx lost the redirect map"; exit 1; }
           grep -q "try_files" home-out/nginx/nginx.conf || { echo "nginx has no SPA fallback"; exit 1; }
+          test "$(grep -cE 'redir \S+ \S+ 301' home-out/caddy/Caddyfile)" -ge 1 || { echo "caddy lost the redirect map"; exit 1; }
+          grep -q "file_server" home-out/caddy/Caddyfile || { echo "caddy does not serve the export"; exit 1; }
           rm -rf home-out
 
       - name: the AWS deploy plan is emitted, carries the redirects, and takes no secrets
@@ -847,6 +849,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "563" ]; then
-            echo "ROADMAP.md holds $count entries and claims 563"; exit 1
+          if [ "$count" != "564" ]; then
+            echo "ROADMAP.md holds $count entries and claims 564"; exit 1
           fi
