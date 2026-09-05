@@ -62,6 +62,7 @@ const DOES = {
   "dsp-duplication": "screens that are nearly the same screen, proposed as one",
   "dsp-entropy": "strings random enough to be credentials, values withheld",
   "dsp-era": "when the site was built, dated by seventeen signals with a spread",
+  "dsp-events": "the global addEventListener the port must remove on unmount, and which never got a remove",
   "dsp-components": "blocks two screens repeat, lifted into one shared component",
   "dsp-props": "blocks that share a shape but differ in words, proposed as one with props",
   "dsp-seo": "the signals each page told a machine: title, canonical, cards, the gaps named",

@@ -779,9 +779,19 @@ jobs:
           grep -q "rows.map" st-out/src/features/MyList/MyList.jsx || { echo "the stencil map did not become a react map"; exit 1; }
           rm -rf st-src st-out
 
+      - name: the events reader names an unremoved listener
+        run: |
+          mkdir -p ev-src
+          printf '%s\n' '<script>window.addEventListener("resize", onResize);</script>' > ev-src/page.html
+          node src/cli.js run --src ev-src --out ev-out
+          test -f ev-out/EVENTS.md || { echo "no events report"; exit 1; }
+          grep -q "resize" ev-out/EVENTS.md || { echo "the listener was not named"; exit 1; }
+          grep -q "no matching .removeEventListener. in this file" ev-out/EVENTS.md || { echo "the unremoved listener was not flagged"; exit 1; }
+          rm -rf ev-src ev-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "556" ]; then
-            echo "ROADMAP.md holds $count entries and claims 556"; exit 1
+          if [ "$count" != "557" ]; then
+            echo "ROADMAP.md holds $count entries and claims 557"; exit 1
           fi

@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and fifty six features across seventy two phases. The statuses are
+Five hundred and fifty seven features across seventy three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-666 tests, on Node 18, 20 and 22, and on Windows in CI.
+670 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2054,15 +2054,20 @@ the whole app reading weighs every screen's shape and the endpoints together; ds
 **556. input-stencil reads Stencil components onto the shared dialect** 🔨
 a Stencil component is a class with a `@Component({ tag })` decorator, `@Prop` fields for its inputs, `@Event` emitters for its outputs, `@State` for local state, and a `render()` that returns JSX. The tag is the selector, and because the render JSX is the same shape React emits, it lowers with the React reader's own lowering, reused not reinvented, once `this.` is stripped from the expressions: `this.items.map(...)` a loop, `this.open && (...)` a conditional, `onClick={() => this.pick(x)}` an event, `{this.name}` interpolation. A design system's elements reach the translator and every emitter as any other component, and because input-react keys on function components a Stencil class is read only by this reader, no collision. No dependency; test/stencil.test.js holds it and a CI step ports a Stencil component through to React.
 
+## Phase 73: the listeners the port must remember to remove
+
+**557. dsp-events names the global event listeners the port must remove on unmount** 🔨
+the third of the lifecycle trilogy beside dsp-storage (data) and dsp-timers (loops): a window or document addEventListener is a subscription that outlives the function that made it, and in a component world each has to be removed on unmount or the port leaks a listener that keeps firing, keeps holding its closure, and stacks a second copy on every remount. dsp-events finds every addEventListener, names the event and the target where it is a plain global, pairs each with a removeEventListener for the same event in the same file, and reports which listeners the port inherits with a teardown and which most likely leaked. It counts and changes nothing. test/events.test.js holds it and a CI step names a page's uncleared listener.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 509 |
+| new in this branch | 510 |
 | planned | 3 |
-| total | 556 |
+| total | 557 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
