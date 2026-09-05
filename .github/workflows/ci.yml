@@ -864,9 +864,19 @@ jobs:
           grep -q "item(s) flagged across" sc-out/SECURITY_SCORECARD.md || { echo "the scorecard did not tally"; exit 1; }
           rm -rf sc-src sc-out
 
+      - name: the performance scorecard gathers the concerns and shows weight
+        run: |
+          mkdir -p pf-src
+          printf '%s\n' '<head><script src="a.js"></script></head><body><img src="hero.jpg"></body>' > pf-src/page.html
+          node src/cli.js run --src pf-src --out pf-out
+          test -f pf-out/PERFORMANCE.md || { echo "no performance scorecard"; exit 1; }
+          grep -q "item(s) flagged across" pf-out/PERFORMANCE.md || { echo "the scorecard did not tally"; exit 1; }
+          grep -q "not summed" pf-out/PERFORMANCE.md || { echo "the port's weight was summed into the items"; exit 1; }
+          rm -rf pf-src pf-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "566" ]; then
-            echo "ROADMAP.md holds $count entries and claims 566"; exit 1
+          if [ "$count" != "567" ]; then
+            echo "ROADMAP.md holds $count entries and claims 567"; exit 1
           fi

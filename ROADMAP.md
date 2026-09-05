@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and sixty six features across eighty two phases. The statuses are
+Five hundred and sixty seven features across eighty three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-715 tests, on Node 18, 20 and 22, and on Windows in CI.
+721 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2104,15 +2104,20 @@ before Lit, Stencil, Polymer or Riot, a team could reach for the platform itself
 **566. vis-security gathers the security concerns into one scorecard** 🔨
 the port's trust surface is read by several plugins: dsp-security (the sharp edges in markup and scripts), dsp-supplychain (third-party code loaded with no Subresource Integrity), dsp-iframes (embedded documents running with no sandbox), dsp-cookies (cookies set with no consent mechanism in play) and dsp-analytics (trackers whose return is a consent decision), each writing its own report. vis-security reads what those plugins left on the context and writes SECURITY_SCORECARD.md, one table of every concern with the count it reported and exactly what that count is. Cookies with a consent mechanism present are not counted as a definite gap, since portamp cannot prove ordering; they are noted for the reviewer instead. It invents nothing, marks a concern whose plugin did not run as "not measured", writes nothing when none ran, carries no value or secret, and does not collide with dsp-security's own SECURITY.md. It is a count, not a grade. test/security-scorecard.test.js holds it.
 
+## Phase 83: every performance concern on one page
+
+**567. vis-perf gathers the performance concerns into one scorecard** 🔨
+the third scorecard beside vis-a11y and vis-security. The port's weight and its first paint are read by several plugins: dsp-perf (the script habits that stall a page: a synchronous XHR, a request in a loop, an interval poll), dsp-render-blocking (what the parser waits on before it can paint), dsp-inline (style and script that cannot be cached or themed), dsp-images (pictures shipped at one fixed size), dsp-fonts (faces with no woff2 or no font-display) and general-size (the bytes the port itself weighs), each writing its own report. vis-perf reads what those plugins left on the context and writes PERFORMANCE.md, one table of every concern with the count it reported and exactly what that count is. The port's size is shown beside the table as a measurement and never summed into the flagged items, because a byte is not a defect. It invents nothing, marks a concern whose plugin did not run as "not measured", writes nothing when none ran, and does not collide with dsp-perf's PERF.md or general-size's SIZE.md. It is a count, not a grade. test/perf-scorecard.test.js holds it.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 519 |
+| new in this branch | 520 |
 | planned | 3 |
-| total | 566 |
+| total | 567 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

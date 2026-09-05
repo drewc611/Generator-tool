@@ -28,6 +28,7 @@ test("the example runs end to end and writes the port", async (t) => {
     "MAGIC.md",
     "MODERNIZATION.md",
     "PERF.md",
+    "PERFORMANCE.md",
     "PORT_NOTES.md",
     "PORT_README.md",
     "ROUNDTRIP.md",
