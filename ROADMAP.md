@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and ninety six features across one hundred and twelve phases. The statuses are
+Five hundred and ninety seven features across one hundred and thirteen phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-832 tests, on Node 18, 20 and 22, and on Windows in CI.
+835 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2281,14 +2281,20 @@ a third review over the newest readers found eight defects worth the name. In in
 Velocity was the template language of the early Java web frameworks: directives that begin with a hash, references that begin with a dollar, and a page composed by #parse of shared pieces or by a layout servlet that drops the page into $screen_content. input-velocity lowers each construct that shapes markup: #if with its #elseif and #else chain negated the way the engine evaluates it, #foreach as a loop with its #else as the empty state and $foreach.count and $velocityCount as the index, $ref and ${ref} and $!ref as interpolation, a reference's Java methods with a JS spelling rewritten (size, length, isEmpty, get, equals, toString dropped) and the word operators and, or, not, eq, ne, lt, le, gt and ge as their symbols, a double quoted string interpolating and a single quoted one literal, an escaped dollar or hash and a hash in prose as the text they are. A held #parse is inlined where its tag stood and #include lands as literal text; a macro defined in the file is expanded at its call with its arguments substituted and named; the one template that reads $screen_content is the layout, composed around every other page and not ported as a screen of its own. #set, #define, #evaluate, a range and a method with no JS spelling are named rather than approximated. The context's top level names are the inputs, read from the expressions only. And the same product page written in Velocity is the same React, Vue and Svelte byte for byte as the five dialects before it. test/velocity.test.js and test/dialects.test.js hold it.
 
 
+## Phase 113: the fourth review pass
+
+**597. Eight more defects in the two Java template readers and the readers census, fixed with the inputs that exposed them** 🔨
+a fourth review over the two newest readers found what a single test page cannot. In input-freemarker: a macro whose body called another macro left the inner call as a raw tag, because the expansion never rescanned what it inserted, and the parameter substitution mangled the inner call's t=t; expansion now runs until no call is left and a parameter is substituted only as an expression, never as the name of an argument. ?string with a format selector, ?string.currency, was stripped to a property read that looked right; the selector is named as a formatting built in with no client equivalent and the value is interpolated unformatted. The implicit loop variables user_index and user_has_next surfaced as phantom inputs; the index is the dialect's own and the rest is named. A block <#assign> or <#function> leaked its captured body into the page; both are removed and named. A positional macro argument was reported as missing; positional arguments take the declared order. In input-velocity: a macro calling a macro lost the inner call, because the expanded body was lowered with an empty macro table; the table is shared down every expansion and every #parse. A string literal argument landed in the page with its quotes; it keeps them inside a directive's parentheses and sheds them in the page, as Velocity renders it. An unclosed #define dropped the rest of the file; it is named and the text kept. $foreach.last is carried as the $last the dialect's repeat provides, not a mangled name. In vis-readers, the extensions the jinja and underscore readers claim were missing from the markup row, so an unclaimed .j2 or .ejs was filed as an asset; they are markup. test/freemarker.test.js, test/velocity.test.js and test/readers-census.test.js hold them.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 549 |
+| new in this branch | 550 |
 | planned | 3 |
-| total | 596 |
+| total | 597 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

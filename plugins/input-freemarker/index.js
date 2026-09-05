@@ -49,6 +49,7 @@ export function fmToJs(code, note = () => {}) {
       .replace(/\?last\b/g, ".at(-1)")
       .replace(/\?join\(/g, ".join(")
       .replace(/\?has_content\b/g, "?.length")
+      .replace(/\?string\.(\w+)/g, (m, f) => { note(`The formatting built in \`?string.${f}\` has no client equivalent; the value is interpolated unformatted.`); return ""; })
       .replace(/\?(?:string|html|js_string|json_string|xhtml|no_esc|c)\b(?:\([^)]*\))?/g, "")
       .replace(/\bgte\b/g, ">=").replace(/\blte\b/g, "<=").replace(/\bgt\b/g, ">").replace(/\blt\b/g, "<");
     for (const m of out.matchAll(/\?([a-z_]+)/g)) note(`The built in \`?${m[1]}\` has no JS spelling this reader knows; it is left as written for a person.`);
@@ -99,19 +100,33 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
   const expandMacro = (name, argText, nested) => {
     const mac = macros.get(name);
     if (!mac) { note(`<@${name}> calls a macro this run does not hold (an import, or a library); the call was removed.`); return ""; }
-    const given = new Map(splitArgs(argText.trim()).map((a) => { const i = a.indexOf("="); return i < 0 ? [a, "true"] : [a.slice(0, i).trim(), a.slice(i + 1).trim()]; }));
+    // Named arguments by name, positional ones in the order the macro declared.
+    const given = new Map();
+    let positional = 0;
+    for (const a of splitArgs(argText.trim())) {
+      const i = a.indexOf("=");
+      if (i < 0) { const p = mac.spec[positional]; positional += 1; if (p) given.set(p.name, a); }
+      else given.set(a.slice(0, i).trim(), a.slice(i + 1).trim());
+    }
     let body = mac.body;
     for (const p of mac.spec) {
       const value = given.get(p.name) ?? p.fallback;
       if (value === undefined) { note(`The macro \`${name}\` was called without \`${p.name}\` and it has no default; the name is left as written.`); continue; }
-      body = body.replace(new RegExp(`\\b${p.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g"), () => value);
+      // The parameter as an expression, never as the name of an argument in an inner call (t=t).
+      body = body.replace(new RegExp(`(?<![\\w.])${p.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b(?!\\s*=)`, "g"), () => value);
     }
     body = body.replace(/<#nested\s*\/?>/g, () => nested ?? "");
     note(`The macro \`<@${name}>\` was expanded at its call site with its arguments substituted textually. Check any body text that shares a parameter's name.`);
     return body;
   };
-  text = text.replace(/<@(\w+)([^>]*?)\/>/g, (m, name, args) => expandMacro(name, args, null));
-  text = text.replace(/<@(\w+)((?:[^>/]|\/(?!>))*?)>([\s\S]*?)<\/@\1>/g, (m, name, args, inner) => expandMacro(name, args, inner));
+  // A macro body may call another macro, so the expansion runs until no call is left.
+  for (let round = 0; round < 8 && /<@\w+/.test(text); round += 1) {
+    text = text.replace(/<@(\w+)([^>]*?)\/>/g, (m, name, args) => expandMacro(name, args, null));
+    text = text.replace(/<@(\w+)((?:[^>/]|\/(?!>))*?)>([\s\S]*?)<\/@\1>/g, (m, name, args, inner) => expandMacro(name, args, inner));
+  }
+  // The block forms capture their body into a variable; the body is not page markup.
+  text = text.replace(/<#(assign|local|global)\s+\w+\s*>[\s\S]*?<\/#\1>/g, (m, t) => { note(`A block <#${t}> captured markup into a variable; it was removed and the variable is not in the port.`); return ""; })
+    .replace(/<#function\b[\s\S]*?<\/#function>/g, () => { note("A <#function> declared code in the template; it was not carried."); return ""; });
 
   if (resolve && depth < 6) {
     text = text.replace(/<#include\s+["']([^"']+)["'][^>]*>/g, (m, name) => {
@@ -137,6 +152,21 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
     }
     return -1;
   };
+  // <#list users as user> gives the body user_index and user_has_next; the
+  // index is the dialect's own, the rest is named.
+  const scoped = (expr) => {
+    let e = expr;
+    for (const f of stack) {
+      if (!f.item) continue;
+      // The item name came from the template; it is escaped whole before it
+      // shapes a pattern, so no character in it can change the match.
+      const item = f.item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      e = e.replace(new RegExp(`\\b${item}_index\\b`, "g"), "$index");
+      if (new RegExp(`\\b${item}_has_next\\b`).test(e)) note(`\`${f.item}_has_next\` was read inside the loop; the dialect has only the index, so it is left as written.`);
+    }
+    return e;
+  };
+  const fm = (expr) => fmToJs(scoped(expr), note);
   const tokens = [];
   const re = /<#(\w+)|<\/#(\w+)\s*>|\$\{|#\{/g;
   let m;
@@ -160,7 +190,7 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
   for (const tk of tokens) {
     out.push(text.slice(last, tk.start));
     last = tk.end;
-    if (tk.expr !== undefined) { out.push(`{{ ${fmToJs(tk.expr.trim(), note)} }}`); continue; }
+    if (tk.expr !== undefined) { out.push(`{{ ${fm(tk.expr.trim(), note)} }}`); continue; }
     if (tk.close !== undefined) {
       const tag = tk.close;
       const frame = stack.at(-1);
@@ -178,12 +208,12 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
     }
     const tag = tk.open; const rest = tk.params.trim();
     switch (tag) {
-      case "if": { const t = fmToJs(rest, note); out.push(`<ng-container ng-if="${attrSafe(t)}">`); stack.push({ kind: "if", tried: [t] }); break; }
+      case "if": { const t = fm(rest, note); out.push(`<ng-container ng-if="${attrSafe(t)}">`); stack.push({ kind: "if", tried: [t] }); break; }
       case "elseif": case "else": {
         const frame = stack.at(-1);
         if (frame?.kind === "if") {
           const nots = frame.tried.map((c) => `!(${c})`);
-          const own = tag === "elseif" ? fmToJs(rest, note) : null;
+          const own = tag === "elseif" ? fm(rest, note) : null;
           const t = own ? [...nots, `(${own})`].join(" && ") : nots.join(" && ");
           if (own) frame.tried.push(own);
           out.push(`</ng-container><ng-container ng-if="${attrSafe(t)}">`);
@@ -197,12 +227,12 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
       case "list": {
         const lm = /^([\s\S]+?)\s+as\s+(\w+)(?:\s*,\s*(\w+))?$/.exec(rest);
         if (lm) {
-          const list = fmToJs(lm[1], note);
+          const list = fm(lm[1], note);
           out.push(`<ng-container ng-repeat="${attrSafe(lm[3] ? `(${lm[2]}, ${lm[3]}) in ${list}` : `${lm[2]} in ${list}`)}">`);
-          stack.push({ kind: "list", list });
+          stack.push({ kind: "list", list, item: lm[3] ?? lm[2] });
         } else {
           // <#list seq> ... <#items as x> ... </#items> ... </#list>: the outer wraps, the items repeat.
-          stack.push({ kind: "listOuter", list: fmToJs(rest, note), opened: false });
+          stack.push({ kind: "listOuter", list: fm(rest, note), opened: false });
         }
         break;
       }
@@ -212,16 +242,16 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
         if (frame?.kind === "listOuter" && im) {
           out.push(`<ng-container ng-repeat="${attrSafe(im[2] ? `(${im[1]}, ${im[2]}) in ${frame.list}` : `${im[1]} in ${frame.list}`)}">`);
           frame.opened = true;
-          stack.push({ kind: "list", list: frame.list });
+          stack.push({ kind: "list", list: frame.list, item: im[2] ?? im[1] });
         } else { note("<#items> outside a <#list> has nothing to repeat; its body was kept once."); out.push("<ng-container>"); stack.push({ kind: "plain" }); }
         break;
       }
       case "sep": case "break": case "continue": break;
-      case "switch": stack.push({ kind: "switch", subject: fmToJs(rest, note), tried: [], open: false }); break;
+      case "switch": stack.push({ kind: "switch", subject: fm(rest, note), tried: [], open: false }); break;
       case "case": {
         const frame = stack.at(-1);
         if (frame?.kind === "switch") {
-          const t = `(${frame.subject}) == ${fmToJs(rest, note)}`;
+          const t = `(${frame.subject}) == ${fm(rest, note)}`;
           if (frame.open) out.push("</ng-container>");
           out.push(`<ng-container ng-if="${attrSafe(t)}">`); frame.tried.push(t); frame.open = true;
         }

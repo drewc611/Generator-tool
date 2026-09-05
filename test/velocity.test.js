@@ -68,3 +68,14 @@ test("a run composes each page into the layout that reads $screen_content, inlin
     await run.cleanup();
   }
 });
+
+test("a macro calling a macro, a string literal argument, an unclosed #define and $foreach.last are read as Velocity reads them", () => {
+  const notes = [];
+  const note = (n) => notes.push(n);
+  assert.equal(lowerVelocity(`#macro(a $t)<i>$t</i>#end#macro(b $t)<p>#a($t)</p>#end#b($x)`, note), `<p><i>{{ x }}</i></p>`);
+  assert.equal(lowerVelocity(`#macro(h $t)<h1>$t</h1>#if($t)!#end#end#h("Hello")`, note), `<h1>Hello</h1><ng-container ng-if="'Hello'">!</ng-container>`);
+  const cut = lowerVelocity(`<p>before</p>#define($x)<b>x</b>\n<p>AFTER</p>`, note);
+  assert.match(cut, /AFTER/, "an unclosed #define keeps the rest of the file");
+  assert.ok(notes.some((n) => /never reaches its #end/.test(n)));
+  assert.equal(vtlToJs("$foreach.last", note), "$last");
+});

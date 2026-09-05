@@ -6,6 +6,8 @@ import test from "node:test";
 import { fmToJs, lowerFreemarker, readInputs } from "../plugins/input-freemarker/index.js";
 import { ROOT, runPipeline } from "./helpers.js";
 
+const D = "$";
+
 /**
  * FreeMarker's directives and its expression language lowered onto the
  * dialect; the defaults, existence tests and built ins with a JS spelling
@@ -28,9 +30,9 @@ test("defaults, existence tests, built ins and word operators become the JS they
 test("if, elseif, list with else, items, switch and a macro lower onto the dialect's blocks", () => {
   const notes = [];
   const out = lowerFreemarker(
-    `<#if a>1<#elseif b>2<#else>3</#if><ul><#list xs as x><li>\${x}</li><#else><li>none</li></#list></ul>` +
-    `<#list ys><ol><#items as y><li>\${y}</li></#items></ol></#list><#switch t><#case "p">P<#break><#default>D</#switch>` +
-    `<#macro tag n><b>\${n}</b></#macro><@tag n=title/>`,
+    `<#if a>1<#elseif b>2<#else>3</#if><ul><#list xs as x><li>${D}{x}</li><#else><li>none</li></#list></ul>` +
+    `<#list ys><ol><#items as y><li>${D}{y}</li></#items></ol></#list><#switch t><#case "p">P<#break><#default>D</#switch>` +
+    `<#macro tag n><b>${D}{n}</b></#macro><@tag n=title/>`,
     (n) => notes.push(n)
   );
   assert.equal(out,
@@ -75,10 +77,23 @@ test("a comparison in parentheses, a self closing call before a block call, a li
   const notes = [];
   const note = (n) => notes.push(n);
   assert.equal(lowerFreemarker(`<#if (n > 3)>big</#if>`, note), `<ng-container ng-if="(n > 3)">big</ng-container>`);
-  assert.equal(lowerFreemarker(`<#macro row x>[<#nested>|\${x}]</#macro><@row x="a"/> MIDDLE <@row x="b">body</@row>`, note), `[|{{ "a" }}] MIDDLE [body|{{ "b" }}]`);
-  const listed = lowerFreemarker(`<#list users><ul><#items as u><li>\${u}</li></#items></ul><#else><p>none</p></#list>`, note);
+  assert.equal(lowerFreemarker(`<#macro row x>[<#nested>|${D}{x}]</#macro><@row x="a"/> MIDDLE <@row x="b">body</@row>`, note), `[|{{ "a" }}] MIDDLE [body|{{ "b" }}]`);
+  const listed = lowerFreemarker(`<#list users><ul><#items as u><li>${D}{u}</li></#items></ul><#else><p>none</p></#list>`, note);
   assert.equal(listed, `<ul><ng-container ng-repeat="u in users"><li>{{ u }}</li></ng-container></ul><ng-container ng-if="!users || !users.length"><p>none</p></ng-container>`);
   assert.equal((listed.match(/<ng-container/g) ?? []).length, (listed.match(/<\/ng-container>/g) ?? []).length, "openers and closers balance");
   assert.equal(fmToJs(`"Done! Next" + x!"d"`, note), `"Done! Next" + (x || "d")`);
   assert.equal(fmToJs(`{"a": 1}`, note), `{"a": 1}`);
+});
+
+test("a macro calling a macro, a formatting selector, implicit loop variables, block assigns and positional arguments are read as FreeMarker reads them", () => {
+  const notes = [];
+  const note = (n) => notes.push(n);
+  assert.equal(lowerFreemarker(`<#macro a t><i>${D}{t}</i></#macro><#macro b t><p><@a t=t/></p></#macro><@b t="x"/>`, note), `<p><i>{{ "x" }}</i></p>`);
+  assert.equal(fmToJs("amount?string.currency", note), "amount");
+  assert.ok(notes.some((n) => /\?string\.currency/.test(n)), "the formatting selector is named");
+  const listed = lowerFreemarker(`<#list users as user>${D}{user_index}<#if user_has_next>,</#if></#list>`, note);
+  assert.match(listed, /\{\{ \$index \}\}/);
+  assert.ok(notes.some((n) => /user_has_next/.test(n)));
+  assert.equal(lowerFreemarker(`<#assign box><b>captured</b></#assign><p>page</p>`, note), `<p>page</p>`);
+  assert.equal(lowerFreemarker(`<#macro greet who><b>Hi ${D}{who}</b></#macro><@greet "World"/>`, note), `<b>Hi {{ "World" }}</b>`, "a positional argument takes the declared parameter");
 });

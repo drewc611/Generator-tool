@@ -33,7 +33,7 @@ export function vtlToJs(code, note = () => {}) {
     let out = part;
     if (/\[\s*[\w$.]+\s*\.\.\s*[\w$.]+\s*\]/.test(out)) note(`\`${part.trim().slice(0, 40)}\` is a range; the port repeats over a list it must be given.`);
     out = out
-      .replace(/\$foreach\.(count|index|first|last|hasNext)\b/g, (m, f) => ({ count: "($index + 1)", index: "$index", first: "($index == 0)", last: "$$last", hasNext: "$$hasNext" })[f])
+      .replace(/\$foreach\.(count|index|first|last|hasNext)\b/g, (m, f) => ({ count: "($index + 1)", index: "$index", first: "($index == 0)", last: "$last", hasNext: "$hasNext" })[f])
       .replace(/\$velocityCount\b/g, "($index + 1)")
       .replace(/\$!?\{([\w]+(?:\.[\w]+)*)\}/g, "$1")
       .replace(/\$!?(?!(?:index|last|hasNext)\b)(?=[A-Za-z_])/g, "")
@@ -44,7 +44,7 @@ export function vtlToJs(code, note = () => {}) {
       .replace(/\.equalsIgnoreCase\(([^()]+)\)/g, ".toLowerCase() == ($1).toLowerCase()")
       .replace(/\.toString\(\)/g, "");
     for (const [re, to] of WORD_OPS) out = out.replace(re, to);
-    if (/\$last|\$hasNext/.test(out)) note("`$foreach.last` or `$foreach.hasNext` was read; the dialect has only the index, so it is left as written.");
+    if (/\$hasNext/.test(out)) note("`$foreach.hasNext` was read; the dialect's repeat has $last and $index, so it is left as written for a person.");
     return out;
   }).join("");
 }
@@ -93,10 +93,10 @@ function referenceEnd(text, at) {
 }
 
 /** Lower a Velocity template onto the attribute dialect. resolve(name) returns a held template or null. */
-export function lowerVelocity(source, note = () => {}, resolve = null, depth = 0) {
+export function lowerVelocity(source, note = () => {}, resolve = null, depth = 0, macros = new Map()) {
   let text = String(source ?? "").replace(/#\*[\s\S]*?\*#/g, "").replace(/^[ \t]*##.*$/gm, "").replace(/([^\\])##.*$/gm, "$1");
-  const macros = new Map();
-  // #macro(name $a $b) ... #end, defined here and expanded at each call.
+  // #macro(name $a $b) ... #end, defined here or in a #parse before the call,
+  // shared down every expansion so a macro that calls a macro still resolves.
   const macroRe = /#macro\s*\(\s*(\w+)([^)]*)\)/g;
   for (let m = macroRe.exec(text); m; m = macroRe.exec(text)) {
     const end = blockEnd(text, m.index + m[0].length);
@@ -111,7 +111,13 @@ export function lowerVelocity(source, note = () => {}, resolve = null, depth = 0
     let body = mac.body;
     mac.params.forEach((p, i) => {
       if (args[i] === undefined) { note(`The macro \`#${name}\` was called without \`$${p}\`; the name is left as written.`); return; }
-      body = body.replace(new RegExp(`\\$!?\\{?${p}\\b\\}?`, "g"), () => args[i]);
+      const re = new RegExp(`\\$!?\\{?${p}\\b\\}?`, "g");
+      const lit = /^(["'])([\s\S]*)\1$/.exec(args[i]);
+      if (!lit) { body = body.replace(re, () => args[i]); return; }
+      // A string literal argument keeps its quotes inside a directive's
+      // parentheses and sheds them in the page, as Velocity renders it.
+      body = body.replace(/#\w+\s*\([^)]*\)/g, (seg) => seg.replace(re, () => args[i]));
+      body = body.replace(re, () => lit[2]);
     });
     note(`The macro \`#${name}(...)\` was expanded at its call site with its arguments substituted textually. Check any body text that shares a parameter's name.`);
     return body;
@@ -120,7 +126,6 @@ export function lowerVelocity(source, note = () => {}, resolve = null, depth = 0
   const out = [];
   const stack = [];
   let i = 0;
-  const lowerRange = (from, to) => { const saved = i; const savedText = text; i = from; while (i < to) step(to); i = saved; text = savedText; };
   function step(limit) {
     const hash = text.indexOf("#", i); const dollar = text.indexOf("$", i);
     let next = [hash, dollar].filter((x) => x >= 0 && x < limit).sort((a, b) => a - b)[0];
@@ -171,7 +176,7 @@ export function lowerVelocity(source, note = () => {}, resolve = null, depth = 0
         const nm = /^\s*["']([^"']+)["']\s*$/.exec(argText ?? "");
         const body = nm && resolve && depth < 6 ? resolve(nm[1]) : null;
         if (body == null) { note(`#parse(${(argText ?? "").trim().slice(0, 40)}) names a template this run does not hold or computes; the tag was removed and the content stands without it.`); return; }
-        out.push(lowerVelocity(body, note, resolve, depth + 1));
+        out.push(lowerVelocity(body, note, resolve, depth + 1, macros));
         return;
       }
       case "include": {
@@ -183,10 +188,10 @@ export function lowerVelocity(source, note = () => {}, resolve = null, depth = 0
       }
       case "set": case "define": case "evaluate": case "literal":
         note(`#${name}(${(argText ?? "").trim().slice(0, 40)}) is server side machinery with no client equivalent. It was removed and is named here so the gap is visible.`);
-        if (name === "define" || name === "literal") { const e = blockEnd(text, i); if (e) i = e.end; }
+        if (name === "define" || name === "literal") { const e = blockEnd(text, i); if (e !== -1) i = e.end; else note(`#${name} never reaches its #end; the rest of the file was kept as text.`); }
         return;
       default:
-        if (macros.has(name)) { out.push(lowerVelocity(expandMacro(name, argText ?? ""), note, resolve, depth + 1)); return; }
+        if (macros.has(name)) { out.push(lowerVelocity(expandMacro(name, argText ?? ""), note, resolve, depth + 1, macros)); return; }
         if (argText !== null) { note(`#${name}(...) calls a macro this run does not hold (a library or a #parse the run lacks); the call was removed.`); return; }
         // #hashtag in prose is text, as Velocity prints it.
         out.push(dm[0]);

@@ -44,3 +44,9 @@ test("a template a reader read from a second file is claimed by that reader, and
   assert.deepEqual(c.screens.map((s) => s.file).sort(), ["orders.component.html", "orders.component.ts"]);
   assert.deepEqual(c.unread, ["Views/_ViewStart.cshtml"], "the skipped Razor file is unclaimed markup, not an asset");
 });
+
+test("the extensions the jinja and underscore readers claim are markup when nobody claimed them", () => {
+  const c = census(["a.j2", "b.ejs", "c.tpl", "d.jinja", "e.mustache"].map((rel) => ({ rel })), []);
+  assert.deepEqual(c.unread, ["a.j2", "b.ejs", "c.tpl", "d.jinja", "e.mustache"]);
+  assert.deepEqual(c.assets, []);
+});
