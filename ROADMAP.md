@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and eighty eight features across one hundred and four phases. The statuses are
+Five hundred and eighty nine features across one hundred and five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-808 tests, on Node 18, 20 and 22, and on Windows in CI.
+809 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2233,14 +2233,20 @@ Blade is Laravel's template language, directives that begin with @ and PHP expre
 thirty four readers each take the files they recognise, and a legacy tree carries pages, templates and scripts none of them knows. COVERAGE.md counts screens; vis-readers counts files, so the question of what the run did not even look at has an answer instead of an assumption. At verify, when the readers have done what they will do, every file the scan kept lands in exactly one of five rows: read as a screen, with the reader credited by name and a count per reader; a script the analyzers scanned that produced no screen, which is what a script that is not a component should do; a style; an asset or data file; or markup no reader claimed, the row a port owner reads first, named in the notes so a page the port has nothing from is a visible gap and not a silent one. Whether each unclaimed file is a page the port needs, and which reader should learn its shape, is a person's call. test/readers-census.test.js holds it.
 
 
+## Phase 105: four dialects, one component
+
+**589. The same page in jinja, Twig, Liquid and Blade is one React, one Vue and one Svelte component, byte for byte** 🔨
+CI already asserts that a screen written in Angular and in Vue produces byte identical React, Vue, Svelte and custom element output, which is the only honest way to claim the middle is framework blind. The server dialects now get the same proof: one product page, a heading, a three way stock condition and a tag list with its empty state, is written four times in jinja, Twig, Liquid and Blade, each is run through its own reader, and the emitted React, Vue and Svelte components are compared byte for byte once the two provenance lines naming the source file and its dialect are set aside, and asserted to still differ with them, because the port must say where it came from. A reader that lowers a conditional chain or an empty state one character differently from the others now fails the suite and CI rather than shipping a quiet divergence. test/dialects.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 541 |
+| new in this branch | 542 |
 | planned | 3 |
-| total | 588 |
+| total | 589 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
