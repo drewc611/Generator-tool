@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eight features across one hundred and twenty four phases. The statuses are
+Six hundred and nine features across one hundred and twenty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2343,14 +2343,19 @@ JSP with JSTL was the enterprise Java page for twenty years: HTML with <c:if>, <
 **608. The JSP reader and the local CI runner reviewed, ten defects fixed with the inputs that exposed them** 🔨
 The review cadence held for the eighth time. In the JSP reader, six places still quoted a literal by hand after the hygiene pass had introduced quoteJs, so an apostrophe in a c:out default or a fmt value broke the expression; one helper now spells a value wherever JavaScript is wanted, an expression as itself, a literal quoted, text around expressions as a concatenation, and c:out prints a literal or an interpolation as the text it is rather than an interpolation inside an interpolation. A dynamic include was parsed without its scripts and styles stripped, unlike the page and a static include, so a footer's script landed in the template; it is stripped the same way. A Spring form cssClass was copied raw, so an expression in it survived unlowered; it goes through the text lowering, an own id or name is kept rather than doubled, and checkboxes honour itemValue and itemLabel like a select. A test with a trailing space or two expressions became a quoted string and read as always true; it is trimmed and a mixed one is read as the concatenation it is and named. An inner c:forEach that reused the outer loop's status name deleted the outer aliases when it closed, leaving a later read unlowered and an input invented; the outer status is restored. The bare function stripped jsp, views or pages without requiring a slash after them, so viewstate.jsp became tate, and two pages that bare to one name overwrote each other's emitted file; the slash is required and a colliding page keeps its whole path or a counted suffix, named. A spaceless ternary (a ? b:c(x) : d) read as a tag library call; only a declared prefix names one, which is what the prefixes the directives record are for. In the runner, a step that fails or is interrupted may leave files it would have removed on success, one of them a planted secret that makes every later demo fail at the secret gate with no hint why; the runner now names what appeared and removes those untracked paths with --clean and nothing else; a spawn failure names the missing shell instead of printing NaN; and zero parsed or matched steps is a failure, because nothing run proves nothing. The template resolver the tag readers and Smarty and Pug each wrote is one, in dsp-ir/text.js, held to one home. Each fix carries the input that exposed it in test/jsp.test.js and test/ci-local.test.js.
 
+## Phase 125: the intranet's page
+
+**609. input-cfml reads ColdFusion Markup, the tag language a generation of intranets and shops were written in** 🔨
+CFML is HTML with <cfif>, <cfloop>, <cfswitch> and <cfoutput> around it, #expressions# inside a cfoutput, <cfset> and <cfparam> for variables, <cfinclude> for shared markup, <cfquery> for SQL in the page, <cfscript> for code, and a library of functions whose names are its own. input-cfml lowers the tags onto the dialect: cfif with its cfelseif and cfelse onto the chain negated the way the engine evaluates it, and a cfif inside an attribute value onto the ternary it means; cfloop over an array onto ng-repeat (with item and index tracked), over a list onto ng-repeat over the list split on its delimiter, over a collection onto the key and value form, over a query onto rows with unqualified names read as the row's columns the way the engine resolves them and named, and a counted or conditional loop kept once and named; cfswitch and cfcase with their value lists onto the equalities they test; cfoutput onto the interpolations it turned on, a doubled ## the literal # it is; cfset onto a substituted alias where the value is fixed and named where it depends on a branch or reads itself, cfparam's default named; cfinclude onto the page it names; cfform, cfinput, cftextarea and cfselect onto a form and its inputs with the server side validation attributes named. Expressions are spelled as JavaScript outside strings: EQ, NEQ, GT, LT, GTE, LTE, IS, AND, OR, NOT, MOD and the spelled out forms become their signs, a lone & becomes +, a doubled quote inside a string is the quote and a #x# inside one is a concatenation; Len, ArrayLen, UCase, Trim, IsDefined, StructKeyExists, ArrayIsEmpty, Replace with ALL, Left, Right, Val, ListLen and their kin are rewritten, DateFormat, NumberFormat, DollarFormat and the other formatters keep their value unformatted and are named, and a function the reader does not know or the application defined is kept and named. CFML arrays are one based, so a literal index is shifted and a variable index is shifted and named. A query, a cfscript block, a custom tag, a cflocation, a cfsilent's output and the url, form, cgi and session scopes are named as what the server did or supplied and never carried, and Application.cfm and OnRequestEnd.cfm are the application's own files, not screens. .cfm and .cfml reach the scan and the census. The same product page written in CFML is the tenth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/cfml.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 561 |
+| new in this branch | 562 |
 | planned | 3 |
-| total | 608 |
+| total | 609 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

@@ -112,6 +112,7 @@ const DOES = {
   "input-razor": "razor views: @if, @foreach, @switch and @expressions lowered, composed into the layout _ViewStart names with partials and sections in place, Model and ViewBag as inputs",
   "input-freemarker": "freemarker templates: <#if>, <#list> with its else, <#switch>, ${x!\"d\"} defaults and ?built_ins lowered, includes inlined, macros expanded at their calls",
   "input-pug": "pug templates read from their indentation: if, each with index and else, case, mixins, extends and block composed, includes inlined, #{} and !{} lowered",
+  "input-cfml": "ColdFusion pages: cfif with its chain, cfloop over arrays, lists, collections and queries, cfswitch, cfoutput's #expressions#, cfset, cfinclude and cfform lowered; queries, cfscript, custom tags and scopes named",
   "input-jsp": "JSP with the standard tag library: c:if, c:choose, c:forEach with its status, c:out, c:set, c:url, includes and Spring form tags lowered, EL spelled as JS, scriptlets and formats named",
   "input-smarty": "Smarty templates rewritten onto jinja's tags and lowered by one lowering: {if}, {foreach} with its properties, {section}, {include}, {extends} and {block} with append and prepend, modifiers rewritten or named",
   "input-thymeleaf": "Thymeleaf natural templates: th:if, th:each with its status, th:text replacing the prototype, link expressions, th:switch, th:field as a model, fragments and the Layout Dialect composed, utilities and message keys named",
