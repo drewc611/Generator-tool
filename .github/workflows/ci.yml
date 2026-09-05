@@ -899,9 +899,28 @@ jobs:
           node src/cli.js run --src mp-src --out mp-out --max-perf 99 || { echo "a real ceiling failed a page under it"; exit 1; }
           rm -rf mp-src mp-out mp-err.txt
 
+      - name: the lifecycle scorecard gathers the teardown axes
+        run: |
+          mkdir -p lc-src
+          printf '%s\n' 'window.addEventListener("resize", onResize); setInterval(tick, 1000);' > lc-src/widget.js
+          node src/cli.js run --src lc-src --out lc-out
+          test -f lc-out/LIFECYCLE_SCORECARD.md || { echo "no lifecycle scorecard"; exit 1; }
+          grep -q "leak(s) flagged across" lc-out/LIFECYCLE_SCORECARD.md || { echo "the scorecard did not tally"; exit 1; }
+          rm -rf lc-src lc-out
+
+      - name: --max-leaks fails a leaky script at zero and passes it under a real ceiling
+        run: |
+          mkdir -p ml-src
+          printf '%s\n' 'window.addEventListener("resize", onResize); setInterval(tick, 1000); const io = new IntersectionObserver(onSee);' > ml-src/widget.js
+          if node src/cli.js run --src ml-src --out ml-out --max-leaks 0 2>ml-err.txt; then echo "a ceiling of zero did not fail the leaky script"; exit 1; fi
+          grep -q "leak(s) against a ceiling of 0" ml-err.txt || { echo "the failure did not name the ceiling"; exit 1; }
+          rm -rf ml-out
+          node src/cli.js run --src ml-src --out ml-out --max-leaks 99 || { echo "a real ceiling failed a script under it"; exit 1; }
+          rm -rf ml-src ml-out ml-err.txt
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "570" ]; then
-            echo "ROADMAP.md holds $count entries and claims 570"; exit 1
+          if [ "$count" != "571" ]; then
+            echo "ROADMAP.md holds $count entries and claims 571"; exit 1
           fi

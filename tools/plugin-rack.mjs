@@ -49,6 +49,7 @@ const DOES = {
   "vis-a11y": "every accessibility axis on one scorecard, each number another plugin's, none invented",
   "vis-security": "every security concern on one scorecard: markup, supply chain, sandbox, cookies, trackers",
   "vis-perf": "every performance concern on one scorecard: scripts, first paint, inline, images, fonts, with the port's weight beside",
+  "vis-lifecycle": "every teardown on one scorecard: timers uncleared, listeners unremoved, observers open; storage not a leak",
   "output-preact": "the same proven JSX, a tenth the runtime",
   "output-solid": "props as props.x and signals as x(), because Solid punishes spelling",
   "output-alpine": "behavior written on the markup, for apps that never wanted a build",

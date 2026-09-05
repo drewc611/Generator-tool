@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy features across eighty six phases. The statuses are
+Five hundred and seventy one features across eighty seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-735 tests, on Node 18, 20 and 22, and on Windows in CI.
+745 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2125,14 +2125,20 @@ the scorecards report; the repository's honest pattern is that a report can beco
 the ceiling set was asymmetric: accessibility and security had budgets and performance did not. --max-perf N fails the run when the performance scorecard's flagged count exceeds N, naming PERFORMANCE.md as where each concern is listed, refuses a ceiling that is not a number out loud, and only ever adds a gate. It lives in general-policy beside the other ceilings and reckons the total through vis-perf's own exported perfTotal from what the analyzers left at plan, so it agrees with the scorecard to the item and does not depend on verify handler order. The port's size is never in the count, because a byte is not a defect and --max-kb already budgets it. With no flag nothing is enforced and the scorecard still reports. test/perf-ceiling.test.js holds it, including that a megabyte of size adds nothing to the count; a CI step runs a heavy page under a ceiling of zero and expects the failure, then under 99 and expects the pass.
 
 
+## Phase 87: every teardown on one page
+
+**571. vis-lifecycle gathers the cleanup axes into one scorecard, with --max-leaks the ceiling** 🔨
+a component port has to tear down what the old page only set up, and three plugins read that debt on their own axes: dsp-timers (a setInterval or setTimeout with no matching clear), dsp-events (a global addEventListener with no matching remove) and dsp-observers (an observer with no disconnect), each writing its own report. vis-lifecycle reads what those plugins left on the context and writes LIFECYCLE_SCORECARD.md, one table of every axis with the count it reported and exactly what that count is, every number another plugin's, an axis whose plugin did not run named "not measured" rather than scored zero, and nothing written when none ran. dsp-storage is deliberately not in the count: a storage write is a persistence surface, not a teardown the old page forgot, and it keeps its own report. --max-leaks turns the total into a ceiling the run enforces, the same shape as --max-security, --max-perf, --max-a11y, --max-kb and --max-unverified, reckoned through vis-lifecycle's own function so the gate agrees with the scorecard; a non-number is refused out loud and no flag means no check. test/lifecycle-scorecard.test.js and test/leaks-ceiling.test.js hold it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 523 |
+| new in this branch | 524 |
 | planned | 3 |
-| total | 570 |
+| total | 571 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

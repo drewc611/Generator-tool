@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { securityTotal } from "../vis-security/index.js";
 import { perfTotal } from "../vis-perf/index.js";
+import { leaksTotal } from "../vis-lifecycle/index.js";
 
 /**
  * Two gates, at the two moments they can still do something.
@@ -126,6 +127,21 @@ export default {
           throw new Error(`${found} performance item(s) against a ceiling of ${max}. PERFORMANCE.md names each concern; fix them or raise the ceiling knowingly.`);
         }
         log.info(`${found} performance item(s), under the ceiling of ${max}`);
+      }
+
+      // And once more for what the port has to tear down: the lifecycle
+      // scorecard's count, capped, reckoned the same way through vis-lifecycle's
+      // own function. A storage write is not in the count; it is a persistence
+      // surface, not a teardown the old page forgot.
+      const leaksCeiling = ctx.config.maxLeaks ?? ctx.config["max-leaks"];
+      if (leaksCeiling !== undefined && leaksCeiling !== null && leaksCeiling !== false) {
+        const max = Number(leaksCeiling);
+        if (!Number.isFinite(max)) throw new Error(`--max-leaks needs a number, got "${leaksCeiling}".`);
+        const found = leaksTotal(ctx);
+        if (found > max) {
+          throw new Error(`${found} leak(s) against a ceiling of ${max}. LIFECYCLE_SCORECARD.md names each axis; fix them or raise the ceiling knowingly.`);
+        }
+        log.info(`${found} leak(s), under the ceiling of ${max}`);
       }
 
       const ceiling = ctx.config.maxUnverified ?? ctx.config["max-unverified"];
