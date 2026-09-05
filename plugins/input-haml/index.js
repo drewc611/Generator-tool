@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
 import { parseIndented, VOID_ELEMENTS } from "../dsp-ir/markup.js";
-import { attrSafe, matchBracket, quoteJs, readInputs, resolveTemplate, splitCommas } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket, quoteJs, readInputs, resolveTemplate, rewriteReceivers, splitCommas } from "../dsp-ir/text.js";
 
 /**
  * Haml, the template language of a generation of Rails applications: a tree
@@ -152,26 +152,6 @@ function helper(name, rawArgs, scope, hold) {
   }
 }
 
-/** Each `receiver.method` match rewritten with its receiver, the receiver being the balanced path just before the dot. */
-function rewriteReceivers(s, re, rewrite) {
-  let out = s;
-  for (;;) {
-    const m = re.exec(out);
-    re.lastIndex = 0;
-    if (!m) return out;
-    let i = m.index - 1; let depth = 0;
-    for (; i >= 0; i -= 1) {
-      const c = out[i];
-      if (c === ")" || c === "]") depth += 1;
-      else if (c === "(" || c === "[") { if (depth === 0) break; depth -= 1; }
-      else if (depth === 0 && !/[\w$.@\u0001\u0002]/.test(c)) break;
-    }
-    const start = i + 1;
-    const recv = out.slice(start, m.index);
-    const whole = start === 0 && m.index + m[0].length === out.length;
-    out = out.slice(0, start) + rewrite(recv, m[1], whole) + out.slice(m.index + m[0].length);
-  }
-}
 
 export function freshScope(note = () => {}) {
   const scope = { note, holds: [], aliases: new Map(), depth: 0, form: null, dir: "" };
@@ -565,6 +545,7 @@ export function railsReader({ name, extension, grammar, readBy, origin, label })
             inputs: readInputs(template),
             outputs: [],
             template,
+            composed: layoutKey && !partial ? [layoutKey] : [],
             templateOrigin: layoutKey && !partial ? `${origin}, composed into its layout and lowered` : `${origin}, lowered`,
             usesNgIf: /ng-if/.test(template),
             usesNgFor: /ng-repeat/.test(template),

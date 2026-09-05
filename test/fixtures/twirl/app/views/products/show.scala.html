@@ -1,0 +1,34 @@
+@(product: Product, related: Seq[Product], orderForm: Form[OrderData])(implicit request: RequestHeader, messages: Messages)
+@import helper._
+
+@main(product.name) {
+  <h1>@product.name</h1>
+  @product.description.map { text =>
+    <p class="description">@text</p>
+  }.getOrElse {
+    <p class="description empty">@messages("product.noDescription")</p>
+  }
+  @product.stock match {
+    case 0 => { <p class="out">Sold out</p> }
+    case n if n < 5 => { <p class="low">Only @n left</p> }
+    case _ => { <p>In stock</p> }
+  }
+  <ul class="tags">
+    @for(tag <- product.tags) {
+      <li>@tag</li>
+    }
+  </ul>
+  @defining(related.take(3)) { shown =>
+    <section class="related">
+      @for((p, i) <- shown.zipWithIndex) {
+        @partials.card(p, i)
+      }
+    </section>
+  }
+  @helper.form(action = routes.Orders.create(product.id), 'class -> "order") {
+    @CSRF.formField
+    @helper.inputText(orderForm("quantity"), '_label -> "Quantity", 'min -> "1")
+    <button type="submit">@messages("product.buy")</button>
+  }
+  <p>Questions? Write to shop@@example.com</p>
+}

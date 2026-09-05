@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and fourteen features across one hundred and thirty phases. The statuses are
+Six hundred and fifteen features across one hundred and thirty one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2373,14 +2373,19 @@ Slim is Haml's terser successor in the Rails world: the same tree written as ind
 **614. The Slim reader read again, and the Haml lowering with it** 🔨
 A review pass over input-slim and the shared Rails lowering, each finding fixed with the input that exposed it as a test. A lone * in a tag's text was read as a splat and dropped; now only * before a name spreads attributes, and the text keeps its asterisk. Slim's whitespace markers, < and > after the tag, were read as the tag's name running on; they stand after the tag and change spacing only. A Ruby line ending in a backslash continues onto the next, as a comma does, and the backslash is stripped. Inside a wrapped attribute list a splat before the pairs stopped the read, so `a(*link_attrs href="/x")` lost its href; the read now names the splat and goes on, and a bare name in the wrapper is the boolean Slim renders as an empty value. A text block nested more than one level deep lost its inner lines; they are flattened into the text. An inline `li:` with nothing after the colon lowers its children as the tag's body. The grammar predicate that told Haml's plain lines from Slim's was an identity check on the grammar object; it is now a `plain` entry each grammar carries. The Slim tag parser returns the notes it gathered so the lowering can voice them, and a fallback branch that dropped its children lowers them. test/slim.test.js holds it.
 
+## Phase 131: the Play view
+
+**615. input-twirl reads Twirl, the Play Framework's template language, with the Scala inside spelled as JavaScript** 🔨
+A Twirl template is a Scala function whose body is markup: its parameters declared on the first line as `@(product: Product)(implicit request: RequestHeader)`, and Scala reached from the markup through one character. The reader parses the header into typed parameter groups and lowers each construct that shapes markup onto the dialect: `@if(c) { } else if (d) { } else { }` as the chain negated the way the compiler evaluates it, `@for(x <- xs) { }` with `(x, i) <- xs.zipWithIndex` as a loop whose index is the dialect's own and a guard as a condition inside it, `@xs.map { x => }` as a loop, `@x match { case Some(v) => { } case None => { } case "a" => { } case n if n > 2 => { } case _ => { } }` as the tests those patterns mean with a pattern the client cannot test named, `@defining(e) { x => }` as an alias, `@Html(raw)` as bound html, `@@` as one @, `@* *@` dropped, `@{ block }` interpolated when it is an expression and named when it declares a val. Whether `.map { }` is a loop or a presence test depends on the receiver's type: a parameter the header declares as an Option is a presence test, one declared as a collection a loop, an undeclared receiver a loop with the assumption named, and a `.getOrElse { }` after the block proves an Option whatever was declared, because a collection has none. The Scala is spelled as JavaScript outside strings, with s interpolation as concatenation, Some and None, getOrElse, isEmpty, nonEmpty, isDefined, size, head, last, mkString, contains, take, exists, forall, the placeholder lambdas and the inline if rewritten, and a formatter named with its value interpolated unformatted. What the server supplied is named rather than approximated: the reverse router, a Form and the fields `helper.inputText(form("name"))` bind (emitted as the input with its model), `helper.form(action = ...)` as the form, `messages("key")` as its key, `CSRF.formField`, the request, the flash and the session. A layout is applied as a call, `@main(product.name) { body }`, whose template takes the body as a parameter typed Html: the reader binds the call's arguments to the layout's parameters, substitutes the body where the Html parameter is rendered, and skips the layout as a screen of its own with a note; a partial called the same way is inlined with its arguments bound and is a screen of its own besides. Twirl is the thirteenth dialect the byte identity gate holds to jinja's React, Vue and Svelte. Three defects the new reader exposed are fixed for every reader at once: a `class` attribute that interpolates is now a static class and an expression class in the IR rather than a literal `{{ }}` in the output, input-react reads a loop over a call chain such as `related.slice(0, 3).map(...)`, and the reader census counts a layout a reader composed into its pages as read rather than as markup no reader claimed, for the Rails readers as well. test/twirl.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 567 |
+| new in this branch | 568 |
 | planned | 3 |
-| total | 614 |
+| total | 615 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

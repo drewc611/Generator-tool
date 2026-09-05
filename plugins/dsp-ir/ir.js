@@ -722,7 +722,16 @@ function buildElement(node, d, ctx, sw = null) {
       continue;
     }
 
-    if (name.toLowerCase() === "class") { staticClass = value ?? ""; continue; }
+    if (name.toLowerCase() === "class") {
+      // class="card {{ i == 0 ? 'first' : '' }}": the literal words are the static class, each interpolation an expression class.
+      if (/\{\{/.test(value ?? "")) {
+        const parts = interpolate(value, ctx.expr);
+        staticClass = parts.filter((p) => p.literal !== undefined).map((p) => p.literal.trim()).filter(Boolean).join(" ");
+        for (const p of parts) if (p.expression !== undefined) classes.push({ kind: "expression", expression: p.expression });
+        continue;
+      }
+      staticClass = value ?? ""; continue;
+    }
     if (name.toLowerCase() === "style") {
       // An empty style attribute is consumed too: passed through as a plain
       // attribute it reaches react as a string prop, which throws.

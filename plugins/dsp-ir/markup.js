@@ -81,3 +81,16 @@ export function stripDelimited(text, open, close, keep = () => null) {
   }
   return out;
 }
+
+/**
+ * True when `index` stands inside an attribute value: an open tag with an odd
+ * count of double quotes since it opened. `spans` names the template spans
+ * that are not markup, so a > inside a condition closes no tag.
+ */
+export function insideAttribute(text, index, spans = null) {
+  const before = spans ? text.slice(0, index).replace(spans, "") : text.slice(0, index);
+  const open = before.lastIndexOf("<");
+  if (open < 0 || open < before.lastIndexOf(">")) return false;
+  const quotes = (before.slice(open).match(/"/g) ?? []).length;
+  return quotes % 2 === 1;
+}

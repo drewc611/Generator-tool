@@ -1,0 +1,16 @@
+@(title: String, active: String = "shop")(content: Html)(implicit messages: Messages)
+@* The shell every page renders inside; content is the page. *@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>@title - Shop</title>
+    <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/main.css")">
+  </head>
+  <body>
+    @partials.nav(active)
+    <main>
+      @content
+    </main>
+    <footer><small>@messages("footer.copyright")</small></footer>
+  </body>
+</html>

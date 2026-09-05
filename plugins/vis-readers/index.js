@@ -25,10 +25,18 @@ export function census(files, screens) {
     // An Angular component's templateUrl is a second file the same reader read.
     if (typeof s.templateOrigin === "string" && /\.[a-z]+$/i.test(s.templateOrigin) && !/\s/.test(s.templateOrigin)) byFile.set(s.templateOrigin.replace(/^\.\//, ""), s.readBy ?? "a reader");
   }
-  const rows = { screens: [], scripts: [], styles: [], assets: [], unread: [] };
+  // A layout or partial a reader composed into screens was read, into each of them.
+  const composedInto = new Map();
+  for (const s of screens) for (const c of s.composed ?? []) {
+    const rel = String(c).replace(/^\.\//, "");
+    const row = composedInto.get(rel) ?? { file: rel, reader: s.readBy ?? "a reader", into: 0 };
+    row.into += 1; composedInto.set(rel, row);
+  }
+  const rows = { screens: [], composed: [], scripts: [], styles: [], assets: [], unread: [] };
   for (const f of files) {
     const rel = f.rel.replace(/^\.\//, "");
     if (byFile.has(rel)) { rows.screens.push({ file: rel, reader: byFile.get(rel) }); continue; }
+    if (composedInto.has(rel)) { rows.composed.push(composedInto.get(rel)); continue; }
     if (MARKUP.test(rel)) { rows.unread.push(rel); continue; }
     if (SCRIPT.test(rel)) { rows.scripts.push(rel); continue; }
     if (STYLE.test(rel)) { rows.styles.push(rel); continue; }
@@ -48,7 +56,7 @@ export default {
       if (!ctx.sources?.files?.length) return log.debug("no source files to account for");
       const c = census(ctx.sources.files, ctx.screens);
       ctx.readers = c;
-      log.info(`${c.screens.length} file(s) read as screens by ${c.byReader.length} reader(s), ${c.unread.length} markup file(s) no reader claimed`);
+      log.info(`${c.screens.length} file(s) read as screens by ${c.byReader.length} reader(s), ${c.composed.length} composed into them, ${c.unread.length} markup file(s) no reader claimed`);
       if (c.unread.length) {
         ctx.unverified(
           `READERS.md names ${c.unread.length} markup file(s) no reader claimed (${c.unread.slice(0, 3).join(", ")}${c.unread.length > 3 ? ", ..." : ""}); ` +
@@ -71,6 +79,7 @@ answer instead of an assumption.
 | row | files |
 | --- | --- |
 | read as a screen | ${c.screens.length} |
+| composed into screens as a layout or partial | ${c.composed.length} |
 | scripts the analyzers scanned, no screen | ${c.scripts.length} |
 | styles | ${c.styles.length} |
 | assets and data | ${c.assets.length} |
@@ -89,6 +98,10 @@ ${c.unread.length
 ## Read as a screen
 
 ${c.screens.length ? c.screens.sort((a, b) => a.file.localeCompare(b.file)).map((s) => `- \`${s.file}\` by ${s.reader}`).join("\n") : "none"}
+
+## Composed into screens
+
+${c.composed.length ? `${c.composed.sort((a, b) => a.file.localeCompare(b.file)).map((s) => `- \`${s.file}\` by ${s.reader}, into ${s.into} screen(s)`).join("\n")}\n\nA layout or partial here is not a screen of its own: the reader wrote it into each page that renders inside it, so it ships as part of those components.` : "none"}
 
 ## Scripts the analyzers scanned
 

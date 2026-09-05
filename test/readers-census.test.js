@@ -12,13 +12,14 @@ import { ROOT, runPipeline } from "./helpers.js";
  */
 
 test("every file lands in exactly one row, and the unread row is markup only", () => {
-  const files = ["a.html", "b.blade.php", "c.js", "d.css", "e.png", "f.hbs", "g.json"].map((rel) => ({ rel }));
-  const screens = [{ file: "a.html", readBy: "static" }, { file: "./b.blade.php", readBy: "blade" }];
+  const files = ["a.html", "b.blade.php", "c.js", "d.css", "e.png", "f.hbs", "g.json", "layouts/app.blade.php"].map((rel) => ({ rel }));
+  const screens = [{ file: "a.html", readBy: "static" }, { file: "./b.blade.php", readBy: "blade", composed: ["layouts/app.blade.php"] }];
   const c = census(files, screens);
   assert.deepEqual(c.screens.map((s) => `${s.file}:${s.reader}`), ["a.html:static", "b.blade.php:blade"]);
   assert.deepEqual(c.unread, ["f.hbs"], "a template no reader claimed is the finding; a script is not");
+  assert.deepEqual(c.composed, [{ file: "layouts/app.blade.php", reader: "blade", into: 1 }], "a layout composed into a page was read, not left unclaimed");
   assert.deepEqual(c.scripts, ["c.js"]); assert.deepEqual(c.styles, ["d.css"]); assert.deepEqual(c.assets, ["e.png", "g.json"]);
-  assert.equal(c.screens.length + c.unread.length + c.scripts.length + c.styles.length + c.assets.length, files.length);
+  assert.equal(c.screens.length + c.composed.length + c.unread.length + c.scripts.length + c.styles.length + c.assets.length, files.length);
   assert.deepEqual(c.byReader, [["blade", 1], ["static", 1]]);
 });
 
@@ -29,7 +30,7 @@ test("a run writes READERS.md with the reader per screen file and names the mark
     assert.ok(run.ctx.written.includes("READERS.md"));
     const c = run.ctx.readers;
     assert.ok(c.byReader.some(([r]) => r === "ember") && c.byReader.some(([r]) => r === "handlebars"), "both readers are credited");
-    assert.equal(c.screens.length + c.unread.length + c.scripts.length + c.styles.length + c.assets.length, c.total);
+    assert.equal(c.screens.length + c.composed.length + c.unread.length + c.scripts.length + c.styles.length + c.assets.length, c.total);
     const md = await readFile(join(run.out, "READERS.md"), "utf8");
     assert.match(md, /by ember/);
     assert.match(md, /user-card\.js/, "the class beside the template is a script the analyzers scanned, not unread");

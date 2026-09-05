@@ -1,3 +1,4 @@
+import { insideAttribute } from "../dsp-ir/markup.js";
 import { attrSafe } from "../dsp-ir/text.js";
 
 /**
@@ -47,15 +48,6 @@ function splitArgs(text) {
   return parts.map((p) => p.trim()).filter(Boolean);
 }
 
-/** True when the text so far stands inside an attribute value: an open tag with an odd count of quotes since it opened. */
-function insideAttribute(text, index) {
-  // Template spans are not markup: a > inside {% if a > 1 %} closes no tag.
-  const before = text.slice(0, index).replace(/\{%[\s\S]*?%\}|\{\{[\s\S]*?\}\}/g, "");
-  const open = before.lastIndexOf("<");
-  if (open < 0 || open < before.lastIndexOf(">")) return false;
-  const quotes = (before.slice(open).match(/"/g) ?? []).length;
-  return quotes % 2 === 1;
-}
 
 /** The text of a branch as a JS string expression: literal pieces quoted, {{ }} pieces spliced in, a filter dropped and named. */
 function branchToJs(body, note) {
@@ -180,7 +172,7 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
     const code = m[1].trim();
 
     const iff = /^if\s+([\s\S]+)$/.exec(code);
-    if (iff && insideAttribute(text, m.index)) {
+    if (iff && insideAttribute(text, m.index, /\{%[\s\S]*?%\}|\{\{[\s\S]*?\}\}/g)) {
       // class="{% if a %}on{% else %}off{% endif %}" cannot hold an element; it
       // is the ternary it means. Only a flat chain is taken; a nested one falls through.
       const ternary = attributeTernary(text, re, m, note);

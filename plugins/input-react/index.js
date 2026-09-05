@@ -70,7 +70,8 @@ export function lowerReact(jsx, note = () => {}) {
     if (end === -1) { out += c; i += 1; continue; }
     const inner = jsx.slice(i + 1, end).trim();
 
-    const loop = /^([\w.$]+)\s*\.\s*map\s*\(\s*\(?\s*([\w$]+)\s*(?:,\s*[\w$]+\s*)?\)?\s*=>\s*([\s\S]*)$/.exec(inner);
+    // The list may be a call chain, related.slice(0, 3).map(...), as long as each call's arguments hold no bracket of their own.
+    const loop = /^([\w.$]+(?:\([^()]*\))?(?:\.[\w$]+(?:\([^()]*\))?)*)\s*\.\s*map\s*\(\s*\(?\s*([\w$]+)\s*(?:,\s*[\w$]+\s*)?\)?\s*=>\s*([\s\S]*)$/.exec(inner);
     const cond = /^([^&]+?)\s*&&\s*([\s\S]*)$/.exec(inner);
 
     if (loop && /<[a-zA-Z]/.test(loop[3])) {

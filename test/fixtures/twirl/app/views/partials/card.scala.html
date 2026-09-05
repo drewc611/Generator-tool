@@ -1,0 +1,5 @@
+@(product: Product, index: Int)
+<div class="card @if(index == 0) {first}">
+  <a href="@routes.Products.show(product.id)">@product.name</a>
+  <span class="price">@("%.2f".format(product.price))</span>
+</div>

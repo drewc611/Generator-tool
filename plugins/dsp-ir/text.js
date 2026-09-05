@@ -124,3 +124,24 @@ export function readInputs(template, { skip = [] } = {}) {
   }
   return [...names].sort();
 }
+
+/** Each `receiver.method` match rewritten with its receiver, the receiver being the balanced path just before the dot. */
+export function rewriteReceivers(s, re, rewrite) {
+  let out = s;
+  for (;;) {
+    const m = re.exec(out);
+    re.lastIndex = 0;
+    if (!m) return out;
+    let i = m.index - 1; let depth = 0;
+    for (; i >= 0; i -= 1) {
+      const c = out[i];
+      if (c === ")" || c === "]") depth += 1;
+      else if (c === "(" || c === "[") { if (depth === 0) break; depth -= 1; }
+      else if (depth === 0 && !/[\w$.@\u0001\u0002]/.test(c)) break;
+    }
+    const start = i + 1;
+    const recv = out.slice(start, m.index);
+    const whole = start === 0 && m.index + m[0].length === out.length;
+    out = out.slice(0, start) + rewrite(recv, m[1], whole) + out.slice(m.index + m[0].length);
+  }
+}
