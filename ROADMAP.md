@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and nineteen features across one hundred and thirty five phases. The statuses are
+Six hundred and twenty features across one hundred and thirty six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2398,14 +2398,19 @@ A review pass over the bound html change, each finding fixed with the input that
 **619. input-django reads Django's template language on the jinja lowering, its own spellings rewritten and what the server did named** 🔨
 Django's template language is jinja's grandparent with spellings of its own, and a template using any of them was read by input-jinja with those spellings dropped: `{% empty %}` fell through so the empty state rendered always, `{% ifequal %}` lost its test, a `{% comment %}` block kept its body, `{% url %}` inside an href left it empty, `forloop.counter` reached the port as a name nothing defines, and a filter argument after a colon reached it as written. input-django claims a template by a spelling only Django has (its tags, `forloop.`, a colon filter argument) and input-jinja leaves those files to it. The reader rewrites Django onto jinja and hands the result to the jinja lowering: `{% empty %}` is a for's else, `{% ifequal %}` and `{% ifnotequal %}` are the tests they mean, a `{% comment %}` block is gone, `{% with %}` and `{% blocktrans with %}` bind names for their block and each read is replaced with what it named (the plural form named and the singular carried), `{% trans %}` stands as its source text and is named, `{% static %}` keeps its path with the prefix named as the deployment's, `{% url %}` is kept as a call to `url`, the reverse router the port must supply, and the `as` forms of all three bind where they are read, `{% firstof %}` is the `||` chain, `{% widthratio %}` the ratio unrounded and named, `{% cycle %}`, `{% now %}`, `{% regroup %}` and `{% lorem %}` are removed and named, an include's `with` names are named, `reversed` is named, `forloop.*` is jinja's `loop.*`, and `{{ x|date:"Y" }}` is the call jinja spells with parentheses. The jinja lowering learned two things for every dialect riding it: `for key, value in map.items()` is the (key, value) loop over an object rather than a tuple that dropped its second name, and `loop.index0`, `loop.index` and `loop.first` are the dialect's own index spelled, with the rest still named. `{% extends "base.html" %}` composes the page into its base, the base is chrome the census counts as composed, and an include is a screen besides. Django is the fourteenth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/django.test.js holds it.
 
+## Phase 136: the fourteenth review pass
+
+**620. The Django reader read again** 🔨
+A review pass over input-django, each finding fixed with the input that exposed it. Django was detected per file, so a child template written only in the tags jinja shares, extending a Django base, was read by input-jinja against the raw base and lost every url, trans and static while the census called the base unread; a template is Django's by its own spellings and so is every template in its tree, the base it extends, the include it names, the child that extends it, and input-jinja leaves alone every file another reader already read or composed. Two apps' templates of one name collapsed to one selector and the second overwrote the first on disk, and `{% extends "base.html" %}` took the first of two bases by path; the selector keeps the app when the bared path would collide, a child's own app answers first, and a tie across apps is named. `|safe`, `|urlencode`, `|linebreaks`, `|striptags` and their kin were dropped silently, changing what the value meant; each dropped filter is named by what it meant. `{% url %}` keyword arguments lost their names and became positional; they travel as an object. A `{% blocktrans with %}` value quoted with a space was cut at the space and an unbalanced quote reached every emitter; the quoted alternation the `{% with %}` parser already had is shared. `{% blocktrans asvar %}` printed its text where the block stood and left the name unbound; the name is bound to the text and nothing is printed. A colon filter argument in a for's list or a url's argument survived into an expression no target evaluates; every tag's expression is rewritten. The include note printed the bound expressions and fired for `only`; it names the names, and `only` is its own fact. A name a removed tag defined, `regroup ... as` and `cycle ... as`, and a `trans ... as` name read inside a tag's test, reached the port as an input nothing supplies; defined names are excluded from the inputs and named, and aliases are read inside tags too. The detector claimed jinja's own `{% trans %}` block and `{% autoescape true %}` and a Liquid page's `{% comment %}` and colon filter; it knows those spellings apart. `loop.index` was rewritten in prose and outside any loop; it is spelled only inside a loop's own template spans. And a `{% with %}` name a loop inside the block rebinds keeps the loop's own. test/django.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 572 |
+| new in this branch | 573 |
 | planned | 3 |
-| total | 619 |
+| total | 620 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

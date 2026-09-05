@@ -40,8 +40,9 @@ export default {
       for (const file of candidates) {
         const text = bodies.get(file.rel.replace(/^\.\//, "")) ?? "";
         if (!text || !/\{%/.test(text)) continue;
-        // Django's own spellings are input-django's to read.
-        if (isDjango(text)) continue;
+        // Django's own spellings are input-django's to read, and so is every file it already read or composed into a screen.
+        const rel = file.rel.replace(/^\.\//, "");
+        if (isDjango(text) || ctx.screens.some((s) => s.file?.replace(/^\.\//, "") === rel || (s.composed ?? []).includes(rel))) continue;
 
         const bodyMatch = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(text);
         const markup = stripStyles(stripScripts(bodyMatch ? bodyMatch[1] : text)).trim();

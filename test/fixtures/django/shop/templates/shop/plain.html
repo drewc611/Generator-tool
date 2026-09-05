@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Plain - Shop{% endblock %}
+{% block content %}
+  <h1>{{ product.name }}</h1>
+  <ul>{% for t in product.tags %}<li>{{ t }}</li>{% endfor %}</ul>
+{% endblock %}

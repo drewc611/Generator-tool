@@ -19,7 +19,13 @@ import { attrSafe } from "../dsp-ir/text.js";
  */
 export function isDjango(text) {
   const t = String(text ?? "");
-  return /\{%-?\s*(?:load|url|static|csrf_token|trans|translate|blocktrans|blocktranslate|empty|ifequal|ifnotequal|comment|spaceless|autoescape|now|cycle|firstof|widthratio|lorem|regroup|verbatim|localize|get_static_prefix)\b/.test(t) || /\bforloop\./.test(t) || /\{\{[^}]*\|\s*\w+:/.test(t);
+  // Liquid in an .html page shares comment, cycle and the colon argument; its own tags say which engine this is.
+  if (/\{%-?\s*(?:assign|capture|unless|tablerow|liquid|render)\b|\{\{-?\s*site\./.test(t)) return false;
+  // jinja's i18n extension spells {% trans %} with no argument and {% autoescape true %}; Django's trans takes a string or a name and its autoescape on or off.
+  return /\{%-?\s*(?:load|url|static|csrf_token|blocktrans|blocktranslate|empty|ifequal|ifnotequal|comment|spaceless|now|cycle|firstof|widthratio|lorem|regroup|verbatim|localize|get_static_prefix)\b/.test(t)
+    || /\{%-?\s*(?:trans|translate)\s+(?:["']|[\w.]+\s*(?:-?%\}|as\b|noop\b|context\b))/.test(t)
+    || /\{%-?\s*autoescape\s+(?:on|off)\b/.test(t)
+    || /\bforloop\./.test(t) || /\{\{[^}]*\|\s*\w+:(?=\S)/.test(t);
 }
 
 /** Python operators into JS, outside of strings. */
@@ -225,7 +231,13 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
       if (stack.length) {
         const frame = stack.pop();
         // A body that reads the loop index asks the dialect to carry it: track by $index.
-        if (frame.opener !== undefined && !frame.pair && /\bloop\.(?:index0?|first|revindex0?|last)\b|\$index\b/.test(out.slice(frame.opener + 1).join(""))) out[frame.opener] = out[frame.opener].replace(/">$/, ' track by $index">');
+        if (frame.opener !== undefined) {
+          // loop.index0 and loop.first are the dialect's own index, loop.index counts from one: spelled inside the loop's own
+          // template spans, never in prose. The rest is named below. A body that reads the index asks the loop to carry it.
+          const spans = /\{\{[\s\S]*?\}\}|\bng-[\w-]+="[^"]*"/g;
+          for (let i = frame.opener + 1; i < out.length; i += 1) out[i] = out[i].replace(spans, (span) => span.replace(/\bloop\.index0\b/g, "$index").replace(/\bloop\.index\b/g, "($index + 1)").replace(/\bloop\.first\b/g, "($index == 0)"));
+          if (!frame.pair && /\bloop\.(?:revindex0?|last|length)\b|\$index\b/.test(out.slice(frame.opener + 1).join(""))) out[frame.opener] = out[frame.opener].replace(/">$/, ' track by $index">');
+        }
         out.push("</ng-container>");
       }
       continue;
@@ -247,10 +259,8 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
 
   // `loop.index` and friends are jinja's loop metadata; naming it beats
   // emitting a variable nothing defines.
-  let result = out.join("");
-  // loop.index0 and loop.first are the dialect's own index; loop.index counts from one; the rest is named.
-  result = result.replace(/\bloop\.index0\b/g, "$index").replace(/\bloop\.index\b/g, "($index + 1)").replace(/\bloop\.first\b/g, "($index == 0)");
-  if (/\bloop\.\w+/.test(result)) {
+  const result = out.join("");
+  if (/\{\{[^}]*\bloop\.\w+|\bng-[\w-]+="[^"]*\bloop\.\w+/.test(result)) {
     note("`loop.` metadata beyond index and first inside a for has no counterpart in the dialect. Rewire it from the loop index in the port.");
   }
   return result;
