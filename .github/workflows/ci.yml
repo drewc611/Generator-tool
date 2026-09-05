@@ -1063,9 +1063,17 @@ jobs:
           grep -qE "ng-|@Model|RenderBody" rz-out/src/features/ProductsShow/ProductsShow.jsx && { echo "the dialect or razor leaked into the React output"; exit 1; } || true
           rm -rf rz-out
 
+      - name: the freemarker reader inlines an include, expands a macro and ports the template
+        run: |
+          node src/cli.js run --src test/fixtures/freemarker --out fm-out
+          test -f fm-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the FreeMarker template was not ported"; exit 1; }
+          grep -q "<nav" fm-out/src/features/TemplatesProduct/TemplatesProduct.jsx || { echo "the include was not inlined"; exit 1; }
+          grep -qE "ng-|<#" fm-out/src/features/TemplatesProduct/TemplatesProduct.jsx && { echo "the dialect or a directive leaked into the React output"; exit 1; } || true
+          rm -rf fm-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "593" ]; then
-            echo "ROADMAP.md holds $count entries and claims 593"; exit 1
+          if [ "$count" != "594" ]; then
+            echo "ROADMAP.md holds $count entries and claims 594"; exit 1
           fi

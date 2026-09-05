@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and ninety three features across one hundred and nine phases. The statuses are
+Five hundred and ninety four features across one hundred and ten phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-820 tests, on Node 18, 20 and 22, and on Windows in CI.
+824 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2263,14 +2263,20 @@ a review of the nine plugins written in this stretch found eight defects worth t
 a second review over the analyzers, hosts and scorecards written in this stretch found four things worth fixing. input-ember lowered the helper inside a quoted attribute twice, so class="btn {{if this.busy 'a' 'b'}}" came out as a call to a helper named busy with a bogus note; a quoted value is now lowered first and once, with a quote inside it swapped so the attribute survives. It also counted {{@index}} as an input and an @onSave wired as a handler as both the input onSave and the output save; loop metadata is skipped and an input that names an output is dropped, so the React prop appears once. Seventeen analyzers each carried a private copy of lineAt and each rescanned the file from the top for every match; one exported lineAt in dsp-ir/emit.js builds the newline table once per text and answers by binary search, the seventeen copies are gone, and the hygiene gate that holds pascal and unique to one definition now holds lineAt too. vis-a11y's own prose said seven axes and A11Y.md where it gathers eight and writes ACCESSIBILITY.md, and its list of per axis reports left out KEYBOARD.md; the words are true again. test/ember.test.js and test/hygiene.test.js hold them.
 
 
+## Phase 110: the template Spring shipped with
+
+**594. input-freemarker lowers FreeMarker onto the dialect, its expression language rewritten where a JS spelling exists** 🔨
+FreeMarker was the template language Spring MVC shipped with for a decade: directives as tags with a hash and an expression language of its own for defaults, existence and built ins. input-freemarker lowers each construct that shapes markup: <#if> with its <#elseif> and <#else> chain negated the way the engine evaluates it, <#list> as a loop with its <#else> as the empty state, the key value form kept and the <#list>/<#items> pair read as one loop, <#switch> and <#case> as the equalities they test, ${expr} as interpolation with x!"none" as a default, x?? as an existence test, ?size, ?upper_case, ?lower_case, ?trim, ?first, ?last and ?join as their methods, the formatting built ins dropped because the target formats, and gt, lt, gte and lte as their operators; a built in with no JS spelling and a range are named. A held <#include> is inlined where its tag stood, a macro defined in the file is expanded at its <@call> with its arguments substituted and named, and <#assign>, <#import>, <#function>, <#attempt> and the rest of the server's machinery are removed and named. The data model's top level names are the inputs, read from the expressions and never from the markup. .ftl and .ftlh reach the scan. test/freemarker.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 546 |
+| new in this branch | 547 |
 | planned | 3 |
-| total | 593 |
+| total | 594 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
