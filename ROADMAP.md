@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and seventy one features across eighty seven phases. The statuses are
+Five hundred and seventy two features across eighty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-745 tests, on Node 18, 20 and 22, and on Windows in CI.
+747 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2131,14 +2131,20 @@ the ceiling set was asymmetric: accessibility and security had budgets and perfo
 a component port has to tear down what the old page only set up, and three plugins read that debt on their own axes: dsp-timers (a setInterval or setTimeout with no matching clear), dsp-events (a global addEventListener with no matching remove) and dsp-observers (an observer with no disconnect), each writing its own report. vis-lifecycle reads what those plugins left on the context and writes LIFECYCLE_SCORECARD.md, one table of every axis with the count it reported and exactly what that count is, every number another plugin's, an axis whose plugin did not run named "not measured" rather than scored zero, and nothing written when none ran. dsp-storage is deliberately not in the count: a storage write is a persistence surface, not a teardown the old page forgot, and it keeps its own report. --max-leaks turns the total into a ceiling the run enforces, the same shape as --max-security, --max-perf, --max-a11y, --max-kb and --max-unverified, reckoned through vis-lifecycle's own function so the gate agrees with the scorecard; a non-number is refused out loud and no flag means no check. test/lifecycle-scorecard.test.js and test/leaks-ceiling.test.js hold it.
 
 
+## Phase 88: the words held to the numbers
+
+**572. The README's headline counts are held by the suite** 🔨
+the sanitation pass the contract asks for after a sprint, and the gate that makes the next one unnecessary. The README swore to 137 plugins and 651 tests while 153 shipped and 745 ran, and its size table carried a line count with no measure that still produced it; only the core's 718 was ever held by a test, which is exactly why the rest rotted. Every figure is trued up and each row is now defined by the measure that produces it: the tool's lines are the .js under src and plugins, the sizes are byte sums rather than du blocks so Windows counts the same, and the plugin and test file counts are read off the tree. test/hygiene.test.js holds the plugin count exactly, everywhere the README states it, and the test file count exactly; the two rows that move on every commit are held to within three percent, a tolerance the test and the README both name, because an exact gate would fail every push and the practice is to true them up at a sprint's end. Nothing was rounded to a nicer number.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 524 |
+| new in this branch | 525 |
 | planned | 3 |
-| total | 571 |
+| total | 572 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

@@ -63,3 +63,59 @@ test("the shared helpers exist exactly once", async () => {
     assert.deepEqual(where.map((f) => f.split(/[\\/]/).slice(-2).join("/")), ["dsp-ir/emit.js"], `${needle} is defined in ${where.length} place(s); the one spelling lives in dsp-ir/emit.js`);
   }
 });
+
+async function walkAll(dir, out = []) {
+  for (const e of await readdir(dir, { withFileTypes: true })) {
+    if (e.name === "node_modules") continue;
+    const p = join(dir, e.name);
+    if (e.isDirectory()) await walkAll(p, out);
+    else out.push(p);
+  }
+  return out;
+}
+
+test("the README's plugin and test file counts are the truth, counted, everywhere they appear", async () => {
+  const readme = await readFile(join(ROOT, "README.md"), "utf8");
+  const plugins = (await readdir(join(ROOT, "plugins"), { withFileTypes: true })).filter((e) => e.isDirectory()).length;
+  const mentions = [...readme.matchAll(/\b(\d+) plugin(?:s\b|\(s\))/g), ...readme.matchAll(/## The (\d+) it ships with/g)].map((m) => Number(m[1]));
+  assert.ok(mentions.length >= 4, "the README states the plugin count in several places");
+  for (const n of mentions) assert.equal(n, plugins, `README says ${n} plugins somewhere; ${plugins} ship. Update every mention.`);
+
+  const testFiles = (await readdir(join(ROOT, "test"))).filter((f) => f.endsWith(".test.js")).length;
+  for (const m of readme.matchAll(/across (\d+) (?:test )?files/g)) {
+    assert.equal(Number(m[1]), testFiles, `README says ${m[1]} test files; there are ${testFiles}.`);
+  }
+});
+
+// These rows move on every commit, so an exact gate would fail every push
+// and the practice is to true them up at the end of a sprint. Three percent
+// is the slack that lets a sprint happen and still catches a stale table.
+test("the README's size table holds to the counted tool, within three percent", async () => {
+  const readme = await readFile(join(ROOT, "README.md"), "utf8");
+  const { stat } = await import("node:fs/promises");
+  const near = (stated, actual, what) => {
+    const drift = Math.abs(stated - actual) / actual;
+    assert.ok(drift <= 0.03, `README says ${what} is ${stated}; it is ${actual} (${(drift * 100).toFixed(1)}% off). True up the table.`);
+  };
+  const num = (s) => Number(String(s).replace(/,/g, ""));
+
+  const jsFiles = [...(await walk(join(ROOT, "src"))), ...(await walk(join(ROOT, "plugins")))];
+  let jsLines = 0;
+  for (const f of jsFiles) jsLines += (await readFile(f, "utf8")).split("\n").length - 1;
+  const lines = /\| Every line of the tool \| ([\d,]+) lines/.exec(readme);
+  assert.ok(lines, "the README states the tool's line count");
+  near(num(lines[1]), jsLines, "the tool's line count");
+
+  const testFiles = (await readdir(join(ROOT, "test"))).filter((f) => f.endsWith(".test.js"));
+  let testLines = 0;
+  for (const f of testFiles) testLines += (await readFile(join(ROOT, "test", f), "utf8")).split("\n").length - 1;
+  const tests = /\| Tests \| ([\d,]+) lines/.exec(readme);
+  assert.ok(tests, "the README states the suite's line count");
+  near(num(tests[1]), testLines, "the suite's line count");
+
+  const bytes = async (dir) => { let n = 0; for (const f of await walkAll(join(ROOT, dir))) n += (await stat(f)).size; return n; };
+  const size = /\| Source on disk \| src (\d+) KB, plugins ([\d.]+) MB/.exec(readme);
+  assert.ok(size, "the README states the source size");
+  near(Number(size[1]), (await bytes("src")) / 1024, "src in KB");
+  near(Number(size[2]), (await bytes("plugins")) / 1048576, "plugins in MB");
+});
