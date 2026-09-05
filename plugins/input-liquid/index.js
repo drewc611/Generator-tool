@@ -232,7 +232,7 @@ export function lowerLiquid(source, note = () => {}, resolve = null, depth = 0) 
 }
 
 /** The inputs a lowered template reads: the platform objects it names and the section settings. */
-export function readInputs(template, settings) {
+export function readGlobals(template, settings) {
   const inputs = new Set(settings);
   // Only the expressions count: `type="search"` is markup, `{{ search.terms }}` is a read.
   const expressions = [
@@ -295,7 +295,7 @@ export default {
           selector,
           className: pascal(selector),
           file: file.rel,
-          inputs: readInputs(lowered, [...settings, ...pulled]),
+          inputs: readGlobals(lowered, [...settings, ...pulled]),
           outputs: [],
           template: lowered,
           templateOrigin: isTemplate && layout ? "a Liquid template, lowered inside its layout" : "a Liquid template, lowered",

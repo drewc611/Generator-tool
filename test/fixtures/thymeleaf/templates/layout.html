@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+  <title layout:title-pattern="$CONTENT_TITLE - Shop">Shop</title>
+  <link rel="stylesheet" th:href="@{/css/site.css}" href="../static/css/site.css">
+</head>
+<body>
+  <header th:replace="~{fragments/nav :: nav(${user})}">Prototype navigation</header>
+  <main layout:fragment="content">
+    <p>Layout default content</p>
+  </main>
+  <footer th:insert="~{fragments/nav :: legal}"></footer>
+  <script th:inline="javascript">var user = /*[[${user}]]*/ null;</script>
+</body>
+</html>

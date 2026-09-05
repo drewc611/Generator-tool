@@ -1,0 +1,3 @@
+<h1 th:text="${product.name}">Product name</h1>
+<th:block th:if="${product.stock == 0}"><p class="out">Sold out</p></th:block><th:block th:if="${!(product.stock == 0) and (product.stock < 5)}"><p class="low">Only [[${product.stock}]] left</p></th:block><th:block th:if="${!(product.stock == 0) and !(product.stock < 5)}"><p>In stock</p></th:block>
+<ul><th:block th:each="tag : ${product.tags}"><li th:text="${tag}">tag</li></th:block><th:block th:if="${#lists.isEmpty(product.tags)}"><li class="none">No tags</li></th:block></ul>

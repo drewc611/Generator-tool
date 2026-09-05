@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import { lowerVelocity, readInputs, vtlToJs } from "../plugins/input-velocity/index.js";
+import { readInputs } from "../plugins/dsp-ir/text.js";
+import { lowerVelocity, vtlToJs } from "../plugins/input-velocity/index.js";
 import { ROOT, runPipeline } from "./helpers.js";
 
 /**

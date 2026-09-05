@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { attrSafe, matchBracket as matchShared, splitWords } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket as matchShared, readInputs, splitWords } from "../dsp-ir/text.js";
 
 const matchBracket = (text, open) => matchShared(text, open, { ticks: false });
 
@@ -252,19 +252,6 @@ export function lowerFreemarker(source, note = () => {}, resolve = null, depth =
   return out.join("");
 }
 
-/** The data model's top level names the template reads, from its expressions only. */
-export function readInputs(template) {
-  const names = new Set();
-  const expressions = [
-    ...[...template.matchAll(/\{\{([\s\S]*?)\}\}/g)].map((m) => m[1]),
-    ...[...template.matchAll(/\sng-[\w-]+="([^"]*)"/g)].map((m) => m[1].replace(/^\(?[\w]+(?:,\s*\w+)?\)?\s+in\s+/, "")),
-  ].join("\n");
-  const locals = new Set([...template.matchAll(/ng-repeat="\(?(\w+)(?:,\s*(\w+))?\)?\s+in/g)].flatMap((m) => [m[1], m[2]].filter(Boolean)));
-  for (const m of expressions.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g, "").matchAll(/(?<![\w.$])([A-Za-z_]\w*)\b(?!\s*\()/g)) {
-    if (!GLOBALS_SKIP.has(m[1]) && !locals.has(m[1]) && m[1] !== "$index") names.add(m[1]);
-  }
-  return [...names].sort();
-}
 
 export default {
   name: "input-freemarker",
@@ -298,7 +285,7 @@ export default {
           selector,
           className: pascal(selector),
           file: file.rel,
-          inputs: readInputs(template),
+          inputs: readInputs(template, { skip: GLOBALS_SKIP }),
           outputs: [],
           template,
           templateOrigin: "a FreeMarker template, lowered",

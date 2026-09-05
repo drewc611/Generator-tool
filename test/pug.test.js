@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import { compose, lowerAttrs, lowerText, lowerTree, parseTag, parseTree, readInputs } from "../plugins/input-pug/index.js";
+import { readInputs } from "../plugins/dsp-ir/text.js";
+import { compose, lowerAttrs, lowerText, lowerTree, parseTag, parseTree } from "../plugins/input-pug/index.js";
 import { ROOT, runPipeline } from "./helpers.js";
 
 /**

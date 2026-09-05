@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import { fmToJs, lowerFreemarker, readInputs } from "../plugins/input-freemarker/index.js";
+import { readInputs } from "../plugins/dsp-ir/text.js";
+import { fmToJs, lowerFreemarker } from "../plugins/input-freemarker/index.js";
 import { ROOT, runPipeline } from "./helpers.js";
 
 const D = "$";

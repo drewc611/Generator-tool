@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred features across one hundred and sixteen phases. The statuses are
+Six hundred and one features across one hundred and seventeen phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2303,14 +2303,19 @@ Pug, once Jade, was the template language of the Express era: a tree written as 
 **600. The Pug reader reviewed on its own, eight defects fixed with the inputs that exposed them** 🔨
 The review cadence held for the fifth time: input-pug was read on its own before the next reader began, and eight shapes real Pug writes came back wrong. An attribute list written over several lines never closed on its first line and became text, so parseTree now joins lines until the bracket that opened closes. A bare boolean between two valued attributes (type="checkbox" checked name="x") was swallowed into the value before it, so the splitter now ends a value where the next word is a bare attribute followed by another. An include at the top of a template that extends a layout, the usual home of a project's mixins, was dropped before the page composed, so includes inline first and their mixins are declared before the blocks fill. A mixin's block was replaced by a node with no line, which read as a div, so the caller's children are spliced in where block stood and the note that once named the gap is gone because the gap is. An outer loop's index read inside a nested loop was renamed to the inner $index, a silent wrong value, so inside a nested repeat it is written as $parent.$index, the dialect's own spelling for the outer scope, and named for the port to carry. An empty when, which falls through to the next in Pug, rendered nothing under its own test, so its equality now joins the next body's test with an or. A parameter followed by == was skipped by the guard that protects attribute names, so the guard now excepts a second equals. And a layout named relatively (extends ../layout) was not recognised as a layout and was ported as a screen of its own, so names are bared of their leading dots and their extension before they are compared, in .jade as in .pug. Three smaller ones came too: a hyphenated mixin name, a single quoted attribute carrying double quotes (kept as entities, not rewritten), and #[strong word] lowered as the tag it is. Each fix carries the input that exposed it in test/pug.test.js.
 
+## Phase 117: the natural template
+
+**601. input-thymeleaf reads Thymeleaf, the natural template of the Spring world, and composes it the way the engine does** 🔨
+Thymeleaf is valid HTML whose prototype text and attributes are replaced at render time by th: attributes that sit beside them, which makes it the server dialect closest to the attribute dialect the rest of the tool reads; the lowering is mostly a renaming and the prototype text is what the engine throws away. th:if and th:unless lower onto ng-if, th:each with its status variable onto ng-repeat with the status fields (index, count, first, last, odd, even, size) written as the arithmetic on $index every target already carries, th:text onto the interpolation that replaces the prototype text, th:utext onto bound html, th:href and th:src with their link expressions (@{/products/{id}(id=${p.id},q=${q})}) onto ng-href and ng-src with the path variables and query filled, th:class and th:classappend onto one ng-class, th:attr onto each attribute it names, th:switch and th:case onto the equalities they test with * as the negation of the rest, th:field onto a two way model with the name and id the engine would have generated, th:with onto substituted aliases, th:object onto the prefix *{...} selects with, th:remove onto its four spellings, th:block onto a transparent container, [[...]] and [(...)] inline output onto an interpolation and bound html, and a prototype only comment onto the markup it hid. The expression language's words (and, or, not, eq, gt, the Elvis ?:, a ? with no else) are spelled as JavaScript outside strings, the utility objects with an exact equivalent (#lists.isEmpty, #strings.toUpperCase, #strings.listJoin) are rewritten, a formatter (#dates, #numbers) keeps its value unformatted and named, and any other utility stays the call it was with the object named as something the port must supply. th:fragment with th:insert, th:replace and th:include compose the way the engine composes them, positional and named parameters substituted and a fragment passed as an argument inserted where ${it} is asked for; the Layout Dialect's layout:decorate and layout:fragment compose a page into its layout, the layout and a fragment only file skipped as chrome. A message key (#{...}) is kept as its key and named, because the bundle is not in the markup and no text is invented; a th:onclick that built script from data is named and never carried; th:errors is named as validation the port must do itself. The same product page written in Thymeleaf is the seventh dialect the byte identity gate holds to jinja's React, Vue and Svelte. And the four readInputs the readers each wrote are one, in dsp-ir/text.js, reading an address around an expression as the expression alone, held to one definition by the hygiene gate. test/thymeleaf.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 553 |
+| new in this branch | 554 |
 | planned | 3 |
-| total | 600 |
+| total | 601 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

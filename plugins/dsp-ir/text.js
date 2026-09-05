@@ -65,3 +65,26 @@ export function splitWords(text) {
 
 /** An expression inside a double quoted dialect attribute: its double quotes become single. */
 export const attrSafe = (s) => String(s).replace(/"/g, "'");
+
+/**
+ * The names a lowered template reads, from its expressions only: every
+ * interpolation and every dialect attribute, with string literals removed,
+ * loop variables and the dialect's own $index left out, and any names the
+ * caller knows are globals skipped. Markup is not an expression: type="search"
+ * is an attribute, {{ search.terms }} is a read.
+ */
+export function readInputs(template, { skip = [] } = {}) {
+  const skipped = new Set(skip);
+  const names = new Set();
+  const expressions = [
+    ...[...template.matchAll(/\{\{([\s\S]*?)\}\}/g)].map((m) => m[1]),
+    ...[...template.matchAll(/\sng-[\w-]+="([^"]*)"/g)].map((m) => m[1].replace(/^\(?[\w$]+(?:,\s*[\w$]+)?\)?\s+in\s+/, "").replace(/\s+track by \$index$/, ""))
+      // ng-href="/cart/{{ id }}" is an address around an expression; only the expression reads.
+      .map((v) => (v.includes("{{") ? [...v.matchAll(/\{\{([\s\S]*?)\}\}/g)].map((m) => m[1]).join("\n") : v)),
+  ].join("\n");
+  const locals = new Set([...template.matchAll(/ng-repeat="\(?(\w+)(?:,\s*(\w+))?\)?\s+in/g)].flatMap((m) => [m[1], m[2]].filter(Boolean)));
+  for (const m of expressions.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`[^`]*`/g, "").matchAll(/(?<![\w.$])([A-Za-z_]\w*)\b(?!\s*\()/g)) {
+    if (!/^(true|false|null|undefined|new|typeof)$/.test(m[1]) && !locals.has(m[1]) && !skipped.has(m[1])) names.add(m[1]);
+  }
+  return [...names].sort();
+}

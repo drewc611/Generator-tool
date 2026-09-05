@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { attrSafe, matchBracket as matchShared } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket as matchShared, readInputs } from "../dsp-ir/text.js";
 
 const matchBracket = (text, open) => matchShared(text, open, { ticks: false });
 
@@ -205,19 +205,6 @@ function blockEnd(text, from) {
   return -1;
 }
 
-/** The context's top level names, from the expressions only. */
-export function readInputs(template) {
-  const names = new Set();
-  const expressions = [
-    ...[...template.matchAll(/\{\{([\s\S]*?)\}\}/g)].map((m) => m[1]),
-    ...[...template.matchAll(/\sng-[\w-]+="([^"]*)"/g)].map((m) => m[1].replace(/^\(?[\w]+(?:,\s*\w+)?\)?\s+in\s+/, "")),
-  ].join("\n");
-  const locals = new Set([...template.matchAll(/ng-repeat="(\w+)\s+in/g)].map((m) => m[1]));
-  for (const m of expressions.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`[^`]*`/g, "").matchAll(/(?<![\w.$])([A-Za-z_]\w*)\b(?!\s*\()/g)) {
-    if (!/^(true|false|null|undefined)$/.test(m[1]) && !locals.has(m[1])) names.add(m[1]);
-  }
-  return [...names].sort();
-}
 
 export default {
   name: "input-velocity",

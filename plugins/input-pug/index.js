@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { pascal } from "../dsp-ir/emit.js";
-import { attrSafe, matchBracket, splitCommas } from "../dsp-ir/text.js";
+import { attrSafe, matchBracket, readInputs, splitCommas } from "../dsp-ir/text.js";
 
 /**
  * Pug, once Jade, the template language of the Express era: a tree written as
@@ -350,19 +350,6 @@ export function lowerTree(root, note = () => {}) {
   return out.join("");
 }
 
-/** The locals a view reads, from its expressions only, loop variables excluded. */
-export function readInputs(template) {
-  const names = new Set();
-  const expressions = [
-    ...[...template.matchAll(/\{\{([\s\S]*?)\}\}/g)].map((m) => m[1]),
-    ...[...template.matchAll(/\sng-[\w-]+="([^"]*)"/g)].map((m) => m[1].replace(/^\w+\s+in\s+/, "").replace(/\s+track by \$index$/, "")),
-  ].join("\n");
-  const locals = new Set([...template.matchAll(/ng-repeat="(\w+)\s+in/g)].map((m) => m[1]));
-  for (const m of expressions.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`[^`]*`/g, "").matchAll(/(?<![\w.$])([A-Za-z_]\w*)\b(?!\s*\()/g)) {
-    if (!/^(true|false|null|undefined|new|typeof)$/.test(m[1]) && !locals.has(m[1])) names.add(m[1]);
-  }
-  return [...names].sort();
-}
 
 export default {
   name: "input-pug",
