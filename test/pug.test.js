@@ -86,3 +86,60 @@ test("a run composes the view, skips the layout, reads the locals as inputs, nam
     await run.cleanup();
   }
 });
+
+test("the fifth review pass: attribute lists over several lines, a bare boolean between valued attributes, a tag inside text", () => {
+  assert.equal(lower('input(\n  type="text"\n  name="q"\n)\np after'), `<input type="text" name="q"><p>after</p>`);
+  assert.equal(lowerAttrs(`type="checkbox" checked name="x"`, [], null, () => {}), ` type="checkbox" checked name="x"`);
+  assert.equal(lowerAttrs(`title='say "hi"' data-x='a'`, [], null, () => {}), ` title="say &quot;hi&quot;" data-x="a"`);
+  assert.equal(lower("p Hello #[strong world] there"), `<p>Hello <strong>world</strong> there</p>`);
+});
+
+test("the fifth review pass: a mixin's block is the caller's children, a hyphenated name, and a parameter before == is substituted", () => {
+  const notes = [];
+  assert.equal(lower("mixin card(t)\n  .card\n    h2= t\n    block\n+card(title)\n  p body", (n) => notes.push(n)), `<div class="card"><h2>{{ title }}</h2><p>body</p></div>`);
+  assert.ok(!notes.some((n) => /called with a block/.test(n)), "the block is filled, not named");
+  assert.equal(lower("mixin my-tag(n)\n  b= n\n+my-tag(t)"), `<b>{{ t }}</b>`);
+  assert.equal(lower("mixin m(p)\n  if p == 1\n    b one\n  a(p=p) x\n+m(kind)"), `<ng-container ng-if="kind == 1"><b>one</b></ng-container><a ng-attr-p="{{ kind }}">x</a>`);
+});
+
+test("the fifth review pass: an outer index inside a nested loop is the parent's, named; an empty when falls through", () => {
+  const notes = [];
+  assert.equal(lower("each row, i in rows\n  each cell, j in row\n    td #{i}-#{j}: #{cell}\n  li #{i}", (n) => notes.push(n)),
+    `<ng-container ng-repeat="row in rows track by $index"><ng-container ng-repeat="cell in row track by $index"><td>{{ $parent.$index }}-{{ $index }}: {{ cell }}</td></ng-container><li>{{ $index }}</li></ng-container>`);
+  assert.ok(notes.some((n) => /\$parent\.\$index/.test(n)));
+  assert.equal(lower("case t\n  when 'a'\n  when 'b'\n    b AB\n  default\n    b D"),
+    `<ng-container ng-if="(t) == 'a' || (t) == 'b'"><b>AB</b></ng-container><ng-container ng-if="!((t) == 'a') && !((t) == 'b')"><b>D</b></ng-container>`);
+  assert.deepEqual(readInputs(`{{ $parent.$index }}`), []);
+});
+
+test("the fifth review pass: an include at the top of an extending template carries its mixins in, and a layout named relatively is a layout", () => {
+  const files = new Map([["layout.pug", "html\n  body\n    block content"], ["mixins.pug", "mixin badge(t)\n  span.badge= t"]]);
+  const resolve = (n) => files.get(n.replace(/^\.\//, "")) ?? files.get(`${n}.pug`) ?? null;
+  const notes = [];
+  const tree = compose(parseTree("extends layout\ninclude mixins\nblock content\n  +badge(kind)"), resolve, (n) => notes.push(n));
+  assert.equal(lowerTree(tree, (n) => notes.push(n)), `<html><body><span class="badge">{{ kind }}</span></body></html>`);
+  assert.ok(!notes.some((n) => /does not hold/.test(n)));
+});
+
+test("a run treats extends ../layout as the layout it names, in .jade too", async () => {
+  const { mkdtemp, writeFile, mkdir, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const dir = await mkdtemp(join(tmpdir(), "portamp-pug-"));
+  try {
+    await mkdir(join(dir, "views/pages"), { recursive: true });
+    await writeFile(join(dir, "views/layout.jade"), "html\n  body\n    block content\n");
+    await writeFile(join(dir, "views/pages/home.jade"), "extends ../layout\nblock content\n  h1= title\n");
+    const run = await runPipeline({ src: dir });
+    try {
+      assert.equal(run.error, null);
+      const sels = run.ctx.screens.filter((s) => s.readBy === "pug").map((s) => s.selector);
+      assert.deepEqual(sels, ["pages-home"]);
+      assert.equal(run.ctx.screens.find((s) => s.selector === "pages-home").template, `<h1>{{ title }}</h1>`);
+      assert.ok(run.ctx.report.unverified.some((n) => /layout other templates extend/.test(n)));
+    } finally {
+      await run.cleanup();
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and ninety nine features across one hundred and fifteen phases. The statuses are
+Six hundred features across one hundred and sixteen phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2298,15 +2298,19 @@ every template reader does three things to a string of source: finds the bracket
 **599. input-pug reads Pug from its indentation and composes it the way the compiler does** 🔨
 Pug, once Jade, was the template language of the Express era: a tree written as indentation, tags with .class#id(attrs) shorthand, text after a tag or behind a pipe, and control flow as keywords at the start of a line. input-pug reads the tree from the indentation and lowers it onto the dialect: if with its else if and else chain negated the way the engine evaluates it, unless as the negated test, each and for as a loop with an index renamed to the dialect's own and an else as the empty state, case and when as the equalities they test, #{expr} as interpolation and !{expr} as bound html, a tag's = and != as buffered output, a dot as block text, an attribute with an expression as ng-class, ng-href, ng-disabled or ng-attr as its name decides and a value that carries spaces read as the JS expression it is, li: a as a tag and its inline child. extends and block compose the way the compiler composes them, block append and prepend included, a held include is inlined and a non Pug include lands as text, and a mixin defined in the file, in the child or the layout, expands at its call with its arguments substituted and named. Unbuffered code, a filter, &attributes and a mixin called with a block are named rather than approximated. The locals a view reads are its inputs, from the expressions only. .pug and .jade reach the scan. test/pug.test.js holds it.
 
+## Phase 116: the fifth review pass
+
+**600. The Pug reader reviewed on its own, eight defects fixed with the inputs that exposed them** 🔨
+The review cadence held for the fifth time: input-pug was read on its own before the next reader began, and eight shapes real Pug writes came back wrong. An attribute list written over several lines never closed on its first line and became text, so parseTree now joins lines until the bracket that opened closes. A bare boolean between two valued attributes (type="checkbox" checked name="x") was swallowed into the value before it, so the splitter now ends a value where the next word is a bare attribute followed by another. An include at the top of a template that extends a layout, the usual home of a project's mixins, was dropped before the page composed, so includes inline first and their mixins are declared before the blocks fill. A mixin's block was replaced by a node with no line, which read as a div, so the caller's children are spliced in where block stood and the note that once named the gap is gone because the gap is. An outer loop's index read inside a nested loop was renamed to the inner $index, a silent wrong value, so inside a nested repeat it is written as $parent.$index, the dialect's own spelling for the outer scope, and named for the port to carry. An empty when, which falls through to the next in Pug, rendered nothing under its own test, so its equality now joins the next body's test with an or. A parameter followed by == was skipped by the guard that protects attribute names, so the guard now excepts a second equals. And a layout named relatively (extends ../layout) was not recognised as a layout and was ported as a screen of its own, so names are bared of their leading dots and their extension before they are compared, in .jade as in .pug. Three smaller ones came too: a hyphenated mixin name, a single quoted attribute carrying double quotes (kept as entities, not rewritten), and #[strong word] lowered as the tag it is. Each fix carries the input that exposed it in test/pug.test.js.
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 552 |
+| new in this branch | 553 |
 | planned | 3 |
-| total | 599 |
+| total | 600 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
