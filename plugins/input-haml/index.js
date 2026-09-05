@@ -243,6 +243,7 @@ export function lowerAttrs(head, scope) {
     for (const m of head.list.matchAll(/([\w:-]+)\s*=\s*("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s]+)/g)) entries.push([m[1], m[2]]);
   }
   if (head.entries) entries.push(...head.entries);
+  for (const n of head.notes ?? []) scope.note(n);
   const classes = [...head.classes]; let id = head.id;
   const parts = [];
   // data: { id: 1 } is data-id="1", as Haml renders it.
@@ -271,18 +272,19 @@ export function lowerAttrs(head, scope) {
   return all.length ? " " + all.join(" ") : "";
 }
 
-/** Lower a tree onto the dialect; `resolve(name)` returns a partial's text or null. */
-/** Haml's line grammar: what a comment, a filter, a text line, an output line and a code line look like. */
+/** Haml's line grammar: what a comment, a filter, a text line, an output line, a code line and a tag look like; `plain` says a line that is not a tag is prose. */
 export const HAML = {
   comment: (line) => line.startsWith("-#") || line.startsWith("/") || line.startsWith("!!!"),
   filter: (line) => (line.startsWith(":") ? line.split(/\s/)[0] : null),
   text: (line) => (line.startsWith("\\") ? line.slice(1) : null),
   output: (line) => { const m = /^(!=|&=|=|~)\s*([\s\S]*)$/.exec(line); return m ? { code: m[2], html: m[1] === "!=" } : null; },
   code: (line) => (line.startsWith("-") ? line.slice(1).trim() : null),
+  plain: (line) => !/^[%.#]/.test(line),
   parseTag,
   parseTree,
 };
 
+/** Lower a tree onto the dialect under a line grammar; `resolve(name, dir)` returns a partial's text (or { body, dir }) or null. */
 export function lowerTree(root, scope = freshScope(), resolve = () => null, depth = 0, grammar = HAML) {
   const out = [];
   const lowerChildren = (children, isRoot = false) => {
@@ -294,7 +296,12 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
       const filter = grammar.filter(line);
       if (filter) { scope.note(`The filter \`${filter}\` transformed its block on the server; the block was not carried.`); continue; }
       const text = grammar.text(line);
-      if (text !== null) { out.push(lowerText(text, scope)); for (const c of node.children) out.push(lowerText(` ${c.line}`, scope)); continue; }
+      if (text !== null) {
+        // A text block's lines, however deep they are indented, are its text.
+        const lines = (nodes) => nodes.flatMap((c) => [c.line, ...lines(c.children)]);
+        out.push(lowerText(text, scope)); for (const l of lines(node.children)) out.push(lowerText(` ${l}`, scope));
+        continue;
+      }
       if (line.startsWith("<")) { out.push(lowerText(line, scope)); lowerChildren(node.children); continue; }
       const output = grammar.output(line);
       if (output) { out.push(expression(output.code, output.html, node, depth)); continue; }
@@ -317,11 +324,15 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
       }
       // An element.
       const head = grammar.parseTag(line);
-      if (!head) { if (grammar === HAML && !/^[%.#]/.test(line)) { out.push(lowerText(line, scope)); continue; } scope.note(`\`${line.slice(0, 40)}\` could not be read as a tag; it was kept as text.`); out.push(lowerText(line, scope)); continue; }
+      if (!head) {
+        if (!(grammar.plain ?? (() => false))(line)) scope.note(`\`${line.slice(0, 40)}\` could not be read as a tag; it was kept as text.`);
+        out.push(lowerText(line, scope)); lowerChildren(node.children);
+        continue;
+      }
       const attrs = lowerAttrs(head, scope);
       if (VOID_ELEMENTS.has(head.tag) || head.selfClose) { out.push(`<${head.tag}${attrs}>`); continue; }
       out.push(`<${head.tag}${attrs}>`);
-      if (head.mode === "inline") { lowerChildren([{ line: head.rest, children: node.children, indent: node.indent + 1 }]); out.push(`</${head.tag}>`); continue; }
+      if (head.mode === "inline") { if (head.rest) lowerChildren([{ line: head.rest, children: node.children, indent: node.indent + 1 }]); else lowerChildren(node.children); out.push(`</${head.tag}>`); continue; }
       if (head.mode === "code") out.push(expression(head.rest, false, node, depth));
       else if (head.mode === "html") out.push(expression(head.rest, true, node, depth));
       else if (head.rest) out.push(lowerText(head.rest, scope));
@@ -501,6 +512,7 @@ export function lowerTree(root, scope = freshScope(), resolve = () => null, dept
 /** A Rails view reader for one indentation dialect: the layout composed, partials resolved, screens pushed. */
 export function railsReader({ name, extension, grammar, readBy, origin, label }) {
   const ext = new RegExp(`\\.${extension}$`, "i");
+  const bareExt = new RegExp(`\\.html\\.${extension}$|\\.${extension}$`, "i");
   return {
     name,
     version: "0.1.0",
@@ -513,7 +525,7 @@ export function railsReader({ name, extension, grammar, readBy, origin, label })
         const note = (t) => { if (!notes.includes(t)) notes.push(t); };
         const bodies = new Map();
         for (const f of files) bodies.set(f.rel.replace(/^\.\//, ""), await readFile(f.path, "utf8").catch(() => { note(`${f.rel} could not be read; it is not in the port.`); return ""; }));
-        const bare = (n) => String(n).replace(/^(\.\.?\/)+/, "").replace(/^(?:app\/)?views\//, "").replace(new RegExp(`\\.html\\.${extension}$|\\.${extension}$`, "i"), "");
+        const bare = (n) => String(n).replace(/^(\.\.?\/)+/, "").replace(/^(?:app\/)?views\//, "").replace(bareExt, "");
         const keys = [...bodies.keys()];
         // A partial is asked for as "shared/nav" and lives at shared/_nav; a bare "form" lives beside the view that renders it.
         const resolve = (n, dir = "") => {

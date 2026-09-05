@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and thirteen features across one hundred and twenty nine phases. The statuses are
+Six hundred and fourteen features across one hundred and thirty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2368,14 +2368,19 @@ The review cadence held for the tenth time. A line of prose under a tag was pars
 **613. input-slim reads Slim on the Haml lowering, the line grammar the only thing its own** 🔨
 Slim is Haml's terser successor in the Rails world: the same tree written as indentation and the same Ruby in it, with the tag's own name where Haml writes %, attributes as name=value pairs after the tag or inside brackets, | and ' for text, == for unescaped output, / and /! for comments, tag: for an inline child, and javascript: or css: for an embedded block. The Haml lowering now takes a line grammar, what a comment, a filter, a text line, an output line, a code line and a tag look like, and the plugin body that composes the layout around a page, resolves partials beside the view and pushes screens is one factory both readers call, so input-slim is a line grammar and nothing else: a tag parser that reads the tag's own name with its classes and id, its attributes bare or wrapped with a value that may hold spaces inside brackets, a splat named, = and == output, : an inline child and / a self close, and a parse of the tree in which a bracket left open or a Ruby line ending in a comma runs on. Everything else, the control lines, the loops, the layout's yield, the partials, the form and link helpers, the Ruby spelled as JavaScript and every note, is the Haml reader's, which is how the two dialects cannot drift apart. .slim reaches the scan and the census, and the same product page written in Slim is the twelfth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/slim.test.js holds it.
 
+## Phase 130: the eleventh review pass
+
+**614. The Slim reader read again, and the Haml lowering with it** 🔨
+A review pass over input-slim and the shared Rails lowering, each finding fixed with the input that exposed it as a test. A lone * in a tag's text was read as a splat and dropped; now only * before a name spreads attributes, and the text keeps its asterisk. Slim's whitespace markers, < and > after the tag, were read as the tag's name running on; they stand after the tag and change spacing only. A Ruby line ending in a backslash continues onto the next, as a comma does, and the backslash is stripped. Inside a wrapped attribute list a splat before the pairs stopped the read, so `a(*link_attrs href="/x")` lost its href; the read now names the splat and goes on, and a bare name in the wrapper is the boolean Slim renders as an empty value. A text block nested more than one level deep lost its inner lines; they are flattened into the text. An inline `li:` with nothing after the colon lowers its children as the tag's body. The grammar predicate that told Haml's plain lines from Slim's was an identity check on the grammar object; it is now a `plain` entry each grammar carries. The Slim tag parser returns the notes it gathered so the lowering can voice them, and a fallback branch that dropped its children lowers them. test/slim.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 566 |
+| new in this branch | 567 |
 | planned | 3 |
-| total | 613 |
+| total | 614 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

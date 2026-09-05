@@ -15,7 +15,7 @@ import { ROOT, runPipeline } from "./helpers.js";
 const lower = (src, note = () => {}, resolve = () => null) => lowerTree(SLIM.parseTree(src), freshScope(note), resolve, 0, SLIM);
 
 test("a Slim tag line is read: the tag's own name, shorthand, bare and wrapped attributes, output, inline child and self close", () => {
-  assert.deepEqual(parseTag(`a.btn#go href=url class="x" data-id=(tag.id) Buy`), { tag: "a", classes: ["btn"], id: "go", hash: null, list: null, entries: [["href", "url"], ["class", '"x"'], ["data-id", "(tag.id)"]], selfClose: false, mode: "text", rest: "Buy" });
+  assert.deepEqual(parseTag(`a.btn#go href=url class="x" data-id=(tag.id) Buy`), { tag: "a", classes: ["btn"], id: "go", hash: null, list: null, entries: [["href", "url"], ["class", '"x"'], ["data-id", "(tag.id)"]], notes: [], selfClose: false, mode: "text", rest: "Buy" });
   assert.deepEqual(parseTag(`li: a href="/" Home`).mode, "inline");
   assert.equal(parseTag(`li: a href="/" Home`).rest, `a href="/" Home`);
   assert.deepEqual(parseTag(`img src="logo.png"/`).selfClose, true);
@@ -79,4 +79,29 @@ test("a run composes the page into its layout with its partial through the Haml 
   } finally {
     await run.cleanup();
   }
+});
+
+test("the eleventh review pass: a lone * is text, whitespace markers stand after the tag, a backslash continues Ruby, wrapped booleans and splats, deep text blocks, an inline child on the next line", () => {
+  const notes = [];
+  const out = lower([
+    "p * required field",
+    "a> href='url1' Link1",
+    "= link_to 'a', \\", "  path",
+    "input(type=\"text\" disabled)",
+    "a(*link_attrs href=\"/x\") Go",
+    "div *attrs Hello",
+    "|", "  one", "    two", "      three",
+    "li:", "  a href='/' Home",
+  ].join("\n"), (n) => notes.push(n));
+  assert.equal(out,
+    `<p>* required field</p>\n` +
+    `<a href="url1">Link1</a>\n` +
+    `<a ng-href="{{ path }}">a</a>\n` +
+    `<input type="text" disabled="">\n` +
+    `<a href="/x">Go</a>\n` +
+    `<div>Hello</div>\n` +
+    ` one two three\n` +
+    `<li><a href="/">Home</a></li>`);
+  assert.ok(notes.filter((n) => /spread a hash of attributes/.test(n)).length >= 1);
+  assert.ok(!notes.some((n) => /could not be read as a tag/.test(n)));
 });
