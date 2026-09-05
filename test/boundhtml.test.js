@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
-import { buildIr } from "../plugins/dsp-ir/ir.js";
+import { boundHtml, buildIr } from "../plugins/dsp-ir/ir.js";
 import { lowerBody } from "../plugins/input-react/index.js";
 import { lowerSvelte } from "../plugins/input-svelte/index.js";
 import { toAlpine } from "../plugins/output-alpine/index.js";
@@ -76,4 +76,36 @@ test("the fixtures that drifted through the round trip hold: pug and haml throug
       await run.cleanup();
     }
   }
+});
+
+test("the thirteenth review pass: a model with a nested handler, tuple and chained entries maps, an index named, placeholder content, void and model conflicts, a tagless wrapper, and a wrapping loop", () => {
+  const notes = []; const note = (n) => notes.push(n);
+  assert.equal(
+    lowerBody(`<input value={x} onChange={(e) => { setX(e.target.value); changed(); }} /><input value={y} onChange={(e) => setForm({...form, name: e.target.value})} class="k" />`, note),
+    `<input ng-model="x" /><input ng-model="y" class="k" />`,
+    "a handler with a block body or an object literal still leaves a model");
+  const back = lowerBody(`<>{pairs.map(([a, b]) => (<li key={a}>{a}{b}</li>))}{Object.entries(x).filter(f).map(([a, b]) => (<li>{a}</li>))}{Object.entries(x).map(([a, b], i) => (<li key={a}>{i}</li>))}{items.map((it, idx) => (<li key={idx}>{idx}</li>))}</>`, note);
+  assert.ok(!/ng-repeat="\(a, b\) in pairs"/.test(back), "a map over tuples is not the object entries loop");
+  assert.ok(!/in x\)\.filter|in Object\.entries/.test(back), "a chain after Object.entries is not spliced into a loop");
+  assert.match(back, /<li ng-repeat="\(a, b\) in x">\{\{ i \}\}<\/li>/);
+  assert.match(back, /<li ng-repeat="it in items">\{\{ idx \}\}<\/li>/);
+  assert.ok(notes.some((n) => /destructured tuples has no dialect loop/.test(n)));
+  assert.ok(notes.some((n) => /chain after Object\.entries has no dialect loop/.test(n)));
+  assert.ok(notes.some((n) => /The map index `i` maps to \$index/.test(n)) && notes.some((n) => /The map index `idx` maps to \$index/.test(n)));
+  assert.equal(lowerSvelte(`{#each Object.entries(x).filter(f) as [k, v]}<dt>{k}</dt>{/each}`, note), `<dt>{{ k }}</dt>`, "an each the dialect cannot spell keeps its rows once, with no marker leaking as an expression");
+  assert.ok(notes.some((n) => /chain after Object\.entries that the dialect cannot spell/.test(n)));
+
+  const placeholder = buildIr(`<div ng-bind-html="x">{{ fallback }} <span ng-click="go()">hi</span></div>`);
+  assert.deepEqual(placeholder.reads, ["x"], "placeholder content beside a binding is never read");
+  assert.deepEqual(placeholder.root.children, [{ kind: "html", expression: "x" }]);
+  assert.ok(placeholder.notes.some((n) => /placeholder content beside its html binding/.test(n)));
+  const conflicts = translate(`<img ng-bind-html="x"><textarea ng-model="m" ng-bind-html="x"></textarea>`);
+  assert.ok(!/dangerouslySetInnerHTML/.test(conflicts.jsx), "a void element and a control keep no html binding");
+  assert.match(conflicts.jsx, /value=\{m\}/);
+  assert.ok(conflicts.notes.some((n) => /<img> is a void element and can hold no html/.test(n)) && conflicts.notes.some((n) => /<textarea> binds both a model and html/.test(n)));
+  assert.match(toVue(`<ng-container ng-bind-html="x"></ng-container>`).markup, /<div v-html="x"><\/div>/, "a tagless wrapper never carries v-html on a <template>");
+  const ko = translate(`<ul class="list" ko-foreach="row in items" ko-html="row.markup"></ul>`);
+  assert.match(ko.jsx, /<ul className="list">/);
+  assert.ok(ko.notes.some((n) => /both repeats its children and binds html per row/.test(n)));
+  assert.equal(boundHtml({ kind: "element", tag: null, children: [{ kind: "html", expression: "x" }] }), null);
 });

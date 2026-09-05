@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import { pascal } from "../dsp-ir/emit.js";
+import { matchBracket } from "../dsp-ir/text.js";
 
 /**
  * portamp reads what it writes.
@@ -72,8 +73,15 @@ export function lowerReact(jsx, note = () => {}) {
 
     // The list may be a call chain, related.slice(0, 3).map(...), as long as each call's arguments hold no bracket of their own,
     // and Object.entries(map).map(([key, value]) => ...) is the (key, value) loop the printer wrote for an object.
-    const loop = /^(Object\.entries\()?([\w.$]+(?:\([^()]*\))?(?:\.[\w$]+(?:\([^()]*\))?)*)\)?\s*\.\s*map\s*\(\s*\(?\s*(?:\[\s*([\w$]+)\s*,\s*([\w$]+)\s*\]|([\w$]+))\s*(?:,\s*[\w$]+\s*)?\)?\s*=>\s*([\s\S]*)$/.exec(inner);
-    if (loop) { loop.list = loop[2]; loop.head = loop[3] ? `(${loop[3]}, ${loop[4]})` : loop[5]; loop.body = loop[6]; }
+    const LIST = "([\\w.$]+(?:\\([^()]*\\))?(?:\\.[\\w$]+(?:\\([^()]*\\))?)*)";
+    const entries = new RegExp(`^Object\\.entries\\(${LIST}\\)\\s*\\.\\s*map\\s*\\(\\s*\\(?\\s*\\[\\s*([\\w$]+)\\s*,\\s*([\\w$]+)\\s*\\]\\s*(?:,\\s*([\\w$]+)\\s*)?\\)?\\s*=>\\s*([\\s\\S]*)$`).exec(inner);
+    const plain = entries ? null : new RegExp(`^${LIST}\\s*\\.\\s*map\\s*\\(\\s*\\(?\\s*([\\w$]+)\\s*(?:,\\s*([\\w$]+)\\s*)?\\)?\\s*=>\\s*([\\s\\S]*)$`).exec(inner);
+    const loop = entries ? { list: entries[1], head: `(${entries[2]}, ${entries[3]})`, index: entries[4], body: entries[5] } : plain ? { list: plain[1], head: plain[2], index: plain[3], body: plain[4] } : null;
+    // A map index the dialect spells $index; any other name is left as written and named.
+    if (loop?.index && loop.index !== "$index") note(`The map index \`${loop.index}\` maps to $index in the dialect; it is left as written in the row.`);
+    // A map over destructured tuples, pairs.map(([a, b]) => ...), is not the object entries loop and has no dialect spelling.
+    const tuples = !loop && new RegExp(`^${LIST}\\s*\\.\\s*map\\s*\\(\\s*\\(?\\s*\\[`).test(inner);
+    if (tuples && /<[a-zA-Z]/.test(inner)) note(/^Object\.entries\(/.test(inner) ? "A .map over a chain after Object.entries has no dialect loop; its rows were kept once and left as written." : "A .map over destructured tuples has no dialect loop; its rows were kept once and the names are left as written.");
     const cond = /^([^&]+?)\s*&&\s*([\s\S]*)$/.exec(inner);
 
     if (loop && /<[a-zA-Z]/.test(loop.body)) {
@@ -112,15 +120,23 @@ export function lowerBody(jsx, note = () => {}) {
   text = text.replace(/\s+dangerouslySetInnerHTML=\{\{\s*__html:\s*([\s\S]*?)\s*\}\}/g, (m, expr) => ` ng-bind-html="${expr.replace(/"/g, "'")}"`);
 
   // An input, textarea or select that binds value (or checked) and onChange is a two way model.
-  // A handler's arrow carries a >, so an attribute list is read as text outside braces and whole brace groups.
-  text = text.replace(/<(input|textarea|select)\b((?:[^>{]|\{[^{}]*\})*)>/g, (m, tag, attrs) => {
+  // A handler's arrow carries a > and its body may nest braces, so the tag is read to the > at brace depth zero.
+  text = text.replace(/<(input|textarea|select)\b/g, (m, tag, at) => `\u0001${tag}\u0002${at}\u0003`);
+  for (;;) {
+    const open = /\u0001(\w+)\u0002(\d+)\u0003/.exec(text);
+    if (!open) break;
+    let depth = 0; let end = open.index + open[0].length;
+    for (; end < text.length; end += 1) { const c = text[end]; if (c === "{") depth += 1; else if (c === "}") depth -= 1; else if (c === ">" && depth === 0) break; }
+    let attrs = text.slice(open.index + open[0].length, end);
     const value = /\b(?:value|checked)=\{([\w.$]+)\}/.exec(attrs);
-    if (value && /\bonChange=/.test(attrs)) {
-      const rest = attrs.replace(/\b(?:value|checked)=\{[\w.$]+\}/, "").replace(/\bonChange=\{[^}]*\}/, "").replace(/\s+/g, " ").trim();
-      return `<${tag} ng-model="${value[1]}"${rest ? " " + rest : ""}>`;
+    const change = /\bonChange=\{/.exec(attrs);
+    if (value && change) {
+      const handlerEnd = matchBracket(attrs, change.index + change[0].length - 1);
+      const rest = (attrs.slice(0, change.index) + (handlerEnd < 0 ? "" : attrs.slice(handlerEnd))).replace(/\b(?:value|checked)=\{[\w.$]+\}/, "").replace(/\s+/g, " ").trim();
+      attrs = ` ng-model="${value[1]}"${rest ? ` ${rest}` : ""}`;
     }
-    return m;
-  });
+    text = `${text.slice(0, open.index)}<${open[1]}${attrs}${text.slice(end)}`;
+  }
 
   // Event props become dialect events.
   text = text.replace(/\son([A-Z]\w+)=\{([\s\S]*?)\}(?=\s|\/?>)/g, (m, name, expr) => {

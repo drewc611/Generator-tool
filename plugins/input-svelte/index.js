@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import { pascal } from "../dsp-ir/emit.js";
+import { matchBracket } from "../dsp-ir/text.js";
 
 /**
  * Reads Svelte components into the same screen shape as every other reader.
@@ -157,6 +158,8 @@ function lowerBlocks(markup, note) {
       // {#each Object.entries(MAP) as [KEY, VALUE]} is the (key, value) loop over an object.
       const each = /^([\s\S]+?)\s+as\s+(?:\[\s*([\w$]+)\s*,\s*([\w$]+)\s*\]|([\w$]+))(?:\s*,\s*([\w$]+))?\s*(?:\(([\s\S]+)\))?\s*$/.exec(rest);
       const entries = each ? /^Object\.entries\(([\s\S]+)\)$/.exec(each[1].trim()) : null;
+      // The argument has to be the whole list: Object.entries(x).filter(f) is a chain the dialect cannot spell.
+      if (entries && matchBracket(each[1].trim(), "Object.entries".length) !== each[1].trim().length) { note(`\`{#each ${rest}}\` repeats over a chain after Object.entries that the dialect cannot spell; its rows were kept once and the block markers dropped.`); stack.push({ type: "each", kept: true }); continue; }
       if (!each || (each[2] && !entries)) { note(`\`{#each ${rest}}\` could not be read as a loop; it was left as written.`); out += m[0]; }
       else {
         if (each[5]) note(`the each index \`${each[5]}\` maps to $index in the dialect.`);
@@ -164,7 +167,8 @@ function lowerBlocks(markup, note) {
         stack.push({ type: "each" });
       }
     } else if (kind === "/" && keyword === "each") {
-      out += "</ng-container>";
+      // An each whose markers were dropped closes nothing.
+      out += stack.at(-1)?.kept ? "" : "</ng-container>";
       stack.pop();
     } else if (kind === "#" && (keyword === "await" || keyword === "key")) {
       note(`a \`{#${keyword}}\` block has no dialect equivalent; its body was kept and the block boundary dropped.`);

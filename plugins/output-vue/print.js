@@ -1,4 +1,4 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { boundHtml, buildIr } from "../dsp-ir/ir.js";
 import { singleQuoted } from "../dsp-ir/emit.js";
 
 /**
@@ -148,9 +148,10 @@ function print(node, depth) {
     case "element": {
       const tag = node.tag ?? "template";
       const props = [...(node.directives ?? []), ...attributes(node)];
-      if (node.children.length === 1 && node.children[0].kind === "html") props.push(`v-html="${attrValue(node.children[0].expression)}"`);
+      const html = boundHtml(node);
+      if (html) props.push(`v-html="${attrValue(html.expression)}"`);
       const open = `<${tag}${props.length ? " " + props.join(" ") : ""}`;
-      const children = node.children.length === 1 && node.children[0].kind === "html" ? [] : node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = html ? [] : node.children.map((c) => print(c, depth + 1)).filter(Boolean);
       if (node.void) return `${indent}${open} />`;
       if (!children.length) return `${indent}${open}></${tag}>`;
       return [`${indent}${open}>`, ...children, `${indent}</${tag}>`].join("\n");

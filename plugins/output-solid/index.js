@@ -1,4 +1,4 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { boundHtml, buildIr } from "../dsp-ir/ir.js";
 import { jsString, guardHandler, pascal, unique } from "../dsp-ir/emit.js";
 
 /**
@@ -140,7 +140,7 @@ function print(node, depth, ctx) {
         return children.join("\n");
       }
       const props = attributes(node, ctx);
-      const html = node.children.length === 1 && node.children[0].kind === "html" ? node.children[0] : null;
+      const html = boundHtml(node);
       if (html) props.push(`innerHTML={${q(html.expression)}}`);
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
       const children = html ? [] : node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);

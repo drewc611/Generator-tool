@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and seventeen features across one hundred and thirty three phases. The statuses are
+Six hundred and eighteen features across one hundred and thirty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2388,14 +2388,19 @@ A review pass over input-twirl, each finding fixed with the input that exposed i
 **617. An element that binds html stays the author's element in every target, and the round trip reads back what the printers write** 🔨
 `<p class="note" ng-bind-html="x">` became a bare html node in the IR, so every target printed a `<div>` the author never wrote and lost the `<p>` and its class; React nested that div inside the parent, which is invalid inside a paragraph, and the round trip counted the extra element and reported eight fixtures drifted. The element now stays, with the html as its only child, and each target carries it its own way: React as `dangerouslySetInnerHTML` on the element, Vue as `v-html`, Angular as `[innerHTML]`, Alpine as `x-html`, Solid as `innerHTML`, Svelte as `{@html}` inside the element and Lit as `unsafeHTML` inside it. The React reader reads that prop back as the dialect's binding, reads a textarea, a select and a checkbox bound with onChange as the models they are (an attribute list is read past the `>` inside an arrow handler), and reads `Object.entries(map).map(([key, value]) => ...)` as the (key, value) loop the printer wrote for an object; the Svelte reader reads `{#each Object.entries(map) as [key, value]}` the same way. Every dialect fixture now round trips with no drift, and test/boundhtml.test.js holds the element in seven targets, the read-back, and the three fixtures that drifted most.
 
+## Phase 134: the thirteenth review pass
+
+**618. The bound html change read again, across the IR, five printers and two readers** 🔨
+A review pass over the bound html change, each finding fixed with the input that exposed it. The React reader's model regex allowed one brace level, so a handler with a block body or an object literal lost its model silently, and that included the printer's own model plus change handler output, so the round trip the change claimed regressed; the tag is now read to the > at brace depth zero and the handler removed by its matching brace. The entries loop matched `Object.entries(`, its `)` and the `[k, v]` head independently, so a map over tuples and a chain after `Object.entries` were lowered as the object loop over the wrong list; the two shapes are matched whole, a tuple map and a chained entries are kept once and named, and a map index the dialect spells `$index` is named when it carries another name; the Svelte reader's entries argument must be balanced and whole, or the each is left as written with its closing marker. The IR converted the children an html binding replaces, so placeholder content registered reads that became props; they are set aside and named. A void element cannot hold html and a control's value is its content, so those two bindings are dropped and named rather than printed as what React throws on. A tagless wrapper carrying html reached Vue as `v-html` on a `<template>`; it falls to the html case. Knockout's wrapping loop over an element that also binds html per row has no row element of its own, and says so. The sole html child test the five printers each restated is one helper, `boundHtml`, in the IR with one home. test/boundhtml.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 570 |
+| new in this branch | 571 |
 | planned | 3 |
-| total | 617 |
+| total | 618 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

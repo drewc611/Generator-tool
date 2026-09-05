@@ -1,4 +1,4 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { boundHtml, buildIr } from "../dsp-ir/ir.js";
 import { VOID } from "../dsp-ir/parse.js";
 import { singleQuoted } from "../dsp-ir/emit.js";
 import { attrSafe } from "../dsp-ir/text.js";
@@ -94,7 +94,7 @@ function print(node, depth) {
     case "element": {
       if (!node.tag) return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
       const props = attributes(node);
-      const html = node.children.length === 1 && node.children[0].kind === "html" ? node.children[0] : null;
+      const html = boundHtml(node);
       if (html) props.push(`[innerHTML]="${attrSafe(html.expression)}"`);
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
       if (VOID.has(node.tag.toLowerCase())) return `${indent}${open} />`;
