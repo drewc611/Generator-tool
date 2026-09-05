@@ -86,7 +86,7 @@ test("discovery loads every plugin that ships", async () => {
   assert.deepEqual(names, [
     "dsp-a11y", "dsp-analytics", "dsp-apimap", "dsp-apistyle", "dsp-archetype", "dsp-assets", "dsp-async", "dsp-auth", "dsp-behavior",
     "dsp-boundaries", "dsp-cognitive", "dsp-complexity", "dsp-components", "dsp-console", "dsp-cookies", "dsp-css", "dsp-dates",
-    "dsp-deadcode", "dsp-deps", "dsp-diff", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-env", "dsp-era", "dsp-events", "dsp-flags", "dsp-focus", "dsp-fonts", "dsp-forms", "dsp-globals",
+    "dsp-deadcode", "dsp-deps", "dsp-diff", "dsp-dom", "dsp-duplication", "dsp-entities", "dsp-entropy", "dsp-env", "dsp-era", "dsp-events", "dsp-flags", "dsp-focus", "dsp-fonts", "dsp-forms", "dsp-globals",
     "dsp-i18n", "dsp-iframes", "dsp-images", "dsp-imports", "dsp-improve", "dsp-inline",
     "dsp-ir", "dsp-labels", "dsp-landmarks", "dsp-learn", "dsp-magic", "dsp-media", "dsp-modernize", "dsp-motion", "dsp-observers", "dsp-perf", "dsp-permissions", "dsp-platform", "dsp-print", "dsp-props", "dsp-render-blocking", "dsp-routes", "dsp-security", "dsp-seo", "dsp-state", "dsp-storage", "dsp-supplychain", "dsp-tables", "dsp-timers", "dsp-tokens",
     "dsp-uplift", "dsp-weight",

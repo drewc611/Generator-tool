@@ -986,9 +986,18 @@ jobs:
           grep -qE "ng-|\{%" lq-out/src/features/TemplatesProduct/TemplatesProduct.jsx && { echo "the dialect or a liquid tag leaked into the React output"; exit 1; } || true
           rm -rf lq-out
 
+      - name: the DOM reader measures a wide and a deep page against the published thresholds
+        run: |
+          node src/cli.js run --src test/fixtures/dom-site --out dm-out
+          test -f dm-out/DOM.md || { echo "no DOM.md"; exit 1; }
+          grep -q "over 60" dm-out/DOM.md || { echo "the wide parent was not flagged"; exit 1; }
+          grep -q "over 32" dm-out/DOM.md || { echo "the deep nest was not flagged"; exit 1; }
+          grep -q "DOM size" dm-out/PERFORMANCE.md || { echo "the scorecard has no DOM axis"; exit 1; }
+          rm -rf dm-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "580" ]; then
-            echo "ROADMAP.md holds $count entries and claims 580"; exit 1
+          if [ "$count" != "581" ]; then
+            echo "ROADMAP.md holds $count entries and claims 581"; exit 1
           fi

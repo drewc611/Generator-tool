@@ -48,6 +48,11 @@ export function collect(ctx) {
     ? { concern: "Images", present: true, count: images.filter((i) => i.wants?.length).length, of: images.length, note: "image(s) missing a srcset, lazy loading, dimensions, a modern format or alt, of images found" }
     : { concern: "Images", present: false });
 
+  const dom = ctx.dom?.screens;
+  rows.push(dom
+    ? { concern: "DOM size", present: true, count: ctx.dom.flagged.length, of: dom.length, note: "screen(s) over a Lighthouse DOM size threshold before their loops run, of screens measured" }
+    : { concern: "DOM size", present: false });
+
   const faces = ctx.fonts?.faces;
   rows.push(faces
     ? { concern: "Fonts", present: true, count: faces.filter(fontGap).length, of: faces.length, note: "face(s) with no woff2, a legacy format or font-display unset, of faces declared" }

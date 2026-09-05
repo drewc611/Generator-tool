@@ -45,6 +45,7 @@ const DESCRIBES = [
   [/^IMPORTS\.md$/, "the module dependency graph from import and require, and the cycles a port should break"],
   [/^DEPENDENCIES\.md$/, "the libraries by version against the support dates their projects published"],
   [/^DIFF\.md$/, "what changed between this run and the previous one"],
+  [/^DOM\.md$/, "the size of the tree each screen renders, against the thresholds Lighthouse publishes"],
   [/^DOCS\.md$/, "the PDF documents read, what each gave up and what it could not"],
   [/^ENTITIES\.md$/, "the nouns the app is about, read from routes, endpoints and screens"],
   [/^ENV\.md$/, "the configuration keys read at runtime and where, names only"],

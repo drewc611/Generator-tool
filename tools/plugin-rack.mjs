@@ -89,6 +89,7 @@ const DOES = {
   "dsp-console": "the debug output left in the scripts, the console calls a port should strip",
   "dsp-deps": "the libraries the app stands on by version, against the support dates their own projects published; not assessed means that",
   "dsp-platform": "the browser APIs the scripts call that the platform removed, deprecated or never standardised, with what replaced each",
+  "dsp-dom": "the size of the tree each screen renders: elements, depth, widest parent and loops, against the thresholds Lighthouse publishes",
   "dsp-env": "the configuration keys the app reads at runtime and where, names only; a blank .env.example the port asks with",
   "dsp-globals": "what the app puts on the global object, which a module port has to contain",
   "dsp-landmarks": "the ARIA landmark structure of each page, the regions a screen reader jumps between",

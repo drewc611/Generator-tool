@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and eighty features across ninety six phases. The statuses are
+Five hundred and eighty one features across ninety seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-788 tests, on Node 18, 20 and 22, and on Windows in CI.
+792 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2185,14 +2185,20 @@ Marko writes control flow as tags and bindings as bare attributes, and every one
 Liquid is the jinja shape with its own words, and a Shopify or Jekyll theme is a layout that wraps every template, sections that declare their settings in a schema, and snippets rendered by name. input-liquid lowers each construct with an exact spelling: if, elsif and else with the chain negated the way the runtime evaluates it, unless as the negated test, case and when as the equalities they test with the else as their negation, for with its else as the empty state, and and or and contains and blank and empty and nil and size and first and last as their JS, filters with an exact spelling rewritten (upcase, downcase, size, default, append, prepend, plus, minus, times, divided_by, join, first, last, truncate, strip) and any other kept as written so the translator names it too. A template is wrapped in layout/theme.liquid at content_for_layout the way the server did and the body is what becomes the screen; a section or snippet the run holds is inlined at its tag and a missing one is named; a section's schema settings are its inputs and travel with it into the template it is inlined into; the platform objects a screen reads (product, collection, cart, shop, customer, routes and the rest) are its inputs, read from its expressions and never from its markup, so a search input does not invent a search object. assign, capture, cycle, increment, paginate, a loop's limit or offset, a render's arguments, a javascript block and the platform's content_for_header have no client equivalent and are named through the notes. A form posts to the platform and is kept as a form whose action the endpoint map must be given. test/liquid.test.js holds it.
 
 
+## Phase 97: the size of the tree
+
+**581. dsp-dom measures the tree each screen renders against the thresholds Lighthouse publishes** 🔨
+a page with thousands of nodes, a parent with sixty children or markup nested thirty levels deep costs memory, style recalculation and layout on every change, and a port carries the shape forward unless someone sees it. dsp-dom reads each screen's IR and measures the elements it renders once, how deep they nest, the widest parent and its tag, the loops that multiply the count at runtime and how deeply they nest, and holds the numbers against the three thresholds Lighthouse publishes for its DOM size audit: more than 1,500 nodes, a depth over 32, a parent with more than 60 children. The element count is stated as a floor, because a loop renders its body once per row and nothing guesses how many rows; loops inside loops are named because the inner body renders once per row of every enclosing list. DOM.md tables every screen and leads with the ones over a threshold; the performance scorecard gains a sixth axis counting them, so --max-perf holds it. Nothing is restructured, because where a screen should split is a decision about the product. test/dom.test.js holds it.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 533 |
+| new in this branch | 534 |
 | planned | 3 |
-| total | 580 |
+| total | 581 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
