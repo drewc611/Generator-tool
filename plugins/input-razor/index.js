@@ -50,13 +50,16 @@ export function csharpToJs(code, note = () => {}) {
 }
 
 const CLOSERS = { "(": ")", "[": "]", "{": "}" };
-function matchBracket(text, open) {
+// Quotes are C# strings only where the text is C#: inside a ( ) condition or
+// a @{ } block. A { } body is markup, and "Don't" in a paragraph is prose.
+// Returns -1 when the bracket never closes; every caller checks.
+function matchBracket(text, open, code = text[open] !== "{") {
   const close = CLOSERS[text[open]];
   let depth = 0; let quote = null;
   for (let i = open; i < text.length; i += 1) {
     const c = text[i];
     if (quote) { if (c === "\\") i += 1; else if (c === quote) quote = null; continue; }
-    if (c === '"' || c === "'") quote = c;
+    if (code && (c === '"' || c === "'")) quote = c;
     else if (c in CLOSERS) depth += 1;
     else if (c === ")" || c === "]" || c === "}") { depth -= 1; if (depth === 0 && c === close) return i + 1; }
   }
@@ -71,7 +74,7 @@ function implicitExpression(text, at) {
   i += ident[0].length;
   for (;;) {
     if (text[i] === "." && /[A-Za-z_]/.test(text[i + 1] ?? "")) { const m = /^\.[A-Za-z_]\w*/.exec(text.slice(i)); i += m[0].length; continue; }
-    if (text[i] === "(" || text[i] === "[") { const e = matchBracket(text, i); if (e < 0) break; i = e; continue; }
+    if (text[i] === "(" || text[i] === "[") { const e = matchBracket(text, i, true); if (e < 0) break; i = e; continue; }
     if (text[i] === "?" && text[i + 1] === "." && /[A-Za-z_]/.test(text[i + 2] ?? "")) { i += 1; continue; }
     break;
   }
@@ -85,27 +88,36 @@ export function composeRazor(source, resolve, note = () => {}, viewStartLayout =
   let text = String(source ?? "").replace(/@\*[\s\S]*?\*@/g, "");
   let layout = viewStartLayout;
   // The code block that names the layout is the one code block every view carries.
-  text = text.replace(/@\{([\s\S]*?)\}/g, (m, body) => {
+  for (let at = text.indexOf("@{"); at >= 0; at = text.indexOf("@{")) {
+    const end = matchBracket(text, at + 1, true);
+    if (end < 0) { note("A @{ code block never closes; the rest of the file was kept as text."); break; }
+    const body = text.slice(at + 2, end - 1);
     const l = /\bLayout\s*=\s*(?:null|"([^"]*)")/.exec(body);
     if (l) { layout = l[1] === undefined ? null : l[1]; }
     const rest = body.replace(/\bLayout\s*=\s*(?:null|"[^"]*")\s*;?/, "").replace(/\bViewBag\.Title\s*=\s*[^;]+;?/, (t) => { note(`\`${t.trim()}\` set the page title in a code block; the layout reads it and the port must supply it.`); return ""; }).trim();
     if (rest) note("A @{ } code block ran C# while rendering; it was not carried and its values are not in the port.");
-    return "";
-  });
+    text = text.slice(0, at) + text.slice(end);
+  }
   const sections = new Map();
   text = text.replace(/@section\s+(\w+)\s*\{/g, (m, name, offset) => `\u0000SECTION:${name}\u0000{`);
   for (;;) {
     const m = /\u0000SECTION:(\w+)\u0000\{/.exec(text);
     if (!m) break;
     const open = m.index + m[0].length - 1;
-    const end = matchBracket(text, open);
+    const end = matchBracket(text, open, false);
+    if (end < 0) { note(`@section ${m[1]} never closes; the rest of the file was kept as text.`); text = text.replace(m[0], ""); break; }
     sections.set(m[1], text.slice(open + 1, end - 1));
     text = text.slice(0, m.index) + text.slice(end);
   }
   if (layout && resolve && depth < 6) {
     const body = resolve(layout);
     if (body != null) {
-      let composed = String(body).replace(/@\*[\s\S]*?\*@/g, "").replace(/@\{[\s\S]*?\}/g, "");
+      let composed = String(body).replace(/@\*[\s\S]*?\*@/g, "");
+      for (let at = composed.indexOf("@{"); at >= 0; at = composed.indexOf("@{")) {
+        const end = matchBracket(composed, at + 1, true);
+        if (end < 0) break;
+        composed = composed.slice(0, at) + composed.slice(end);
+      }
       composed = composed.replace(/@RenderBody\(\)/g, () => text);
       composed = composed.replace(/@(?:await\s+)?RenderSection(?:Async)?\(\s*"(\w+)"[^)]*\)/g, (m, name) => sections.get(name) ?? "");
       composed = composed.replace(/@IsSectionDefined\(\s*"(\w+)"\s*\)/g, (m, name) => (sections.has(name) ? "true" : "false"));
@@ -139,24 +151,37 @@ export function lowerRazor(source, note = () => {}) {
   const out = [];
   const lower = (t) => {
     let i = 0;
+    // A bracket that never closes is a view this reader cannot follow; the rest
+    // is kept as text and named, never looped over.
+    const bail = (at, what) => { note(`${what} never closes; the rest of the file from there was kept as text.`); out.push(t.slice(at)); return t.length; };
     while (i < t.length) {
       const at = t.indexOf("@", i);
       if (at < 0) { out.push(t.slice(i)); break; }
       out.push(t.slice(i, at));
       i = at + 1;
       if (t[i] === "@") { out.push("@"); i += 1; continue; }
-      if (t[i] === ":") { const nl = t.indexOf("\n", i); out.push(t.slice(i + 1, nl < 0 ? t.length : nl)); i = nl < 0 ? t.length : nl; continue; }
-      if (t[i] === "(") { const e = matchBracket(t, i); out.push(`{{ ${expr(t.slice(i + 1, e - 1).trim())} }}`); i = e; continue; }
-      if (t[i] === "{") { const e = matchBracket(t, i); note("A @{ } code block ran C# while rendering; it was not carried and its values are not in the port."); i = e; continue; }
+      // help@example.com: Razor treats an @ glued to the word before it as the sign itself.
+      if (at > 0 && /[A-Za-z0-9._-]/.test(t[at - 1]) && /[A-Za-z0-9]/.test(t[i] ?? "")) { out.push("@"); continue; }
+      if (t[i] === ":") { const nl = t.indexOf("\n", i); lower(t.slice(i + 1, nl < 0 ? t.length : nl)); i = nl < 0 ? t.length : nl; continue; }
+      if (t[i] === "(") { const e = matchBracket(t, i, true); if (e < 0) { i = bail(at, "An @( expression"); continue; } out.push(`{{ ${expr(t.slice(i + 1, e - 1).trim())} }}`); i = e; continue; }
+      if (t[i] === "{") { const e = matchBracket(t, i, true); if (e < 0) { i = bail(at, "A @{ code block"); continue; } note("A @{ } code block ran C# while rendering; it was not carried and its values are not in the port."); i = e; continue; }
       const word = /^[A-Za-z_]\w*/.exec(t.slice(i))?.[0];
       if (!word) { out.push("@"); continue; }
+      // Directives head the file and take the rest of their line; @using with a ( is a block instead.
+      if (/^(using|model|inject|addTagHelper|removeTagHelper|inherits|implements|namespace|functions|helper|layout|page|attribute)$/.test(word) && !(word === "using" && /^\s*\(/.test(t.slice(i + 5)))) {
+        if (word === "model") { const nl = t.indexOf("\n", i); note(`@model ${t.slice(i + 5, nl < 0 ? t.length : nl).trim()} names the C# type the controller supplied; the port's Model input carries that shape and this tool does not know it.`); i = nl < 0 ? t.length : nl; continue; }
+        if (word === "functions" || word === "helper") { const bo = t.indexOf("{", i); const be = bo < 0 ? -1 : matchBracket(t, bo, true); if (be < 0) { i = bail(at, `@${word}`); continue; } note(`@${word} declared C# in the view; it was not carried.`); i = be; continue; }
+        const nl = t.indexOf("\n", i); i = nl < 0 ? t.length : nl; continue;
+      }
 
-      if (word === "if") { i = control(t, i + 2, "if"); continue; }
+      if (word === "if") { const r = control(t, i + 2, "if"); if (r < 0) { i = bail(at, "An @if block"); continue; } i = r; continue; }
       if (word === "foreach") {
-        const open = t.indexOf("(", i); const e = matchBracket(t, open);
+        const open = t.indexOf("(", i); const e = open < 0 ? -1 : matchBracket(t, open, true);
+        if (e < 0) { i = bail(at, "A @foreach"); continue; }
         const head = t.slice(open + 1, e - 1).trim();
         const lm = /^(?:var|[\w<>\[\],. ]+?)\s+(\w+)\s+in\s+([\s\S]+)$/.exec(head);
-        const bodyOpen = t.indexOf("{", e); const bodyEnd = matchBracket(t, bodyOpen);
+        const bodyOpen = t.indexOf("{", e); const bodyEnd = bodyOpen < 0 ? -1 : matchBracket(t, bodyOpen, false);
+        if (bodyEnd < 0) { i = bail(at, "A @foreach body"); continue; }
         if (lm) out.push(`<ng-container ng-repeat="${q(`${lm[1]} in ${expr(lm[2])}`)}">`);
         else { note(`@foreach (${head.slice(0, 40)}) has a shape this reader does not know; its body was kept once, unrepeated.`); out.push("<ng-container>"); }
         lower(t.slice(bodyOpen + 1, bodyEnd - 1));
@@ -164,16 +189,18 @@ export function lowerRazor(source, note = () => {}) {
         i = bodyEnd; continue;
       }
       if (word === "for" || word === "while" || word === "do" || word === "using" || word === "try" || word === "lock") {
-        const open = t.indexOf(word === "do" ? "{" : "(", i); const e = word === "do" ? open : matchBracket(t, open);
-        const bodyOpen = t.indexOf("{", e); const bodyEnd = matchBracket(t, bodyOpen);
+        const open = t.indexOf(word === "do" ? "{" : "(", i); const e = open < 0 ? -1 : word === "do" ? open : matchBracket(t, open, true);
+        const bodyOpen = e < 0 ? -1 : t.indexOf("{", e); const bodyEnd = bodyOpen < 0 ? -1 : matchBracket(t, bodyOpen, false);
+        if (bodyEnd < 0) { i = bail(at, `A @${word} block`); continue; }
         note(`@${word} ran a C# loop or block; its body was kept once and what it did is not in the port.`);
         out.push("<ng-container>"); lower(t.slice(bodyOpen + 1, bodyEnd - 1)); out.push("</ng-container>");
         i = bodyEnd; continue;
       }
       if (word === "switch") {
-        const open = t.indexOf("(", i); const e = matchBracket(t, open);
+        const open = t.indexOf("(", i); const e = open < 0 ? -1 : matchBracket(t, open, true);
+        const bodyOpen = e < 0 ? -1 : t.indexOf("{", e); const bodyEnd = bodyOpen < 0 ? -1 : matchBracket(t, bodyOpen, false);
+        if (bodyEnd < 0) { i = bail(at, "A @switch"); continue; }
         const subject = expr(t.slice(open + 1, e - 1).trim());
-        const bodyOpen = t.indexOf("{", e); const bodyEnd = matchBracket(t, bodyOpen);
         const body = t.slice(bodyOpen + 1, bodyEnd - 1);
         const cases = [...body.matchAll(/\b(case\s+([\s\S]+?)|default)\s*:/g)];
         const tried = [];
@@ -186,11 +213,6 @@ export function lowerRazor(source, note = () => {}) {
           lower(chunk); out.push("</ng-container>");
         });
         i = bodyEnd; continue;
-      }
-      if (/^(using|model|inject|addTagHelper|removeTagHelper|inherits|implements|namespace|functions|helper|layout|page|attribute)$/.test(word)) {
-        if (word === "model") { const nl = t.indexOf("\n", i); note(`@model ${t.slice(i + 5, nl < 0 ? t.length : nl).trim()} names the C# type the controller supplied; the port's Model input carries that shape and this tool does not know it.`); i = nl < 0 ? t.length : nl; continue; }
-        if (word === "functions" || word === "helper") { const bo = t.indexOf("{", i); const be = matchBracket(t, bo); note(`@${word} declared C# in the view; it was not carried.`); i = be; continue; }
-        const nl = t.indexOf("\n", i); i = nl < 0 ? t.length : nl; continue;
       }
       if (word === "Html" || word === "Url" || word === "Component") {
         const im = implicitExpression(t, i);
@@ -214,19 +236,21 @@ export function lowerRazor(source, note = () => {}) {
     const tried = [];
     let pos = i;
     for (;;) {
-      const open = t.indexOf("(", pos); const e = matchBracket(t, open);
+      const open = t.indexOf("(", pos); const e = open < 0 ? -1 : matchBracket(t, open, true);
+      const bodyOpen = e < 0 ? -1 : t.indexOf("{", e); const bodyEnd = bodyOpen < 0 ? -1 : matchBracket(t, bodyOpen, false);
+      if (bodyEnd < 0) return -1;
       const test = expr(t.slice(open + 1, e - 1).trim());
       const nots = tried.map((c) => `!(${c})`);
       out.push(`<ng-container ng-if="${q(tried.length ? [...nots, `(${test})`].join(" && ") : test)}">`);
       tried.push(test);
-      const bodyOpen = t.indexOf("{", e); const bodyEnd = matchBracket(t, bodyOpen);
       lower(t.slice(bodyOpen + 1, bodyEnd - 1)); out.push("</ng-container>");
       pos = bodyEnd;
       const tail = /^\s*else\s+if\s*\(/.exec(t.slice(pos));
       if (tail) { pos += tail[0].length - 1; continue; }
       const els = /^\s*else\s*\{/.exec(t.slice(pos));
       if (els) {
-        const bo = pos + els[0].length - 1; const be = matchBracket(t, bo);
+        const bo = pos + els[0].length - 1; const be = matchBracket(t, bo, false);
+        if (be < 0) return -1;
         out.push(`<ng-container ng-if="${q(nots.concat(`!(${test})`).join(" && "))}">`);
         lower(t.slice(bo + 1, be - 1)); out.push("</ng-container>");
         pos = be;

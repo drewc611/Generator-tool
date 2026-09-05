@@ -37,3 +37,10 @@ test("a run writes READERS.md with the reader per screen file and names the mark
     await run.cleanup();
   }
 });
+
+test("a template a reader read from a second file is claimed by that reader, and a Razor view is markup", () => {
+  const files = ["orders.component.ts", "orders.component.html", "Views/_ViewStart.cshtml"].map((rel) => ({ rel }));
+  const c = census(files, [{ file: "orders.component.ts", templateOrigin: "orders.component.html", readBy: "angular" }]);
+  assert.deepEqual(c.screens.map((s) => s.file).sort(), ["orders.component.html", "orders.component.ts"]);
+  assert.deepEqual(c.unread, ["Views/_ViewStart.cshtml"], "the skipped Razor file is unclaimed markup, not an asset");
+});

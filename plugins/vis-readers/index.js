@@ -14,13 +14,17 @@
  * runs at verify so the census is what the readers actually did.
  */
 
-const MARKUP = /\.(html?|shtml|php|asp|jsp|inc|hbs|handlebars|marko|liquid|twig|xslt?|vue|riot|tag|svelte|jsx|tsx|xhtml|jsf|aspx|ascx|master)$/i;
+const MARKUP = /\.(html?|shtml|php|asp|jsp|inc|hbs|handlebars|marko|liquid|twig|xslt?|cshtml|vue|riot|tag|svelte|jsx|tsx|xhtml|jsf|aspx|ascx|master)$/i;
 const SCRIPT = /\.(js|mjs|cjs|ts)$/i;
 const STYLE = /\.(css|scss|less)$/i;
 
 export function census(files, screens) {
   const byFile = new Map();
-  for (const s of screens) if (s.file) byFile.set(s.file.replace(/^\.\//, ""), s.readBy ?? "a reader");
+  for (const s of screens) {
+    if (s.file) byFile.set(s.file.replace(/^\.\//, ""), s.readBy ?? "a reader");
+    // An Angular component's templateUrl is a second file the same reader read.
+    if (typeof s.templateOrigin === "string" && /\.[a-z]+$/i.test(s.templateOrigin) && !/\s/.test(s.templateOrigin)) byFile.set(s.templateOrigin.replace(/^\.\//, ""), s.readBy ?? "a reader");
+  }
   const rows = { screens: [], scripts: [], styles: [], assets: [], unread: [] };
   for (const f of files) {
     const rel = f.rel.replace(/^\.\//, "");

@@ -82,3 +82,8 @@ test("a run composes each view, skips the layout as a screen, reads the variable
     await run.cleanup();
   }
 });
+
+test("a directive Blade does not know is printed as text, so email addresses and CSS at-rules survive", () => {
+  const { template } = lowerBlade(`<p>Mail help@example.com (support) now</p>\n<style>@media (max-width: 600px) { .x { display: none } }</style>`, () => {});
+  assert.equal(template, `<p>Mail help@example.com (support) now</p>\n<style>@media (max-width: 600px) { .x { display: none } }</style>`);
+});

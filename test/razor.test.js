@@ -77,3 +77,17 @@ test("a run applies _ViewStart's layout, skips the layout as a screen, reads Mod
     await run.cleanup();
   }
 });
+
+test("prose apostrophes, unbalanced brackets, @using lines, email addresses and @: lines are read the way Razor reads them", () => {
+  const notes = [];
+  const note = (n) => notes.push(n);
+  assert.equal(lowerRazor(`@if (Model.Ok) {\n<p>Don't panic</p>\n}\n<p>after</p>`, note).template, `<ng-container ng-if="Model.Ok">\n<p>Don't panic</p>\n</ng-container>\n<p>after</p>`, "an apostrophe in a body is prose, not a C# string");
+  const broken = lowerRazor(`<p>@(Model.X</p>`, note);
+  assert.equal(broken.template, `<p>@(Model.X</p>`, "an unbalanced expression is kept as text");
+  assert.ok(notes.some((n) => /never closes/.test(n)));
+  assert.equal(lowerRazor(`@using MyApp.Models\n<h1>T</h1>\n@if (Model.Items.Count > 0) {\n<ul><li>@Model.Name</li></ul>\n}\n<p>tail</p>`, note).template,
+    `\n<h1>T</h1>\n<ng-container ng-if="Model.Items.length > 0">\n<ul><li>{{ Model.Name }}</li></ul>\n</ng-container>\n<p>tail</p>`, "a @using directive takes its line and nothing else");
+  assert.equal(lowerRazor(`<p>Mail help@example.com now</p>`, note).template, `<p>Mail help@example.com now</p>`, "an email address is the sign itself");
+  assert.equal(lowerRazor(`@if (true) {\n@:Hello @Model.Name\n}`, note).template, `<ng-container ng-if="true">\nHello {{ Model.Name }}\n</ng-container>`, "a literal line still evaluates its expressions");
+  assert.equal(composeRazor(`@{ Layout = null; var x = new { a = 1 }; }\n<p>body</p>`, null, note), `\n<p>body</p>`, "a code block with nested braces is removed whole");
+});

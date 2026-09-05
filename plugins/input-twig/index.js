@@ -26,7 +26,6 @@ export function twigToJinja(source, note = () => {}) {
   let text = String(source ?? "");
   // Tags first: elseif, set, and the tests inside {% %} and {{ }}.
   text = text.replace(/\{%(-?)\s*elseif\s+/g, "{%$1 elif ");
-  text = text.replace(/\{%(-?)\s*set\s+([\s\S]*?)\s*(-?)%\}/g, (m, a, body, b) => `{%${a} set ${body} ${b}%}`);
   const rewriteExpr = (expr) => {
     const parts = expr.split(/('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")/);
     return parts.map((part, i) => {

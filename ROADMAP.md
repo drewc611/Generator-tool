@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and ninety one features across one hundred and seven phases. The statuses are
+Five hundred and ninety two features across one hundred and eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-816 tests, on Node 18, 20 and 22, and on Windows in CI.
+819 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2251,14 +2251,20 @@ a <div> or <span> with onclick, ng-click, @click, (click), on-click or onClick l
 Razor is the view language of ASP.NET MVC and ASP.NET Core: C# after an @ and markup everywhere else, a view composed from the layout _ViewStart or its own code block names, the body rendered where the layout says, sections landing where the layout asks and dropped with a note where it does not, and partials rendered by name from Shared or beside the view. input-razor composes first, then lowers: @if with its else if and else chain negated the way the runtime evaluates it, @foreach as a loop naming its variable, @switch and case as the equalities they test, @expr and @(expr) as interpolation, @Html.Raw as bound html, @Html.DisplayFor as the value it displays and DisplayNameFor as the property's name, @: as a literal line and @@ as the sign itself, and a C# expression as the JS it names: .Count and .Length and .Any() to length checks, string.IsNullOrEmpty to a truth test, ToUpper and ToLower and Trim to their methods, is null to a null test. Model, ViewBag, ViewData and User are the inputs where the view read them, and @model names the C# type the port's Model carries without knowing its shape. A @{ } code block, @for and @while, @Url.Action and @Html.ActionLink and the form helpers, tag helpers and a section no layout renders are named rather than approximated, because Razor's parser is a C# parser and this is not one. .cshtml reaches the scan. test/razor.test.js holds it.
 
 
+## Phase 108: the review pass
+
+**592. Eight defects a review found in the new readers are fixed, each with the input that exposed it as a test** 🔨
+a review of the nine plugins written in this stretch found eight defects worth the name, and each is fixed with the exact input that exposed it held as a test. In input-razor: an apostrophe in prose inside a control body was read as a C# string opener, so "Don't panic" swallowed the block's closing brace or hung the lowering; brackets are now C# only inside a condition or a code block and markup bodies read their braces plainly. An unbalanced bracket sent the scanner to minus one and looped forever; every bracket match is now checked and an expression that never closes is kept as text and named. A @using namespace line, which heads most views, was read as a using block and dropped everything to the next brace; directives now take their line first and only a @using with a parenthesis is a block. An email address in prose became an interpolation of a nonexistent variable; an @ glued to the word before it is now the sign itself, as Razor's own parser reads it. A @: literal line was pushed raw so the expressions Razor still evaluates in it printed as text; it is now lowered. A code block was removed up to its first closing brace, leaving a nested brace's tail on the page; blocks are now matched balanced. In input-blade: a directive Blade does not know was deleted with its argument, so help@example.com became help.com and a CSS @media rule lost its query; an unknown directive is now printed as text, which is what Blade does. In vis-readers: an Angular component's external template, read by input-angular from a second file, was reported as markup no reader claimed; a template a reader read from a second file is now credited to it, and a Razor view counts as markup. input-twig's no-op rewrite of set is gone. test/razor.test.js, test/blade.test.js and test/readers-census.test.js hold them.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 544 |
+| new in this branch | 545 |
 | planned | 3 |
-| total | 591 |
+| total | 592 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

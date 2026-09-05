@@ -208,7 +208,9 @@ export function lowerBlade(source, note = () => {}) {
         if (name === "yield" || name === "include" || name.startsWith("include") || name === "each" || name === "stack") note(`@${name}(${a.slice(0, 40)}) was not composed: its target is not in this run or the compose step did not reach it. The tag was removed.`);
         break;
       }
-      default: { take(); note(`@${name} has no dialect equivalent; it was removed and is named here so the gap is visible.`); }
+      // Blade compiles only the directives it knows and prints the rest as text,
+      // so help@example.com and @media stay exactly what they were.
+      default: out.push(`@${name}`);
     }
   }
   out.push(text.slice(last));
