@@ -47,7 +47,8 @@ ctx.sources.screenshots   [{ path, name, bytes, state }]
 ctx.sources.specs         [] for OpenAPI or Postman input plugins
 
 ctx.tokens          design tokens, available from plan onward
-ctx.screens         [{ selector, file, inputs, outputs, usesTwoWay, rxjs }]
+ctx.screens         [{ selector, className, file, inputs, outputs, template, templateOrigin,
+                       usesNgIf, usesNgFor, usesTwoWay, rxjs, readBy }]
 ctx.api.calls       [{ method, path, file, name, headers, body }]
 ctx.api.interceptors [{ file }]
 ctx.plan.components []

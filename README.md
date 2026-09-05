@@ -10,7 +10,7 @@ about where the plugin classes come from. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 165 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 801 passing, 802 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins including the transformer, the learned archetype model and the Svelte, Lit, Alpine and Stencil readers](media/test-run.png)
+![node --test running the portamp suite: 801 passing, 802 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the Ember, Mithril, Marko, Liquid, Twig and XSLT readers](media/test-run.png)
 
 <sub>Proof, not a promise. Every line above is verbatim from `npm test`: 801
 tests pass across 102 test files with `node --test` and no framework, and
@@ -79,7 +79,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across five hundred and eighty five features, and every
+The core grew from 527 lines to 718 across five hundred and eighty six features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -1007,8 +1007,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): five hundred and eighty five features in
-one hundred and one phases, forty four shipped, five hundred and thirty eight new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): five hundred and eighty six features in
+one hundred and two phases, forty four shipped, five hundred and thirty nine new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

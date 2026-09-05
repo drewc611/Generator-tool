@@ -376,6 +376,32 @@ emits and inline style and script are exactly what a strict Content Security
 Policy forbids, so lifting them out closes a theming gap and a security gap at
 once. test/paint.test.js holds both.
 
+9.x is the long tail, and it is where the rules above earn their keep. Four
+scorecards gather what the analyzers measured into one page each (vis-a11y,
+vis-security, vis-perf, vis-lifecycle), every one counting rather than grading
+and every one paired with a `--max-*` ceiling that only ever adds a check and
+is reckoned through the scorecard's own function so gate and report agree.
+Six more readers reach the old web and the enterprise web alike: input-ember
+lowers Glimmer, input-mithril walks hyperscript, input-marko reads control
+flow written as tags, input-liquid composes a theme the way the server did,
+input-twig rewrites Twig's spellings onto jinja's and shares that one lowering,
+and input-xslt reads a stylesheet as the template it is with XPath as the path
+it names. Each names what has no honest equivalent rather than approximating
+it. Four analyzers read what the source says about its own dependencies:
+dsp-env the configuration keys (names, never values), dsp-deps the libraries by
+version against the support dates their projects published (not in the table
+means not assessed), dsp-platform the browser APIs the platform removed or
+deprecated, dsp-dom the size of each screen's tree against thresholds
+Lighthouse publishes. Two hosts join the site engine (output-eleventy, and
+output-playwright beside output-cypress). Two defects surfaced under the new
+readers and were fixed for every reader at once: the object literal parser read
+a ternary as key value pairs, and an event wired on a child component reached
+React as a raw attribute, so the IR now learns the run's own tag names from
+every printer that builds one. And the words are held like the digits: the
+README's plugin and test counts, the size table within three percent, the
+port README's index of every report, and every count spelled in English
+numerals are each a test that fails when a sentence drifts from the file.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -441,8 +467,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: five hundred and eighty five features in
-one hundred and one phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: five hundred and eighty six features in
+one hundred and two phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.

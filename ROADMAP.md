@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Five hundred and eighty five features across one hundred and one phases. The statuses are
+Five hundred and eighty six features across one hundred and two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2215,14 +2215,20 @@ Twig, the template language of Symfony, Drupal and Craft, is jinja's grammar wit
 XSLT was the front end of the early 2000s, an XML document and a stylesheet the browser or the server ran to make the page, and the stylesheet is a template in a strict grammar. input-xslt parses it with a small strict XML reader and lowers it onto the dialect: xsl:for-each is a loop over the selected nodes with the loop variable named for the last path step and an xsl:sort named, xsl:if and xsl:choose with when and otherwise are the conditional chain negated the way the processor evaluates it, xsl:value-of is an interpolation and with output escaping disabled bound html, xsl:attribute sets an attribute on its parent and an attribute value template binds one, xsl:element names an element, xsl:apply-templates over a select with a matching template repeats that template's body, xsl:call-template inlines the named template with its parameters named, and a variable with a select is substituted at its uses. XPath lowers to the JS path it names, a/b/@c to a.b.c, count() to .length, not() to !, position() to the index, and and or to their operators, the root to the one input called data; a predicate filter, an axis, a key or a function the table does not know is kept as written and named, because this is not an XPath engine and a wrong path that looks right is the defect the tool exists to avoid. .xsl and .xslt reach the scan. test/xslt.test.js holds it.
 
 
+## Phase 102: the contract catches up
+
+**586. CLAUDE.md, the README's captions, the package description and the plugin API describe the tool that ships** 🔨
+the contract's account of the tool stopped at 8.0 while the code reached 9.49, the README's test run caption named the Svelte, Lit, Alpine and Stencil readers as the newest, the package description listed six readers of thirty two and no host arrangement, and docs/PLUGIN-API.md gave a screen six fields where every reader pushes twelve. Each is trued up: CLAUDE.md carries a 9.x paragraph naming the scorecards and their ceilings, the six readers from Ember to XSLT and what each refuses to guess, the four analyzers of a source's own dependencies, the two hosts, the two defects fixed for every reader at once and the gates that hold the words like the digits; the caption names the newest readers; the description counts the input plugins and names the hosts; and the API doc lists every field a screen carries so a plugin author can guess the shape, which is what the contract promised. Nothing was added to the tool; the words about it were made true.
+
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 538 |
+| new in this branch | 539 |
 | planned | 3 |
-| total | 585 |
+| total | 586 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
