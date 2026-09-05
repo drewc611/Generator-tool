@@ -27,8 +27,10 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: '${{ matrix.node }}' }
 
+      # Fixtures are the legacy source the tool reads, not the tool: an Ember
+      # fixture carries decorators Node cannot run, and that is the point of it.
       - name: syntax check every source file
-        run: for f in $(find src plugins test -name '*.js'); do node --check "$f"; done
+        run: for f in $(find src plugins test -name '*.js' -not -path '*/fixtures/*'); do node --check "$f"; done
 
       - name: the core names no framework
         run: |
