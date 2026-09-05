@@ -17,7 +17,8 @@ export default {
   class: "input",
   setup({ on, log }) {
     on("extract", async (ctx) => {
-      const candidates = ctx.sources.files.filter((f) => /\.(jinja2?|j2|html?)$/i.test(f.rel));
+      // Nunjucks is jinja's JavaScript port; its .njk files are read by the same lowering and credited to it by name.
+      const candidates = ctx.sources.files.filter((f) => /\.(jinja2?|j2|html?|njk|nunjucks)$/i.test(f.rel));
       let count = 0;
       const notes = [];
       const note = (text) => { if (!notes.includes(text)) notes.push(text); };
@@ -37,19 +38,26 @@ export default {
         return hit ? bodies.get(hit) : null;
       };
 
+      // A layout other templates extend is chrome: composed into each of them, not a screen of its own.
+      const keyOf = (name) => { const clean = String(name).replace(/^\.\//, ""); if (bodies.has(clean)) return clean; const base = clean.split("/").pop(); return [...bodies.keys()].find((k) => k.endsWith(`/${base}`) || k === base) ?? null; };
+      const extended = new Set([...bodies.values()].flatMap((b) => [...b.matchAll(/\{%-?\s*extends\s+['"]([^'"]+)['"]/g)].map((m) => keyOf(m[1]))).filter(Boolean));
       for (const file of candidates) {
-        const text = bodies.get(file.rel.replace(/^\.\//, "")) ?? "";
-        if (!text || !/\{%/.test(text)) continue;
-        // Django's own spellings are input-django's to read, and so is every file it already read or composed into a screen.
         const rel = file.rel.replace(/^\.\//, "");
+        const text = bodies.get(rel) ?? "";
+        // A tag marks a jinja file; an .njk file is Nunjucks's whatever it holds. A page with only {{ }} is another dialect's.
+        if (!text || !(/\{%/.test(text) || /\.(njk|nunjucks)$/i.test(rel))) continue;
+        // Django's own spellings are input-django's to read, and so is every file it already read or composed into a screen.
         if (isDjango(text) || ctx.screens.some((s) => s.file?.replace(/^\.\//, "") === rel || (s.composed ?? []).includes(rel))) continue;
+        if (extended.has(rel) && /\{%-?\s*block\s/.test(text) && !/\{%-?\s*extends\s/.test(text)) { note(`${rel} is a layout other templates extend; it is composed into each of them rather than ported as a screen of its own.`); continue; }
 
-        const bodyMatch = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(text);
-        const markup = stripStyles(stripScripts(bodyMatch ? bodyMatch[1] : text)).trim();
-        if (!markup) continue;
-
-        const lowered = lowerJinja(markup, note, resolveInclude);
-        const name = file.rel.replace(/\.(jinja2?|j2|html?)$/i, "").split("/").filter((p) => p !== ".").join("-");
+        const parentKey = keyOf(/\{%-?\s*extends\s+['"]([^'"]+)['"]/.exec(text)?.[1] ?? "");
+        // The body is cut after the page is composed into its layout, so the document around a child template never reaches the port.
+        const composedText = lowerJinja(stripStyles(stripScripts(text)), note, resolveInclude);
+        const bodyMatch = /<body\b[^>]*>([\s\S]*?)<\/body\s*>/i.exec(composedText);
+        const lowered = (bodyMatch ? bodyMatch[1] : composedText).trim();
+        if (!lowered) continue;
+        const nunjucks = /\.(njk|nunjucks)$/i.test(file.rel);
+        const name = file.rel.replace(/\.(jinja2?|j2|html?|njk|nunjucks)$/i, "").split("/").filter((p) => p !== ".").join("-");
         const selector = name.toLowerCase().replace(/[^\w-]/g, "-") || "page";
         ctx.screens.push({
           selector,
@@ -58,12 +66,13 @@ export default {
           inputs: [],
           outputs: [],
           template: lowered,
-          templateOrigin: "a jinja template, lowered",
+          composed: parentKey ? [parentKey] : [],
+          templateOrigin: parentKey ? (nunjucks ? "a Nunjucks template, composed into its layout and lowered through jinja" : "a jinja template, composed into its layout and lowered") : nunjucks ? "a Nunjucks template, lowered through jinja" : "a jinja template, lowered",
           usesNgIf: /ng-if/.test(lowered),
           usesNgFor: /ng-repeat/.test(lowered),
           usesTwoWay: false,
           rxjs: [],
-          readBy: "jinja",
+          readBy: nunjucks ? "nunjucks" : "jinja",
         });
         count += 1;
       }

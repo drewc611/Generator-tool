@@ -1057,14 +1057,14 @@ jobs:
 
       - name: one page in twelve server dialects is one React component, provenance aside
         run: |
-          for d in jinja twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl django ejs; do
+          for d in jinja twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl django ejs nunjucks; do
             node src/cli.js run --src test/fixtures/dialects/$d --out dl-$d >/dev/null
             grep -vE "Ported from|Template translated from" dl-$d/src/features/Product/Product.jsx > dl-$d.jsx
           done
-          for d in twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl django ejs; do
+          for d in twig liquid blade freemarker velocity thymeleaf smarty jsp cfml haml slim twirl django ejs nunjucks; do
             cmp dl-jinja.jsx dl-$d.jsx || { echo "the $d port of the same page differs from the jinja port"; exit 1; }
           done
-          rm -rf dl-jinja dl-twig dl-liquid dl-blade dl-freemarker dl-velocity dl-thymeleaf dl-smarty dl-jsp dl-cfml dl-haml dl-slim dl-twirl dl-django dl-ejs dl-*.jsx
+          rm -rf dl-jinja dl-twig dl-liquid dl-blade dl-freemarker dl-velocity dl-thymeleaf dl-smarty dl-jsp dl-cfml dl-haml dl-slim dl-twirl dl-django dl-ejs dl-nunjucks dl-*.jsx
 
       - name: the keyboard reader names a click target the keyboard cannot reach
         run: |
@@ -1173,6 +1173,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "622" ]; then
-            echo "ROADMAP.md holds $count entries and claims 622"; exit 1
+          if [ "$count" != "623" ]; then
+            echo "ROADMAP.md holds $count entries and claims 623"; exit 1
           fi

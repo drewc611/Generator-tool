@@ -115,6 +115,22 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
   // replace the parent's, a block the child leaves alone keeps its default,
   // and {{ super() }} splices the default back in. Only a parent the run
   // does not hold falls through to the note below.
+  // {% raw %} and {% verbatim %} hold text the engine never read; its braces are spelled as the strings they are so the
+  // dialect prints them rather than reading them.
+  text = text.replace(/\{%-?\s*(raw|verbatim)\s*-?%\}([\s\S]*?)\{%-?\s*end\1\s*-?%\}/g, (m, tag, body) => body.replace(/\{\{|\}\}|\{%|%\}|\{#|#\}/g, (b) => `{{ "${b[0]}" + "${b[1]}" }}`));
+  // Nunjucks spells an asynchronous loop asyncEach and asyncAll; the port renders them as the loop they are.
+  text = text.replace(/\{%(-?)\s*async(?:Each|All)\s+/g, "{%$1 for ").replace(/\{%(-?)\s*end(?:each|all)\s*(-?)%\}/g, "{%$1 endfor $2%}");
+  // {% set name = expr %} binds a name for the rest of the template: each later read is what it named, before a parent's
+  // blocks are merged so a set outside every block still reaches them. A block set is named below.
+  const sets = [];
+  text = text.replace(/\{%-?\s*set\s+([\w$]+)\s*=\s*([\s\S]+?)\s*-?%\}/g, (m, name, expr, at) => { sets.push({ name, expr: expr.trim(), at }); return ""; });
+  for (const s of sets) {
+    const safe = s.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const value = /^[\w$.]+$|^"(?:\\.|[^"\\])*"$|^'(?:\\.|[^'\\])*'$/.test(s.expr) ? s.expr : `(${s.expr})`;
+    text = text.replace(/\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}/g, (span) => span.replace(new RegExp(`(?<![\\w.$])${safe}(?![\\w$])`, "g"), () => value));
+    note(`\`{% set ${s.name} %}\` bound a name for the template; each read of it is what it named.`);
+  }
+
   const extend = /\{%-?\s*extends\s+['"]([^'"]+)['"]\s*-?%\}/.exec(text);
   if (extend && resolveInclude && depth < 6) {
     const parent = resolveInclude(extend[1]);
@@ -247,7 +263,10 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
       note(`\`{% ${code} %}\` composes with a template this run does not hold, so it could not be inlined. The tag was removed; the content of this file stands alone.`);
       continue;
     }
-    if (/^(load|csrf_token|set\s|with\s|endwith|url\s)/.test(code)) {
+    if (/^(?:import|from)\s/.test(code)) { note(`\`{% ${code.slice(0, 40)} %}\` imports macros from another template; the macros it names are not in the port and a call to one is named where it stands.`); continue; }
+    if (/^call\b/.test(code)) { note(`\`{% ${code.slice(0, 40)} %}\` called a macro with a body; the body is kept once where it stood and the macro's own markup around it is not in the port.`); continue; }
+    if (code === "endcall") continue;
+    if (/^(load|csrf_token|set\s|endset|with\s|endwith|url\s)/.test(code)) {
       note(`\`{% ${code} %}\` is server side machinery with no client equivalent. It was removed and is named here so the gap is visible.`);
       continue;
     }

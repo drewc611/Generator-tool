@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and twenty two features across one hundred and thirty eight phases. The statuses are
+Six hundred and twenty three features across one hundred and thirty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2413,14 +2413,19 @@ EJS is the template language of a decade of Express apps: underscore's delimiter
 **622. The EJS reader read again, and the underscore lowering with it** 🔨
 A review pass over input-ejs and the underscore lowering it rides, each finding fixed with the input that exposed it. When a loop with an index closed, every read of that index inside it was spelled `$index`, including reads inside an inner loop, so an outer index read from a nested loop silently became the inner one; the inner loop's range is known to the loop that encloses it, and the outer index inside it is reached through `$parent`, one per level of nesting. An include whose path was computed reached the lowering as an interpolation and its rows became text; it is removed and named. Locals were split at every comma and brace, so a nested literal or a call with commas was cut and its inner keys reported as bound; they are split at the top level and a key read before its first colon, and a shorthand local binds its own name. A nested counted loop's marker was passed over and its bytes reached the emitted markup; each counted loop finds the closer that matches it by depth, innermost first. A dropped opener such as `while` still let its closer pop the enclosing container, so what followed rendered unconditionally; a dropped opener owns its closer. The layout was only ever `layout.ejs`, so `layouts/main.ejs` became a screen carrying the body sentinel; the layout is whichever file renders `<%- body %>`, two are named and one chosen, and the layout is lowered once per run rather than once per page. An include path beginning with `/` resolved against the including file and was reported as not held; it is against the views root. An include cycle was cut only by depth, six copies deep and with the wrong reason; the chain is known and the cycle is named where it repeats. And `for (const [k, v] of Object.entries(o))`, the commonest EJS spelling of an object loop, was dropped; it is the (key, value) loop. test/ejs.test.js holds it.
 
+## Phase 139: jinja's JavaScript port
+
+**623. Nunjucks is read by the jinja lowering, which learned raw blocks, set bindings, the asynchronous loops, and to name an import and a call** 🔨
+Nunjucks is jinja ported to JavaScript, and its .njk files never reached a reader because the scan did not keep the extension. input-jinja now reads .njk and .nunjucks, credits them to Nunjucks by name in the census and the provenance, and the lowering learned four things every dialect riding it gets: a `{% raw %}` or `{% verbatim %}` block holds text the engine never read, so its braces are spelled as the strings they are and the dialect prints them rather than reading them; `{% set name = expr %}` binds a name for the rest of the template and each later read is what it named, the note naming the name and never the value, where before the tag was removed as machinery and the reads left dangling; Nunjucks's `asyncEach` and `asyncAll` are the loops they are; and `{% import %}`, `{% from %}` and `{% call %}` are named rather than falling through as unknown, a call's body kept once where it stood. Nunjucks is the sixteenth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/nunjucks.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 575 |
+| new in this branch | 576 |
 | planned | 3 |
-| total | 622 |
+| total | 623 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
