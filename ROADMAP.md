@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and two features across one hundred and eighteen phases. The statuses are
+Six hundred and three features across one hundred and nineteen phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2313,14 +2313,19 @@ Thymeleaf is valid HTML whose prototype text and attributes are replaced at rend
 **602. The Thymeleaf reader reviewed on its own, ten defects fixed with the inputs that exposed them** 🔨
 The review cadence held for the sixth time, and two of the ten reached past the new reader into the IR every reader shares. The older fragment spelling, th:replace="frags :: legal" with no ~{}, still the commonest in Spring apps, was read as an expression and dropped as a render time choice; it is a fragment spec. A void element carrying both th:each and th:if left with a closing tag, because the repeat and test path returned before the void check. A selection with a utility inside it, *{#maps.isEmpty(attrs)}, had the object prefixed onto names the rewrite itself introduced (f.Object.keys, f.fields); the fields are prefixed first, on the source, and the rewrite runs after. th:classappend written before th:class produced two ng-class attributes, because the attributes were applied in source order rather than the engine's; appends now apply after what they append to. th:field named only the last segment of its path, so billing.zip and shipping.zip collided on name and id; the whole path under the object is what the engine renders. A :: selector inside a fragment cloned from another file resolved against the host page's fragments, and crashed a direct caller with none; a fragment now remembers the file it came from. A whole template inserted with ~{footer} brought its html and body wrapper, and the screen's body extraction stopped at the first close it met, dropping everything after; the wrapper is unwrapped and the extraction reads to the last. A template was found by its basename alone when its path did not match, so ~{admin/nav} silently composed public/nav.html; that was a guess, and a template is now found by its path or a suffix of it or named as missing. In the IR, rootIdentifiers took every name before a colon for an object key, so the then branch of a ? b : c was never a read and never a prop in any target; a key is only a key after { or a comma. And the $ boundary fix let $ctrl, $root and $scope surface as props verbatim; every $ name is the scope's machinery and none is a prop. Each fix carries the input that exposed it in test/thymeleaf.test.js and test/ir.test.js.
 
+## Phase 119: the PHP generation's template
+
+**603. input-smarty reads Smarty through the jinja lowering, one lowering serving three dialects** 🔨
+Smarty was the template engine of a generation of PHP applications, and its grammar is jinja's shape under different braces: {$var} with its |modifier chains, {if}/{elseif}/{else}/{/if}, {foreach ... as} with {foreachelse}, {section}, {include file=}, {extends file=} with {block name=} and its append and prepend, {assign}, {literal}, {* comments *} and a library of function plugins that rendered widgets on the server. input-smarty rewrites the Smarty spellings onto jinja's at the tag level and hands the result to the jinja lowering, which already composes inheritance, inlines held includes and names what it cannot carry, as input-twig does; one lowering, three dialects. Expressions are spelled as JavaScript on the way: $var loses its sigil, -> becomes a dot, $a.$b becomes a[b], the word operators (eq, ne, gt, lt, ge, le, mod, is even, is odd) become their signs, a modifier binds to the variable or string just before it as Smarty reads it, and a modifier with an exact equivalent (upper, lower, count, default, cat, replace, trim, truncate) is rewritten while one that formatted its value on the server (date_format, number_format, string_format) is dropped and named, leaving the value unformatted. The foreach properties, $item@index, @iteration, @first, @last and @total and their $smarty.foreach.name spellings, are the arithmetic on $index every target already carries; a named key reads as the index; a section's $items[i] reads as the row it stands on. {block name=x append} and prepend are super() on the side they name, which the jinja lowering composes. A function plugin ({html_options}, {cycle}, {math}) rendered on the server and is named, never approximated; {php} is named and never carried; {capture} leaves its content where it was captured and names the later read; $smarty.get, .post, .session and .server are context the port must supply, named as such; a brace followed by whitespace is the literal text Smarty 3 reads it as, and {literal} keeps its braces. A template is found by its path or a suffix of it, never by its basename alone. .tpl reaches the scan, and a .tpl file that holds <% is left to the underscore reader. The same product page written in Smarty is the eighth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/smarty.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 555 |
+| new in this branch | 556 |
 | planned | 3 |
-| total | 602 |
+| total | 603 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

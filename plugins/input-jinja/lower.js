@@ -47,6 +47,54 @@ function splitArgs(text) {
   return parts.map((p) => p.trim()).filter(Boolean);
 }
 
+/** True when the text so far stands inside an attribute value: an open tag with an odd count of quotes since it opened. */
+function insideAttribute(before) {
+  const open = before.lastIndexOf("<");
+  if (open < 0 || open < before.lastIndexOf(">")) return false;
+  const quotes = (before.slice(open).match(/"/g) ?? []).length;
+  return quotes % 2 === 1;
+}
+
+/** The text of a branch as a JS string expression: literal pieces quoted, {{ }} pieces spliced in. */
+function branchToJs(body) {
+  const pieces = [];
+  let last = 0;
+  for (const mm of body.matchAll(/\{\{-?\s*([\s\S]*?)\s*-?\}\}/g)) {
+    if (mm.index > last) pieces.push(`'${body.slice(last, mm.index).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`);
+    pieces.push(`(${pythonToJs(mm[1])})`);
+    last = mm.index + mm[0].length;
+  }
+  if (last < body.length) pieces.push(`'${body.slice(last).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`);
+  return pieces.length ? pieces.join(" + ") : "''";
+}
+
+/** A flat if/elif/else chain inside an attribute, read to its endif and folded into one interpolation. */
+function attributeTernary(text, re, open, note) {
+  const branches = [];
+  let test = pythonToJs(open[1].replace(/^if\s+/, ""));
+  let cursor = re.lastIndex;
+  const scan = new RegExp(re.source, "g");
+  scan.lastIndex = cursor;
+  let elseBody = null;
+  for (;;) {
+    const mm = scan.exec(text);
+    if (!mm) return null;
+    const code = mm[1].trim();
+    const body = text.slice(cursor, mm.index);
+    if (/^(if|for)\s/.test(code) || /\{%/.test(body)) return null;
+    if (test !== null) branches.push({ test, body }); else elseBody = body;
+    if (/^elif\s/.test(code)) { test = pythonToJs(code.replace(/^elif\s+/, "")); }
+    else if (code === "else") { test = null; }
+    else if (code === "endif") { re.lastIndex = scan.lastIndex; break; }
+    else return null;
+    cursor = scan.lastIndex;
+  }
+  let js = elseBody === null ? "''" : branchToJs(elseBody);
+  for (const b of [...branches].reverse()) js = `${b.test} ? ${branchToJs(b.body)} : ${js}`;
+  note("A condition inside an attribute value was folded into the ternary it means; an element cannot stand inside an attribute.");
+  return { text: `{{ ${js} }}` };
+}
+
 export function lowerJinja(source, note = () => {}, resolveInclude = null, depth = 0) {
   let text = String(source ?? "").replace(/\{#[\s\S]*?#\}/g, "");
 
@@ -127,6 +175,12 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
     const code = m[1].trim();
 
     const iff = /^if\s+([\s\S]+)$/.exec(code);
+    if (iff && insideAttribute(text.slice(0, m.index))) {
+      // class="{% if a %}on{% else %}off{% endif %}" cannot hold an element; it
+      // is the ternary it means. Only a flat chain is taken; a nested one falls through.
+      const ternary = attributeTernary(text, re, m, note);
+      if (ternary) { out.push(ternary.text); last = re.lastIndex; continue; }
+    }
     if (iff) {
       const test = pythonToJs(iff[1]);
       out.push(`<ng-container ng-if="${attrSafe(test)}">`);

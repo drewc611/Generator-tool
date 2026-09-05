@@ -7,13 +7,13 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 173 plugins, and the literal output of
+lines of core, no runtime dependencies, 174 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 860 passing, 861 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the Ember, Mithril, Marko, Liquid, Twig and XSLT readers](media/test-run.png)
+![node --test running the portamp suite: 864 passing, 865 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the Ember, Mithril, Marko, Liquid, Twig and XSLT readers](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 860
-tests pass across 112 test files with `node --test` and no framework, and
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 864
+tests pass across 113 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing. CI reruns the same
 suite on Node 18, 20 and 22 and on Windows, and asserts the same screen written
 in two dialects emits byte identical output across all four targets.</sub>
@@ -34,9 +34,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 173 plugin(s)
+node src/cli.js plugins      # 174 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 861 tests, node --test, no framework
+npm test                     # 865 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -69,7 +69,7 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | --- | --- |
 | Core | **718 lines** across four files |
 | Every line of the tool | 37,298 lines of JavaScript in src and plugins |
-| Tests | 12,107 lines, 861 cases across 112 files |
+| Tests | 12,204 lines, 865 cases across 113 files |
 | Source on disk | src 27 KB, plugins 1.7 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -79,7 +79,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and two features, and every
+The core grew from 527 lines to 718 across six hundred and three features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -120,9 +120,9 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The 173 it ships with
+## The 174 it ships with
 
-![The plugin rack: 173 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 174 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## Yes, there is a transformer in it
 
@@ -1007,8 +1007,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and two features in
-one hundred and eighteen phases, forty four shipped, five hundred and fifty five new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and three features in
+one hundred and nineteen phases, forty four shipped, five hundred and fifty six new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
