@@ -846,9 +846,18 @@ jobs:
           grep -q "item(s) flagged across" ax-out/ACCESSIBILITY.md || { echo "the scorecard did not tally"; exit 1; }
           rm -rf ax-src ax-out
 
+      - name: the custom-element reader lowers a vanilla component
+        run: |
+          mkdir -p wc-src
+          printf '%s\n' 'class XCard extends HTMLElement { static get observedAttributes(){return ["title"];} connectedCallback(){ this.innerHTML = `<h2>${this.title}</h2>`; } } customElements.define("x-card", XCard);' > wc-src/card.js
+          node src/cli.js run --src wc-src --out wc-out
+          test -d wc-out/src || { echo "no port emitted"; exit 1; }
+          grep -rq "XCard" wc-out/src || { echo "the custom element was not ported"; exit 1; }
+          rm -rf wc-src wc-out
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "564" ]; then
-            echo "ROADMAP.md holds $count entries and claims 564"; exit 1
+          if [ "$count" != "565" ]; then
+            echo "ROADMAP.md holds $count entries and claims 565"; exit 1
           fi

@@ -36,6 +36,7 @@ const DOES = {
   "input-blackbox": "HAR, schema dumps, exports. Passive: nothing driven, nothing fetched",
   "input-static": "a site with no framework: pages are screens, links are the routes",
   "input-stencil": "stencil components: @Component tag, @Prop/@Event, render JSX lowered by the React reader",
+  "input-webcomponents": "vanilla custom elements: observedAttributes as inputs, CustomEvent as outputs, innerHTML lowered",
   "input-underscore": "the templates input-backbone deferred: <%= %> lowered to the dialect",
   "input-handlebars": "#if, #each and the empty state in else, lowered to the dialect",
   "input-jinja": "server rendered pages read as screens; python logic respelled as JS",
