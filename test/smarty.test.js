@@ -95,3 +95,56 @@ test("a run composes the template into the layout it extends, ports it, reads th
     await run.cleanup();
   }
 });
+
+test("the seventh review pass: PHP functions, numeric keys, every occurrence replaced, formatting modifiers named, a conditional assign carried", () => {
+  const notes = [];
+  const sc = freshScope((n) => notes.push(n));
+  assert.equal(exprToJs("isset($a) and !empty($b) and count($c) gt 0 and in_array($x, $list)", sc), "a != null and !!b and c.length > 0 and list.includes(x)");
+  assert.equal(exprToJs("number_format($p, 2)", sc), "p");
+  assert.equal(exprToJs("my_helper($p)", sc), "my_helper(p)");
+  assert.ok(notes.some((n) => /number_format\(\) formatted its value/.test(n)) && notes.some((n) => /my_helper\(\) is a PHP function/.test(n)));
+  assert.equal(exprToJs("$list.0.name"), "list[0].name");
+  assert.equal(exprToJs("$path|replace:'/':'-'"), "path.split('/').join('-')");
+  const before = notes.length;
+  assert.equal(exprToJs("$s|nl2br|strip_tags|escape", sc), "s");
+  assert.ok(notes.slice(before).some((n) => /\|nl2br formatted/.test(n)) && notes.slice(before).some((n) => /\|strip_tags formatted/.test(n)) && !notes.slice(before).some((n) => /\|escape/.test(n)));
+  const out = smartyToJinja(`{if $a}{assign var=cls value='on'}{else}{assign var=cls value='off'}{/if}<div class="{$cls}">{foreach $xs as $x}{$n = $x}{/foreach}{$n}{assign var=top value=1}{$top}`, (n) => notes.push(n));
+  assert.equal(out, `{% if a %}{% set cls = 'on' %}{% else %}{% set cls = 'off' %}{% endif %}<div class="{{ cls }}">{% for x in xs %}{% set n = x %}{% endfor %}{{ n }}{{ 1 }}`);
+  assert.ok(notes.some((n) => /inside a branch or loop takes a value the port must carry/.test(n)));
+});
+
+test("the seventh review pass: the folded ternary is attribute safe, drops a filter inside it and names it, and sees markup only", () => {
+  const notes = [];
+  assert.equal(lowerJinja(`<div class="{% if t == "a" %}on{% endif %}">x</div>`, (n) => notes.push(n)), `<div class="{{ t == 'a' ? 'on' : '' }}">x</div>`);
+  assert.equal(lowerJinja(`<a title="{% if a %}{{ t|truncate(5) }}{% endif %}">t</a>`, (n) => notes.push(n)), `<a title="{{ a ? (t) : '' }}">t</a>`);
+  assert.ok(notes.some((n) => /filter `truncate` inside a condition inside an attribute was dropped/.test(n)));
+  assert.equal(lowerJinja(`<div class="{% if a > 1 %}big{% endif %} {% if b %}y{% endif %}">x</div>`), `<div class="{{ a > 1 ? 'big' : '' }} {{ b ? 'y' : '' }}">x</div>`, "a > inside a tag is not a tag close");
+  const run = smartyToJinja(`<a title="{if $a}{$t|truncate:5}{/if}">t</a>`);
+  assert.equal(lowerJinja(run, () => {}), `<a title="{{ a ? (t) : '' }}">t</a>`);
+});
+
+test("the seventh review pass: readInputs keeps a filter's arguments and drops only its name; track by is never a name", async () => {
+  const { readInputs } = await import("../plugins/dsp-ir/text.js");
+  assert.deepEqual(readInputs(`<li ng-repeat="o in xs | filter:q track by o.id">{{ o.name }}</li><p>{{ items | filter:search | orderBy:sortKey }} {{ body | limitTo:count }}</p>`), ["body", "count", "items", "q", "search", "sortKey", "xs"]);
+});
+
+test("the seventh review pass: a layout in a subdirectory is skipped by the same match that composed it", async () => {
+  const { mkdtemp, writeFile, mkdir, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const dir = await mkdtemp(join(tmpdir(), "portamp-sm-"));
+  try {
+    await mkdir(join(dir, "templates/shared"), { recursive: true });
+    await writeFile(join(dir, "templates/shared/layout.tpl"), `<html><body>{block name=content}D{/block}</body></html>`);
+    await writeFile(join(dir, "templates/page.tpl"), `{extends file='layout.tpl'}{block name=content}<h1>{$t}</h1>{/block}`);
+    const run = await runPipeline({ src: dir });
+    try {
+      assert.equal(run.error, null);
+      assert.deepEqual(run.ctx.screens.filter((s) => s.readBy === "smarty").map((s) => s.selector), ["page"]);
+      assert.equal(run.ctx.screens.find((s) => s.selector === "page").template, `<h1>{{ t }}</h1>`);
+    } finally {
+      await run.cleanup();
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

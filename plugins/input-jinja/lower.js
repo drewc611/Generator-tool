@@ -48,20 +48,25 @@ function splitArgs(text) {
 }
 
 /** True when the text so far stands inside an attribute value: an open tag with an odd count of quotes since it opened. */
-function insideAttribute(before) {
+function insideAttribute(text, index) {
+  // Template spans are not markup: a > inside {% if a > 1 %} closes no tag.
+  const before = text.slice(0, index).replace(/\{%[\s\S]*?%\}|\{\{[\s\S]*?\}\}/g, "");
   const open = before.lastIndexOf("<");
   if (open < 0 || open < before.lastIndexOf(">")) return false;
   const quotes = (before.slice(open).match(/"/g) ?? []).length;
   return quotes % 2 === 1;
 }
 
-/** The text of a branch as a JS string expression: literal pieces quoted, {{ }} pieces spliced in. */
-function branchToJs(body) {
+/** The text of a branch as a JS string expression: literal pieces quoted, {{ }} pieces spliced in, a filter dropped and named. */
+function branchToJs(body, note) {
   const pieces = [];
   let last = 0;
   for (const mm of body.matchAll(/\{\{-?\s*([\s\S]*?)\s*-?\}\}/g)) {
     if (mm.index > last) pieces.push(`'${body.slice(last, mm.index).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`);
-    pieces.push(`(${pythonToJs(mm[1])})`);
+    // A JS ternary cannot carry a template filter; the value goes in unformatted and the filter is named.
+    const [head, ...filters] = mm[1].split(/(?<!\|)\|(?!\|)/);
+    for (const f of filters) note(`The filter \`${f.trim().split(/[:(]/)[0]}\` inside a condition inside an attribute was dropped; the value is unformatted there.`);
+    pieces.push(`(${pythonToJs(head.trim())})`);
     last = mm.index + mm[0].length;
   }
   if (last < body.length) pieces.push(`'${body.slice(last).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`);
@@ -89,10 +94,10 @@ function attributeTernary(text, re, open, note) {
     else return null;
     cursor = scan.lastIndex;
   }
-  let js = elseBody === null ? "''" : branchToJs(elseBody);
-  for (const b of [...branches].reverse()) js = `${b.test} ? ${branchToJs(b.body)} : ${js}`;
+  let js = elseBody === null ? "''" : branchToJs(elseBody, note);
+  for (const b of [...branches].reverse()) js = `${b.test} ? ${branchToJs(b.body, note)} : ${js}`;
   note("A condition inside an attribute value was folded into the ternary it means; an element cannot stand inside an attribute.");
-  return { text: `{{ ${js} }}` };
+  return { text: `{{ ${attrSafe(js)} }}` };
 }
 
 export function lowerJinja(source, note = () => {}, resolveInclude = null, depth = 0) {
@@ -175,7 +180,7 @@ export function lowerJinja(source, note = () => {}, resolveInclude = null, depth
     const code = m[1].trim();
 
     const iff = /^if\s+([\s\S]+)$/.exec(code);
-    if (iff && insideAttribute(text.slice(0, m.index))) {
+    if (iff && insideAttribute(text, m.index)) {
       // class="{% if a %}on{% else %}off{% endif %}" cannot hold an element; it
       // is the ternary it means. Only a flat chain is taken; a nested one falls through.
       const ternary = attributeTernary(text, re, m, note);

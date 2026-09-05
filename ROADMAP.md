@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and three features across one hundred and nineteen phases. The statuses are
+Six hundred and four features across one hundred and twenty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2318,14 +2318,19 @@ The review cadence held for the sixth time, and two of the ten reached past the 
 **603. input-smarty reads Smarty through the jinja lowering, one lowering serving three dialects** 🔨
 Smarty was the template engine of a generation of PHP applications, and its grammar is jinja's shape under different braces: {$var} with its |modifier chains, {if}/{elseif}/{else}/{/if}, {foreach ... as} with {foreachelse}, {section}, {include file=}, {extends file=} with {block name=} and its append and prepend, {assign}, {literal}, {* comments *} and a library of function plugins that rendered widgets on the server. input-smarty rewrites the Smarty spellings onto jinja's at the tag level and hands the result to the jinja lowering, which already composes inheritance, inlines held includes and names what it cannot carry, as input-twig does; one lowering, three dialects. Expressions are spelled as JavaScript on the way: $var loses its sigil, -> becomes a dot, $a.$b becomes a[b], the word operators (eq, ne, gt, lt, ge, le, mod, is even, is odd) become their signs, a modifier binds to the variable or string just before it as Smarty reads it, and a modifier with an exact equivalent (upper, lower, count, default, cat, replace, trim, truncate) is rewritten while one that formatted its value on the server (date_format, number_format, string_format) is dropped and named, leaving the value unformatted. The foreach properties, $item@index, @iteration, @first, @last and @total and their $smarty.foreach.name spellings, are the arithmetic on $index every target already carries; a named key reads as the index; a section's $items[i] reads as the row it stands on. {block name=x append} and prepend are super() on the side they name, which the jinja lowering composes. A function plugin ({html_options}, {cycle}, {math}) rendered on the server and is named, never approximated; {php} is named and never carried; {capture} leaves its content where it was captured and names the later read; $smarty.get, .post, .session and .server are context the port must supply, named as such; a brace followed by whitespace is the literal text Smarty 3 reads it as, and {literal} keeps its braces. A template is found by its path or a suffix of it, never by its basename alone. .tpl reaches the scan, and a .tpl file that holds <% is left to the underscore reader. The same product page written in Smarty is the eighth dialect the byte identity gate holds to jinja's React, Vue and Svelte. test/smarty.test.js holds it.
 
+## Phase 120: the seventh review pass
+
+**604. The Smarty reader and the shared lowering reviewed, ten defects fixed with the inputs that exposed them** 🔨
+The review cadence held for the seventh time, and this pass reached the jinja lowering three dialects share and the readInputs every reader shares. The ternary a condition inside an attribute folds into was spliced in raw, so a double quote in its test ended the attribute; it goes through attrSafe like every other test. A filter inside such a branch ({{ t|truncate(5) }}) became a JavaScript bitwise or, so the filter is dropped and named and the value goes in unformatted. A > inside an earlier {% if a > 1 %} in the same attribute read as a tag close and the second chain fell back to a container inside the attribute; template spans are set aside before the markup is scanned. readInputs stripped a filter's arguments with its name, so a variable passed to a filter ({{ items | filter:search }}) was no longer an input; only the name goes, and track by is never a name. In the Smarty reader, PHP functions called in expressions (isset, empty, count, in_array, strlen, implode, str_replace) carried into the port as calls nothing defines, so the ones with an exact equivalent are rewritten, a formatter (number_format, date, sprintf) keeps its value unformatted and is named, and any other is kept and named as something the port must supply. A numeric key ($list.0) became list.0, a syntax error; it is the index it means. |replace replaced the first occurrence where Smarty replaces every one. nl2br, strip_tags, wordwrap, indent and spacify changed a value and were dropped in silence; they are named with the other formatters. An {assign} inside a branch or a loop was substituted as if it were the only one, a wrong value that looks right; inside a branch or loop it is carried as a set and named. A layout in a subdirectory was composed into its children and still ported as a screen, because the skip matched the whole path where the resolver matched a suffix; both match the same way. Each fix carries the input that exposed it in test/smarty.test.js.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 556 |
+| new in this branch | 557 |
 | planned | 3 |
-| total | 603 |
+| total | 604 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

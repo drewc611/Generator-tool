@@ -34,7 +34,6 @@ const WORD_OPS = { eq: "==", ne: "!=", neq: "!=", gt: ">", lt: "<", gte: ">=", g
 const BLOCK_FUNCTIONS = new Set(["strip", "nocache", "capture", "php", "literal", "textformat", "block", "if", "foreach", "section", "while", "for", "function", "setfilter"]);
 
 const unquote = (s) => String(s).trim().replace(/^(['"])([\s\S]*)\1$/, "$2");
-const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Splits at a character outside strings and brackets. */
 function splitTop(text, ch) {
@@ -70,6 +69,7 @@ function variable(ref, scope) {
   // $a.$b is a dynamic index, $a->b a property, $a.b a key; all are paths in JS.
   s = s.replace(/->/g, ".");
   s = s.replace(/\.\$([\w]+)/g, "[$1]");
+  s = s.replace(/\.(\d+)(?![\w])/g, "[$1]");
   s = s.replace(/\[\$([\w]+)\]/g, "[$1]");
   s = s.replace(/^\$/, "");
   // Inside {section name=i loop=$items}, $items[i] is the row the loop stands on.
@@ -104,11 +104,11 @@ function applyModifiers(js, mods, scope) {
       case "count": out = `${out}.length`; break;
       case "default": out = `(${out} || ${a[0] ?? "''"})`; break;
       case "cat": out = `(${out} + ${a[0] ?? "''"})`; break;
-      case "replace": out = `${out}.replace(${a[0] ?? "''"}, ${a[1] ?? "''"})`; break;
+      case "replace": out = `${out}.split(${a[0] ?? "''"}).join(${a[1] ?? "''"})`; break;
       case "truncate": out = `${out} | limitTo:${a[0] ?? 80}`; break;
       case "trim": out = `${out}.trim()`; break;
-      case "strip": case "strip_tags": case "escape": case "nl2br": case "nofilter": case "unescape": case "wordwrap": case "indent": case "spacify": break;
-      case "capitalize": case "date_format": case "number_format": case "string_format": case "regex_replace": case "json_encode": case "htmlspecialchars": case "implode": case "explode": case "count_characters": case "count_words":
+      case "strip": case "escape": case "nofilter": case "unescape": break;
+      case "nl2br": case "strip_tags": case "wordwrap": case "indent": case "spacify": case "capitalize": case "date_format": case "number_format": case "string_format": case "regex_replace": case "json_encode": case "htmlspecialchars": case "implode": case "explode": case "count_characters": case "count_words":
         scope.note(`The modifier |${name} formatted its value on the server; the value is unformatted in the port and the format is not carried.`); break;
       default:
         scope.note(`The modifier |${name} is a Smarty plugin this reader does not know; the value is carried unmodified.`);
@@ -138,7 +138,43 @@ export function exprToJs(expr, scope = freshScope()) {
       out += mods ? applyModifiers(js, splitTop(mods, "|").slice(1), scope) : js;
     }
   }
-  return out + operators(text.slice(last));
+  return phpFunctions(out + operators(text.slice(last)), scope);
+}
+
+const PHP = {
+  isset: (a) => `${a[0]} != null`,
+  empty: (a) => `!${a[0]}`,
+  count: (a) => `${a[0]}.length`,
+  sizeof: (a) => `${a[0]}.length`,
+  strlen: (a) => `${a[0]}.length`,
+  is_array: (a) => `Array.isArray(${a[0]})`,
+  in_array: (a) => `${a[1]}.includes(${a[0]})`,
+  strtoupper: (a) => `${a[0]}.toUpperCase()`,
+  strtolower: (a) => `${a[0]}.toLowerCase()`,
+  trim: (a) => `${a[0]}.trim()`,
+  implode: (a) => `${a[1]}.join(${a[0]})`,
+  str_replace: (a) => `${a[2]}.split(${a[0]}).join(${a[1]})`,
+  is_null: (a) => `${a[0]} == null`,
+  array_key_exists: (a) => `(${a[0]} in ${a[1]})`,
+};
+
+/** A PHP function called inside an expression: the ones with an exact equivalent rewritten, the rest kept and named. */
+function phpFunctions(js, scope) {
+  let s = js;
+  const re = /(?<![\w.$])([a-z_]\w*)\(/g;
+  let m;
+  while ((m = re.exec(s))) {
+    const end = matchBracket(s, m.index + m[0].length - 1, { ticks: false });
+    if (end < 0) break;
+    const args = splitTop(s.slice(m.index + m[0].length, end - 1), ",").map((x) => x.trim()).filter(Boolean);
+    let rep;
+    if (PHP[m[1]]) rep = PHP[m[1]](args);
+    else if (/^(number_format|date|sprintf|printf|htmlspecialchars|nl2br|ucfirst|ucwords|json_encode|round|floor|ceil|substr|strip_tags|money_format|strftime)$/.test(m[1])) { scope.note(`${m[1]}() formatted its value on the server; the value is unformatted in the port and the format is not carried.`); rep = args[0] ?? "null"; }
+    else { scope.note(`${m[1]}() is a PHP function the template called; the call was kept and the port must supply \`${m[1]}\`.`); continue; }
+    s = s.slice(0, m.index) + rep + s.slice(end);
+    re.lastIndex = m.index + rep.length;
+  }
+  return s;
 }
 
 /** The word operators as their signs, outside of strings and variables. */
@@ -148,7 +184,7 @@ const operators = (c) => c
   .replace(/(?<![\w.$])is\s+(not\s+)?odd(?![\w$])/g, (mm, not) => (not ? "% 2 != 1" : "% 2 == 1"));
 
 export function freshScope(note = () => {}) {
-  return { note, listsByItem: new Map(), loopsByName: new Map(), keyAliases: new Map(), sectionItems: new Map(), assigned: new Map(), blocks: [] };
+  return { note, listsByItem: new Map(), loopsByName: new Map(), keyAliases: new Map(), sectionItems: new Map(), assigned: new Map(), blocks: [], depth: 0 };
 }
 
 /** Smarty tags onto jinja's, expressions onto JavaScript. */
@@ -195,8 +231,8 @@ function lowerTag(inner, scope, note) {
   if (/^['"]/.test(tag)) return `{{ ${exprToJs(tag, scope)} }}`;
   if (tag.startsWith("/")) {
     const name = tag.slice(1).trim();
-    if (name === "if") return "{% endif %}";
-    if (name === "foreach" || name === "section" || name === "for" || name === "while") return "{% endfor %}";
+    if (name === "if") { scope.depth -= 1; return "{% endif %}"; }
+    if (name === "foreach" || name === "section" || name === "for" || name === "while") { scope.depth -= 1; return "{% endfor %}"; }
     if (name === "block") return `${scope.blocks.pop() ? "{{ super() }}" : ""}{% endblock %}`;
     if (BLOCK_FUNCTIONS.has(name)) return "";
     note(`{/${name}} closes a Smarty block function this reader does not know; the tag was removed and its content stands.`);
@@ -207,7 +243,7 @@ function lowerTag(inner, scope, note) {
   const [, name, restRaw] = m;
   const rest = restRaw.trim();
   switch (name) {
-    case "if": return `{% if ${exprToJs(rest, scope)} %}`;
+    case "if": scope.depth += 1; return `{% if ${exprToJs(rest, scope)} %}`;
     case "elseif": return `{% elif ${exprToJs(rest, scope)} %}`;
     case "else": return rest.startsWith("if") ? `{% elif ${exprToJs(rest.slice(2), scope)} %}` : "{% else %}";
     case "foreachelse": case "sectionelse": return "{% else %}";
@@ -216,6 +252,7 @@ function lowerTag(inner, scope, note) {
       const modern = /^([\s\S]+?)\s+as\s+\$([\w]+)(?:\s*=>\s*\$([\w]+))?\s*$/.exec(rest);
       const attrs = attributesOf(rest);
       let list; let item; let key = null; let loopName = null;
+      scope.depth += 1;
       if (modern) { list = exprToJs(modern[1], scope); item = modern[3] ?? modern[2]; key = modern[3] ? modern[2] : null; }
       else if (attrs.from && attrs.item) { list = exprToJs(attrs.from, scope); item = unquote(attrs.item); key = attrs.key ? unquote(attrs.key) : null; loopName = attrs.name ? unquote(attrs.name) : null; }
       else { note(`{foreach ${rest.slice(0, 40)}} loops in a shape this reader does not know; its body was kept once, unrepeated.`); return "{% if true %}"; }
@@ -227,6 +264,7 @@ function lowerTag(inner, scope, note) {
     }
     case "section": {
       const attrs = attributesOf(rest);
+      scope.depth += 1;
       if (!attrs.name || !attrs.loop) { note(`{section ${rest.slice(0, 40)}} loops in a shape this reader does not know; its body was kept once.`); return "{% if true %}"; }
       const sName = unquote(attrs.name); const list = exprToJs(attrs.loop, scope);
       scope.listsByItem.set(sName, list);
@@ -263,6 +301,7 @@ function lowerTag(inner, scope, note) {
       note(`{${name}} is Smarty machinery with no client equivalent; it was removed and is named here.`);
       return "";
     case "while": case "for":
+      scope.depth += 1;
       note(`{${name} ${rest.slice(0, 30)}} loops on a condition or a range; the port repeats over a list it must be given.`);
       return "{% if true %}";
     default:
@@ -276,6 +315,12 @@ function assignment(name, valueRaw, scope, note) {
   const js = exprToJs(valueRaw, scope);
   if (new RegExp(`(?<![\\w.$])${name}(?![\\w$])`).test(js)) {
     note(`{assign} of \`$${name}\` reads its own previous value; the accumulation is server side machinery and the port must carry it.`);
+    return `{% set ${name} = ${js} %}`;
+  }
+  // Inside a branch or a loop the value depends on the branch taken; substituting one of them would be a guess.
+  if (scope.depth > 0) {
+    scope.assigned.delete(name);
+    note(`{assign} of \`$${name}\` inside a branch or loop takes a value the port must carry; it was not substituted.`);
     return `{% set ${name} = ${js} %}`;
   }
   scope.assigned.set(name, js);
@@ -320,7 +365,7 @@ export default {
       let count = 0;
       for (const [key, text] of bodies) {
         const file = files.find((f) => f.rel.replace(/^\.\//, "") === key);
-        if (extended.has(bare(key))) { note(`${key} is a layout other templates extend; it is composed into each of them rather than ported as a screen of its own.`); continue; }
+        if ([...extended].some((p) => bare(key) === p || bare(key).endsWith(`/${p}`))) { note(`${key} is a layout other templates extend; it is composed into each of them rather than ported as a screen of its own.`); continue; }
         const lowered = lowerJinja(smartyToJinja(text, note), note, resolve);
         const bodyMatch = /<body\b[^>]*>([\s\S]*)<\/body\s*>/i.exec(lowered);
         const template = stripStyles(stripScripts(bodyMatch ? bodyMatch[1] : lowered)).trim();
