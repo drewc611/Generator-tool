@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { securityTotal } from "../vis-security/index.js";
 
 /**
  * Two gates, at the two moments they can still do something.
@@ -94,6 +95,21 @@ export default {
           throw new Error(`${found} accessibility finding(s) against a ceiling of ${max}. A11Y.md names each one; fix them or raise the ceiling knowingly.`);
         }
         log.info(`${found} accessibility finding(s), under the ceiling of ${max}`);
+      }
+
+      // And once more for the trust surface: the security scorecard's count,
+      // capped. The total is reckoned through vis-security's own function from
+      // what the analyzers left at plan, so the gate agrees with the scorecard
+      // and does not depend on which verify handler ran first.
+      const securityCeiling = ctx.config.maxSecurity ?? ctx.config["max-security"];
+      if (securityCeiling !== undefined && securityCeiling !== null && securityCeiling !== false) {
+        const max = Number(securityCeiling);
+        if (!Number.isFinite(max)) throw new Error(`--max-security needs a number, got "${securityCeiling}".`);
+        const found = securityTotal(ctx);
+        if (found > max) {
+          throw new Error(`${found} security item(s) against a ceiling of ${max}. SECURITY_SCORECARD.md names each concern; fix them or raise the ceiling knowingly.`);
+        }
+        log.info(`${found} security item(s), under the ceiling of ${max}`);
       }
 
       const ceiling = ctx.config.maxUnverified ?? ctx.config["max-unverified"];

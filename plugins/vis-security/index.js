@@ -16,7 +16,7 @@
  * not a grade, and it does not collide with dsp-security's own SECURITY.md.
  */
 
-function collect(ctx) {
+export function collect(ctx) {
   const rows = [];
 
   const security = ctx.security?.findings;
@@ -53,6 +53,14 @@ function collect(ctx) {
 
   return rows;
 }
+
+/**
+ * The scorecard's headline number, reckoned from what the analyzers left at
+ * plan. general-policy's --max-security ceiling imports this rather than
+ * reading the scorecard, so the gate agrees with the report and does not depend
+ * on which verify handler ran first.
+ */
+export const securityTotal = (ctx) => collect(ctx).filter((r) => r.present).reduce((n, r) => n + r.count, 0);
 
 export default {
   name: "vis-security",

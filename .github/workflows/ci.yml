@@ -879,9 +879,19 @@ jobs:
           node src/cli.js publish-check
           grep -q '"publish"' plugins/general-publish/index.js && { echo "publish-check must never invoke npm publish"; exit 1; } || true
 
+      - name: --max-security fails a leaky page at zero and passes it under a real ceiling
+        run: |
+          mkdir -p mx-src
+          printf '%s\n' '<a href="x" onclick="go()">x</a><script src="https://cdn.example.com/a.js"></script>' > mx-src/page.html
+          if node src/cli.js run --src mx-src --out mx-out --max-security 0 2>mx-err.txt; then echo "a ceiling of zero did not fail the leaky page"; exit 1; fi
+          grep -q "security item(s) against a ceiling of 0" mx-err.txt || { echo "the failure did not name the ceiling"; exit 1; }
+          rm -rf mx-out
+          node src/cli.js run --src mx-src --out mx-out --max-security 99 || { echo "a real ceiling failed a page under it"; exit 1; }
+          rm -rf mx-src mx-out mx-err.txt
+
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "568" ]; then
-            echo "ROADMAP.md holds $count entries and claims 568"; exit 1
+          if [ "$count" != "569" ]; then
+            echo "ROADMAP.md holds $count entries and claims 569"; exit 1
           fi

@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Five hundred and sixty eight features across eighty four phases. The statuses are
+Five hundred and sixty nine features across eighty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-727 tests, on Node 18, 20 and 22, and on Windows in CI.
+731 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2114,15 +2114,20 @@ the third scorecard beside vis-a11y and vis-security. The port's weight and its 
 **568. publish-check proves the package is ready to ship without shipping it** 🔨
 docs/PUBLISHING.md ends with a step a person does by eye: run npm pack --dry-run and read the file list, because a recorded screenshot or a real attestation must never be in it. general-publish turns that into one command. publish-check runs the same dry run, reads the same list, and holds it against what the package promises: only the top levels `files` declares ship plus what npm always adds; nothing forbidden ships (an attestation, a local config, a screenshots or recordings directory, a dotenv, a private key, matched as whole path segments so a plugin named input-shots is not mistaken for a shots directory); dependencies is empty, the zero runtime dependency invariant; the version is a plain semver; and every bin target is in the tarball. Each check prints ok or FAIL and the command exits 1 on any FAIL. The pure check is tested without spawning npm and one test runs the real dry run against this repository, which is the actual proof. It never runs npm publish: entries 96 and 325 stay open on purpose, because publishing is a decision with an owner, and this only makes sure the last check before it cannot be skipped by accident. test/publish.test.js holds it.
 
+## Phase 85: the trust surface, capped
+
+**569. --max-security turns the security scorecard into a ceiling the run enforces** 🔨
+the scorecards report; the repository's honest pattern is that a report can become an opt in ceiling, the same shape as --max-unverified, --max-kb and --max-a11y, that fails the run and prints what would clear it, and only ever adds a gate. --max-security N fails the run when the security scorecard's flagged count exceeds N, naming SECURITY_SCORECARD.md as where each concern is listed, and refuses a ceiling that is not a number out loud. The gate lives in general-policy beside the other ceilings and reckons the total through vis-security's own exported function from what the analyzers left at plan, so it agrees with the scorecard to the item and does not depend on which verify handler ran first, since the kernel runs same stage handlers in discovery order and general-policy fires before vis-security. With no flag nothing is enforced and the scorecard still reports. test/security-ceiling.test.js holds it, including the reckoning, the fail, the pass, the opt in, and the refusal; a CI step runs a leaky page under a ceiling of zero and expects the failure.
+
 
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 521 |
+| new in this branch | 522 |
 | planned | 3 |
-| total | 568 |
+| total | 569 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
