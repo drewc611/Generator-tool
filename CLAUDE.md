@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and sixteen in five classes, and the core has never learned
+Plugins that ship, two hundred and eighteen in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform  input-cics  input-informix  input-cobolscreen  input-ispf  input-xbase  input-fluid  input-tk  input-autoit
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform  input-cics  input-informix  input-cobolscreen  input-ispf  input-xbase  input-fluid  input-tk  input-autoit  input-openedge  input-pbwin
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -717,6 +717,23 @@ unreferenced radio by a run of consecutive calls, this reader's own
 structural convenience rather than a rule either format states.
 test/tk.test.js and test/autoit.test.js hold both.
 
+10.17 reaches the 4GL that still runs the back office, and the dialog
+built by numbered controls rather than named ones. input-openedge reads
+Progress OpenEdge ABL `.p` source, where a `DEFINE VARIABLE`/`DEFINE
+BUTTON` declares a field or button anywhere in the file but a `FORM ...
+WITH FRAME` block is the one real screen boundary the language gives,
+naming which declared fields and buttons belong to a screen and in what
+order; a button wires from its own `ON CHOOSE OF` block only when it
+holds exactly one clean bare `RUN name.` statement. input-pbwin reads
+PowerBASIC for Windows `.bas` source, where a DDT control's identity is a
+plain integer id rather than a variable a value was assigned to, so this
+reader names each field after its own id; a button wires from its own
+trailing `CALL procname` clause on the same statement, the cleanest
+wiring reference any statement-built reader in this tool gets. Both name
+a name their own `FORM`/`DIALOG` block references with nothing declared
+for it, rather than inventing a field. test/openedge.test.js and
+test/pbwin.test.js hold both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -782,8 +799,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and seventy five features in
-one hundred and seventy eight phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and seventy seven features in
+one hundred and eighty phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

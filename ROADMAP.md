@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and seventy five features across one hundred and seventy eight phases. The statuses are
+Six hundred and seventy seven features across one hundred and eighty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2654,14 +2654,24 @@ A Tk GUI is built by ordinary executable Tcl statements, `label`, `entry`, `chec
 **675. input-autoit reads AutoIt .au3 scripts, a field's name taken from the variable a GUICtrlCreate call's return value was assigned to, since the language gives it no other** 🔨
 An AutoIt script opens one window with `GUICreate` and populates it with `GUICtrlCreate*` calls, positional arguments only, no keyword binding the way Tcl's `-textvariable` or COBOL's `USING` gives a field its name, so this reader reads the field's name from whichever variable the call's own return value was assigned to, `$custNo = GUICtrlCreateInput(...)` naming the field `custNo`; a call left unassigned is a real gap, named rather than invented. `GUICtrlCreatePassword` is its own dedicated function, a genuine signal rather than a style flag to infer from. AutoIt wires a button entirely through its event loop, so this reader resolves a button's action by matching its own variable against a `Case`/`If` block in the file's `GUIGetMsg` loop and reading the one clean function call inside it, naming anything more complex present rather than approximated; radios, given no explicit grouping reference at all, group by a run of consecutive `GUICtrlCreateRadio` calls, this reader's own structural convenience the same restraint input-uno, input-powerbuilder and input-fxml already keep for their own ungrouped formats. test/autoit.test.js holds it.
 
+## Phase 179: the 4GL that still runs the back office
+
+**676. input-openedge reads Progress OpenEdge ABL .p source, a FORM ... WITH FRAME block the one real screen boundary the language gives** 🔨
+A `DEFINE VARIABLE name AS type LABEL "text"` and `DEFINE BUTTON name LABEL "text"` declare a field or button anywhere in the file, but neither belongs to a screen until a `FORM ... WITH FRAME framename` block lists it, so this reader treats each `FORM`/`WITH FRAME` block as its own screen, rendered in the frame's own listed order rather than declaration order; a name the frame lists with no matching `DEFINE` anywhere is named rather than invented, and a `DEFINE`d field never listed in any frame is simply not part of a screen, not a gap. `AS LOGICAL` becomes a real checkbox, everything else a real text input, and `FORMAT` is formatting this reader does not translate, the same restraint input-xbase already keeps over `PICTURE`. A button wires from its own `ON CHOOSE OF ... DO: ... END` block only when the block holds exactly one clean bare `RUN name.` statement; anything else in the block, or no block at all, is named through a note rather than approximated, the same restraint input-autoit already keeps over a multi-statement event handler. test/openedge.test.js holds it.
+
+## Phase 180: the dialog built by numbered controls, not named ones
+
+**677. input-pbwin reads PowerBASIC for Windows .bas source, a control's field name taken from its own numeric id since DDT gives it no other** 🔨
+PowerBASIC's Dynamic Dialog Tools build a window entirely through `DIALOG NEW ... TO handle` and `CONTROL ADD type, handle, id, "text", x, y, w, h` statements, one screen per `DIALOG NEW`; unlike every other statement-built screen this tool reads, a DDT control's identity is a plain integer id, not a variable a value was assigned to or a name a keyword argument bound, so this reader names each field after its own id, a naming convention it documents rather than a name PowerBASIC itself gives. A `CHECKBOX`'s own text is its label, paired directly, and an `OPTION` groups by a run of consecutive statements, the same restraint input-autoit already keeps for its own ungrouped radios; a `BUTTON` wires from its own trailing `CALL procname` clause on the same statement, the cleanest wiring reference this tool's statement-built readers get, needing no separate event loop to match against the way input-autoit's `Case`/`If` search does. A `CONTROL ADD` naming a handle no `DIALOG NEW` opened, an unrecognised control type and a button with no `CALL` clause are each named rather than guessed. test/pbwin.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 628 |
+| new in this branch | 630 |
 | planned | 3 |
-| total | 675 |
+| total | 677 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

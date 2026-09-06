@@ -45,6 +45,10 @@ const KEEP = new Set([
   ".tcl",
   // AutoIt scripts: a GUI built directly by executable GUICtrlCreate* calls, no designer file of its own.
   ".au3",
+  // PowerBASIC for Windows: a GUI built directly by executable DIALOG NEW/CONTROL ADD statements, no designer file of its own.
+  ".bas",
+  // Progress OpenEdge ABL (4GL): DEFINE VARIABLE/BUTTON and FORM ... WITH FRAME declared directly in procedure source, no designer file of its own.
+  ".p",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
