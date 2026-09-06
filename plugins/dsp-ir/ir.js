@@ -101,6 +101,8 @@ export const DIALECTS = {
     },
     text: (n) => (/^(?:data-)?ng-bind$/.test(n) ? "expr" : /^(?:data-)?ng-bind-template$/.test(n) ? "template" : null),
     event: (n) => /^(?:data-)?ng-(click|change|input|submit|blur|focus|keyup|keydown|keypress|mouseover|mouseout|mouseenter|mouseleave|mousedown|mouseup|mousemove|dblclick|paste|copy|cut)$/.exec(n)?.[1] ?? null,
+    // ng-submit on a form with no action swallows the navigation itself; a port that forgets reloads the page.
+    eventMods: (n) => (/^(?:data-)?ng-submit$/.test(n) ? ["prevent"] : []),
     html: (n) => n === "ng-bind-html",
     // ng-show and ng-hide are the same directive with the test inverted.
     show: (n) => (n === "ng-show" ? "show" : n === "ng-hide" ? "hide" : false),
@@ -547,7 +549,7 @@ function convert(node, d, ctx) {
   // key, and a condition the dialect evaluates per row. The list is the one expression read outside it.
   const pre = structural.each !== undefined ? d.loop(structural.each) : null;
   const frame = pre ? { name: pre.index && pre.index !== "$index" ? pre.index : ctx.loops.length ? `$index${ctx.loops.length + 1}` : "$index", used: Boolean(pre.index) } : null;
-  const list = pre ? loopList(pre, ctx) : null;
+  const list = pre ? loopList(pre, ctx, node) : null;
   if (frame && !d.loopWrapsChildren) ctx.loops.push(frame);
   // Bound html replaces the element's children, never the element: the tag
   // and its attributes are the author's and every target keeps them.
@@ -668,10 +670,12 @@ function convert(node, d, ctx) {
 }
 
 /** The list expression a loop maps over; a numeric range is spelled out. */
-function loopList(loop, ctx) {
+function loopList(loop, ctx, node = null) {
   if (loop.range) return `Array.from({ length: ${loop.list} }, (_, i) => i + 1)`;
   const list = ctx.expr(loop.list);
-  ctx.lists.add(list);
+  // A select's options are a list the screen is handed, not the data the screen is of: an empty option list is
+  // not the empty state, so it is read but never becomes the collection an emitter guards on.
+  if (!/^option$/i.test(node?.tag ?? "")) ctx.lists.add(list);
   return list;
 }
 

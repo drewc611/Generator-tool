@@ -7,13 +7,13 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 183 plugins, and the literal output of
+lines of core, no runtime dependencies, 184 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 941 passing, 942 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the Ember, Mithril, Marko, Liquid, Twig and XSLT readers](media/test-run.png)
+![node --test running the portamp suite: 955 passing, 956 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 937
-tests pass across 126 test files with `node --test` and no framework, and
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 955
+tests pass across 128 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing. CI reruns the same
 suite on Node 18, 20 and 22 and on Windows, and asserts the same screen written
 in two dialects emits byte identical output across all four targets.</sub>
@@ -34,9 +34,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 183 plugin(s)
+node src/cli.js plugins      # 184 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 942 tests, node --test, no framework
+npm test                     # 956 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -69,8 +69,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | --- | --- |
 | Core | **718 lines** across four files |
 | Every line of the tool | 41,613 lines of JavaScript in src and plugins |
-| Tests | 13,918 lines, 942 cases across 126 files |
-| Source on disk | src 27 KB, plugins 1.9 MB |
+| Tests | 14,270 lines, 956 cases across 128 files |
+| Source on disk | src 27 KB, plugins 2.0 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
@@ -79,7 +79,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and thirty features, and every
+The core grew from 527 lines to 718 across six hundred and thirty three features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -120,9 +120,9 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The 183 it ships with
+## The 184 it ships with
 
-![The plugin rack: 183 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 184 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## Yes, there is a transformer in it
 
@@ -417,6 +417,32 @@ search engine finds the document by its words. What cannot be decoded is
 counted, never faked: an encrypted file is refused by name, an exotic
 stream filter is skipped and said, and a glyph with no text mapping is a
 number in `DOCS.md`, not a lookalike character.
+
+## An executable becomes its dialogs
+
+A native Windows program is a legacy front end whose interface is data:
+every dialog is a template in the `.rsrc` section naming its controls with
+their class, caption, id, position and styles, every menu a tree of
+captions and command ids, the string table the messages the code showed,
+the version block the product's name. `input-exe` reads all of it with no
+dependency, PE32 and PE32+ alike, every offset bounds checked so a
+truncated file is a list of problems and never a crash, and lowers each
+dialog onto the shared dialect: a static beside a field is its label, an
+edit is an input typed by its style, radios inside a group box share the
+group's name, a combo box is a select whose options the code filled at
+runtime and so is named as a list the port must be handed, a mnemonic is
+an `accesskey`, OK submits every field back by name as the dialog's return
+did. The same React, Vue and Svelte every other reader produces come out
+the far end, with `DIALOGS.md` holding every control's rectangle in dialog
+units, `MENUS.md` every menu, `STRINGS.md` every message. A .NET assembly
+keeps its forms in code, so the reader says so rather than pretending.
+
+A PNG screenshot is measured too, not just catalogued: `input-shots`
+decodes it with Node's own inflate, counts the colours its pixels are made
+of into `PALETTE.md`, and `dsp-tokens` takes exactly one thing from them,
+the page background, with the screenshot named in the provenance. The ink
+is deliberately not taken, because a header bar and body text are both
+dark and a pixel share cannot tell them apart.
 
 ## The port stops repeating itself
 
@@ -863,14 +889,20 @@ The constraints are the interesting part:
   The tool that ports apps to React does not itself need React, and adding a
   build step to a tool whose selling point is having no build step would be
   funny for about a day.
-- **Read only.** It displays a completed run. It cannot trigger one, edit a
-  file, or write anything. A UI that mutates the port is a second source of
-  truth. A test asserts the server contains no write call.
+- **Read only, with an intake.** It displays a completed run and may run the
+  tool again. What you drop on it, an `.exe`, a screenshot, a whole folder of
+  old pages, lands in the console's own intake beside the run, never in the
+  port, and the next run reads exactly that with the flags you pressed
+  (transformer, train, reverse, sort, vue, svelte). The server hands the bytes
+  to the intake the command owns and writes nothing itself; a test asserts the
+  server contains no write call, and another that nothing which weakens a
+  policy gate is a flag the page can set.
 - **Loopback only.** It binds `127.0.0.1`, never `0.0.0.0`, because it serves
   screenshots of a customer system. A test asserts the bound address, and both
   file routes refuse any path that climbs out of their directory.
-- **Under 800 lines**, including the HTML. It is 659, and a test fails the build
-  if that stops being true.
+- **Under a budget**, including the HTML: 1750 lines now, raised on the record
+  each time a feature bought it, and a test fails the build if the console
+  grows past it.
 
 The built component cannot be rendered without a build, so the right pane shows
 the emitted source, syntax highlighted, and says that is what it is rather than
@@ -1007,8 +1039,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and thirty features in
-one hundred and forty five phases, forty four shipped, five hundred and eighty three new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and thirty three features in
+one hundred and forty six phases, forty four shipped, five hundred and eighty six new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

@@ -118,6 +118,13 @@
   .key:focus-visible { outline: 1px dotted var(--amber); outline-offset: 1px; }
   .run { flex: 0 0 62px; color: var(--p-hi); }
   .run.busy { color: var(--amber); }
+  /* the intake: what a person drops on the console is what the next run reads */
+  .intake { display: flex; flex-direction: column; gap: 3px; padding: 4px 0 0; flex: none; }
+  .drop { display: block; border: 1px dashed var(--p-dim); color: var(--muted); font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase; padding: 6px; text-align: center; cursor: pointer; }
+  .drop.over, .drop:hover { border-color: var(--amber); color: var(--amber); }
+  .drop input { display: none; }
+  .flags { display: flex; gap: 3px; flex-wrap: wrap; }
+  .flags .key { flex: 1 0 30%; }
 
   /* rack and screens: the playlist */
   .rack { grid-area: rack; }
@@ -311,6 +318,26 @@
   <div class="transport">
     <button class="key run" id="run" title="Run the pipeline again">▶ run</button>
     <button class="key" id="all" aria-pressed="true">all stages</button>
+  </div>
+  <div class="intake" id="intake">
+    <label class="drop" id="drop" tabindex="0">drop an .exe, a screenshot or a folder of old pages here, or click to pick files
+      <input type="file" id="pick" multiple aria-label="pick files for the intake">
+      <input type="file" id="pick-dir" webkitdirectory aria-label="pick a folder for the intake">
+    </label>
+    <div class="flags" id="flags" aria-label="flags for the next run">
+      <button class="key" data-flag="transformer" aria-pressed="false" title="Draw the transformer's attention (ATTENTION.md)">transformer</button>
+      <button class="key" data-flag="train" aria-pressed="false" title="Train it on its fixed task (TRAINING.md)">train</button>
+      <button class="key" data-flag="train-reverse" aria-pressed="false" title="Train and grade reversal on held out data (REVERSE.md)">reverse</button>
+      <button class="key" data-flag="train-sort" aria-pressed="false" title="Train and grade sorting on held out data (SORT.md)">sort</button>
+      <button class="key" data-flag="vue" aria-pressed="false" title="Emit Vue beside React">vue</button>
+      <button class="key" data-flag="svelte" aria-pressed="false" title="Emit Svelte beside React">svelte</button>
+    </div>
+    <div class="transport">
+      <button class="key run" id="port-intake" title="Run the pipeline over what was dropped">▶ port intake</button>
+      <button class="key" id="pick-dir-key" title="Pick a whole folder">folder</button>
+      <button class="key" id="clear-intake" title="Empty the intake">clear</button>
+    </div>
+    <div class="sub" id="intake-status" role="status" aria-live="polite"></div>
   </div>
 </section>
 
@@ -787,15 +814,19 @@ $("rk-sort").addEventListener("click", () => {
 $("wipe").addEventListener("input", applyWipe);
 $("all").addEventListener("click", () => selectStage(null));
 
-// Running the tool again is the one thing this window is allowed to cause.
-async function rerun() {
+// Running the tool again is the one thing this window is allowed to cause, over the tree it was started with or
+// over the intake, with the flags pressed below.
+const flagsOn = () => Object.fromEntries([...document.querySelectorAll("#flags .key")].map((k) => [k.dataset.flag, k.getAttribute("aria-pressed") === "true"]));
+document.querySelectorAll("#flags .key").forEach((k) => k.addEventListener("click", () => k.setAttribute("aria-pressed", String(k.getAttribute("aria-pressed") !== "true"))));
+async function rerun(options = {}) {
   const button = $("run");
   if (button.classList.contains("busy")) return;
   button.classList.add("busy");
   button.textContent = "· running";
-  $("now").textContent = "running the pipeline";
+  $("now").textContent = options.source === "intake" ? "running the pipeline over the intake" : "running the pipeline";
   try {
-    const result = await fetch("/rerun", { method: "POST" }).then((r) => r.json());
+    const body = JSON.stringify({ source: options.source ?? "src", flags: flagsOn() });
+    const result = await fetch("/rerun", { method: "POST", headers: { "Content-Type": "application/json" }, body }).then((r) => r.json());
     if (!result.ok) {
       $("now").textContent = "stopped: " + (result.error ?? "unknown").split("\n")[0];
       $("lamp-unver").classList.add("warn");
@@ -810,7 +841,45 @@ async function rerun() {
     button.textContent = "▶ run";
   }
 }
-$("run").addEventListener("click", rerun);
+$("run").addEventListener("click", () => rerun());
+
+// What a person hands the console goes to its intake, folders walked, then the pipeline runs over exactly that.
+async function filesOf(transfer) {
+  const out = [];
+  const walk = (entry, base) => new Promise((done) => {
+    if (entry.isFile) entry.file((f) => { out.push({ file: f, path: base + f.name }); done(); }, done);
+    else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const next = () => reader.readEntries(async (list) => { if (!list.length) return done(); for (const e of list) await walk(e, base + entry.name + "/"); next(); }, done);
+      next();
+    } else done();
+  });
+  const entries = [...(transfer.items ?? [])].map((i) => i.webkitGetAsEntry?.()).filter(Boolean);
+  if (!entries.length) return [...transfer.files].map((f) => ({ file: f, path: f.webkitRelativePath || f.name }));
+  for (const e of entries) await walk(e, "");
+  return out;
+}
+async function intake(items) {
+  const status = $("intake-status");
+  let sent = 0;
+  for (const { file, path } of items) {
+    const r = await fetch("/intake?path=" + encodeURIComponent(path), { method: "POST", body: file }).then((r) => r.json()).catch((err) => ({ error: err.message }));
+    if (!r.ok) { status.textContent = "refused " + path + ": " + (r.error ?? "unknown"); return; }
+    sent += 1;
+    status.textContent = r.files + " file(s) in the intake";
+  }
+  if (sent) await rerun({ source: "intake" });
+}
+const picked = (e) => intake([...e.target.files].map((f) => ({ file: f, path: f.webkitRelativePath || f.name })));
+$("pick").addEventListener("change", picked);
+$("pick-dir").addEventListener("change", picked);
+$("pick-dir-key").addEventListener("click", () => $("pick-dir").click());
+$("port-intake").addEventListener("click", () => rerun({ source: "intake" }));
+$("clear-intake").addEventListener("click", async () => { await fetch("/intake", { method: "DELETE" }); $("intake-status").textContent = "intake emptied"; });
+const drop = $("drop");
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", async (e) => { e.preventDefault(); drop.classList.remove("over"); intake(await filesOf(e.dataTransfer)); });
 
 function renderAll() {
   renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens();

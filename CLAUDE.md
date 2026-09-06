@@ -75,7 +75,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and eighty three in five classes, and the core has never learned
+Plugins that ship, a hundred and eighty four in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -83,7 +83,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -403,6 +403,24 @@ README's plugin and test counts, the size table within three percent, the
 port README's index of every report, and every count spelled in English
 numerals are each a test that fails when a sentence drifts from the file.
 
+10.0 takes what you have. input-exe reads a native Windows executable as
+the legacy front end it is: the dialog templates in its resource section
+become screens on the shared dialect (a static beside a field is its label,
+radios inside a group box share the group's name, a combo box is a select
+whose options the code filled and so is named as a list the port is handed,
+a mnemonic is an accesskey, OK submits every field back by name), menus
+become menu bars, the string table and the version block are reported, and a
+.NET assembly is named as keeping its forms in code. PE32 and PE32+ are read
+with no dependency and every offset bounds checked. input-shots decodes a PNG
+with node's own inflate and counts the colours its pixels are made of into
+PALETTE.md; dsp-tokens takes the page background from them and nothing else,
+because a header bar and body text are both dark. The console has an intake:
+drop an .exe, a screenshot or a folder on it, press the flags it offers, and
+the next run reads exactly that from the console's own sidecar, never the
+port; the server hands bytes to the intake the command owns and writes
+nothing itself. test/exe.test.js, test/shots.test.js and test/ui.test.js
+hold it.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -468,8 +486,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and thirty features in
-one hundred and forty five phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and thirty three features in
+one hundred and forty six phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.

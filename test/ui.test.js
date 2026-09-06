@@ -37,9 +37,11 @@ test("the whole ui is under the budget the spec set", async () => {
   // keymap, the sparkline and the offline line bought the raise to 1550,
   // with the pure logic split into lib.js where the suite reads it. Anchoring
   // the run comparison as a tooltip below the head, so its list stops
-  // overrunning the header bar, bought the last ten. The budget still exists
-  // so growth stays a decision, not a drift.
-  assert.ok(js + html + lib < 1560, `${js + html + lib} lines, the spec allows under 1560`);
+  // overrunning the header bar, bought the last ten. The intake, a drop zone
+  // that hands what a person drops to the run with the flags they pressed,
+  // bought the raise to 1750. The budget still exists so growth stays a
+  // decision, not a drift.
+  assert.ok(js + html + lib < 1750, `${js + html + lib} lines, the spec allows under 1750`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once
@@ -148,7 +150,9 @@ test("the ui never writes into the port", async () => {
 import {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
   sparklinePoints, keyAction, STAGE_KEYS, offlineNotice, isTextFile, reportsIn,
+  intakePath, rerunOptions, RERUN_FLAGS,
 } from "../plugins/vis-ui/lib.js";
+import { createIntake } from "../plugins/vis-ui/index.js";
 
 const quiet = { info() {}, debug() {}, warn() {}, error() {} };
 
@@ -369,4 +373,75 @@ test("the console shows the coverage gauge and the ui command watches", async ()
   assert.equal(plugin.commands.ui.describe.includes("--watch"), true, "the command says so");
   const source = await readFile(join(ROOT, "plugins", "vis-ui", "index.js"), "utf8");
   assert.match(source, /args\.watch/, "and the command honors it");
+});
+
+/* ------------------------------------------------------------ the intake */
+
+test("an intake path is a relative file path and nothing else", () => {
+  assert.equal(intakePath("ledger.exe"), "ledger.exe");
+  assert.equal(intakePath("site/pages/index.html"), "site/pages/index.html");
+  assert.equal(intakePath("\\win\\style\\a.png"), "win/style/a.png", "a Windows separator is a separator");
+  assert.equal(intakePath("/rooted/a.png"), "rooted/a.png", "a leading slash is dropped, never honoured");
+  assert.equal(intakePath("a//b.png"), "a/b.png", "a doubled slash is one");
+  for (const bad of ["", "../escape", "a/../b", "./a", "a\u0000b", "x".repeat(600)]) assert.equal(intakePath(bad), null, JSON.stringify(bad));
+});
+
+test("a rerun request carries only the flags the console offers, as booleans, and the source", () => {
+  assert.deepEqual(rerunOptions(undefined), { source: "src", flags: {} });
+  assert.deepEqual(rerunOptions({ source: "intake", flags: { transformer: 1, vue: false, allowLive: true, "max-kb": 0 } }), { source: "intake", flags: { transformer: true, vue: false } }, "a policy switch or a ceiling is never a flag a page can set");
+  assert.deepEqual(rerunOptions({ source: "/etc" }), { source: "src", flags: {} });
+  assert.ok(!RERUN_FLAGS.some((f) => /allow|offline|max|only|skip/.test(f)), "nothing that weakens a gate is offered");
+});
+
+test("the intake writes what it is handed under the run's sidecar, lists it, refuses an escape, and empties", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "portamp-intake-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const intake = createIntake(join(dir, "out", ".portamp", "intake"));
+  assert.deepEqual(await intake.list(), [], "an intake that does not exist yet is empty, not an error");
+  const files = await intake.put("pages/index.html", Buffer.from("<h1>hi</h1>"));
+  assert.deepEqual(files, [{ path: "pages/index.html", bytes: 11 }]);
+  await intake.put("ledger.exe", Buffer.from("MZ"));
+  assert.deepEqual((await intake.list()).map((f) => f.path), ["ledger.exe", "pages/index.html"]);
+  await assert.rejects(() => intake.put("../outside.txt", Buffer.from("x")), /only land inside the intake/);
+  await assert.rejects(() => intake.put("", Buffer.from("x")));
+  assert.equal(await readFile(join(dir, "out", ".portamp", "intake", "pages", "index.html"), "utf8"), "<h1>hi</h1>");
+  await intake.clear();
+  assert.deepEqual(await intake.list(), []);
+});
+
+test("the server hands uploads to the intake and reruns pointed at it; without one it says so", async (t) => {
+  const { dir, out, server: plain, address: plainAddress } = await fixture();
+  t.after(() => new Promise((done) => plain.close(done)).then(() => rm(dir, { recursive: true, force: true })));
+  assert.equal((await fetch(`${plainAddress}/intake?path=a.png`, { method: "POST", body: "x" })).status, 501, "a server started without an intake refuses, it does not invent one");
+  assert.deepEqual(await fetch(`${plainAddress}/intake.json`).then((r) => r.json()), { dir: null, files: [] });
+
+  const puts = [];
+  const reruns = [];
+  const intake = { dir: join(out, ".portamp", "intake"), files: [], async put(rel, bytes) { puts.push([rel, bytes.length]); this.files.push(rel); return this.files.map((p) => ({ path: p, bytes: 1 })); }, async clear() { this.files = []; }, async list() { return this.files.map((p) => ({ path: p, bytes: 1 })); } };
+  const { server, address } = await serve({ outDir: out, shotsDir: join(dir, "shots"), port: 0, log: quiet, intake, rerun: async (o) => { reruns.push(o); } });
+  t.after(() => new Promise((done) => server.close(done)));
+  const put = await fetch(`${address}/intake?path=${encodeURIComponent("site/index.html")}`, { method: "POST", body: "<p>old</p>" }).then((r) => r.json());
+  assert.deepEqual(put, { ok: true, path: "site/index.html", files: 1 });
+  assert.deepEqual(puts, [["site/index.html", 10]]);
+  assert.equal((await fetch(`${address}/intake?path=${encodeURIComponent("../escape.html")}`, { method: "POST", body: "x" })).status, 400);
+  assert.equal((await fetch(`${address}/intake`, { method: "POST", body: "x" })).status, 400, "no path, no file");
+  assert.deepEqual(await fetch(`${address}/intake.json`).then((r) => r.json()), { dir: intake.dir, files: [{ path: "site/index.html", bytes: 1 }] });
+  const ran = await fetch(`${address}/rerun`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: "intake", flags: { transformer: true, allowLive: true } }) }).then((r) => r.json());
+  assert.equal(ran.ok, true);
+  assert.deepEqual(reruns, [{ source: "intake", flags: { transformer: true } }], "the rerun gets the source and the offered flags, nothing else");
+  await fetch(`${address}/rerun`, { method: "POST" });
+  assert.deepEqual(reruns[1], { source: "src", flags: {} }, "an empty request is the plain rerun it always was");
+  assert.deepEqual(await fetch(`${address}/intake`, { method: "DELETE" }).then((r) => r.json()), { ok: true });
+  assert.deepEqual(intake.files, []);
+});
+
+test("the console page carries the intake: a drop zone, a folder picker, the offered flags and the buttons", async () => {
+  const html = await readFile(join(ROOT, "plugins/vis-ui/app.html"), "utf8");
+  for (const needle of ['id="intake"', 'id="drop"', "webkitdirectory", 'data-flag="transformer"', 'data-flag="train-reverse"', 'id="port-intake"', 'id="clear-intake"', '"/intake?path="', 'source: "intake"', "webkitGetAsEntry"]) {
+    assert.ok(html.includes(needle), `app.html carries ${needle}`);
+  }
+  const flags = [...html.matchAll(/data-flag="([\w-]+)"/g)].map((m) => m[1]);
+  assert.ok(flags.every((f) => RERUN_FLAGS.includes(f)), "every flag the page offers is one the server accepts");
+  const source = await readFile(join(ROOT, "plugins/vis-ui/index.js"), "utf8");
+  assert.match(source, /config\.src = source === "intake" \? intake\.dir : original\.src/, "a rerun over the intake reads the intake, and the next plain rerun reads the tree again");
 });

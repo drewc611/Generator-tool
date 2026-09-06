@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { contrastHex } from "../input-shots/png.js";
 import {
   flattenSamples, measureColors, measureDensity, measureRadius, mergeSpacing, measureTypeScale,
   readStyleVariables, rolesFromVariables,
@@ -18,6 +19,34 @@ const DEFAULTS = {
   radius: { control: 6, card: 10 },
   shadow: "0 1px 2px rgba(28,27,25,0.04), 0 4px 16px rgba(28,27,25,0.05)",
 };
+
+/**
+ * The page background from the palettes input-shots measured, where the screenshots agree. Only that: the ink and a
+ * brand bar are both dark and both read against it, and a pixel share cannot tell text from a header, so nothing else
+ * is named from pixels.
+ */
+export function colorsFromScreenshots(screenshots) {
+  const shots = (screenshots ?? []).filter((s) => Array.isArray(s.palette) && s.palette.length);
+  if (!shots.length) return null;
+  const color = {};
+  const evidence = {};
+  // The background is the dominant colour of a screenshot when it covers at least four tenths of it; when several
+  // screenshots disagree the commonest wins and the disagreement is written into the evidence.
+  const dominant = shots.map((s) => ({ s, top: s.palette[0] })).filter(({ top }) => top.share >= 0.4);
+  if (dominant.length) {
+    const tally = new Map();
+    for (const d of dominant) tally.set(d.top.hex, (tally.get(d.top.hex) ?? 0) + 1);
+    const [hex, n] = [...tally].sort((a, b) => b[1] - a[1])[0];
+    const first = dominant.find((d) => d.top.hex === hex);
+    color.bg = hex;
+    evidence.bg = `bg from the pixels of ${first.s.name}${IMG_EXT(first.s)} (${(first.top.share * 100).toFixed(0)}% of it)${dominant.length > n ? `, ${dominant.length - n} screenshot(s) disagree` : ""}`;
+    // How many of the other colours would read as text against it is reported, never which one is the ink.
+    const legible = first.s.palette.slice(1).filter((p) => contrastHex(p.hex, hex) >= 4.5).length;
+    evidence.bg += `; ${legible} other colour(s) read against it at 4.5:1 or better`;
+  }
+  return Object.keys(color).length ? { color, evidence } : null;
+}
+const IMG_EXT = (s) => (/\.[a-z]+$/i.exec(s.path ?? "")?.[0] ?? "");
 
 /**
  * Produces the token set the emitters build from. Values are measured from the
@@ -94,6 +123,12 @@ export default {
           );
         }
       }
+
+      // A screenshot's pixels are the last honest evidence before a default: the colour most of a screenshot is,
+      // is the page background. Only that is taken, only where nothing declared or observed already answered, and
+      // it names its screenshot.
+      const pixels = colorsFromScreenshots(ctx.sources.screenshots);
+      if (pixels?.color.bg && !recovered.color.bg) { recovered.color.bg = pixels.color.bg; evidence.push(pixels.evidence.bg); }
 
       const density = measureDensity(rowHeights);
       if (density) {

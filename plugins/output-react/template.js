@@ -8,7 +8,7 @@ import { jsString, guardHandler } from "../dsp-ir/emit.js";
  */
 
 const PROP = {
-  class: "className", for: "htmlFor", tabindex: "tabIndex", readonly: "readOnly",
+  class: "className", for: "htmlFor", tabindex: "tabIndex", readonly: "readOnly", accesskey: "accessKey",
   maxlength: "maxLength", minlength: "minLength", colspan: "colSpan", rowspan: "rowSpan",
   autocomplete: "autoComplete", autofocus: "autoFocus", srcset: "srcSet",
   novalidate: "noValidate", enctype: "encType", usemap: "useMap", cellpadding: "cellPadding",

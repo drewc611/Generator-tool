@@ -137,3 +137,28 @@ export function compareRuns(current, previous) {
     notesOpened: isNotes.filter((n) => !wasNotes.includes(n)),
   };
 }
+
+/* ------------------------------------------------------------ the intake */
+
+/** The flags the console offers a rerun; anything else in a request is dropped, never passed to the run. */
+export const RERUN_FLAGS = ["transformer", "train", "train-reverse", "train-sort", "train-math", "vue", "svelte", "lit", "html", "site", "export", "components"];
+
+/** A rerun request reduced to what the console may ask: the source to read and the offered flags as booleans. */
+export function rerunOptions(body) {
+  const source = body?.source === "intake" ? "intake" : "src";
+  const flags = {};
+  for (const flag of RERUN_FLAGS) if (body?.flags && Object.hasOwn(body.flags, flag)) flags[flag] = Boolean(body.flags[flag]);
+  return { source, flags };
+}
+
+/**
+ * A path a dropped file may land at inside the intake: relative, forward slashed, no empty, dot or dot dot segment,
+ * no control character, and short. Anything else is null and the upload is refused.
+ */
+export function intakePath(raw) {
+  const clean = String(raw ?? "").replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+/g, "/");
+  if (!clean || clean.length > 512 || /[\u0000-\u001f\u007f]/.test(clean)) return null;
+  const parts = clean.split("/");
+  if (parts.some((p) => p === "" || p === "." || p === "..")) return null;
+  return parts.join("/");
+}

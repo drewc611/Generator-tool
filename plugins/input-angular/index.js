@@ -11,6 +11,8 @@ const KEEP = new Set([
   ".htm", ".shtml", ".php", ".asp", ".jsp", ".inc", ".txt", ".xml", ".pdf",
   ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp",
   ".woff", ".woff2", ".ttf", ".otf", ".eot",
+  // A native executable is a legacy front end too: its dialogs and menus are resources a reader lifts.
+  ".exe", ".dll",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;

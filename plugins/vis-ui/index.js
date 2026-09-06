@@ -1,9 +1,10 @@
 import { createServer } from "node:http";
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readdir, readFile, mkdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, extname, join, resolve, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { pascal } from "../dsp-ir/emit.js";
+import { intakePath, rerunOptions } from "./lib.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -221,7 +222,53 @@ function within(base, requested) {
   return rel && !rel.startsWith("..") && !rel.startsWith(sep) ? full : null;
 }
 
-export async function serve({ outDir, shotsDir, port = 4321, log = console, rerun = null }) {
+/** A request body up to a limit, or a 413 shaped error past it. */
+function readBody(req, limit) {
+  return new Promise((done, fail) => {
+    const chunks = [];
+    let size = 0;
+    req.on("data", (c) => {
+      size += c.length;
+      if (size > limit) { const err = new Error(`the body is over ${limit} bytes`); err.status = 413; req.destroy(); fail(err); return; }
+      chunks.push(c);
+    });
+    req.on("end", () => done(Buffer.concat(chunks)));
+    req.on("error", fail);
+  });
+}
+
+/**
+ * The console's intake: what a person dropped on it, written under the run's
+ * own sidecar directory and never into the port. A rerun pointed at it reads
+ * exactly those files, so an executable, a screenshot or a folder of old pages
+ * becomes a port without a path typed anywhere. The server hands bytes here
+ * and writes nothing itself.
+ */
+export function createIntake(dir) {
+  const list = async (at = dir, base = "") => {
+    const out = [];
+    for (const e of await readdir(at, { withFileTypes: true }).catch(() => [])) {
+      const rel = base ? `${base}/${e.name}` : e.name;
+      if (e.isDirectory()) out.push(...(await list(join(at, e.name), rel)));
+      else out.push({ path: rel, bytes: (await stat(join(at, e.name))).size });
+    }
+    return out.sort((a, b) => a.path.localeCompare(b.path));
+  };
+  return {
+    dir,
+    list: () => list(),
+    async put(rel, bytes) {
+      const target = intakePath(rel) ? within(dir, intakePath(rel)) : null;
+      if (!target) throw new Error("a file may only land inside the intake");
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, bytes);
+      return list();
+    },
+    async clear() { await rm(dir, { recursive: true, force: true }); },
+  };
+}
+
+export async function serve({ outDir, shotsDir, port = 4321, log = console, rerun = null, intake = null }) {
   const runPath = join(outDir, ".portamp", "run.json");
   const shell = await readFile(join(here, "app.html"), "utf8");
 
@@ -269,12 +316,33 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         if (!rerun) return send(501, TYPES[".json"], '{"error":"this server was started without a way to re run"}');
         const started = Date.now();
         try {
-          await rerun();
+          // The request may name the source (the intake, or the tree the command was given) and the offered flags.
+          const text = (await readBody(req, 65536)).toString("utf8");
+          await rerun(rerunOptions(text ? JSON.parse(text) : {}));
           return send(200, TYPES[".json"], JSON.stringify({ ok: true, ms: Date.now() - started }));
         } catch (err) {
           // A policy stop is a result, not a crash. The UI shows it.
           return send(200, TYPES[".json"], JSON.stringify({ ok: false, error: err.message, ms: Date.now() - started }));
         }
+      }
+      // What a person handed the console lands in the intake the command owns; this server writes nothing itself,
+      // and the port's own files are never the target.
+      if (url.pathname === "/intake" && req.method === "POST") {
+        if (!intake) return send(501, TYPES[".json"], '{"error":"this server was started without an intake"}');
+        const rel = intakePath(url.searchParams.get("path") ?? "");
+        if (!rel) return send(400, TYPES[".json"], '{"error":"the path must be a relative file path with no . or .. segment"}');
+        let bytes;
+        try { bytes = await readBody(req, 256 * 1024 * 1024); } catch (err) { return send(err.status ?? 500, TYPES[".json"], JSON.stringify({ error: err.message })); }
+        const files = await intake.put(rel, bytes);
+        return send(200, TYPES[".json"], JSON.stringify({ ok: true, path: rel, files: files.length }));
+      }
+      if (url.pathname === "/intake" && req.method === "DELETE") {
+        if (!intake) return send(501, TYPES[".json"], '{"error":"this server was started without an intake"}');
+        await intake.clear();
+        return send(200, TYPES[".json"], '{"ok":true}');
+      }
+      if (url.pathname === "/intake.json") {
+        return send(200, TYPES[".json"], JSON.stringify(intake ? { dir: intake.dir, files: await intake.list() } : { dir: null, files: [] }));
       }
       // The page polls this every few seconds; the timestamp is the version,
       // so an unchanged run costs a 304 instead of the whole document.
@@ -404,7 +472,7 @@ export default {
 
   commands: {
     ui: {
-      describe: "serve the last run on 127.0.0.1; --watch reruns on change",
+      describe: "serve the last run on 127.0.0.1; drop an .exe, a screenshot or a folder on it to port that; --watch reruns on change",
       async run({ config, log, args, runPipeline }) {
         const runPath = join(config.out, ".portamp", "run.json");
         const already = await readFile(runPath, "utf8").then(() => true).catch(() => false);
@@ -415,12 +483,25 @@ export default {
           log.info("serving the last run. Pass --fresh to run the pipeline again.\n");
         }
 
+        // A rerun from the console may point the run at the intake and switch an offered flag on. The core reads
+        // the config when a run starts, so the command the config was handed to is what changes it, and the tree
+        // and screenshots it was started with come back the moment a rerun asks for them.
+        const intake = createIntake(join(config.out, ".portamp", "intake"));
+        const original = { src: config.src, shots: config.shots };
+        const rerun = async (options = {}) => {
+          const { source, flags } = rerunOptions(options);
+          config.src = source === "intake" ? intake.dir : original.src;
+          config.shots = source === "intake" ? intake.dir : original.shots;
+          for (const [flag, on] of Object.entries(flags)) config[flag] = on;
+          return runPipeline();
+        };
         const { server, address } = await serve({
           outDir: config.out,
           shotsDir: config.shots,
           port: Number(args.port) || 4321,
           log,
-          rerun: runPipeline,
+          rerun,
+          intake,
         });
         if (!openBrowser(address)) log.info("could not open a browser, open that address yourself");
 

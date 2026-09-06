@@ -22,7 +22,7 @@ export default {
       // Binary formats cannot carry a secret these patterns could name, and
       // scanning their bytes decoded as text invents matches. Every format
       // that is text, however obscure, still goes through the gate.
-      const binary = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|otf|eot|mp[34]|webm|ogg|wav|pdf|zip)$/i;
+      const binary = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|otf|eot|mp[34]|webm|ogg|wav|pdf|zip|exe|dll)$/i;
       for (const f of ctx.sources.files) {
         if (binary.test(f.rel)) continue;
         const text = await readFile(f.path, "utf8").catch(() => "");

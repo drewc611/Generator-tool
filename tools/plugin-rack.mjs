@@ -39,6 +39,7 @@ const DOES = {
   "input-stencil": "stencil components: @Component tag, @Prop/@Event, render JSX lowered by the React reader",
   "input-webcomponents": "vanilla custom elements: observedAttributes as inputs, CustomEvent as outputs, innerHTML lowered",
   "input-ember": "ember components: Glimmer blocks with block params, @args, {{on}} and {{action}}, <Input @value>, yield; one .hbs, one reader",
+  "input-exe": "a native Windows executable: its dialog templates as screens, menus as menu bars, the string table and version block read from the .rsrc section with no dependency; .NET forms named as code",
   "input-underscore": "the templates input-backbone deferred: <%= %> lowered to the dialect",
   "input-handlebars": "#if, #each and the empty state in else, lowered to the dialect",
   "input-jinja": "server rendered pages read as screens; python logic respelled as JS",
