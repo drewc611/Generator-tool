@@ -7,7 +7,9 @@ import test from "node:test";
 import { buildIr } from "../plugins/dsp-ir/ir.js";
 import { camel, caption, lowerForm, lowerMenu, stripPrefix } from "../plugins/input-vb6/forms.js";
 import { decodeShortcut, kindOf, modelForm, parseValue, readFrm } from "../plugins/input-vb6/frm.js";
+import { applyFrx, decodeAnsi, describe, expectedKind, readRecord } from "../plugins/input-vb6/frx.js";
 import { translate } from "../plugins/output-react/template.js";
+import { LOGIN_ITEMS, bitmap, emptyPictureRecord, frx, hex, itemDataRecord, listRecord, loginFrx, pictureRecord, shortTextRecord, sizedListRecord, textRecord } from "./fixtures/vb6/frx.mjs";
 import { ROOT, runPipeline } from "./helpers.js";
 
 /**
@@ -16,13 +18,17 @@ import { ROOT, runPipeline } from "./helpers.js";
  * properties in twips, a menu as nested VB.Menu blocks, and after the form
  * the code. input-vb6 walks the blocks with a stack, lowers the form onto the
  * shared dialect through the lowering input-delphi shares, reads which
- * handlers the code wires and which messages MsgBox shows, and names the
- * binary .frx companion without reading it. The fixtures are real .frm files
- * under test/fixtures/vb6.
+ * handlers the code wires and which messages MsgBox shows, and reads the
+ * binary .frx companion for the two things a port needs from it: a combo or
+ * list box's items, and that a long text exists. The fixtures are real .frm
+ * files under test/fixtures/vb6; the .frx beside them is built by
+ * test/fixtures/vb6/frx.mjs, so the bytes and the offsets the .frm spells are
+ * one source.
  */
 
 const FIXTURES = join(ROOT, "test/fixtures/vb6");
 const login = async () => readFrm(await readFile(join(FIXTURES, "frmLogin.frm"), "latin1"));
+const loginBytes = async () => readFile(join(FIXTURES, "frmLogin.frx"));
 
 test("the .frm scanner walks the block tree, skips property groups whole, and reads the handlers and messages from the code", async () => {
   const read = await login();
@@ -39,7 +45,8 @@ test("the .frm scanner walks the block tree, skips property groups whole, and re
   assert.deepEqual(parseValue('"&Save"'), { string: "&Save" });
   assert.deepEqual(parseValue('"say ""hi"""'), { string: 'say "hi"' }, "a doubled quote is a literal one");
   assert.equal(parseValue("-1  'True"), -1); assert.equal(parseValue("0   'False"), 0); assert.equal(parseValue("8.25"), 8.25);
-  assert.deepEqual(parseValue('"frmLogin.frx":000A'), { frx: true }); assert.deepEqual(parseValue('$"frmLogin.frx":0000'), { frx: true });
+  assert.deepEqual(parseValue('"frmLogin.frx":000A'), { frx: true, file: "frmLogin.frx", offset: 10, dollar: false }, "a pointer is the file and the offset it names, in hex");
+  assert.deepEqual(parseValue('$"frmLogin.frx":0000'), { frx: true, file: "frmLogin.frx", offset: 0, dollar: true }, "a dollar marks a string stored in the companion");
   assert.deepEqual(parseValue("^O"), { raw: "^O" }); assert.deepEqual(parseValue("&H00FFFFFF&"), { raw: "&H00FFFFFF&" }, "a colour is a token, not a number");
 
   assert.deepEqual(read.handlers.map((h) => `${h.control}_${h.event}`), ["Form_Load", "cmdSave_Click", "cmdCancel_Click", "txtUser_Change", "mnuOpen_Click", "txtField_LostFocus", "tmrIdle_Timer"]);
@@ -68,21 +75,26 @@ test("kinds from class and properties, shortcuts spelled out, prefixes stripped,
   assert.deepEqual(caption("R&&D &Options..."), { text: "R&D Options", accesskey: "o" });
 });
 
-test("a form lowers onto the dialect in reading order: menu bar, labels, fields, a frame of radios, a select from the frx, a control array, the buttons", async () => {
+test("a form lowers onto the dialect in reading order: menu bar, labels, fields, a frame of radios, a select with its items from the frx, a control array, the buttons", async () => {
   const notes = [];
   const form = modelForm(await login());
   assert.deepEqual(form.size, { width: 6000, height: 3900 }); assert.equal(form.frxRefs, 4, "ItemData, List, Text and Picture point into the frx");
+  assert.deepEqual(form.controls.find((c) => c.name === "cboRegion").frx.map((p) => [p.property, p.offset]), [["ItemData", 0], ["List", 0x12]], "a control carries its pointers");
   assert.deepEqual(form.nonvisual.map((n) => [n.name, n.className, n.events]), [["tmrIdle", "VB.Timer", ["Timer"]]]);
   assert.deepEqual(form.events, ["Load"]);
+  const bytes = await loginBytes();
+  const records = await applyFrx(form, (name) => (name === "frmLogin.frx" ? bytes : null));
+  assert.deepEqual(records.sort((a, b) => a.offset - b.offset).map((r) => [r.owner, r.property, r.kind]), [["cboRegion", "ItemData", "itemdata"], ["cboRegion", "List", "list"], ["txtNotes", "Text", "text"], ["imgLogo", "Picture", "picture"]]);
+  assert.deepEqual(form.controls.find((c) => c.name === "cboRegion").options, LOGIN_ITEMS, "the list's items are the select's options");
   const { template, outputs, fields, title, usesTwoWay, usesNgFor, usesNgIf } = lowerForm(form, (n) => notes.push(n));
-  assert.equal(title, "Log in"); assert.equal(usesTwoWay, true); assert.equal(usesNgFor, true); assert.equal(usesNgIf, true);
+  assert.equal(title, "Log in"); assert.equal(usesTwoWay, true); assert.equal(usesNgFor, false, "no list is handed in, so nothing repeats"); assert.equal(usesNgIf, true);
   assert.deepEqual(outputs, ["about", "cancel", "exit", "help", "ok", "open"], "outputs are events; the emitter names the handler on<Event>");
   assert.deepEqual(fields, ["userName", "password", "role", "region", "rememberMe", "field0", "field1", "notes"]);
   assert.match(template, /^<form class="window" ng-submit="onOk\(\{ userName: userName, password: password, role: role, region: region, rememberMe: rememberMe, field0: field0, field1: field1, notes: notes \}\)">\n  <h2>Log in<\/h2>\n  <nav class="menu-bar" aria-label="menu">/, "the default button is the submit and hands every field back by name; the menu bar comes first");
   assert.match(template, /<label for="f-user-name">User name<\/label>\n\s*<input id="f-user-name" type="text" ng-model="userName">/, "a label on the row of a field names it; the mnemonic and the colon are gone");
   assert.match(template, /<input id="f-password" type="password" ng-model="password">/, "a PasswordChar is a password input");
   assert.match(template, /<fieldset>\n\s*<legend>Role<\/legend>\n\s*<label><input type="radio" ng-model="role" value="clerk" accesskey="c"> Clerk<\/label>\n\s*<label><input type="radio" ng-model="role" value="manager" accesskey="m"> Manager<\/label>\n\s*<\/fieldset>/, "option buttons share their frame's name and read left to right whatever the file order");
-  assert.match(template, /<label for="f-region">Region<\/label>\n\s*<select id="f-region" ng-model="region">\n\s*<option ng-repeat="option in regionOptions">\{\{ option \}\}<\/option>\n\s*<\/select>/, "a list held in the frx is a list the port is handed");
+  assert.match(template, /<label for="f-region">Region<\/label>\n\s*<select id="f-region" ng-model="region">\n\s*<option>North<\/option>\n\s*<option>South<\/option>\n\s*<option>East<\/option>\n\s*<option>West<\/option>\n\s*<\/select>/, "a list held in the frx is read into real options");
   assert.match(template, /<label><input type="checkbox" ng-model="rememberMe" accesskey="r"> Remember me<\/label>/, "the mnemonic is the access key");
   assert.match(template, /<input id="f-field0" type="text" ng-model="field0">\n\s*<input id="f-field1" type="text" ng-model="field1">/, "a control array is one field per index, left to right");
   assert.match(template, /<p ng-show="shown.lockedOutShown">Locked out<\/p>\n\s*<textarea id="f-notes" ng-model="notes" readonly><\/textarea>/, "a hidden label labels nothing; a locked multiline text box is a read only textarea");
@@ -93,7 +105,8 @@ test("a form lowers onto the dialect in reading order: menu bar, labels, fields,
   assert.match(template, /ng-click="onAbout\(\)" accesskey="a" disabled>About/);
   assert.doesNotMatch(template, /tmrIdle|Interval|60000/, "a timer is not a control and its interval is not printed");
 
-  assert.ok(notes.some((n) => /list\(s\) region are filled from the binary \.frx companion, which is not read/.test(n)));
+  assert.ok(notes.some((n) => /^region has 4 option\(s\) read from the binary \.frx companion; anything the code adds to the list at runtime is not read$/.test(n)), "Form_Load's AddItem is code, and code is not read");
+  assert.ok(!notes.some((n) => /regionOptions|Enter notes here/.test(n)), "no list is handed in, and the long text is never printed");
   assert.ok(notes.some((n) => /1 control\(s\) start hidden \(Locked out\)/.test(n)));
   assert.ok(notes.some((n) => /1 control\(s\) start disabled \(Help\)/.test(n)));
   assert.ok(notes.some((n) => /1 picture control\(s\) are placeholders/.test(n)));
@@ -106,7 +119,7 @@ test("a form lowers onto the dialect in reading order: menu bar, labels, fields,
 
   const ir = buildIr(template);
   assert.deepEqual(ir.collections, [], "a select's options are a list the screen is handed, not the data it is of");
-  assert.deepEqual(ir.reads, ["onAbout", "onCancel", "onExit", "onHelp", "onOk", "onOpen", "regionOptions", "shown"]);
+  assert.deepEqual(ir.reads, ["onAbout", "onCancel", "onExit", "onHelp", "onOk", "onOpen", "shown"]);
   const jsx = translate(template).jsx;
   assert.match(jsx, /onSubmit=\{\(event\) => \{ event\.preventDefault\(\); onOk\(/, "ng-submit swallows the navigation in the port");
   assert.match(jsx, /accessKey="r"/);
@@ -159,20 +172,97 @@ test("the review pass: keyword captions, a label above its field, a second defau
   assert.ok(notes.some((n) => /cmdGhost_Click \(no control by that name\)/.test(n)));
 });
 
-test("a folder of .frm files becomes screens, a report and notes, names the .frx, and ports to React with every state", async (t) => {
+test("the .frx reader takes a record against the layouts its property is known to write, accepts only a reading that fits, and never keeps a text's bytes", async () => {
+  assert.deepEqual(await loginBytes(), loginFrx().bytes, "the .frx fixture is what the builder writes; node test/fixtures/vb6/frx.mjs rebuilds it");
+  const pointers = Object.fromEntries((await login()).form.children.flatMap((c) => Object.entries(c.props).filter(([, v]) => v?.frx).map(([k, v]) => [k, v.offset])));
+  assert.deepEqual(pointers, loginFrx().offsets, "the .frm's pointers spell the offsets the records landed at");
+  assert.equal(hex(0x2e), "002E", "an offset is spelled as the .frm spells it");
+
+  // Both list layouts and both text layouts read; which one a record took is not the port's business, only that it fits.
+  const items = ["North", "S\u00e9ville", "", "West"];
+  const built = frx([listRecord(items), sizedListRecord(items), textRecord("Enter notes here.\r\nTwo lines."), shortTextRecord("short"), itemDataRecord([7, 8, 9]), pictureRecord(bitmap()), emptyPictureRecord(), [0xff, 0xfe, 0xfd, 0xfc, 0xfb]]);
+  const [words, sized, long, short, paired, pic, empty, junk] = built.offsets;
+  const rec = (property, offset, dollar = false) => readRecord(built.bytes, { property, offset, dollar });
+  assert.deepEqual(rec("List", words).items, items, "the 2 byte count layout, an accented letter read as Windows 1252, an empty item kept in place");
+  assert.deepEqual(rec("List", sized).items, items, "the layout behind a 4 byte payload count, which the items fill exactly");
+  assert.equal(rec("List", words).end, sized, "a record ends where the next begins");
+  assert.deepEqual(rec("Text", long), { property: "Text", offset: long, kind: "text", length: 29, end: short }, "a long text is its length, never its bytes");
+  assert.equal(rec("Text", short).length, 5, "the 2 byte length layout");
+  assert.equal(rec("Caption", long, true).kind, "text", "a dollar pointer is a string whatever the property");
+  assert.deepEqual(rec("ItemData", paired), { property: "ItemData", offset: paired, kind: "itemdata", count: 3, end: pic }, "the numbers are counted, not read");
+  assert.deepEqual(rec("Picture", pic), { property: "Picture", offset: pic, kind: "picture", format: "a bitmap", length: 58, end: empty });
+  assert.deepEqual(rec("Icon", empty), { property: "Icon", offset: empty, kind: "picture", format: "none", length: 0, end: junk }, "a size of zero is no picture");
+  assert.equal(JSON.stringify(rec("Text", long)).includes("Enter"), false, "the text is in no field of the result");
+
+  // What does not fit is named, never guessed at.
+  assert.deepEqual(rec("List", junk), { property: "List", offset: junk, kind: "unread", reason: "the record fits neither list layout" });
+  assert.deepEqual(rec("List", long), { property: "List", offset: long, kind: "unread", reason: "the record reads as one string of 29 byte(s), not as a list" }, "a list pointer at a text record says what it found");
+  assert.deepEqual(rec("Text", words), { property: "Text", offset: words, kind: "unread", reason: "the record reads as a list of 4 item(s), not as text" });
+  assert.equal(rec("Picture", words).reason, "the record does not carry the picture header VB writes");
+  assert.equal(rec("ItemData", junk).reason, "the record's count of numbers runs past the end of the file");
+  assert.deepEqual(rec("List", built.bytes.length), { property: "List", offset: built.bytes.length, kind: "beyond", reason: `the offset ${hex(built.bytes.length)} is past the end of the file (${built.bytes.length} byte(s))` });
+  assert.equal(rec("List", -1).kind, "beyond");
+  assert.equal(rec("Whatever", pic).kind, "picture", "an unknown property is tried against every layout, the picture's marker first");
+  assert.equal(rec("Whatever", sized).kind, "list"); assert.equal(rec("Whatever", short).kind, "text");
+  assert.deepEqual(rec("Whatever", junk), { property: "Whatever", offset: junk, kind: "unread", reason: "the record fits no layout this reader knows" });
+  assert.equal(expectedKind("MouseIcon"), "picture"); assert.equal(expectedKind("ToolTipText"), "text"); assert.equal(expectedKind("Sorted"), "unknown");
+  assert.equal(decodeAnsi(Buffer.from([0x80, 0xe9])).length, 2);
+
+  // Applied to a form: only a select's List becomes options, and only when it holds something; everything else is described.
+  const src = (listAt, textAt, extra = "") => readFrm(["Begin VB.Form frmX", '   Caption = "X"', `   Icon = "frmX.frx":${hex(empty)}`,
+    "   Begin VB.ListBox lstA", `      List = "frmX.frx":${hex(listAt)}`, "      Left = 1", "      Top = 1", "      Width = 100", "      Height = 100", "   End",
+    "   Begin VB.TextBox txtA", `      Text = "frmX.frx":${hex(textAt)}`, "      Left = 1", "      Top = 300", "      Width = 100", "      Height = 100", "   End",
+    `   Begin VB.Label lblA`, `      Caption = $"other.frx":0000`, "      Left = 1", "      Top = 600", "      Width = 100", "      Height = 100", "   End",
+    extra, "End"].join("\n"));
+  const form = modelForm(src(sized, long));
+  const records = await applyFrx(form, (name) => (name === "frmX.frx" ? built.bytes : null));
+  assert.deepEqual(records.map((r) => [r.owner, r.property, r.kind, r.applied ?? false]), [["frmX", "Icon", "picture", false], ["lstA", "List", "list", true], ["txtA", "Text", "text", false], ["lblA", "Caption", "missing", false]]);
+  assert.deepEqual(form.controls.find((c) => c.name === "lstA").options, items);
+  assert.equal(describe(records[1]), `lstA.List at ${hex(sized)}, 4 item(s) read as its options`);
+  assert.equal(describe(records[0]), `frmX.Icon at ${hex(empty)}, an empty picture record`);
+  assert.equal(describe(records[2]), `txtA.Text at ${hex(long)}, 29 byte(s) of text, a value the port is not handed and this report does not print`);
+  assert.equal(describe(records[3]), "lblA.Caption at 0000, in other.frx, which is not in the tree");
+  const notes = [];
+  const { template, usesNgFor } = lowerForm(form, (n) => notes.push(n));
+  assert.match(template, /<select id="f-a" ng-model="a">\n\s*<option>North<\/option>\n\s*<option>S\u00e9ville<\/option>\n\s*<option><\/option>\n\s*<option>West<\/option>\n\s*<\/select>/);
+  assert.equal(usesNgFor, false);
+  assert.ok(notes.some((n) => /^a has 4 option\(s\) read from the binary \.frx companion/.test(n)));
+
+  const emptyList = frx([listRecord([]), listRecord(["", ""])]);
+  const none = modelForm(src(0, long));
+  const noneRecs = await applyFrx(none, () => emptyList.bytes);
+  assert.equal(noneRecs[1].applied, undefined); assert.equal(none.controls[0].options, null);
+  assert.equal(describe(noneRecs[1]), "lstA.List at 0000, a list of 0 item(s) not carried (the record holds no items)");
+  const blank = modelForm(src(emptyList.offsets[1], long));
+  assert.equal(describe((await applyFrx(blank, () => emptyList.bytes))[1]), `lstA.List at ${hex(emptyList.offsets[1])}, a list of 2 item(s) not carried (every item is empty)`);
+  const handed = [];
+  lowerForm(blank, (n) => handed.push(n));
+  assert.ok(handed.some((n) => /the list\(s\) a are filled from the binary \.frx companion and were not read from it; the port takes each as `<name>Options`/.test(n)), "a list that did not read is still handed to the port");
+  const unread = modelForm(src(junk, built.bytes.length + 10));
+  const unreadRecs = await applyFrx(unread, () => built.bytes);
+  assert.equal(describe(unreadRecs[1]), `lstA.List at ${hex(junk)}, not read: the record fits neither list layout`);
+  assert.match(describe(unreadRecs[2]), /not read: the offset .* is past the end of the file/);
+  const onDiv = modelForm(src(sized, long, ['   Begin Other.Grid grdA', `      List = "frmX.frx":${hex(words)}`, "      Left = 1", "      Top = 900", "      Width = 100", "      Height = 100", "   End"].join("\n")));
+  const onDivRecs = await applyFrx(onDiv, () => built.bytes);
+  assert.equal(describe(onDivRecs.find((r) => r.owner === "grdA")), `grdA.List at ${hex(words)}, a list of 4 item(s) not carried (on a control that is not a select)`);
+});
+
+test("a folder of .frm files becomes screens, a report and notes, reads the .frx beside each, and ports to React with every state", async (t) => {
   const run = await runPipeline({ src: FIXTURES, shots: join(FIXTURES, "no-shots") });
   t.after(run.cleanup);
   assert.equal(run.error, null);
   assert.deepEqual(run.ctx.screens.map((s) => s.selector).sort(), ["form-about", "form-login"], "the frm prefix is stripped from the selector");
   const login = run.ctx.screens.find((s) => s.selector === "form-login");
   assert.equal(login.readBy, "vb6"); assert.equal(login.file, "frmLogin.frm"); assert.equal(login.title, "Log in"); assert.equal(login.className, "FormLogin");
-  assert.deepEqual(login.inputs, ["regionOptions", "shown"], "the fields are the form's own state, not inputs"); assert.deepEqual(login.outputs, ["about", "cancel", "exit", "help", "ok", "open"]);
+  assert.deepEqual(login.inputs, ["shown"], "the fields are the form's own state, not inputs, and the region list is no longer handed in"); assert.deepEqual(login.outputs, ["about", "cancel", "exit", "help", "ok", "open"]);
   assert.equal(login.usesTwoWay, true); assert.deepEqual(login.rxjs, []); assert.match(login.templateOrigin, /form frmLogin in frmLogin\.frm/);
   const about = run.ctx.screens.find((s) => s.selector === "form-about");
   assert.equal(about.title, "About Ledger"); assert.deepEqual(about.outputs, ["cancel"]);
 
   const jsx = await readFile(join(run.out, "src/features/FormLogin/FormLogin.jsx"), "utf8");
-  assert.match(jsx, /export default function FormLogin\(\{ regionOptions, shown, onAbout, onCancel, onExit, onHelp, onOk, onOpen, loading, error, onRetry \}\)/);
+  assert.match(jsx, /export default function FormLogin\(\{ shown, onAbout, onCancel, onExit, onHelp, onOk, onOpen, loading, error, onRetry \}\)/);
+  assert.match(jsx, /<option>\s*North\s*<\/option>\s*<option>\s*South\s*<\/option>\s*<option>\s*East\s*<\/option>\s*<option>\s*West\s*<\/option>/, "the options read from the .frx reach the port");
+  assert.doesNotMatch(jsx, /Enter notes here/, "the long text is a value and is never printed");
   assert.match(jsx, /const \[userName, setUserName\] = useState\(""\);/); assert.match(jsx, /const \[password, setPassword\] = useState\(""\);/);
   assert.match(jsx, /const \[field0, setField0\] = useState\(""\);/, "a control array's elements are fields");
   assert.match(jsx, /onSubmit=\{\(event\) => \{ event\.preventDefault\(\); onOk\(\{ userName: userName/, "submit prevents the navigation and hands the fields back");
@@ -181,7 +271,8 @@ test("a folder of .frm files becomes screens, a report and notes, names the .frx
 
   const report = await readFile(join(run.out, "FORMS_VB6.md"), "utf8");
   assert.match(report, /^# Forms \(Visual Basic 6\)/);
-  assert.match(report, /## frmLogin\.frm\n\nThe binary companion frmLogin\.frx holds 4 propert\(ies\) the text points into it; it is named and not read\./);
+  assert.match(report, /## frmLogin\.frm\n\nThe binary companion frmLogin\.frx was read for the 4 propert\(ies\) the text points into it: cboRegion\.ItemData at 0000, 4 number\(s\) paired with the list's items, not carried; cboRegion\.List at 0012, 4 item\(s\) read as its options; txtNotes\.Text at 002E, 17 byte\(s\) of text, a value the port is not handed and this report does not print; imgLogo\.Picture at 0043, a bitmap of 58 byte\(s\), an image resource not carried\./);
+  assert.doesNotMatch(report, /Enter notes here|North/, "the text is never printed, and the options belong to the component, not the report");
   assert.match(report, /### frmLogin \(VB\.Form\): Log in\n\n6000 × 3900 twips, 19 control\(s\), form handlers: Load\./);
   assert.match(report, /\| txtPassword \| VB\.TextBox \| input \|  \| 1560, 450 \| 2500 × 285 \| 1 \|  \|/, "the rectangle in twips and the tab index");
   assert.match(report, /\| fraRole\.optClerk \| VB\.OptionButton \| radio \| Clerk \| 240, 300 \| 1500 × 255 \| 1 \|  \|/, "a nested control is named through its container");
@@ -194,10 +285,13 @@ test("a folder of .frm files becomes screens, a report and notes, names the .frx
   assert.match(report, /### frmAbout \(VB\.Form\): About Ledger/);
 
   const notes = run.ctx.report.unverified.join("\n");
-  assert.match(notes, /frmLogin\.frm: the binary companion frmLogin\.frx holds 4 propert\(ies\) the text form points into it \(list items, pictures, long text\); it is named and not read\./);
+  assert.match(notes, /frmLogin\.frm: txtNotes\.Text is 17 byte\(s\) of text in frmLogin\.frx; it is a value, noted and never printed\./);
+  assert.match(notes, /frmLogin\.frm: 1 picture\(s\) in frmLogin\.frx \(imgLogo\.Picture: a bitmap\) are image resources not carried into the port\./);
+  assert.match(notes, /frmLogin\.frm: ItemData in frmLogin\.frx pairs a number with each item of cboRegion; the numbers are not carried\./);
   assert.match(notes, /frmAbout\.frm: 1 propert\(ies\) point into frmAbout\.frx, which is not in the tree/);
   assert.match(notes, /frmLogin\.frm: 3 MsgBox message\(s\) the code shows are listed in FORMS_VB6\.md/);
-  assert.match(notes, /frmLogin\.frm, form frmLogin: the list\(s\) region are filled from the binary \.frx companion/);
+  assert.match(notes, /frmLogin\.frm, form frmLogin: region has 4 option\(s\) read from the binary \.frx companion/);
+  assert.doesNotMatch(notes, /regionOptions|named and not read|Enter notes here/);
   assert.match(await readFile(join(run.out, "READERS.md"), "utf8"), /frmLogin\.frm/, "the census counts the form file as read");
   assert.ok(!run.ctx.report.unverified.some((n) => /no reader claimed/.test(n) && /\.frm/.test(n)), "no form file is an unread markup file");
 });

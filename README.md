@@ -7,13 +7,13 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 189 plugins, and the literal output of
+lines of core, no runtime dependencies, 192 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 1001 passing, 1002 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
+![node --test running the portamp suite: 1027 passing, 1028 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1001
-tests pass across 136 test files with `node --test` and no framework, and
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1027
+tests pass across 140 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing it does not already
 know about: the one alert it raises on `input-fetch` is the site copy writing
 network data to a folder, which is what copying a site is, and the write
@@ -37,9 +37,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 189 plugin(s)
+node src/cli.js plugins      # 192 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 1002 tests, node --test, no framework
+npm test                     # 1028 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -71,9 +71,9 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 45,711 lines of JavaScript in src and plugins |
-| Tests | 15,922 lines, 1002 cases across 136 files |
-| Source on disk | src 27 KB, plugins 2.1 MB |
+| Every line of the tool | 48,037 lines of JavaScript in src and plugins |
+| Tests | 16,783 lines, 1028 cases across 140 files |
+| Source on disk | src 27 KB, plugins 2.3 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
@@ -82,7 +82,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and forty two features, and every
+The core grew from 527 lines to 718 across six hundred and forty seven features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -123,9 +123,9 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The 189 it ships with
+## The 192 it ships with
 
-![The plugin rack: 189 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 192 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## Yes, there is a transformer in it
 
@@ -446,20 +446,55 @@ dialog does: `input-winforms` reads the `InitializeComponent` body of a
 `*.Designer.cs` or `*.Designer.vb` with a scanner that knows both languages'
 strings; `input-xaml` reads a WPF, UWP, Xamarin.Forms or MAUI window, page or
 control as the XML it is, bindings included; `input-vb6` reads a `.frm`'s
-blocks, the handlers its code wires and the messages `MsgBox` shows, with the
-binary `.frx` named and never read; `input-delphi` reads a `.dfm`, `.fmx` or
+blocks, the handlers its code wires and the messages `MsgBox` shows, and reads
+the binary `.frx` companion for a list's options and a long text's existence,
+never its bytes; `input-delphi` reads a `.dfm`, `.fmx` or
 `.lfm`'s object blocks with their string lists and collections. Each writes
 its own report (`WINFORMS.md`, `LAYOUT.md`, `FORMS_VB6.md`,
 `FORMS_DELPHI.md`), names every handler as behaviour to reimplement rather than
-reading code, and prints no value but a caption. A zip dropped on the console
-is unpacked with Node's own zlib, every entry held to the intake's path rule.
+reading code, and prints no value but a caption. `input-winforms` reads the
+`.resx` beside a localized form, so a caption the designer left to
+`ApplyResources` is a caption and not a control's name. `input-rc` reads the
+Windows resource script the executable was compiled from, ids resolved through
+`resource.h`, and the suite proves the script and the binary lower to byte
+identical templates. A zip or an Electron `app.asar` dropped on the console is
+unpacked with Node alone, every entry held to the intake's path rule;
+`portamp unpack app.asar` does the same from the command line.
 
-A PNG screenshot is measured too, not just catalogued: `input-shots`
-decodes it with Node's own inflate, counts the colours its pixels are made
+A PNG or JPEG screenshot is measured too, not just catalogued: `input-shots`
+decodes both with no dependency, counts the colours its pixels are made
 of into `PALETTE.md`, and `dsp-tokens` takes exactly one thing from them,
 the page background, with the screenshot named in the provenance. The ink
 is deliberately not taken, because a header bar and body text are both
 dark and a pixel share cannot tell them apart.
+
+## A picture of anything becomes a screen
+
+Take a picture of a screen, a sketch, a printed form or a whiteboard and
+`--photo true` ports it; on the console the photograph key opens a phone's
+camera straight into the intake, and pictures dropped alone are read as
+screens without a press. `input-photo` cuts the pixels into the regions a
+screen is made of by shape alone, with no model and no dependency: each pixel
+is foreground where it differs from the light around it, so a photograph's
+uneven lighting is background and not a shape; small marks on one row are a
+line of writing, the light left inside a filled block is the writing on it,
+a small square outline is a check box, an outline the height of a line or two
+is a field, a filled block with one line on it is a button, an outline holding
+other regions is a card. The regions lower onto the same dialect every reader
+targets, each kept where the picture had it as a share of the page, so React,
+Vue and Svelte lay the screen out as photographed: writing above a field is
+its label, writing inside it its placeholder, the writing on a button its
+caption and the button an event.
+
+No words are read. There is no OCR here, so every line of writing is an input
+the component takes, named by its role (`title1`, `label1`, `caption2`) and
+listed in `PHOTO.md` with where it sits and how many marks long it is, for a
+person to type in what it said; a test asserts the template holds not one word
+between its tags. Which box is a field and which a button is a reading from
+shape, and the notes say so with the counts. The JPEG decoder underneath reads
+baseline and extended sequential files with their restart intervals and
+applies the camera's Exif orientation, and names a progressive, arithmetic
+coded or CMYK file as one it does not decode rather than approximating it.
 
 ## A site you can reach becomes a folder you own
 
@@ -478,7 +513,7 @@ lacked. The console's intake takes the same URL through the same function.
 
 ```bash
 npm install -g portamp     # once the v* tag publishes; docs/PUBLISHING.md says how
-portamp plugins            # 189 plugin(s)
+portamp plugins            # 192 plugin(s)
 portamp ui                 # the console, with its intake
 ```
 
@@ -932,10 +967,11 @@ The constraints are the interesting part:
   build step to a tool whose selling point is having no build step would be
   funny for about a day.
 - **Read only, with an intake.** It displays a completed run and may run the
-  tool again. What you drop on it, an `.exe`, a screenshot, a whole folder of
-  old pages, lands in the console's own intake beside the run, never in the
-  port, and the next run reads exactly that with the flags you pressed
-  (transformer, train, reverse, sort, vue, svelte). The server hands the bytes
+  tool again. What you drop on it, an `.exe`, a photo, a screenshot, a whole
+  folder of old pages, lands in the console's own intake beside the run, never
+  in the port, and the next run reads exactly that with the flags you pressed
+  (transformer, train, reverse, sort, vue, svelte, photo); the photograph key
+  opens a phone's camera into the same intake. The server hands the bytes
   to the intake the command owns and writes nothing itself; a test asserts the
   server contains no write call, and another that nothing which weakens a
   policy gate is a flag the page can set.
@@ -1081,8 +1117,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and forty two features in
-one hundred and fifty phases, forty four shipped, five hundred and ninety five new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and forty seven features in
+one hundred and fifty one phases, forty four shipped, six hundred new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

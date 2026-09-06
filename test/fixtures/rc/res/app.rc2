@@ -1,0 +1,23 @@
+//
+// APP.RC2 - resources Microsoft Visual C++ does not edit directly
+//
+
+#ifdef APSTUDIO_INVOKED
+#error this file is not editable by Microsoft Visual C++
+#endif //APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Add manually edited resources here...
+
+IDR_EDIT MENUEX
+BEGIN
+    POPUP "Edit"
+    BEGIN
+        MENUITEM "Cut",                         ID_EDIT_CUT
+        MENUITEM "Paste",                       ID_EDIT_PASTE, MFT_STRING, MFS_CHECKED
+        MENUITEM "",                            0, MFT_SEPARATOR
+    END
+END
+
+/////////////////////////////////////////////////////////////////////////////

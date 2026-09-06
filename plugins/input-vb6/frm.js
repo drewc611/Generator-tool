@@ -16,7 +16,6 @@ import { splitCommas } from "../dsp-ir/text.js";
  * the messages a user saw. No other literal is read.
  */
 
-/** One property value: a string with its doubled quotes undone, a number with its `'True` comment dropped, a .frx pointer, or the raw token. */
 /** A line without its comment: an apostrophe or Rem outside every string ends it. */
 function uncomment(line) {
   let inString = false;
@@ -28,9 +27,15 @@ function uncomment(line) {
   return line;
 }
 
+/**
+ * One property value: a string with its doubled quotes undone, a number with
+ * its `'True` comment dropped, a .frx pointer as the file and offset it names
+ * (a `$` before it marks a string stored there), or the raw token.
+ */
 export function parseValue(raw) {
   const s = String(raw).trim();
-  if (/^\$?"[^"]*\.frx":[0-9A-Fa-f]+/.test(s)) return { frx: true };
+  const frx = /^(\$?)"([^"]*\.frx)":([0-9A-Fa-f]+)/i.exec(s);
+  if (frx) return { frx: true, file: frx[2], offset: parseInt(frx[3], 16), dollar: frx[1] === "$" };
   const str = /^"((?:[^"]|"")*)"/.exec(s);
   if (str) return { string: str[1].replace(/""/g, '"') };
   const num = /^-?\d+(?:\.\d+)?(?![\w&])/.exec(s);
@@ -194,12 +199,12 @@ export function modelForm(read) {
       optionsFrom: kind === "select" ? (p.List?.frx ? "frx" : "runtime") : null,
       submit: on(p.Default), cancel: on(p.Cancel), isDefault: on(p.Default), labelFor: null,
       initialText: (kind === "input" || kind === "textarea") && ((str(p.Text) ?? "") !== "" || Boolean(p.Text?.frx)),
-      events: eventsOf(node.name), children: [],
+      events: eventsOf(node.name), children: [], frx: pointersOf(node),
     };
     for (const child of node.children) {
       if (child.className === "VB.Menu") continue;
       const k = kindOf(child);
-      if (k === "nonvisual") { nonvisual.push({ name: child.name, className: child.className, note: nonvisualNote(child.className), events: eventsOf(child.name) }); continue; }
+      if (k === "nonvisual") { nonvisual.push({ name: child.name, className: child.className, note: nonvisualNote(child.className), events: eventsOf(child.name), frx: pointersOf(child) }); continue; }
       c.children.push(toControl(child));
     }
     return c;
@@ -229,12 +234,15 @@ export function modelForm(read) {
     size: { width: num(p.ClientWidth) ?? num(p.Width) ?? 0, height: num(p.ClientHeight) ?? num(p.Height) ?? 0 },
     units: { row: 180, above: 480, col: 120 },
     controls: root.children, menus, nonvisual, events: formEvents, messages: read.messages, orphans,
-    frxRefs: countFrx(form),
+    frx: root.frx, frxRefs: countFrx(form),
   };
 }
 
+/** The properties of one block that point into a .frx, as pointers the companion reader resolves. */
+const pointersOf = (node) => Object.entries(node.props).filter(([, v]) => v && typeof v === "object" && v.frx).map(([property, v]) => ({ property, file: v.file, offset: v.offset, dollar: v.dollar }));
+
 function countFrx(node) {
-  let n = Object.values(node.props).filter((v) => v && typeof v === "object" && v.frx).length;
+  let n = pointersOf(node).length;
   for (const c of node.children) n += countFrx(c);
   return n;
 }

@@ -1,5 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, extname, basename } from "node:path";
+import { decodeJpeg } from "./jpeg.js";
 import { decodePng, palette } from "./png.js";
 
 const IMG = new Set([".png", ".jpg", ".jpeg", ".webp"]);
@@ -49,16 +50,17 @@ export default {
           bytes: bytes.length,
           state: STATES.find((st) => name.toLowerCase().includes(st)) || "default",
         };
-        // A PNG's pixels are counted, so its colours are evidence rather than a guess; a JPEG or WebP is
-        // catalogued only, because decoding those needs a dependency this reader does not take.
-        if (extname(e).toLowerCase() === ".png") {
-          const image = decodePng(bytes);
+        // A PNG's or a JPEG's pixels are counted, so its colours are evidence rather than a guess; a WebP is
+        // catalogued only, because decoding one needs a dependency this reader does not take.
+        const ext = extname(e).toLowerCase();
+        if (ext !== ".webp") {
+          const image = ext === ".png" ? decodePng(bytes) : decodeJpeg(bytes);
           if (image.error) undecoded.push(`${e} (${image.error})`);
           else { shot.width = image.width; shot.height = image.height; shot.palette = palette(image); measured += 1; }
         }
         ctx.sources.screenshots.push(shot);
       }
-      if (measured) log.info(`${measured} PNG screenshot(s) measured: size and the colours their pixels are made of`);
+      if (measured) log.info(`${measured} screenshot(s) measured: size and the colours their pixels are made of`);
       // One note for the run, not one per file: the files are named in it.
       if (undecoded.length) ctx.unverified(`${undecoded.length} screenshot(s) could not be decoded and are catalogued, not measured: ${undecoded.join("; ")}.`);
       const observed = await readFile(join(ctx.config.shots, "observed.json"), "utf8").catch(() => null);

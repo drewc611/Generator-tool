@@ -6,6 +6,7 @@ import test from "node:test";
 import { buildIr } from "../plugins/dsp-ir/ir.js";
 import { caption, formsReport, kindOf, lowerForm, stem } from "../plugins/input-winforms/index.js";
 import { designerBody, readDesigner, readNumber, readString } from "../plugins/input-winforms/designer.js";
+import { applyResx, readResx } from "../plugins/input-winforms/resx.js";
 import { translate } from "../plugins/output-react/template.js";
 import { ROOT, runPipeline } from "./helpers.js";
 
@@ -18,7 +19,10 @@ import { ROOT, runPipeline } from "./helpers.js";
  * input-exe makes for a native dialog, so a .NET form and a Win32 dialog with
  * the same controls come out as the same React. The fixtures are real designer
  * files under test/fixtures/winforms; the two plain .cs files beside them are
- * the code behind and a helper, and neither is a form.
+ * the code behind and a helper, and neither is a form. Localized.Designer.cs
+ * is a form the designer marked Localizable, so every caption, location and
+ * size sits in Localized.resx beside it and Localized.de.resx is the German
+ * half the port must never read for it.
  */
 
 const FIXTURES = join(ROOT, "test/fixtures/winforms");
@@ -151,7 +155,7 @@ test("a folder of designer files becomes screens, WINFORMS.md and notes, and por
   const run = await runPipeline({ src: FIXTURES, shots: join(FIXTURES, "no-shots") });
   t.after(run.cleanup);
   assert.equal(run.error, null);
-  assert.deepEqual(run.ctx.screens.map((s) => s.selector).sort(), ["form-login-form", "form-orders-form"], "the code behind and the helper class are not forms");
+  assert.deepEqual(run.ctx.screens.map((s) => s.selector).sort(), ["form-localized", "form-login-form", "form-orders-form"], "the code behind and the helper class are not forms");
   const login = run.ctx.screens.find((s) => s.selector === "form-login-form");
   assert.equal(login.className, "FormLoginForm"); assert.equal(login.readBy, "winforms"); assert.equal(login.file, "LoginForm.Designer.cs"); assert.equal(login.title, "Log in");
   assert.deepEqual(login.inputs, ["shown"], "the fields are the form's own state; only the shown states are handed in");
@@ -183,9 +187,21 @@ test("a folder of designer files becomes screens, WINFORMS.md and notes, and por
   assert.match(notes, /OrdersForm\.Designer\.vb, form OrdersForm: the list\(s\) warehouse declare no items/);
   assert.match(notes, /OrdersForm\.Designer\.vb, form OrdersForm: a VB designer file wires no handlers/);
   const readers = await readFile(join(run.out, "READERS.md"), "utf8");
-  assert.match(readers, /- \*\*winforms\*\*: 2 file\(s\)/); assert.match(readers, /`LoginForm\.Designer\.cs` by winforms/); assert.match(readers, /`OrdersForm\.Designer\.vb` by winforms/);
+  assert.match(readers, /- \*\*winforms\*\*: 3 file\(s\)/); assert.match(readers, /`LoginForm\.Designer\.cs` by winforms/); assert.match(readers, /`OrdersForm\.Designer\.vb` by winforms/);
   assert.ok(!run.ctx.report.unverified.some((n) => /no reader claimed/.test(n)), "no designer file is an unread markup file");
   assert.equal(run.ctx.provenance["WINFORMS.md"].plugin, "input-winforms");
+  // The localized form went through the same run: the .resx beside it was read from disk, the German one only named.
+  const localized = run.ctx.screens.find((s) => s.selector === "form-localized");
+  assert.equal(localized.title, "Customer & Co"); assert.deepEqual(localized.outputs, ["cancel", "ok"]); assert.deepEqual(localized.inputs, ["shown"]);
+  const ljsx = await readFile(join(run.out, "src/features/FormLocalized/FormLocalized.jsx"), "utf8");
+  assert.match(ljsx, /accessKey="s"/); assert.match(ljsx, /<option>\n\s*Süd\n\s*<\/option>/, "the options the .resx declared reach the port as options");
+  assert.match(ljsx, /htmlFor="f-name"/); assert.match(ljsx, /Send notifications/);
+  assert.match(forms, /## Localized \(Localized\.Designer\.cs\)\n\ntitle "Customer & Co" \(from Localized\.resx\), accepts on btnSave, cancels on btnCancel\. 12 control\(s\), 66 statement\(s\) read, C#\./);
+  assert.match(forms, /Culture variant\(s\) named and not read: Localized\.de\.resx\./);
+  assert.match(notes, /Localized\.Designer\.cs, form Localized: the text of 6 control\(s\) \(lblName, lblRegion, chkNotify, lblHint, btnSave, btnCancel\) came from Localized\.resx beside the designer/);
+  assert.match(notes, /OrdersForm\.Designer\.vb, form OrdersForm: the text of 1 control\(s\) \(lnkTerms\) lives in the \.resx \(resources\.ApplyResources or GetString\); the control names stand in/, "a localized form with no .resx beside it keeps exactly the note it had");
+  for (const german of [/Speichern/, /Abbrechen/, /Kunde\b/]) { assert.doesNotMatch(forms, german); assert.doesNotMatch(notes, german); assert.doesNotMatch(ljsx, german); }
+  assert.doesNotMatch(forms + notes + ljsx, /logo\.png|AAEAAAD|Segoe UI|999, 999/, "a file path, a base64 blob, a font and an overridden location are never printed");
 });
 
 /**
@@ -264,4 +280,137 @@ test("the review pass: keywords, literal ampersands, mnemonics off, a hidden lab
   assert.match(report, /\| lblPlain \| Label \| Salt & Pepper \|/);
   const piped = readDesigner(cs('this.lbl = new System.Windows.Forms.Label();\nthis.lbl.Text = "a | b";\nthis.Controls.Add(this.lbl);', "Pipes"), "Pipes.Designer.cs");
   assert.match(formsReport([{ rel: "Pipes.Designer.cs", read: piped }]), /\| lbl \| Label \| a \\\| b \|/, "a pipe in a caption is escaped in the table");
+});
+
+/**
+ * The localized half. When a form is Localizable the designer writes every
+ * caption, location and size into `<Form>.resx` and loads them back with
+ * `resources.ApplyResources`; the reader takes the neutral .resx beside the
+ * designer as the designer's other half, applies exactly what was asked for
+ * on the controls that asked, names what was present and not asked for, and
+ * names the culture variants without opening one.
+ */
+test("readResx reads a .resx structurally: entries by kind, entities decoded, metadata rows and the header comment's examples set aside", async () => {
+  const resx = readResx(await readFile(join(FIXTURES, "Localized.resx"), "utf8"));
+  const names = resx.entries.map((e) => e.name);
+  assert.equal(resx.entries.length, 44);
+  assert.ok(!names.some((n) => n.startsWith(">>") || n.startsWith("&gt;")), "the >> rows are metadata in either spelling");
+  assert.ok(!names.some((n) => /^(Name1|Color1|Bitmap1|Icon1)$/.test(n)), "the Visual Studio header comment's example entries are a comment, not entries");
+  assert.ok(!names.some((n) => /^(resmimetype|version|reader|writer)$/.test(n)), "resheader rows are not data");
+  const by = new Map(resx.entries.map((e) => [e.name, e]));
+  assert.equal(by.get("lblName.Text").value, "&Name:"); assert.equal(by.get("lblName.Text").kind, "text"); assert.equal(by.get("lblName.Text").type, null);
+  assert.equal(by.get("cboRegion.Items1").value, "Süd", "a numeric entity decodes"); assert.equal(by.get("cboRegion.Items2").value, "Ost & West");
+  assert.equal(by.get("lblHint.Text").value, "Hint: <keep> the \"quoted\" 'part'", "the five named entities decode");
+  assert.equal(by.get("lblName.Location").value, "12, 15"); assert.equal(by.get("lblName.Location").type, "System.Drawing.Point, System.Drawing");
+  assert.equal(by.get("lblHint.Visible").value, "False");
+  assert.deepEqual([by.get("pbLogo.Image").kind, by.get("pbLogo.Image").value], ["file", null], "a ResXFileRef is named, its path never kept");
+  assert.deepEqual([by.get("imageList1.ImageStream").kind, by.get("imageList1.ImageStream").value], ["binary", null], "a base64 object is named, never decoded");
+  assert.deepEqual(readResx("<root><data name=\"a.Text\"><value>x</value></data></root>").entries, [{ name: "a.Text", type: null, kind: "text", value: "x" }]);
+  assert.deepEqual(readResx("").entries, []); assert.deepEqual(readResx("<data name=\"loose.Text\"><value>x</value></data>").entries, [], "an entry outside <root> is not a resource");
+});
+
+test("the designer half of a localized form: ApplyResources on every control and $this, Items filled from GetString are items in the .resx and not unread", async () => {
+  const r = await read("Localized.Designer.cs");
+  assert.equal(r.statements, 66); assert.equal(r.controls.size, 12); assert.deepEqual(r.problems, []);
+  assert.equal(r.form.localized, true); assert.equal(r.form.text, null);
+  for (const n of ["lblName", "txtName", "lblRegion", "cboRegion", "chkNotify", "lblHint", "pbLogo", "btnSave", "btnCancel"]) assert.equal(r.controls.get(n).localized, true, `${n} is passed to ApplyResources`);
+  assert.equal(r.controls.get("lblStatic").localized, false); assert.equal(r.controls.get("lblStatic").text, "Static");
+  const cbo = r.controls.get("cboRegion");
+  assert.equal(cbo.itemsResource, true); assert.deepEqual(cbo.items, []); assert.deepEqual(cbo.unreadProps, [], "resources.GetString in Items.AddRange is a resource, not a literal the scanner failed on");
+  assert.deepEqual(r.controls.get("chkNotify").inline.filter((p) => p === "Location"), ["Location"], "an inline Location after ApplyResources is remembered");
+  assert.ok(!r.controls.get("btnSave").inline.includes("Location") && !r.controls.get("btnSave").inline.includes("Text"));
+  assert.equal(r.controls.get("imageList1").hasImage, false, "ImageStream is not one of the image properties; the component is named as a component");
+  // Read alone, with no .resx applied, the form is exactly what it was before this half existed: names stand in and the note says so.
+  const notes = [];
+  const { template, title } = lowerForm(r, (n) => notes.push(n));
+  assert.equal(title, "");
+  assert.match(template, /<button type="submit">btnSave<\/button>/); assert.match(template, /<p>lblName<\/p>/, "a label with no caption and no field it names is a paragraph of its name");
+  assert.match(template, /<option ng-repeat="option in region(Options|Field)/, "items in a .resx nobody read are a list the port is handed");
+  assert.ok(notes.some((n) => /^the text of 9 control\(s\) \(lblName, txtName, lblRegion, cboRegion, chkNotify, lblHint, pbLogo, btnSave, btnCancel\) lives in the \.resx \(resources\.ApplyResources or GetString\); the control names stand in and the port must take each caption from the resource file\.$/.test(n)));
+  assert.ok(notes.some((n) => /^the form's own title lives in the \.resx; the port must take it from there\.$/.test(n)));
+});
+
+test("the neutral .resx applied: captions, mnemonics, labels, options, a hidden and a disabled control and the title come from it; inline wins; the rest is named", async () => {
+  const r = await read("Localized.Designer.cs");
+  const summary = applyResx(r, readResx(await readFile(join(FIXTURES, "Localized.resx"), "utf8")), { file: "Localized.resx", cultures: ["Localized.de.resx"] });
+  assert.equal(summary, r.resx);
+  assert.deepEqual(summary.captions, ["lblName", "lblRegion", "chkNotify", "lblHint", "btnSave", "btnCancel"]); assert.equal(summary.title, true); assert.equal(summary.applied, 35);
+  assert.deepEqual(summary.unapplied, ["lblStatic.Text", "lblOld.Text"], "an entry for a control the designer never passed to ApplyResources, or for no control, is present and not applied");
+  assert.deepEqual(summary.files, ["pbLogo.Image", "imageList1.ImageStream"]);
+  assert.deepEqual([...summary.left], [["lblName", ["AutoSize"]], ["chkNotify", ["Location"]], ["btnSave", ["Font"]], ["$this", ["AutoScaleDimensions", "ClientSize"]]], "names only, never a value");
+  assert.equal(r.form.text, "Customer & Co"); assert.equal(r.form.resxText, true);
+  assert.equal(r.controls.get("btnSave").text, "&Save"); assert.deepEqual(r.controls.get("btnSave").location, [60, 130]); assert.deepEqual(r.controls.get("btnSave").size, [75, 23]); assert.equal(r.controls.get("btnSave").tabIndex, 6);
+  assert.equal(r.controls.get("btnCancel").enabled, false); assert.equal(r.controls.get("lblHint").visible, false);
+  assert.deepEqual(r.controls.get("chkNotify").location, [12, 70], "the designer set Location inline after ApplyResources, so the .resx does not override it");
+  assert.deepEqual(r.controls.get("cboRegion").items, ["Nord", "Süd", "Ost & West"]); assert.equal(r.controls.get("cboRegion").resxItems, true);
+  assert.equal(r.controls.get("lblStatic").text, "Static", "a control with no ApplyResources keeps its inline text whatever the .resx says");
+  assert.equal(r.controls.get("txtName").text, null, "no Text entry, no text: a text box's empty value is not invented");
+  assert.equal(r.controls.get("pbLogo").hasImage, false, "the file reference is named, not applied");
+
+  const notes = [];
+  const { template, outputs, fields, title, usesNgFor, usesNgIf } = lowerForm(r, (n) => notes.push(n));
+  assert.equal(title, "Customer & Co"); assert.deepEqual(outputs, ["cancel", "ok"]); assert.deepEqual(fields, ["name", "region", "sendNotifications"]);
+  assert.equal(usesNgFor, false, "options from the .resx are options, not a list the port is handed"); assert.equal(usesNgIf, true);
+  assert.match(template, /^<form class="winform" ng-submit="onOk\(\{ name: name, region: region, sendNotifications: sendNotifications \}\)">\n  <h2>Customer &amp; Co<\/h2>\n  <label for="f-name">Name<\/label>\n  <input id="f-name" type="text" ng-model="name">/, "the .resx caption labels the field beside it exactly as an inline one would, mnemonic and colon gone");
+  assert.match(template, /<label for="f-region">Region<\/label>\n\s*<select id="f-region" ng-model="region">\n\s*<option>Nord<\/option>\n\s*<option>Süd<\/option>\n\s*<option>Ost &amp; West<\/option>\n\s*<\/select>/, "Items, Items1, Items2 are the options in index order");
+  assert.match(template, /<label><input type="checkbox" ng-model="sendNotifications" accesskey="n"> Send notifications<\/label>/, "the mnemonic in a .resx caption is the access key");
+  assert.match(template, /<p ng-show="shown\.hintKeepTheQuotedPartShown">Hint: &lt;keep&gt; the &quot;quoted&quot; 'part'<\/p>\n\s*<p>Static<\/p>/, "Visible False in the .resx hides the control by a named state; the entities decode once");
+  assert.match(template, /<button type="submit" accesskey="s">Save<\/button>\n\s*<button type="button" ng-click="onCancel\(\)" disabled>Cancel<\/button>\n<\/form>$/, "Enabled False in the .resx disables the control");
+  assert.doesNotMatch(template, /btnSave|lblName|Speichern|Kunde/, "no name stands in and no German is read");
+  assert.ok(notes.some((n) => n === "the text of 6 control(s) (lblName, lblRegion, chkNotify, lblHint, btnSave, btnCancel) came from Localized.resx beside the designer (resources.ApplyResources); culture variant(s) Localized.de.resx sit beside it and were not read, because the language the port speaks is a decision about the product."), notes.join("\n"));
+  assert.ok(notes.some((n) => n === "the form's own title came from Localized.resx."));
+  assert.ok(notes.some((n) => n === "2 entries in Localized.resx (lblStatic.Text, lblOld.Text) name no control the designer passed to ApplyResources and are not applied; WINFORMS.md lists them."));
+  assert.ok(notes.some((n) => n === "2 resource(s) in Localized.resx (pbLogo.Image, imageList1.ImageStream) are a file or a serialized object, named and not decoded."));
+  assert.ok(notes.some((n) => /1 control\(s\) start hidden \(Hint:/.test(n))); assert.ok(notes.some((n) => /1 control\(s\) start disabled \(Cancel\)/.test(n)));
+  assert.ok(!notes.some((n) => /lives in the \.resx/.test(n)), "with the .resx read, nothing is left living in it unread");
+  assert.ok(!notes.some((n) => /could not be read exactly/.test(n)));
+  assert.deepEqual(buildIr(template).collections, []);
+  const jsx = translate(template).jsx;
+  assert.match(jsx, /accessKey="s"/); assert.match(jsx, /Customer & Co/);
+
+  const report = formsReport([{ rel: "Localized.Designer.cs", read: r }]);
+  assert.match(report, /title "Customer & Co" \(from Localized\.resx\), accepts on btnSave, cancels on btnCancel\. 12 control\(s\), 66 statement\(s\) read, C#\./);
+  assert.match(report, /\nLocalized: the caption\(s\) of lblName, lblRegion, chkNotify, lblHint, btnSave, btnCancel and the title came from Localized\.resx, 35 entries applied\. Culture variant\(s\) named and not read: Localized\.de\.resx\. Present and not applied \(no ApplyResources on that control\): lblStatic\.Text, lblOld\.Text\. File or serialized resource\(s\), named and not decoded: pbLogo\.Image, imageList1\.ImageStream\. Left in the file, by property name: lblName \(AutoSize\); chkNotify \(Location\); btnSave \(Font\); \$this \(AutoScaleDimensions, ClientSize\)\.\n/);
+  assert.match(report, /\| lblName \| Label \| Name \(from \.resx\) \| 12, 15 \| 38 × 13 \| 0 \|  \|  \|/, "a caption from the .resx says so; its location, size and tab index came with it");
+  assert.match(report, /\| txtName \| TextBox \|  \| 60, 12 \| 200 × 20 \| 1 \|  \|  \|/, "a text box the .resx gives no Text has none, and is not said to have one in the file");
+  assert.match(report, /\| cboRegion \| ComboBox \| \(3 item\(s\) from \.resx\) \| 60, 40 \| 200 × 21 \| 3 \|  \|  \|/);
+  assert.match(report, /\| chkNotify \| CheckBox \| Send notifications \(from \.resx\) \| 12, 70 \| 124 × 17 \| 4 \|  \|  \|/, "the inline location, not the .resx one");
+  assert.match(report, /\| lblStatic \| Label \| Static \| 12, 115 \|/); assert.match(report, /\| btnCancel \| Button \| Cancel \(from \.resx\) \| 141, 130 \| 75 × 23 \| 7 \|/);
+  assert.doesNotMatch(report, /999, 999|Segoe|logo\.png|AAEAAAD|Speichern|Kunde|Not asked for|old label/, "no value other than a caption or an item is printed, and the German file is not read");
+});
+
+test("the .resx corner cases: a control asked for with no Text entry, a form with no $this.Text, unreadable values, a HeaderText, and no .resx at all", () => {
+  const body = cs([
+    ctl("btnGo", "Button"), 'resources.ApplyResources(this.btnGo, "btnGo");',
+    ctl("lblA", "Label"), 'resources.ApplyResources(this.lblA, "lblA");',
+    ctl("grid", "DataGridView"), ctl("colName", "DataGridViewTextBoxColumn"), 'resources.ApplyResources(this.colName, "colName");',
+    "this.grid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { this.colName });",
+    'resources.ApplyResources(this, "$this");',
+    "this.Controls.Add(this.btnGo); this.Controls.Add(this.lblA); this.Controls.Add(this.grid);",
+  ].join("\n"), "Corner");
+  const resx = readResx([
+    '<root><data name="lblA.Text"><value>Alpha</value></data><data name="lblA.Location"><value>not a point</value></data>',
+    '<data name="btnGo.Visible"><value>maybe</value></data><data name="colName.HeaderText"><value>Name</value></data>',
+    '<data name="$this.ClientSize"><value>1, 1</value></data></root>',
+  ].join(""));
+  const r = readDesigner(body, "Corner.Designer.cs");
+  applyResx(r, resx, { file: "Corner.resx" });
+  assert.equal(r.form.text, null); assert.equal(r.form.resxText, undefined);
+  assert.deepEqual(r.controls.get("lblA").unreadProps, ["Location"]); assert.deepEqual(r.controls.get("btnGo").unreadProps, ["Visible"]);
+  assert.equal(r.controls.get("colName").headerText, "Name");
+  const notes = [];
+  const { template, title } = lowerForm(r, (n) => notes.push(n));
+  assert.equal(title, ""); assert.match(template, /^<div class="winform">\n  <button type="button" ng-click="onGo\(\)">btnGo<\/button>\n  <p>Alpha<\/p>\n  <table class="data-grid-view">\n    <thead><tr><th>Name<\/th><\/tr><\/thead>/, "with no locations the controls keep declaration order; a caption the .resx lacks keeps the name; a column head the .resx gives is the head");
+  assert.ok(notes.some((n) => n === "the form's own title lives in the .resx and Corner.resx carries no $this.Text; the class name stands in."));
+  assert.ok(notes.some((n) => n === "1 control(s) (btnGo) take their text from the .resx and Corner.resx carries no Text for them; the control names stand in."));
+  assert.ok(notes.some((n) => n === "the text of 2 control(s) (lblA, colName) came from Corner.resx beside the designer (resources.ApplyResources); no culture variant sits beside it."), notes.join("\n"));
+  assert.ok(notes.some((n) => /lblA: Location could not be read exactly and left out/.test(n)) && notes.some((n) => /btnGo: Visible could not be read exactly and left out/.test(n)));
+  assert.equal(formsReport([{ rel: "Corner.Designer.cs", read: r }]).includes("| btnGo | Button | (no Text in Corner.resx) |"), true);
+  // No .resx at all: the read is untouched and the notes are the ones a designer file alone has always produced.
+  const alone = readDesigner(body, "Corner.Designer.cs");
+  const aloneNotes = [];
+  lowerForm(alone, (n) => aloneNotes.push(n));
+  assert.equal(alone.resx, undefined);
+  assert.ok(aloneNotes.some((n) => n === "the text of 3 control(s) (btnGo, lblA, colName) lives in the .resx (resources.ApplyResources or GetString); the control names stand in and the port must take each caption from the resource file."));
+  assert.ok(aloneNotes.some((n) => n === "the form's own title lives in the .resx; the port must take it from there."));
 });

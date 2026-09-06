@@ -183,9 +183,9 @@ function newControl(name, line) {
   return {
     name, type: null, fullType: null, line, text: null, textResource: false, localized: false, initialText: false,
     location: null, size: null, tabIndex: null, enabled: true, visible: true, readOnly: false, multiline: false, password: false,
-    checked: false, items: [], dropDownStyle: null, selectionMode: null, min: null, max: null, format: null, customFormat: false,
+    checked: false, items: [], itemsResource: false, dropDownStyle: null, selectionMode: null, min: null, max: null, format: null, customFormat: false,
     maxLength: null, anchor: [], dock: null, headerText: null, useMnemonic: true, hasImage: false, contextMenu: null,
-    events: [], children: [], columns: [], parent: null, unreadProps: [],
+    events: [], children: [], columns: [], parent: null, unreadProps: [], inline: [],
   };
 }
 
@@ -199,7 +199,7 @@ export function readDesigner(source, rel = "") {
   const { lang, statements } = body;
   const classMatch = lang === "cs" ? /\bclass\s+(\w+)/.exec(source) : /\bClass\s+(\w+)/.exec(source);
   const controls = new Map();
-  const form = { name: null, text: null, textResource: false, localized: false, clientSize: null, acceptButton: null, cancelButton: null, mainMenuStrip: null, events: [], children: [] };
+  const form = { name: null, text: null, textResource: false, localized: false, clientSize: null, acceptButton: null, cancelButton: null, mainMenuStrip: null, events: [], children: [], inline: [] };
   const problems = [];
   const control = (name) => { if (!controls.has(name)) controls.set(name, newControl(name, null)); return controls.get(name); };
   const str = (raw) => readString(raw, lang);
@@ -208,6 +208,8 @@ export function readDesigner(source, rel = "") {
 
   const assign = (target, prop, raw) => {
     const s = str(raw);
+    // What the code set inline is remembered, so a .resx entry for the same property never overrides it.
+    if (!isResource(raw)) target.inline.push(prop);
     switch (prop) {
       case "Text": if (isResource(raw)) target.textResource = true; else if (s !== null) target.text = s; else target.unreadProps.push(prop); return;
       case "Name": if (s !== null) target.designerName = s; return;
@@ -291,7 +293,9 @@ export function readDesigner(source, rel = "") {
           const target = control(owner);
           if (names.every((n) => n === null)) {
             const values = literals(call[2]);
-            for (const v of values) if (v === null) target.unreadProps.push("Items"); else target.items.push(v);
+            // A localizable form fills its list with resources.GetString("x.Items"): the items live in the .resx, not unread.
+            const parts = splitCommas(call[2].includes("{") ? call[2].slice(call[2].indexOf("{") + 1, matchBracket(call[2], call[2].indexOf("{"), { ticks: false }) - 1) : call[2], { ticks: false });
+            values.forEach((v, i) => { if (v !== null) target.items.push(v); else if (isResource(parts[i] ?? "")) target.itemsResource = true; else target.unreadProps.push("Items"); });
           } else for (const n of names) if (n) { control(n).parent = owner; target.children.push(n); }
         } else if (collection === "Columns") {
           for (const n of names) if (n) control(owner).columns.push(n);

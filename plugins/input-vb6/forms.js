@@ -15,7 +15,10 @@ import { pascal } from "../dsp-ir/emit.js";
  *
  * A control is { name, className, kind, caption, rect, tab, hidden, disabled,
  * readonly, password, checked, multiple, index, options, optionsFrom, submit,
- * cancel, isDefault, labelFor, events, children }. Kinds: label, input,
+ * cancel, isDefault, labelFor, events, children }; `optionsFrom` says where a
+ * select's options are when the file does not list them (`runtime`, or `frx`
+ * for VB6's binary companion), and stays `frx` beside options that were read
+ * from that companion. Kinds: label, input,
  * textarea, number, date, time, range, checkbox, radio, radiogroup, select,
  * button, group, section, tabs, tab, image, rule, progress, table, listview,
  * tree, decoration, nonvisual, unknown. A form is { name, caption, size,
@@ -174,8 +177,10 @@ export function lowerForm(form, note) {
           hasModel = true;
           fields.push(field);
           push(`<select id="${id}" ng-model="${field}"${c.multiple ? " multiple" : ""}${a}>`);
-          if (c.options) for (const o of c.options) push(`  <option>${esc(o)}</option>`);
-          else { hasRepeat = true; notes.lists.push({ field, from: c.optionsFrom }); push(`  <option ng-repeat="option in ${field}Options">{{ option }}</option>`); }
+          if (c.options) {
+            for (const o of c.options) push(`  <option>${esc(o)}</option>`);
+            if (c.optionsFrom === "frx") notes.skipped.push(`${field} has ${c.options.length} option(s) read from the binary .frx companion; anything the code adds to the list at runtime is not read`);
+          } else { hasRepeat = true; notes.lists.push({ field, from: c.optionsFrom }); push(`  <option ng-repeat="option in ${field}Options">{{ option }}</option>`); }
           push(`</select>`);
           break;
         }
@@ -253,7 +258,7 @@ export function lowerForm(form, note) {
   if (notes.lists.length) {
     const frx = notes.lists.filter((l) => l.from === "frx").map((l) => l.field);
     const runtime = notes.lists.filter((l) => l.from !== "frx").map((l) => l.field);
-    if (frx.length) note(`the list(s) ${frx.join(", ")} are filled from the binary .frx companion, which is not read; the port takes each as \`<name>Options\`, which it must be handed.`);
+    if (frx.length) note(`the list(s) ${frx.join(", ")} are filled from the binary .frx companion and were not read from it; the port takes each as \`<name>Options\`, which it must be handed.`);
     if (runtime.length) note(`the list(s) ${runtime.join(", ")} are filled by the code at runtime; the port takes each as \`<name>Options\`, which it must be handed.`);
   }
   if (notes.hidden.length) note(`${notes.hidden.length} control(s) start hidden (${notes.hidden.join(", ")}); which state shows each is code the port drives through \`shown\`.`);

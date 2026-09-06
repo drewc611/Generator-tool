@@ -33,10 +33,11 @@ test("the packed tarball installs and runs on its own, outside the repository", 
 
   const [packed] = JSON.parse(run("npm", ["pack", "--pack-destination", dir, "--json"], ROOT));
   assert.equal(packed.name, "portamp");
-  const tarball = join(dir, packed.filename);
-  assert.ok((await stat(tarball)).size > 0, `${packed.filename} was written`);
+  // Read once and measure the bytes read, so nothing is checked and then opened as two steps.
+  const bytes = await readFile(join(dir, packed.filename));
+  assert.ok(bytes.length > 0, `${packed.filename} was written`);
 
-  const unpacked = await untarGz(await readFile(tarball), dir);
+  const unpacked = await untarGz(bytes, dir);
   assert.ok(unpacked.includes("package/package.json") && unpacked.includes("package/src/cli.js"), `the tarball unpacks to package/: ${unpacked.length} file(s)`);
   const pkg = join(dir, "package");
   const shipped = JSON.parse(await readFile(join(pkg, "package.json"), "utf8"));

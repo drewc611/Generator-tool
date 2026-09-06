@@ -68,7 +68,7 @@ Begin VB.Form frmLogin
       Locked          =   -1  'True
       MultiLine       =   -1  'True
       TabIndex        =   14
-      Text            =   "frmLogin.frx":0034
+      Text            =   "frmLogin.frx":002E
       Top             =   2760
       Width           =   4200
    End
@@ -109,7 +109,7 @@ Begin VB.Form frmLogin
       Height          =   315
       ItemData        =   "frmLogin.frx":0000
       Left            =   1560
-      List            =   "frmLogin.frx":000A
+      List            =   "frmLogin.frx":0012
       Style           =   2  'Dropdown List
       TabIndex        =   3
       Top             =   1680
@@ -167,7 +167,7 @@ Begin VB.Form frmLogin
    Begin VB.Image imgLogo 
       Height          =   600
       Left            =   4800
-      Picture         =   "frmLogin.frx":0052
+      Picture         =   "frmLogin.frx":0043
       Top             =   120
       Width           =   900
    End

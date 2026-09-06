@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and eighty nine in five classes, and the core has never learned
+Plugins that ship, a hundred and ninety two in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -446,6 +446,27 @@ every entry held to the intake's path rule. test/winforms.test.js,
 test/xaml.test.js, test/vb6.test.js, test/delphi.test.js and test/zip.test.js
 hold it.
 
+10.5 takes what you have in your hand. input-asar reads an Electron app's
+archive with no dependency and unpacks it as the folder it is, on the
+command line or dropped on the console, every path held; in a source tree it
+is named, never unpacked in place. input-rc reads a Windows resource script
+as the source of what input-exe reads from the binary, ids resolved through
+resource.h, and the suite proves the two readings lower to byte identical
+templates. input-winforms reads the .resx beside a localized form so a
+caption left to ApplyResources is a caption; input-vb6 reads the .frx
+companion for a list's options and a long text's existence, never its bytes.
+And a picture of anything becomes a screen: a JPEG decodes with no dependency
+(baseline and extended sequential, restarts, every Exif orientation), the
+pixels are cut into regions by shape alone (lines of writing, fields, check
+boxes, buttons, bars, cards) with a photograph's uneven light read as
+background, and the regions lower onto the shared dialect laid out as
+photographed. No words are read: every line of writing is an input the
+component takes, listed in PHOTO.md by position, and a test asserts none is
+invented. The console has a photograph key that opens a phone's camera into
+the intake, and pictures dropped alone turn the photo flag on. test/asar.test.js,
+test/rc.test.js, test/jpeg.test.js and test/photo.test.js hold it beside the
+winforms and vb6 suites.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -511,8 +532,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and forty two features in
-one hundred and fifty phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and forty seven features in
+one hundred and fifty one phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

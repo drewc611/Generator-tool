@@ -320,9 +320,10 @@
     <button class="key" id="all" aria-pressed="true">all stages</button>
   </div>
   <div class="intake" id="intake">
-    <label class="drop" id="drop" tabindex="0">drop an .exe, a screenshot or a folder of old pages here, or click to pick files
+    <label class="drop" id="drop" tabindex="0">drop an .exe, a photo, a screenshot or a folder of old pages here, or click to pick files
       <input type="file" id="pick" multiple aria-label="pick files for the intake">
       <input type="file" id="pick-dir" webkitdirectory aria-label="pick a folder for the intake">
+      <input type="file" id="camera" accept="image/*" capture="environment" aria-label="take a picture of a screen or a page to port">
     </label>
     <div class="flags" id="flags" aria-label="flags for the next run">
       <button class="key" data-flag="transformer" aria-pressed="false" title="Draw the transformer's attention (ATTENTION.md)">transformer</button>
@@ -331,6 +332,7 @@
       <button class="key" data-flag="train-sort" aria-pressed="false" title="Train and grade sorting on held out data (SORT.md)">sort</button>
       <button class="key" data-flag="vue" aria-pressed="false" title="Emit Vue beside React">vue</button>
       <button class="key" data-flag="svelte" aria-pressed="false" title="Emit Svelte beside React">svelte</button>
+      <button class="key" data-flag="photo" aria-pressed="false" title="Read every picture in the intake as a screen by shape (PHOTO.md)">photo</button>
     </div>
     <div class="transport">
       <input id="site-url" type="url" placeholder="https://old.example.com — copy a site (needs --allow-live and an attestation)" aria-label="site address to copy into the intake" style="flex:1;min-width:0;font:inherit;font-size:9px;padding:3px 5px;background:#0d1a14;color:var(--p-hi);border:1px solid var(--edge-lo)">
@@ -338,6 +340,7 @@
     </div>
     <div class="transport">
       <button class="key run" id="port-intake" title="Run the pipeline over what was dropped">▶ port intake</button>
+      <button class="key" id="camera-key" title="Take a picture of a screen, a sketch or a paper form; it is read as a screen by shape and the words are left for you to fill">📷 photograph</button>
       <button class="key" id="pick-dir-key" title="Pick a whole folder">folder</button>
       <button class="key" id="clear-intake" title="Empty the intake">clear</button>
     </div>
@@ -864,8 +867,11 @@ async function filesOf(transfer) {
   for (const e of entries) await walk(e, "");
   return out;
 }
-async function intake(items) {
+// Pictures dropped by themselves are screens to read by shape, so the photo flag rides that run without a press.
+const PICTURE = /\.(png|jpe?g)$/i;
+async function intake(items, flags = {}) {
   const status = $("intake-status");
+  const onlyPictures = items.length > 0 && items.every(({ path }) => PICTURE.test(path));
   let sent = 0;
   for (const { file, path } of items) {
     const r = await fetch("/intake?path=" + encodeURIComponent(path), { method: "POST", body: file }).then((r) => r.json()).catch((err) => ({ error: err.message }));
@@ -873,11 +879,14 @@ async function intake(items) {
     sent += 1;
     status.textContent = r.files + " file(s) in the intake" + (r.refused?.length ? "; " + r.refused.length + " archive entr(ies) refused: " + r.refused.map((x) => x.entry + " (" + x.reason + ")").join(", ") : "");
   }
-  if (sent) await rerun({ source: "intake" });
+  if (sent) await rerun({ source: "intake", flags: onlyPictures ? { photo: true, ...flags } : flags });
 }
 const picked = (e) => intake([...e.target.files].map((f) => ({ file: f, path: f.webkitRelativePath || f.name })));
 $("pick").addEventListener("change", picked);
 $("pick-dir").addEventListener("change", picked);
+// A picture taken on the spot lands under its own time, so two in a row are two screens.
+$("camera").addEventListener("change", (e) => intake([...e.target.files].map((f) => ({ file: f, path: "photo-" + new Date().toISOString().replace(/[:.]/g, "-") + (PICTURE.test(f.name) ? f.name.slice(f.name.lastIndexOf(".")) : ".jpg") })), { photo: true }));
+$("camera-key").addEventListener("click", () => $("camera").click());
 $("pick-dir-key").addEventListener("click", () => $("pick-dir").click());
 $("port-intake").addEventListener("click", () => rerun({ source: "intake" }));
 // A site address goes to the server, which hands it to the fetch command's gates; a refusal is shown in its own words.

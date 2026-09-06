@@ -17,6 +17,8 @@ const KEEP = new Set([
   ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm",
   // Windows resource scripts and .NET resource files: the source of a dialog and the captions a designer localized.
   ".rc", ".rc2", ".resx",
+  // An Electron app keeps its front end in one archive beside the executable.
+  ".asar",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;

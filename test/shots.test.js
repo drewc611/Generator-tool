@@ -102,8 +102,8 @@ test("a run over dropped screenshots measures them, writes PALETTE.md and carrie
   assert.equal(run.error, null);
   const measured = run.ctx.sources.screenshots.filter((s) => s.palette);
   assert.deepEqual(measured.map((s) => [s.name, s.width, s.height]).sort(), [["orders", 120, 80], ["orders-empty", 60, 40]]);
-  assert.ok(run.ctx.sources.screenshots.some((s) => s.name === "photo" && !s.palette), "a JPEG is catalogued, not measured");
-  assert.ok(run.ctx.report.unverified.some((n) => /^1 screenshot\(s\) could not be decoded and are catalogued, not measured: broken\.png \(not a PNG: the signature is missing\)\.$/.test(n)), "one note for the run names every file");
+  assert.ok(run.ctx.sources.screenshots.some((s) => s.name === "photo" && !s.palette), "a JPEG that is only a header is catalogued, not measured");
+  assert.ok(run.ctx.report.unverified.some((n) => /^2 screenshot\(s\) could not be decoded and are catalogued, not measured: broken\.png \(not a PNG: the signature is missing\); photo\.jpg \(.*\)\.$/.test(n)), "one note for the run names every file, the JPEG with its own reason now that JPEGs decode");
   const md = await readFile(join(run.out, "PALETTE.md"), "utf8");
   assert.match(md, /## orders\.png\n\n120 × 80 pixels\.\n\n\| colour \| share \|\n\| --- \| --- \|\n\| #FBFAF8 \| \d+\.\d% \|/);
   assert.match(md, /which colour is the brand's is a person's call/);

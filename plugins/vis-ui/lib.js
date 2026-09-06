@@ -141,7 +141,7 @@ export function compareRuns(current, previous) {
 /* ------------------------------------------------------------ the intake */
 
 /** The flags the console offers a rerun; anything else in a request is dropped, never passed to the run. */
-export const RERUN_FLAGS = ["transformer", "train", "train-reverse", "train-sort", "train-math", "vue", "svelte", "lit", "html", "site", "export", "components"];
+export const RERUN_FLAGS = ["transformer", "train", "train-reverse", "train-sort", "train-math", "vue", "svelte", "lit", "html", "site", "export", "components", "photo"];
 
 /**
  * What a rerun sets on the run's config: the source and screenshots it reads, and every offered flag, a pressed

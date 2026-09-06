@@ -7,6 +7,7 @@ import { pascal } from "../dsp-ir/emit.js";
 import { RERUN_FLAGS, intakePath, rerunOptions, rerunPatch, siteUrl } from "./lib.js";
 import { fetchForRun } from "../input-fetch/index.js";
 import { readZip } from "./zip.js";
+import { readAsar } from "../input-asar/asar.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -270,14 +271,15 @@ export function createIntake(dir) {
     /** A file lands as named; an archive is unpacked under its own name, every entry held to the same path rule. */
     async put(rel, bytes) {
       const refused = [];
-      if (/\.zip$/i.test(rel)) {
-        const { entries, error } = readZip(bytes);
+      // A zip or an Electron asar: both are a folder in one file, and both land as that folder.
+      if (/\.(zip|asar)$/i.test(rel)) {
+        const { entries, error } = /\.zip$/i.test(rel) ? readZip(bytes) : readAsar(bytes);
         if (error) refused.push({ entry: rel, reason: error });
         for (const entry of entries ?? []) {
           if (entry.directory) continue;
           const got = entry.bytes();
           if (got.error) { refused.push({ entry: entry.name, reason: got.error }); continue; }
-          if (!(await place(`${rel.replace(/\.zip$/i, "")}/${entry.name.replace(/^\/+/, "")}`, got.bytes))) refused.push({ entry: entry.name, reason: "the path climbs out of the intake" });
+          if (!(await place(`${rel.replace(/\.(zip|asar)$/i, "")}/${entry.name.replace(/^\/+/, "")}`, got.bytes))) refused.push({ entry: entry.name, reason: "the path climbs out of the intake" });
         }
       } else if (!(await place(rel, bytes))) {
         throw new Error("a file may only land inside the intake");
@@ -510,7 +512,7 @@ export default {
 
   commands: {
     ui: {
-      describe: "serve the last run on 127.0.0.1; drop an .exe, a screenshot or a folder on it to port that; --watch reruns on change",
+      describe: "serve the last run on 127.0.0.1; drop an .exe, a photo, a screenshot or a folder on it to port that, or photograph a screen from a phone; --watch reruns on change",
       async run({ config, log, args, policy, runPipeline }) {
         const runPath = join(config.out, ".portamp", "run.json");
         const already = await readFile(runPath, "utf8").then(() => true).catch(() => false);

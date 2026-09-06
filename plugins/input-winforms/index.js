@@ -1,7 +1,9 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import { basename, dirname, join } from "node:path";
 import { pascal } from "../dsp-ir/emit.js";
-import { readInputs } from "../dsp-ir/text.js";
+import { readInputs, regexEscape } from "../dsp-ir/text.js";
 import { readDesigner } from "./designer.js";
+import { applyResx, readResx } from "./resx.js";
 
 /**
  * Reads Windows Forms designer code as the legacy front end it is. A .NET
@@ -16,8 +18,9 @@ import { readDesigner } from "./designer.js";
  * What the designer code cannot say is named rather than guessed: a handler's
  * body lives in the code behind file and is not read, a combo box with no
  * items is filled at runtime, a control that starts hidden is shown by a state
- * the port drives, a caption that lives in the .resx is taken from there, and
- * a third party control type is kept as a div with its type named.
+ * the port drives, a caption that lives in the .resx is taken from the neutral
+ * .resx beside the designer where one is, and a third party control type is
+ * kept as a div with its type named.
  */
 
 /**
@@ -74,6 +77,9 @@ export function kindOf(type) {
 }
 
 const FIELD = new Set(["input", "textarea", "listbox", "combobox", "range", "date", "spinner"]);
+const CAPTIONED = new Set(["text", "link", "checkbox", "radio", "group", "tabpage", "button", "menuitem", "striplabel"]);
+/** A control whose caption the designer left to the .resx and nothing supplied: the name stands in for it. */
+const unresolved = (c) => (c.localized || c.textResource) && c.text === null;
 
 /**
  * A form lowered onto the shared dialect. Controls are laid out in reading
@@ -86,7 +92,7 @@ export function lowerForm(read, note) {
   const { form, controls } = read;
   const all = [...controls.values()].map((c) => ({ ...c, kind: kindOf(c.type) }));
   const byName = new Map(all.map((c) => [c.name, c]));
-  const captionOf = (c) => (c.localized || c.textResource ? { text: c.name, accesskey: null } : caption(c.text ?? "", c.useMnemonic));
+  const captionOf = (c) => (unresolved(c) ? { text: c.name, accesskey: null } : caption(c.text ?? "", c.useMnemonic));
   const names = new Set();
   const unique = (base) => {
     const st = declarable(base || "field");
@@ -97,7 +103,7 @@ export function lowerForm(read, note) {
     return name;
   };
   const outputs = new Set();
-  const notes = { hidden: [], disabled: [], images: 0, lists: [], unknown: [], skipped: [], events: [], unwired: [], localized: [], initial: [], checked: [], editable: [], components: [] };
+  const notes = { hidden: [], disabled: [], images: 0, lists: [], unknown: [], skipped: [], events: [], unwired: [], localized: [], fromResx: [], noEntry: [], initial: [], checked: [], editable: [], components: [] };
   let hasSubmit = false;
   let hasModel = false;
   let hasRepeat = false;
@@ -106,15 +112,18 @@ export function lowerForm(read, note) {
     if (!a.location || !b.location) return a.location ? -1 : b.location ? 1 : 0;
     return Math.abs(a.location[1] - b.location[1]) > 8 ? a.location[1] - b.location[1] : a.location[0] - b.location[0];
   };
-  // A caption from the .resx is unknown here, so the designer name, prefix dropped, names the event and the field.
-  const nameOf = (c) => (c.localized || c.textResource ? stem(c.name) : camel(captionOf(c).text) || stem(c.name));
+  // A caption left in a .resx nobody read is unknown here, so the designer name, prefix dropped, names the event and the field.
+  const nameOf = (c) => (unresolved(c) ? stem(c.name) : camel(captionOf(c).text) || stem(c.name));
   const eventName = nameOf;
   const fieldName = (c) => unique(camel(c.labelText ?? "") || stem(c.name));
   const wiredClick = (c) => c.events.some((e) => e.event === "Click" || e.event === "LinkClicked" || e.event === "ItemClicked");
 
   for (const c of all) {
     if (c.kind === "component") { notes.components.push(`${c.name} (${c.type}${c.events.length ? `, ${c.events.map((e) => e.event).join("/")} wired` : ""})`); continue; }
-    if (c.localized || c.textResource) notes.localized.push(c.name);
+    // A caption the .resx supplied is a caption; one the .resx beside the form lacks, on a control that shows one, is a gap with a size.
+    if (c.resxText) notes.fromResx.push(c.name);
+    else if (unresolved(c) && read.resx && CAPTIONED.has(c.kind)) notes.noEntry.push(c.name);
+    else if ((unresolved(c) || (c.itemsResource && !c.items.length)) && !read.resx) notes.localized.push(c.name);
     if (c.kind === "input" || c.kind === "textarea") { if (c.text !== null) notes.initial.push(c.name); }
     for (const e of c.events) {
       const clickish = e.event === "Click" || e.event === "LinkClicked";
@@ -259,7 +268,7 @@ export function lowerForm(read, note) {
         case "tabpage": lines.push(`${pad}<section aria-label="${esc(cap.text || c.name)}"${a}>`, ...render(c.name, depth + 1), `${pad}</section>`); break;
         case "split": lines.push(`${pad}<div class="split-container"${a}>`, `${pad}  <div class="panel">`, ...render(`${c.name}.Panel1`, depth + 2), `${pad}  </div>`, `${pad}  <div class="panel">`, ...render(`${c.name}.Panel2`, depth + 2), `${pad}  </div>`, `${pad}</div>`); break;
         case "grid": case "listview": {
-          const heads = c.columns.map((n) => byName.get(n)).filter(Boolean).map((col) => (col.localized || col.textResource ? col.name : col.headerText ?? col.text ?? col.name));
+          const heads = c.columns.map((n) => byName.get(n)).filter(Boolean).map((col) => (unresolved(col) && col.headerText === null ? col.name : col.headerText ?? col.text ?? col.name));
           const klass = c.kind === "grid" ? "data-grid-view" : "list-view";
           notes.skipped.push(`the ${c.kind === "grid" ? "grid" : "list view"} ${c.name} ${heads.length ? `has ${heads.length} column(s) the designer declared (${heads.join(", ")}) and` : "is a table whose columns and"} rows the code supplies`);
           if (heads.length) lines.push(`${pad}<table class="${klass}"${a}>`, `${pad}  <thead><tr>${heads.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>`, `${pad}</table>`);
@@ -313,7 +322,7 @@ export function lowerForm(read, note) {
     notes.skipped.push(`the context menu ${c.name} opens on right click of ${owners.length ? owners.join(", ") : "a control the code chooses"}; the port must wire the trigger`);
     body.push(`  <nav class="context-menu" aria-label="${esc(stem(c.name))}">`, `    <ul role="menu">`, ...menuItems(c.children, 3), `    </ul>`, `  </nav>`);
   }
-  const title = form.localized || form.textResource ? "" : caption(form.text ?? "", false).text;
+  const title = form.text === null ? "" : caption(form.text ?? "", false).text;
   const result = fields.length ? `{ ${fields.map((f) => `${f}: ${f}`).join(", ")} }` : "";
   const open = hasSubmit ? `<form class="winform" ng-submit="onOk(${result})">` : `<div class="winform">`;
   const template = [open, ...(title ? [`  <h2>${esc(title)}</h2>`] : []), ...body, hasSubmit ? "</form>" : "</div>"].join("\n");
@@ -327,7 +336,17 @@ export function lowerForm(read, note) {
   if (notes.initial.length) note(`${notes.initial.length} text box(es) start with a text the designer set (${notes.initial.join(", ")}); the value is not reprinted and the port's initial state must set it.`);
   if (notes.images) note(`${notes.images} picture box(es) are placeholders; the image resources are not carried into the port.`);
   if (notes.localized.length) note(`the text of ${notes.localized.length} control(s) (${notes.localized.join(", ")}) lives in the .resx (resources.ApplyResources or GetString); the control names stand in and the port must take each caption from the resource file.`);
-  if (form.localized || form.textResource) note(`the form's own title lives in the .resx; the port must take it from there.`);
+  if ((form.localized || form.textResource) && !read.resx) note(`the form's own title lives in the .resx; the port must take it from there.`);
+  if (read.resx) {
+    const { file, cultures } = read.resx;
+    const variants = cultures.length ? `culture variant(s) ${cultures.join(", ")} sit beside it and were not read, because the language the port speaks is a decision about the product` : "no culture variant sits beside it";
+    if (notes.fromResx.length) note(`the text of ${notes.fromResx.length} control(s) (${notes.fromResx.join(", ")}) came from ${file} beside the designer (resources.ApplyResources); ${variants}.`);
+    if (form.resxText) note(`the form's own title came from ${file}.`);
+    else if (form.localized || form.textResource) note(`the form's own title lives in the .resx and ${file} carries no $this.Text; the class name stands in.`);
+    if (notes.noEntry.length) note(`${notes.noEntry.length} control(s) (${notes.noEntry.join(", ")}) take their text from the .resx and ${file} carries no Text for them; the control names stand in.`);
+    if (read.resx.unapplied.length) note(`${read.resx.unapplied.length} entr${read.resx.unapplied.length === 1 ? "y" : "ies"} in ${file} (${read.resx.unapplied.join(", ")}) name no control the designer passed to ApplyResources and are not applied; WINFORMS.md lists them.`);
+    if (read.resx.files.length) note(`${read.resx.files.length} resource(s) in ${file} (${read.resx.files.join(", ")}) are a file or a serialized object, named and not decoded.`);
+  }
   if (notes.unknown.length) note(`control type(s) with no HTML equivalent kept as divs: ${notes.unknown.join(", ")}.`);
   if (notes.components.length) note(`component(s) with no visual: ${notes.components.join(", ")}; each is behaviour the port must reimplement where the code used it.`);
   if (notes.events.length) note(`event(s) wired beyond Click: ${notes.events.join("; ")}; each handler is in the code behind, which is not read, and is behaviour the port must reimplement rather than invent.`);
@@ -341,26 +360,56 @@ export function lowerForm(read, note) {
 const cell = (text) => String(text).replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
 const px = (p) => (p ? `${p[0]}, ${p[1]}` : "");
 const wh = (s) => (s ? `${s[0]} × ${s[1]}` : "");
-const CAPTIONED = new Set(["text", "link", "checkbox", "radio", "group", "tabpage", "button", "menuitem", "striplabel"]);
-
 export function formsReport(files) {
   const out = ["# Windows Forms", "", "Every form the designer files declared, with each control's type, caption, location and size in pixels, tab index, anchor or dock, and the events the designer wired. The port lays the controls out in reading order; this is the layout the original drew. A text box's initial text is a value and is not reprinted.", ""];
   for (const f of files) {
     const { form, controls } = f.read;
     out.push(`## ${f.read.className} (${f.rel})`, "");
-    const facts = [form.text !== null && !form.localized ? `title "${form.text}"` : form.localized ? "title in the .resx" : "no title set", form.clientSize ? `client size ${wh(form.clientSize)}` : null, form.acceptButton ? `accepts on ${form.acceptButton}` : null, form.cancelButton ? `cancels on ${form.cancelButton}` : null, form.mainMenuStrip ? `menu ${form.mainMenuStrip}` : null].filter(Boolean);
+    const facts = [form.text !== null ? `title "${form.text}"${form.resxText ? ` (from ${f.read.resx?.file ?? "the .resx"})` : ""}` : form.localized || form.textResource ? "title in the .resx" : "no title set", form.clientSize ? `client size ${wh(form.clientSize)}` : null, form.acceptButton ? `accepts on ${form.acceptButton}` : null, form.cancelButton ? `cancels on ${form.cancelButton}` : null, form.mainMenuStrip ? `menu ${form.mainMenuStrip}` : null].filter(Boolean);
     out.push(`${facts.join(", ")}. ${controls.size} control(s), ${f.read.statements} statement(s) read${f.read.lang === "vb" ? ", VB" : ", C#"}.`, "");
     if (form.events.length) out.push(`Form events wired: ${form.events.map((e) => `${e.event} → ${e.handler}`).join(", ")}.`, "");
+    if (f.read.resx) {
+      // Names only: an entry's value is a caption or an option where it was applied, and is nothing the report reprints otherwise.
+      const r = f.read.resx;
+      const left = [...r.left].map(([owner, props]) => `${owner} (${[...new Set(props)].join(", ")})`);
+      out.push([
+        `Localized: ${r.captions.length ? `the caption(s) of ${r.captions.join(", ")}${r.title ? " and the title" : ""}` : r.title ? "the title" : "no caption"} came from ${r.file}, ${r.applied} entr${r.applied === 1 ? "y" : "ies"} applied.`,
+        r.cultures.length ? `Culture variant(s) named and not read: ${r.cultures.join(", ")}.` : "No culture variant sits beside it.",
+        r.unapplied.length ? `Present and not applied (no ApplyResources on that control): ${r.unapplied.join(", ")}.` : null,
+        r.files.length ? `File or serialized resource(s), named and not decoded: ${r.files.join(", ")}.` : null,
+        left.length ? `Left in the file, by property name: ${left.join("; ")}.` : null,
+      ].filter(Boolean).join(" "), "");
+    }
     out.push("| name | type | text | location | size | tab | anchor / dock | events |", "| --- | --- | --- | --- | --- | --- | --- | --- |");
     for (const c of controls.values()) {
       const kind = kindOf(c.type);
-      const text = c.localized || c.textResource ? "(from .resx)" : kind === "column" ? c.headerText ?? c.text ?? "" : CAPTIONED.has(kind) ? caption(c.text ?? "", c.useMnemonic).text : c.text !== null && (kind === "input" || kind === "textarea") ? "(initial value withheld)" : "";
+      const own = kind === "column" ? c.headerText ?? c.text ?? "" : CAPTIONED.has(kind) ? caption(c.text ?? "", c.useMnemonic).text : c.text !== null && (kind === "input" || kind === "textarea") ? "(initial value withheld)" : "";
+      // With the .resx read, a control it gives no Text is one with no caption, or one whose name stands in and says so.
+      const missing = f.read.resx ? (CAPTIONED.has(kind) ? `(no Text in ${f.read.resx.file})` : c.resxItems ? `(${c.items.length} item(s) from .resx)` : "") : "(from .resx)";
+      const text = c.resxText && (kind === "column" || CAPTIONED.has(kind)) ? `${own} (from .resx)` : unresolved(c) ? missing : own;
       const layout = [c.dock ? `dock ${c.dock}` : null, c.anchor.length ? `anchor ${c.anchor.join(", ")}` : null].filter(Boolean).join("; ");
       out.push(`| ${c.name} | ${cell(c.type ?? "")} | ${cell(text)} | ${px(c.location)} | ${wh(c.size)} | ${c.tabIndex ?? ""} | ${layout} | ${cell(c.events.map((e) => `${e.event} → ${e.handler}`).join(", "))} |`);
     }
     out.push("");
   }
   return out.join("\n") + "\n";
+}
+
+/**
+ * The neutral .resx beside a localized designer file, applied to the form. It
+ * is read from disk by the designer's own name (`Foo.Designer.cs` owns
+ * `Foo.resx`) rather than from the scan's list, and a missing file leaves the
+ * form exactly as the designer code described it, name stand ins and note.
+ * The culture variants beside it are named by listing the folder, never read.
+ */
+async function readResources(designerPath, read) {
+  const base = basename(designerPath).replace(/(\.Designer)?\.(cs|vb)$/i, "");
+  const dir = dirname(designerPath);
+  const xml = await readFile(join(dir, `${base}.resx`), "utf8").catch(() => null);
+  if (xml === null) return;
+  const variant = new RegExp(`^${regexEscape(base)}\\.[A-Za-z]{2,3}(?:-[A-Za-z0-9]+)*\\.resx$`, "i");
+  const cultures = (await readdir(dir).catch(() => [])).filter((n) => variant.test(n)).sort();
+  applyResx(read, readResx(xml), { file: `${base}.resx`, cultures });
 }
 
 export default {
@@ -382,6 +431,7 @@ export default {
         // A code behind file calls InitializeComponent and a helper class never names it; neither defines a form.
         if (!read) { skipped += 1; continue; }
         for (const p of read.problems) ctx.unverified(`${rel}: ${p}.`);
+        if (read.form.localized || read.form.textResource || [...read.controls.values()].some((c) => c.localized || c.textResource)) await readResources(file.path, read);
         const lowered = lowerForm(read, (n) => ctx.unverified(`${rel}, form ${read.className}: ${n}`));
         const selector = unique(`form-${kebabClass(read.className)}`);
         ctx.screens.push({
