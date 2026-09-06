@@ -6,6 +6,8 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { untarGz } from "./fixtures/tar/read.mjs";
+
 /**
  * publish-check reads the file list npm would pack and holds it against what
  * the package promises. That proves the list; it does not prove the files in
@@ -16,28 +18,16 @@ import { fileURLToPath } from "node:url";
  * shipped cli from a directory with no repository around it: the roster has to
  * match the checkout's, and a run over the example has to write PORT_NOTES.md.
  *
- * node has no tar of its own, so the tar binary is used and the test skips,
- * saying so, where there is none.
+ * node has no tar of its own and the platform's reads a Windows drive letter
+ * as a remote host, so the tarball is unpacked by the suite's own reader over
+ * node's gunzip.
  */
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const shell = process.platform === "win32";
 const run = (file, args, cwd) => execFileSync(file, args, { cwd, shell, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 60_000, maxBuffer: 16 * 1024 * 1024 });
 
-function tarAvailable() {
-  try {
-    run("tar", ["--version"], ROOT);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 test("the packed tarball installs and runs on its own, outside the repository", async (t) => {
-  if (!tarAvailable()) {
-    t.skip("tar is not on PATH; the installed tarball proof needs it to unpack what npm packed");
-    return;
-  }
   const dir = await mkdtemp(join(tmpdir(), "portamp-installed-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
 
@@ -46,7 +36,8 @@ test("the packed tarball installs and runs on its own, outside the repository", 
   const tarball = join(dir, packed.filename);
   assert.ok((await stat(tarball)).size > 0, `${packed.filename} was written`);
 
-  run("tar", ["-xzf", tarball, "-C", dir], dir);
+  const unpacked = await untarGz(await readFile(tarball), dir);
+  assert.ok(unpacked.includes("package/package.json") && unpacked.includes("package/src/cli.js"), `the tarball unpacks to package/: ${unpacked.length} file(s)`);
   const pkg = join(dir, "package");
   const shipped = JSON.parse(await readFile(join(pkg, "package.json"), "utf8"));
   assert.equal(shipped.version, packed.version, "the unpacked manifest is the one that was packed");

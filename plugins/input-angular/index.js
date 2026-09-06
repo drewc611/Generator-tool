@@ -15,6 +15,8 @@ const KEEP = new Set([
   ".exe", ".dll",
   // Desktop form definitions: WinForms designer code, XAML, VB6 and Delphi form files.
   ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm",
+  // Windows resource scripts and .NET resource files: the source of a dialog and the captions a designer localized.
+  ".rc", ".rc2", ".resx",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
