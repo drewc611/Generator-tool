@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and four in five classes, and the core has never learned
+Plugins that ship, two hundred and six in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -596,6 +596,29 @@ stay named gaps rather than invented wiring, the same restraint input-qt
 and input-glade already keep over what a form's own code, not its markup,
 decides. test/storyboard.test.js and test/tapestry.test.js hold both.
 
+10.11 reaches the format banking, insurance and government back offices
+have run since SQL Server 2000, and closes with the one legacy interface
+that was never markup at all. input-ssrs reads Microsoft's own .rdl report
+definitions: PageHeader, Body and PageFooter each become a section in page
+order, and a Tablix, RDL's table and matrix construct, has its deeply
+nested row and cell layout flattened onto a real HTML table, since RDL
+draws no header, detail or footer distinction inside one the way BIRT's
+table does. A bare `=Fields!name.Value` or `=Parameters!name.Value`
+reference is the one expression shape read for real; anything else a
+VB.NET expression does is named rather than partly reproduced, the same
+restraint input-jasperreports and input-birt already keep. input-powerbuilder
+reads Sybase/Appeon PowerBuilder's exported .srw window sources, a plain
+text export with no XML or JSON shape of its own: a `forward` section
+declares every control's name and class before the file's real content,
+and finding each control's real, later property block rather than that
+forward-declared shell is the one structural decision the reader makes.
+Radios group by a run of consecutive siblings the same honest heuristic
+input-uno already documents for its own radios, a groupbox's children are
+never reparented beneath it since PowerBuilder places every control flat
+within the window, and a DataWindow, a separate `.srd`/`.pbl` artifact,
+is named rather than guessed at. test/ssrs.test.js and
+test/powerbuilder.test.js hold both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -661,8 +684,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and sixty three features in
-one hundred and sixty six phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and sixty five features in
+one hundred and sixty eight phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

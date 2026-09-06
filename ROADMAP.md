@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and sixty three features across one hundred and sixty six phases. The statuses are
+Six hundred and sixty five features across one hundred and sixty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2594,14 +2594,24 @@ A `.storyboard`'s `<scene>` is a real screen boundary the way a Qt Designer form
 **663. input-tapestry reads Apache Tapestry's .tml templates, translating only what actually carries Tapestry meaning and leaving the rest of the markup exactly as a designer wrote it** 🔨
 A `.tml` template is valid HTML with `t:` namespaced attributes and elements marking exactly the spots a designer's plain markup turns dynamic, so `t:type="textfield"` and `"passwordfield"` on any element become a real text or password input with ng-model, `t:type="checkbox"` and the `<t:checkbox>` element form both become a real checkbox the same way, `<t:if test="...">` and `<t:loop source="..." value="...">` wrap their contents in the same ng-if and ng-repeat containers input-jinja and input-twig already use for `{% if %}` and `{% for %}`, and a bare `${property.path}` becomes `{{ property.path }}` verbatim. Two things Tapestry hides in the Java class behind the template stay honest gaps: a select's `t:model` names a SelectModel this reader cannot see, so its options are named the way input-qt and input-glade already name an unresolved combo box, and a submit button gets no invented ng-click, since Tapestry wires its handler by naming convention, never written in the template at all; a `${...}` expression with a method call or an operator is a computed value this reader does not evaluate, and a `t:type` or `t:` namespaced element with no vocabulary entry is named rather than approximated, its wrapper dropped and its content kept rather than guessed at. test/tapestry.test.js holds it.
 
+## Phase 167: the format banking, insurance and government back offices have run since SQL Server 2000
+
+**664. input-ssrs reads Microsoft's own .rdl report definitions, a Tablix's deeply nested row and cell layout flattened onto a real HTML table** 🔨
+PageHeader, Body and PageFooter, RDL's own names for the parts input-jasperreports's bands and input-birt's sections already are, each become a section in page order, and a Tablix, the modern replacement for the older Table and List elements some files still carry, has its deeply nested row and cell layout flattened onto a real HTML table; RDL draws no header, detail or footer distinction inside a Tablix the way BIRT's table does, so every row lands in one body rather than a split this reader would invent. A bare `=Fields!name.Value` or `=Parameters!name.Value` reference is the one expression shape read for real, lowered onto the dialect's own interpolation; anything else a VB.NET expression does, a function call, a concatenation, an `IIf`, is named rather than partly reproduced, the same restraint kept over a subreport it does not follow and an image whose source it does not evaluate. test/ssrs.test.js holds it.
+
+## Phase 168: the interface that was text
+
+**665. input-powerbuilder reads Sybase/Appeon PowerBuilder's exported .srw window sources, and finds each control's real property block by walking past the shell that only declares it exists** 🔨
+A `.srw` file forward-declares every control's name and PowerBuilder class before the file's real content, so this reader takes the forward section for names and classes only and never for a value; a control's actual properties live in a second, later `type <name> from <class> within <window>` block that sits outside `forward`, and telling the two apart is one parent check in a small block stack, not a second pass over the file. Statictext becomes a paragraph, singlelineedit an input whose own `password` property makes it one, multilineedit a textarea, checkbox and radiobutton lower the ordinary way, radios grouped by a run of consecutive siblings in the window's own declaration order since a `.srw` states no group of its own; a dropdownlistbox's inline `string item[]` array becomes real options, and a commandbutton wires an output from its own `event <name>::clicked` block found elsewhere in the file, any other event on it named as behaviour the port must reimplement rather than invented wiring. A groupbox's own children are never reparented beneath it, because PowerBuilder places every control flat within the window with no tree to reflect, only a heading from its own text; a DataWindow is named as the separate `.srd`/`.pbl` artifact it is, an empty structural table standing in for it. An opaque property, one whose type keyword is not `integer`, `string` or `boolean`, is named by key and never by value, and a control class with no vocabulary entry is named rather than approximated. test/powerbuilder.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 616 |
+| new in this branch | 618 |
 | planned | 3 |
-| total | 663 |
+| total | 665 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

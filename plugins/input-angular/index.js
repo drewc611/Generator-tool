@@ -14,7 +14,7 @@ const KEEP = new Set([
   // A native executable is a legacy front end too: its dialogs and menus are resources a reader lifts.
   ".exe", ".dll",
   // Desktop form definitions: WinForms designer code, XAML, VB6, Delphi, Qt Designer and GTK Builder form files.
-  ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm", ".ui", ".fbp", ".glade", ".xdl", ".storyboard", ".xib",
+  ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm", ".ui", ".fbp", ".glade", ".xdl", ".storyboard", ".xib", ".srw",
   // Windows resource scripts and .NET resource files: the source of a dialog and the captions a designer localized.
   ".rc", ".rc2", ".resx",
   // An Electron app keeps its front end in one archive beside the executable.
@@ -27,6 +27,8 @@ const KEEP = new Set([
   ".jrxml",
   // Eclipse BIRT's own report definition: a document layout the same way, designed visually rather than coded.
   ".rptdesign",
+  // SQL Server Reporting Services' own report definition: a document layout the same way, laid out in Report Builder.
+  ".rdl",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
