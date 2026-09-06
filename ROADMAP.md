@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and forty nine features across one hundred and fifty two phases. The statuses are
+Six hundred and fifty features across one hundred and fifty three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2522,14 +2522,21 @@ The JPEG decoder was fed the shapes the format forbids and the shapes it barely 
 **649. The twenty first review pass: the archive and resource script readers read again** 🔨
 The asar reader stopped trusting the header it was handed: a files field that was a list or a string had yielded one entry per character with a native method as its link, a size spelled as a string or a boolean or left out had become a file, an offset in hex or empty had been read as zero, and a tree past sixty four folders had been dropped without a word. Each shape is now a reason by entry name, the ceiling names the folder it stopped at, and unpacking refuses a NUL in a name, drops a drive root the way it drops a leading slash, refuses the second of two entries that fold onto one path instead of overwriting the first, and turns a file standing where a folder is needed into a refusal instead of an exception; the console intake reads through the same guard, and the intake itself now refuses the second of two archive entries that fold onto one path and a file standing where a folder is needed, with the code, instead of overwriting or throwing the whole drop. The resource script reader learned to name what rc.exe would refuse: a string or a comment that never closes, a condition that does not parse (which had been decided false in silence), a second else, a dialog or menu with no block, a control or string with no id, a block hanging on a control or on nothing. Popups are read to the same sixteen levels the binary reader keeps, the version walk and the style brackets moved from recursion onto stacks, and expressions past a length no person writes are named rather than walked, closing four stack overflows and a quadratic bracket match. A script Visual Studio saved as UTF 16 is decoded by its mark, a NUL ridden one with no mark is named and yields nothing, and a NUL escape ends a caption where the compiled template's does. test/asar.test.js and test/rc.test.js hold it.
 
+## Phase 153: the console offered what the command line already could
+
+**650. The intake's flags grow from seven to forty six, grouped, scrollable, and one source of truth with the server** 🔨
+The console offered seven flags because that was what fit in a wrapping row: two targets, three transformer modes, one for photo. Every other target, host, deploy plan, meta-framework and document the command line already accepts (`--qwik true`, `--nginx true`, `--aws true`, and forty more) had no button, so pressing them meant leaving the console for a terminal. `plugins/vis-ui/lib.js` now names every one of them in `FLAG_GROUPS`, nine named groups the page reads at runtime through the same `/lib.js` module the suite imports, so the panel can never offer a flag the server would refuse: `RERUN_FLAGS` is `FLAG_GROUPS` flattened, and a test parses the panel's own title map to assert the two lists agree exactly, in both directions. The panel renders itself from that one array into a scrollable box, group labels first, so forty six real buttons fit in the same fixed pane without turning the console into a page that scrolls.
+
+Making room for them found what a fixed fourteen year old layout does not forgive: the sparkline that draws plugins per stage set no floor under itself, so once the intake needed real height the flex column starved it to nothing, and its bars, each an unshrinkable line of text-free `<i>` tags with no ceiling on how many render, painted straight through the layout below when a run this size (a hundred and eighty eight plugins, run on portamp by portamp) gave a stage a bar count in three figures. The chart now holds a fixed slice of the deck regardless of what else grows, its bars a fixed three cells scaled to a ratio rather than one cell per plugin, and its own column no longer lets an empty pixel-art tag shrink to nothing while its own label refuses to move an inch. The deck's fixed height rose once, on the record, to hold all of it with nothing hidden behind anything else. test/ui.test.js holds the panel against the server's own list; the sparkline is proven at three sizes so a small run and a run of the whole plugin set still draw the same shape.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 602 |
+| new in this branch | 603 |
 | planned | 3 |
-| total | 649 |
+| total | 650 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

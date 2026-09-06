@@ -40,9 +40,11 @@ test("the whole ui is under the budget the spec set", async () => {
   // overrunning the header bar, bought the last ten. The intake, a drop zone
   // that hands what a person drops to the run with the flags they pressed,
   // bought the raise to 1750; the site copy, a URL handed through the fetch
-  // command's gates, bought 1800; an archive unpacked on the intake, 1850. The
-  // budget still exists so growth stays a decision, not a drift.
-  assert.ok(js + html + lib < 1850, `${js + html + lib} lines, the spec allows under 1850`);
+  // command's gates, bought 1800; an archive unpacked on the intake, 1850; the
+  // flags panel grown from seven buttons to forty six, grouped and scrollable
+  // rather than wrapping the deck open, bought 1900. The budget still exists
+  // so growth stays a decision, not a drift.
+  assert.ok(js + html + lib < 1900, `${js + html + lib} lines, the spec allows under 1900`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once
@@ -441,11 +443,14 @@ test("the server hands uploads to the intake and reruns pointed at it; without o
 
 test("the console page carries the intake: a drop zone, a folder picker, the offered flags and the buttons", async () => {
   const html = await readFile(join(ROOT, "plugins/vis-ui/app.html"), "utf8");
-  for (const needle of ['id="intake"', 'id="drop"', "webkitdirectory", 'data-flag="transformer"', 'data-flag="train-reverse"', 'id="port-intake"', 'id="clear-intake"', '"/intake?path="', 'source: "intake"', "webkitGetAsEntry"]) {
+  for (const needle of ['id="intake"', 'id="drop"', "webkitdirectory", 'id="flags"', "FLAG_GROUPS", "renderFlags", 'id="port-intake"', 'id="clear-intake"', '"/intake?path="', 'source: "intake"', "webkitGetAsEntry"]) {
     assert.ok(html.includes(needle), `app.html carries ${needle}`);
   }
-  const flags = [...html.matchAll(/data-flag="([\w-]+)"/g)].map((m) => m[1]);
-  assert.ok(flags.every((f) => RERUN_FLAGS.includes(f)), "every flag the page offers is one the server accepts");
+  // The panel is built at runtime from FLAG_GROUPS, one real title per flag, so the page never drifts from what the server accepts.
+  const block = html.slice(html.indexOf("const FLAG_TITLE"), html.indexOf("function renderFlags"));
+  const titled = [...block.matchAll(/"?([\w-]+)"?\s*:\s*"/g)].map((m) => m[1]);
+  assert.ok(RERUN_FLAGS.every((f) => titled.includes(f)), "every flag the server accepts has a title in the panel");
+  assert.ok(titled.every((f) => RERUN_FLAGS.includes(f)), "the panel offers nothing the server would refuse");
   const source = await readFile(join(ROOT, "plugins/vis-ui/index.js"), "utf8");
   assert.match(source, /Object\.assign\(config, rerunPatch\(original, intake\.dir, rerunOptions\(options\)\)\)/, "a rerun over the intake reads the intake, and the next plain rerun reads the tree again");
 });

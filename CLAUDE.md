@@ -467,6 +467,15 @@ the intake, and pictures dropped alone turn the photo flag on. test/asar.test.js
 test/rc.test.js, test/jpeg.test.js and test/photo.test.js hold it beside the
 winforms and vb6 suites.
 
+10.5.4 gives the console what the command line already had: the intake's flag
+panel grows from seven buttons to forty six, every target, host, deploy plan
+and document the CLI accepts, grouped and built at runtime from the one array
+the server also reads, so the page can never offer what the server would
+refuse. Fitting them found the sparkline had no floor and no ceiling, painting
+through the layout under a stage's real plugin count; it now holds a fixed
+slice of the deck and draws three scaled cells instead of one per plugin.
+test/ui.test.js holds both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -532,8 +541,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and forty nine features in
-one hundred and fifty two phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and fifty features in
+one hundred and fifty three phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

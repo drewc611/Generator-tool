@@ -141,7 +141,20 @@ export function compareRuns(current, previous) {
 /* ------------------------------------------------------------ the intake */
 
 /** The flags the console offers a rerun; anything else in a request is dropped, never passed to the run. */
-export const RERUN_FLAGS = ["transformer", "train", "train-reverse", "train-sort", "train-math", "vue", "svelte", "lit", "html", "site", "export", "components", "photo"];
+export const FLAG_GROUPS = [
+  { label: "targets", flags: ["vue", "svelte", "lit", "html", "angular", "preact", "solid", "qwik", "astro", "alpine"] },
+  { label: "meta-frameworks", flags: ["next", "remix", "nuxt", "sveltekit", "eleventy"] },
+  { label: "site", flags: ["site", "export", "components", "photo"] },
+  { label: "hosts", flags: ["dockerfile", "nginx", "caddy"] },
+  { label: "deploy plans", flags: ["aws", "azure", "gcp", "cloudflare", "vercel", "netlify"] },
+  { label: "api & docs", flags: ["openapi", "msw", "postman", "curl", "adr", "migration", "types"] },
+  { label: "tests", flags: ["cypress", "playwright", "storybook", "fixtures"] },
+  { label: "design", flags: ["tailwind", "design-tokens"] },
+  { label: "transformer", flags: ["transformer", "train", "train-reverse", "train-sort", "train-math"] },
+];
+
+/** Every flag the console offers, flattened from the groups it shows them in. */
+export const RERUN_FLAGS = FLAG_GROUPS.flatMap((g) => g.flags);
 
 /**
  * What a rerun sets on the run's config: the source and screenshots it reads, and every offered flag, a pressed

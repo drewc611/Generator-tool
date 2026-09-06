@@ -82,7 +82,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and forty nine features, and every
+The core grew from 527 lines to 718 across six hundred and fifty features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -969,9 +969,13 @@ The constraints are the interesting part:
 - **Read only, with an intake.** It displays a completed run and may run the
   tool again. What you drop on it, an `.exe`, a photo, a screenshot, a whole
   folder of old pages, lands in the console's own intake beside the run, never
-  in the port, and the next run reads exactly that with the flags you pressed
-  (transformer, train, reverse, sort, vue, svelte, photo); the photograph key
-  opens a phone's camera into the same intake. The server hands the bytes
+  in the port, and the next run reads exactly that with the flags you pressed;
+  the photograph key opens a phone's camera into the same intake. The flags
+  are forty six real ones grouped into nine categories (targets,
+  meta-frameworks, site, hosts, deploy plans, api & docs, tests, design,
+  transformer), scrollable in a fixed pane rather than a page that scrolls,
+  built at runtime from the one array the server also reads so the console can
+  never offer a flag the server would refuse. The server hands the bytes
   to the intake the command owns and writes nothing itself; a test asserts the
   server contains no write call, and another that nothing which weakens a
   policy gate is a flag the page can set.
@@ -1117,8 +1121,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and forty nine features in
-one hundred and fifty two phases, forty four shipped, six hundred and two new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and fifty features in
+one hundred and fifty three phases, forty four shipped, six hundred and three new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
