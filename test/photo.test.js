@@ -35,6 +35,8 @@ test("the regions of a screen read the same from a render and from a photograph 
   assert.ok(Math.abs(clean.lineHeight - 22) <= 3, `the writing is about 22 pixels tall, read ${clean.lineHeight}`);
   assert.equal(clean.darkPage, false);
   assert.ok(field1.at.left > 0.08 && field1.at.left < 0.09 && field1.at.width > 0.82 && field1.at.width < 0.85, "positions come as a share of the page too");
+  // The same screen at a thumbnail's size and at a phone camera's size reads the same, because the working width follows the picture.
+  for (const scale of [0.5, 3]) assert.deepEqual(kinds(segment(loginScreen({ scale, photo: true })).regions), kinds(clean.regions), `at ${scale}× the reading holds`);
 });
 
 test("a card holds what sits inside it, a dark page reads its light marks, and an empty picture is empty", () => {
@@ -132,4 +134,5 @@ test("a PNG and a JPEG decode by their first bytes, and anything else is a reaso
   assert.equal(decodePicture(encodePng({ width: 16, height: 16, colorType: 6, depth: 8, pixel: (x, y) => Array.from(img.pixels.subarray((y * 16 + x) * 4, (y * 16 + x) * 4 + 4)) })).width, 16);
   assert.equal(decodePicture(encodeJpeg(img)).width, 16);
   assert.equal(decodePicture(Buffer.from("RIFF....WEBP")).error, "neither a PNG nor a JPEG by its first bytes");
+  assert.equal(decodePicture(Buffer.from("\0\0\0\x18ftypheic\0\0\0\0mif1")).error, "a heic container (HEIC or a video) is not decoded; save the picture as a JPEG");
 });

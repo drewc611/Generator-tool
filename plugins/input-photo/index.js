@@ -140,6 +140,8 @@ export function lowerPhoto(read, { name, width, height }) {
 export function decodePicture(bytes) {
   if (bytes.length > 8 && bytes[0] === 0x89 && bytes[1] === 0x50) return decodePng(bytes);
   if (bytes.length > 2 && bytes[0] === 0xff && bytes[1] === 0xd8) return decodeJpeg(bytes);
+  // A phone's own format is named, so the fix is one setting away rather than a mystery.
+  if (bytes.length > 12 && String.fromCharCode(...bytes.subarray(4, 8)) === "ftyp") return { error: `a ${String.fromCharCode(...bytes.subarray(8, 12)).trim()} container (HEIC or a video) is not decoded; save the picture as a JPEG` };
   return { error: "neither a PNG nor a JPEG by its first bytes" };
 }
 

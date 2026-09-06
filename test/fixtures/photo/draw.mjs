@@ -59,20 +59,21 @@ export function noise(img, amount = 6) {
 }
 
 /** The login form the photo tests share: a title bar, two labelled fields, a checkbox row, a button and a footer line. */
-export function loginScreen({ width = 720, height = 1000, photo = false } = {}) {
-  const img = canvas(width, height);
-  fillRect(img, 0, 0, width, 90, [28, 44, 80]);
-  text(img, 40, 30, 9, 30, [240, 240, 240]);
-  text(img, 60, 160, 8, 20);
-  strokeRect(img, 60, 195, 600, 60, [90, 90, 90], 3);
-  text(img, 60, 300, 10, 20);
-  strokeRect(img, 60, 335, 600, 60, [90, 90, 90], 3);
-  text(img, 80, 350, 12, 22, [120, 120, 120]);
-  strokeRect(img, 60, 440, 26, 26, [90, 90, 90], 3);
-  text(img, 104, 442, 14, 20);
-  fillRect(img, 60, 520, 600, 72, [36, 120, 200]);
-  text(img, 300, 542, 6, 26, [255, 255, 255]);
-  text(img, 200, 900, 20, 16, [110, 110, 110]);
+export function loginScreen({ scale = 1, photo = false } = {}) {
+  const k = (v) => Math.round(v * scale);
+  const img = canvas(k(720), k(1000));
+  fillRect(img, 0, 0, k(720), k(90), [28, 44, 80]);
+  text(img, k(40), k(30), 9, k(30), [240, 240, 240]);
+  text(img, k(60), k(160), 8, k(20));
+  strokeRect(img, k(60), k(195), k(600), k(60), [90, 90, 90], Math.max(1, k(3)));
+  text(img, k(60), k(300), 10, k(20));
+  strokeRect(img, k(60), k(335), k(600), k(60), [90, 90, 90], Math.max(1, k(3)));
+  text(img, k(80), k(350), 12, k(22), [120, 120, 120]);
+  strokeRect(img, k(60), k(440), k(26), k(26), [90, 90, 90], Math.max(1, k(3)));
+  text(img, k(104), k(442), 14, k(20));
+  fillRect(img, k(60), k(520), k(600), k(72), [36, 120, 200]);
+  text(img, k(300), k(542), 6, k(26), [255, 255, 255]);
+  text(img, k(200), k(900), 20, k(16), [110, 110, 110]);
   if (photo) { light(img); noise(img); }
   return img;
 }

@@ -14,10 +14,11 @@
  * caller says so too.
  */
 
-const WORK_WIDTH = 320;
+/** The working width: a quarter of the picture, never under 320 nor over 800, so a thin line in a large photograph survives the shrink. */
+export const workWidthFor = (width) => Math.max(320, Math.min(800, Math.round(width / 4)));
 
 /** A grayscale copy shrunk to the working width by box filter, so noise averages out and the rest is fast. */
-export function shrink(image, workWidth = WORK_WIDTH) {
+export function shrink(image, workWidth = workWidthFor(image.width)) {
   const scale = Math.max(1, image.width / workWidth);
   const width = Math.max(1, Math.round(image.width / scale));
   const height = Math.max(1, Math.round(image.height / scale));
@@ -174,7 +175,7 @@ export function segment(image, options = {}) {
       else if (within.length) s.kind = "card";
       else s.kind = lowWide ? "field" : "box";
     } else if (s.kind === "block") {
-      if (texts.length === 1 && within.length <= 2 && s.h <= lineH * 3.5 && s.w >= s.h && s.w < W * 0.9) { s.kind = "button"; s.label = texts[0]; }
+      if (texts.length === 1 && within.length <= 2 && s.h <= lineH * 4.5 && s.w >= s.h && s.w < W * 0.9) { s.kind = "button"; s.label = texts[0]; }
       else if (s.w >= W * 0.6 && s.h <= lineH * 5) { s.kind = "bar"; s.label = texts.length === 1 ? texts[0] : null; }
       else s.kind = "image";
     } else if (s.kind === "check") s.kind = "check";
