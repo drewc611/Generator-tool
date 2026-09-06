@@ -47,6 +47,7 @@ const DOES = {
   "input-xaml": "WPF, UWP, Xamarin.Forms and MAUI XAML read as XML: every Window, Page, UserControl and ContentPage lowered onto the dialect as input-exe lowers a dialog, bindings read from the markup, code behind named and never read; LAYOUT.md carries the panel tree",
   "input-vb6": "Visual Basic 6 .frm files: the form's controls in twips, its menu bar, the default and cancel buttons, control arrays, the handlers the code wires and the messages MsgBox shows, lowered onto the dialect; the binary .frx named, not read",
   "input-delphi": "Delphi and Lazarus .dfm, .fmx and .lfm files: the form's components in pixels, radio groups with their items, tab pages, the main menu, ModalResult buttons and the data sources, queries and timers that draw nothing, lowered onto the dialect",
+  "input-extjs": "Ext.define/Ext.create config trees: xtype panels, forms, fields, comboboxes with their inline store data, buttons and grids lowered onto the dialect; a handler's body, a store named elsewhere and an unrecognised base class are named, never read",
   "input-fetch": "portamp fetch <url>: copies one origin's pages and assets into a folder behind --allow-live and the attestation, robots.txt honoured, every skip written down; the folder is then what input-static ports",
   "input-underscore": "the templates input-backbone deferred: <%= %> lowered to the dialect",
   "input-handlebars": "#if, #each and the empty state in else, lowered to the dialect",

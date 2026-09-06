@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and forty nine features across one hundred and fifty two phases. The statuses are
+Six hundred and fifty two features across one hundred and fifty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2522,14 +2522,31 @@ The JPEG decoder was fed the shapes the format forbids and the shapes it barely 
 **649. The twenty first review pass: the archive and resource script readers read again** 🔨
 The asar reader stopped trusting the header it was handed: a files field that was a list or a string had yielded one entry per character with a native method as its link, a size spelled as a string or a boolean or left out had become a file, an offset in hex or empty had been read as zero, and a tree past sixty four folders had been dropped without a word. Each shape is now a reason by entry name, the ceiling names the folder it stopped at, and unpacking refuses a NUL in a name, drops a drive root the way it drops a leading slash, refuses the second of two entries that fold onto one path instead of overwriting the first, and turns a file standing where a folder is needed into a refusal instead of an exception; the console intake reads through the same guard, and the intake itself now refuses the second of two archive entries that fold onto one path and a file standing where a folder is needed, with the code, instead of overwriting or throwing the whole drop. The resource script reader learned to name what rc.exe would refuse: a string or a comment that never closes, a condition that does not parse (which had been decided false in silence), a second else, a dialog or menu with no block, a control or string with no id, a block hanging on a control or on nothing. Popups are read to the same sixteen levels the binary reader keeps, the version walk and the style brackets moved from recursion onto stacks, and expressions past a length no person writes are named rather than walked, closing four stack overflows and a quadratic bracket match. A script Visual Studio saved as UTF 16 is decoded by its mark, a NUL ridden one with no mark is named and yields nothing, and a NUL escape ends a caption where the compiled template's does. test/asar.test.js and test/rc.test.js hold it.
 
+## Phase 153: the console offered what the command line already could
+
+**650. The intake's flags grow from seven to forty six, grouped, scrollable, and one source of truth with the server** 🔨
+The console offered seven flags because that was what fit in a wrapping row: two targets, three transformer modes, one for photo. Every other target, host, deploy plan, meta-framework and document the command line already accepts (`--qwik true`, `--nginx true`, `--aws true`, and forty more) had no button, so pressing them meant leaving the console for a terminal. `plugins/vis-ui/lib.js` now names every one of them in `FLAG_GROUPS`, nine named groups the page reads at runtime through the same `/lib.js` module the suite imports, so the panel can never offer a flag the server would refuse: `RERUN_FLAGS` is `FLAG_GROUPS` flattened, and a test parses the panel's own title map to assert the two lists agree exactly, in both directions. The panel renders itself from that one array into a scrollable box, group labels first, so forty six real buttons fit in the same fixed pane without turning the console into a page that scrolls.
+
+Making room for them found what a fixed fourteen year old layout does not forgive: the sparkline that draws plugins per stage set no floor under itself, so once the intake needed real height the flex column starved it to nothing, and its bars, each an unshrinkable line of text-free `<i>` tags with no ceiling on how many render, painted straight through the layout below when a run this size (a hundred and eighty eight plugins, run on portamp by portamp) gave a stage a bar count in three figures. The chart now holds a fixed slice of the deck regardless of what else grows, its bars a fixed three cells scaled to a ratio rather than one cell per plugin, and its own column no longer lets an empty pixel-art tag shrink to nothing while its own label refuses to move an inch. The deck's fixed height rose once, on the record, to hold all of it with nothing hidden behind anything else. test/ui.test.js holds the panel against the server's own list; the sparkline is proven at three sizes so a small run and a run of the whole plugin set still draw the same shape.
+
+## Phase 154: the enterprise desk
+
+**651. input-extjs reads Sencha ExtJS, the classic Ext.define and Ext.create API, and lowers a real component boundary onto the dialect the rest of the tool already reads** 🔨
+An xtype config tree is a real component boundary somebody drew on purpose, so a panel, a form, a textfield, a combobox with its inline store data, a checkbox, a button and a grid lower onto the dialect the way input-vb6 and input-exe already lower a form, rather than the inventory input-jquery is left with when a library declares no boundaries at all. A structural scanner over the source, string, comment and brace aware and no dependency, finds every `Ext.define` and `Ext.create` call and reads the object literal each is handed as a tree of keys and values; a function or a bare reference bound to `handler` or `listeners.click` is kept only as where it sits and how many lines it runs, never as its body, because a handler's own behaviour is exactly what this tool refuses to guess at. A combobox's inline store data becomes real options; a store named elsewhere, a layout other than the default, a `vtype` validator, an unresolved combo and an `Ext.define` that extends a base class the reader does not recognise are each named through the report rather than approximated, and an `Ext.data.Store` or `Ext.data.Model` beside a screen is read as the data definition it is and kept out of the screen tree entirely. EXTJS.md carries every class this run read, what it became, and what was named as a gap. test/extjs.test.js holds it, including a full pipeline run proving a login form ports to a real React component with no handler body, store name or ExtJS syntax surviving into the port or its notes.
+
+## Phase 155: what the scan never opened is named too
+
+**652. Every file the scan does not open is its own named row, not a silent absence, so dropping something the tool cannot yet read gets an honest answer instead of nothing at all** 🔨
+The scan kept a whitelist of extensions it would even look inside, so a file that landed on the console's intake or in a source tree with an extension no reader has asked for simply never existed as far as the run knew: not read, not named, not counted anywhere, indistinguishable from a file that was never dropped at all. That silence is exactly what the readers census exists to close for the files the scan already kept, and it now closes it for the ones the scan never opened too. The scan names every file it steps over as it walks the tree, and vis-readers' census carries the list as its own row, distinct from a markup file a reader looked at and did not recognise, because failing to open a file and failing to recognise its contents are different gaps with different fixes. READERS.md gets a Not scanned section naming each one, and the run's own report names the count with the first few files, the same bounded shape every other gap in this tool is reported in. The console reads the same census back over the sidecar every other measurement rides, so the moment after a drop is the moment it says plainly: read as a screen, or not understood yet, and where to look. test/readers-census.test.js and test/ui.test.js hold it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 602 |
+| new in this branch | 605 |
 | planned | 3 |
-| total | 649 |
+| total | 652 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

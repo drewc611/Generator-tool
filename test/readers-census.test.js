@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
@@ -30,7 +31,7 @@ test("a run writes READERS.md with the reader per screen file and names the mark
     assert.ok(run.ctx.written.includes("READERS.md"));
     const c = run.ctx.readers;
     assert.ok(c.byReader.some(([r]) => r === "ember") && c.byReader.some(([r]) => r === "handlebars"), "both readers are credited");
-    assert.equal(c.screens.length + c.composed.length + c.unread.length + c.scripts.length + c.styles.length + c.assets.length, c.total);
+    assert.equal(c.screens.length + c.composed.length + c.unread.length + c.scripts.length + c.styles.length + c.assets.length + c.notScanned.length, c.total);
     const md = await readFile(join(run.out, "READERS.md"), "utf8");
     assert.match(md, /by ember/);
     assert.match(md, /user-card\.js/, "the class beside the template is a script the analyzers scanned, not unread");
@@ -63,5 +64,34 @@ test("every reader that composes a layout or a fragment into its pages records i
     } finally {
       await run.cleanup();
     }
+  }
+});
+
+
+test("a file the scan never opened is its own row, not absent from the count and not mistaken for unclaimed markup", () => {
+  const files = ["a.html"].map((rel) => ({ rel }));
+  const skipped = [{ rel: "notes.sql", ext: ".sql" }, { rel: "data.dat", ext: ".dat" }];
+  const c = census(files, [{ file: "a.html", readBy: "static" }], skipped);
+  assert.deepEqual(c.notScanned, ["data.dat", "notes.sql"], "sorted, and never in unread, scripts, styles or assets");
+  assert.deepEqual(c.unread, []);
+  assert.equal(c.total, 3, "the count the scan never opened is not silently missing from the total");
+  assert.equal(census(files, []).notScanned.length, 0, "the third argument is optional; an old caller with two arguments still gets a census");
+});
+
+test("a file dropped on the console with an extension no reader has asked for is named, not silently dropped", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "portamp-notscanned-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await writeFile(join(dir, "index.html"), "<html><body><app-root></app-root></body></html>");
+  await writeFile(join(dir, "notes.rtf"), "{\\rtf1 not a format any reader asks for}");
+  const run = await runPipeline({ src: dir, site: true });
+  try {
+    assert.equal(run.error, null);
+    assert.deepEqual(run.ctx.readers.notScanned, ["notes.rtf"]);
+    const notes = run.ctx.report.unverified.join("\n");
+    assert.match(notes, /1 file\(s\) this run never looked inside.*notes\.rtf/s);
+    const md = await readFile(join(run.out, "READERS.md"), "utf8");
+    assert.match(md, /notes\.rtf/);
+  } finally {
+    await run.cleanup();
   }
 });

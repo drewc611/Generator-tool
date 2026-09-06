@@ -50,7 +50,7 @@ export function createContext({ config, log, policy }) {
     authorization: null,
 
     // filled by input plugins
-    sources: { files: [], screenshots: [], specs: [], observedStyles: [] },
+    sources: { files: [], screenshots: [], specs: [], observedStyles: [], skipped: [] },
 
     // filled by dsp plugins
     tokens: null,

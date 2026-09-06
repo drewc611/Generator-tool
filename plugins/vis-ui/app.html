@@ -32,7 +32,7 @@
     background: #04060e; color: var(--ink);
     font: 11px/1.45 var(--mono); letter-spacing: .2px;
     display: grid; grid-template-columns: 276px 1fr;
-    grid-template-rows: 42px 128px minmax(0, 1fr) minmax(0, 168px);
+    grid-template-rows: 42px 356px minmax(0, 1fr) minmax(0, 168px);
     grid-template-areas: "head head" "deck compare" "rack compare" "rack notes";
   }
 
@@ -94,12 +94,13 @@
 
   /* deck: stage analyser and transport */
   .deck { grid-area: deck; }
-  .analyser { display: flex; gap: 3px; padding: 5px 6px; flex: 1; align-items: flex-end; }
-  .col { flex: 1; display: flex; flex-direction: column-reverse; gap: 2px; height: 100%; justify-content: flex-start; }
-  .col i { display: block; height: 5px; background: #14251c; border-radius: 1px; }
+  .chart { flex: 0 0 48px; overflow: hidden; }
+  .analyser { display: flex; gap: 3px; padding: 5px 6px; flex: 1; align-items: flex-end; min-height: 0; }
+  .col { flex: 1; display: flex; flex-direction: column-reverse; gap: 2px; height: 100%; min-height: 0; justify-content: flex-start; overflow: hidden; }
+  .col i { display: block; flex: 0 0 5px; height: 5px; background: #14251c; border-radius: 1px; }
   .col i.lit { background: var(--p-mid); }
   .col i.peak { background: var(--amber); }
-  .col em { font-style: normal; color: var(--p-dim); font-size: 8px; letter-spacing: .8px; text-align: center; margin-top: 3px; }
+  .col em { flex: 0 0 auto; font-style: normal; color: var(--p-dim); font-size: 8px; letter-spacing: .8px; text-align: center; margin-top: 3px; }
   .transport { display: flex; gap: 3px; padding: 4px 0 0; flex: none; }
   .key {
     flex: 1; text-align: center; padding: 4px 0; font-size: 8.5px; letter-spacing: 1.2px; text-transform: uppercase;
@@ -123,8 +124,11 @@
   .drop { display: block; border: 1px dashed var(--p-dim); color: var(--muted); font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase; padding: 6px; text-align: center; cursor: pointer; }
   .drop.over, .drop:hover { border-color: var(--amber); color: var(--amber); }
   .drop input { display: none; }
-  .flags { display: flex; gap: 3px; flex-wrap: wrap; }
-  .flags .key { flex: 1 0 30%; }
+  .flags-box { max-height: 110px; flex: none; }
+  .flags { display: flex; flex-direction: column; gap: 3px; padding: 3px; }
+  .flags-grp { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+  .flags-grp .lbl { color: var(--faint); font-size: 8px; letter-spacing: 1.2px; text-transform: uppercase; flex: 0 0 100%; padding-top: 2px; }
+  .flags .key { flex: 1 0 30%; padding: 1px 4px; font-size: 9.5px; }
 
   /* rack and screens: the playlist */
   .rack { grid-area: rack; }
@@ -313,7 +317,7 @@
 
 <section class="unit deck">
   <div class="cap"><span>plugins per stage</span><b id="deck-total"></b></div>
-  <div class="sunk"><div class="analyser" id="analyser"></div></div>
+  <div class="sunk chart"><div class="analyser" id="analyser"></div></div>
   <div class="transport" id="transport"></div>
   <div class="transport">
     <button class="key run" id="run" title="Run the pipeline again">▶ run</button>
@@ -325,15 +329,7 @@
       <input type="file" id="pick-dir" webkitdirectory aria-label="pick a folder for the intake">
       <input type="file" id="camera" accept="image/*" capture="environment" aria-label="take a picture of a screen or a page to port">
     </label>
-    <div class="flags" id="flags" aria-label="flags for the next run">
-      <button class="key" data-flag="transformer" aria-pressed="false" title="Draw the transformer's attention (ATTENTION.md)">transformer</button>
-      <button class="key" data-flag="train" aria-pressed="false" title="Train it on its fixed task (TRAINING.md)">train</button>
-      <button class="key" data-flag="train-reverse" aria-pressed="false" title="Train and grade reversal on held out data (REVERSE.md)">reverse</button>
-      <button class="key" data-flag="train-sort" aria-pressed="false" title="Train and grade sorting on held out data (SORT.md)">sort</button>
-      <button class="key" data-flag="vue" aria-pressed="false" title="Emit Vue beside React">vue</button>
-      <button class="key" data-flag="svelte" aria-pressed="false" title="Emit Svelte beside React">svelte</button>
-      <button class="key" data-flag="photo" aria-pressed="false" title="Read every picture in the intake as a screen by shape (PHOTO.md)">photo</button>
-    </div>
+    <div class="sunk flags-box"><div class="scroll flags" id="flags" aria-label="flags for the next run"></div></div>
     <div class="transport">
       <input id="site-url" type="url" placeholder="https://old.example.com — copy a site (needs --allow-live and an attestation)" aria-label="site address to copy into the intake" style="flex:1;min-width:0;font:inherit;font-size:9px;padding:3px 5px;background:#0d1a14;color:var(--p-hi);border:1px solid var(--edge-lo)">
       <button class="key" id="fetch-site" title="Copy the site's pages into the intake, through the same gates as portamp fetch">copy site</button>
@@ -415,7 +411,7 @@
 <script type="module">
 import {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
-  sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn, compareRuns,
+  sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn, compareRuns, FLAG_GROUPS,
 } from "/lib.js";
 
 const $ = (id) => document.getElementById(id);
@@ -489,13 +485,17 @@ function renderDeck() {
     n: new Set(run.plugins.filter((p) => p.stages.includes(stage)).map((p) => p.name)).size,
   }));
   const tallest = Math.max(1, ...perStage.map((s) => s.n));
+  // A fixed number of cells regardless of how many plugins a stage carries, so a run of five loads
+  // the same as a run of five hundred: each cell is a third of the tallest stage's count, rounded.
+  const CELLS = 3;
   $("deck-total").textContent = run.plugins.length;
   $("analyser").innerHTML = perStage.map((s) => {
-    const cells = Array.from({ length: tallest }, (_, k) => {
-      const lit = k < s.n;
-      return '<i class="' + (lit ? (k >= tallest - 2 ? "peak" : "lit") : "") + '"></i>';
+    const litCount = Math.round((s.n / tallest) * CELLS);
+    const cells = Array.from({ length: CELLS }, (_, k) => {
+      const lit = k < litCount;
+      return '<i class="' + (lit ? (k === CELLS - 1 ? "peak" : "lit") : "") + '"></i>';
     }).join("");
-    return '<div class="col">' + cells + "<em>" + s.stage + "</em></div>";
+    return '<div class="col" title="' + s.n + ' plugin(s)">' + cells + "<em>" + s.stage + "</em></div>";
   }).join("");
   $("transport").innerHTML = STAGES.map((s) =>
     '<button class="key done" data-stage="' + s + '" aria-pressed="false">' + s + "</button>"
@@ -824,8 +824,35 @@ $("all").addEventListener("click", () => selectStage(null));
 // Running the tool again is the one thing this window is allowed to cause, over the tree it was started with or
 // over the intake, with the flags pressed below.
 // Only a pressed key travels: an unpressed one leaves the command line's own value in force.
+// One title per flag, short: what pressing it asks the run to do, and the report it buys.
+const FLAG_TITLE = {
+  vue: "Emit Vue beside React", svelte: "Emit Svelte beside React", lit: "Emit a Lit custom element beside React",
+  html: "Emit a dependency free custom element", angular: "Emit Angular beside React", preact: "Emit Preact beside React",
+  solid: "Emit Solid beside React", qwik: "Emit Qwik, resumable, from the same JSX", astro: "Emit an Astro page hydrating the React component",
+  alpine: "Emit an Alpine island beside React", next: "Arrange the site as a Next.js app directory", remix: "Arrange the site as Remix route modules",
+  nuxt: "Arrange the site as a Nuxt app", sveltekit: "Arrange the site as a SvelteKit app", eleventy: "Arrange the site as an Eleventy site",
+  site: "Assemble a folder of pages into a site with a router", export: "Prerender every route to plain hostable html",
+  components: "Lift repeated blocks into shared components", photo: "Read every picture in the intake as a screen by shape (PHOTO.md)",
+  dockerfile: "Write a Dockerfile around the port's own server", nginx: "Write an nginx server block with the redirect map",
+  caddy: "Write a Caddyfile with the redirect map", aws: "Emit an AWS deploy plan, no secrets", azure: "Emit an Azure deploy plan, no secrets",
+  gcp: "Emit a GCP deploy plan, no secrets", cloudflare: "Emit a Cloudflare Pages deploy plan", vercel: "Emit a Vercel deploy plan",
+  netlify: "Emit a Netlify deploy plan", openapi: "Describe every request the app makes (no response)", msw: "Emit mock handlers for the endpoint map",
+  postman: "Emit a Postman collection", curl: "Emit a curl script per endpoint", adr: "Write architecture decision records for what changed",
+  migration: "Write the migration guide from legacy to port", types: "Write a TypeScript surface for every screen",
+  cypress: "Write a Cypress suite that walks every route", playwright: "Write a Playwright suite that walks every route",
+  storybook: "Write a story per screen", fixtures: "Write msw fixtures for every endpoint", tailwind: "Emit Tailwind classes from the measured tokens",
+  "design-tokens": "Write tokens.css from what the source measured", transformer: "Draw the transformer's attention (ATTENTION.md)",
+  train: "Train it on its fixed task (TRAINING.md)", "train-reverse": "Train and grade reversal on held out data (REVERSE.md)",
+  "train-sort": "Train and grade sorting on held out data (SORT.md)", "train-math": "Train and grade arithmetic on held out data (MATH.md)",
+};
+function renderFlags() {
+  const box = $("flags");
+  box.innerHTML = FLAG_GROUPS.map((g) => `<div class="flags-grp"><span class="lbl">${g.label}</span>${g.flags.map((f) =>
+    `<button class="key" data-flag="${f}" aria-pressed="false" title="${FLAG_TITLE[f] ?? f}">${f}</button>`).join("")}</div>`).join("");
+}
+renderFlags();
 const flagsOn = () => Object.fromEntries([...document.querySelectorAll("#flags .key")].filter((k) => k.getAttribute("aria-pressed") === "true").map((k) => [k.dataset.flag, true]));
-document.querySelectorAll("#flags .key").forEach((k) => k.addEventListener("click", () => k.setAttribute("aria-pressed", String(k.getAttribute("aria-pressed") !== "true"))));
+$("flags").addEventListener("click", (e) => { const k = e.target.closest(".key"); if (k) k.setAttribute("aria-pressed", String(k.getAttribute("aria-pressed") !== "true")); });
 async function rerun(options = {}) {
   const button = $("run");
   if (button.classList.contains("busy")) return;
@@ -842,6 +869,14 @@ async function rerun(options = {}) {
     }
     await refresh();
     $("now").textContent = "done in " + result.ms + "ms";
+    // The moment a person just dropped something is the moment they want to know
+    // whether it was understood, not a run's worth of numbers later.
+    if (options.source === "intake" && run.readers) {
+      const gap = (run.readers.notScanned?.length ?? 0) + (run.readers.unread?.length ?? 0);
+      $("intake-status").textContent = gap
+        ? `read ${run.readers.screens.length} screen(s) from what was dropped; ${gap} file(s) not understood yet, see READERS.md`
+        : `read ${run.readers.screens.length} screen(s) from what was dropped`;
+    }
   } catch (err) {
     $("now").textContent = "could not run: " + err.message;
   } finally {

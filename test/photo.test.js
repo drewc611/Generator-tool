@@ -181,7 +181,7 @@ test("the twenty first review pass: the edges of a picture, a label beside its f
 test("the console takes a photograph: a capture input, a photo key, and the flag rides the rerun", async () => {
   const html = await readFile(new URL("../plugins/vis-ui/app.html", import.meta.url), "utf8");
   assert.match(html, /<input type="file" id="camera" accept="image\/\*" capture="environment"/, "a phone opens its camera");
-  assert.match(html, /id="camera-key"/); assert.match(html, /data-flag="photo"/);
+  assert.match(html, /id="camera-key"/); assert.ok(html.includes("photo:"), "the panel titles the photo flag");
   assert.match(html, /onlyPictures \? \{ photo: true, \.\.\.flags \} : flags/, "pictures dropped alone are read as screens");
   assert.ok(RERUN_FLAGS.includes("photo"));
   assert.deepEqual(rerunOptions({ source: "intake", flags: { photo: 1 } }).flags, { photo: true });

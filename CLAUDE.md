@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and ninety two in five classes, and the core has never learned
+Plugins that ship, a hundred and ninety three in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -467,6 +467,36 @@ the intake, and pictures dropped alone turn the photo flag on. test/asar.test.js
 test/rc.test.js, test/jpeg.test.js and test/photo.test.js hold it beside the
 winforms and vb6 suites.
 
+10.5.4 gives the console what the command line already had: the intake's flag
+panel grows from seven buttons to forty six, every target, host, deploy plan
+and document the CLI accepts, grouped and built at runtime from the one array
+the server also reads, so the page can never offer what the server would
+refuse. Fitting them found the sparkline had no floor and no ceiling, painting
+through the layout under a stage's real plugin count; it now holds a fixed
+slice of the deck and draws three scaled cells instead of one per plugin.
+test/ui.test.js holds both.
+
+10.6 reads the enterprise desk the other readers never reached. input-extjs
+takes apart Sencha ExtJS, the classic Ext.define and Ext.create API that ran
+the internal tools and government portals of the 2010s: an xtype config tree
+is a real component boundary somebody drew on purpose, so a panel, a form, a
+textfield, a combobox with its inline store data, a checkbox, a button and a
+grid lower onto the dialect the way input-vb6 and input-exe already lower a
+form. A store named elsewhere, a layout other than the default, a vtype
+validator and every handler and listener are named as existing and never read
+for what they do; an Ext.data.Store or Model beside a screen is read as the
+data definition it is, never mistaken for one. test/extjs.test.js holds it.
+
+10.6.1 closes a silence the readers census could not see: a file whose
+extension no reader has asked for never reached the scan at all, so it was
+indistinguishable from a file never dropped. The scan now names every file it
+steps over as it walks the tree, and the census carries the list as its own
+row, separate from a markup file a reader looked at and did not recognise.
+The console reads the same census back over the run's own sidecar, so the
+moment after a drop is the moment it says plainly whether the file became a
+screen or not, and where READERS.md says why. test/readers-census.test.js and
+test/ui.test.js hold it.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -532,8 +562,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and forty nine features in
-one hundred and fifty two phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and fifty two features in
+one hundred and fifty five phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
