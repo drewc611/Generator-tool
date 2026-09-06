@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and ninety seven in five classes, and the core has never learned
+Plugins that ship, two hundred in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -524,6 +524,31 @@ them reaches React, Vue and Svelte exactly as an Angular component does.
 test/gwt.test.js, test/flex.test.js, test/qt.test.js and test/swing.test.js
 hold them.
 
+10.8 reaches the native desktop's other two toolkits and the printed page
+behind them both. input-glade reads GTK Builder's .glade files, GTK2 and
+GTK3's own declarative UI format: a GtkFrame's label becomes a heading, a
+GtkLabel's mnemonic_widget pairs it to its field the way a Qt buddy does, a
+GtkButton wires its own signal child straight to an output, and a
+GtkRadioButton's group property names another radio's id directly, so
+grouping is resolved transitively rather than by a shared button group's
+name. Because Qt Designer's own .ui files can share this format's shape
+under the same extension in the wild, this reader answers only to .glade,
+leaving .ui entirely to input-qt. input-fbp reads wxFormBuilder's .fbp
+project files for wxWidgets: a sizeritem or a spacer unwrapped to the one
+widget it holds or skipped outright, a wxStaticBoxSizer's own label kept as
+a heading, and wxWidgets' own radio grouping rule followed exactly, a
+wxRB_GROUP style starting a new group that every radio after it joins
+across sizers until the next one starts another. input-jasperreports reads
+JasperReports' .jrxml band layouts as the document they are: a read only
+screen with no input, button or event to wire, title through summary each
+a section in page order, and a bare $F, $P or $V reference the one
+expression shape this reader evaluates, lowered onto the dialect's own
+interpolation; anything a textField expression does beyond that single
+reference is named rather than partly reproduced. All three name a widget
+class, a property or an expression with no honest equivalent rather than
+approximating it. test/glade.test.js, test/fbp.test.js and
+test/jasperreports.test.js hold them.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -589,8 +614,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and fifty six features in
-one hundred and fifty nine phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and fifty nine features in
+one hundred and sixty two phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

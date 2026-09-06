@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Six hundred and fifty six features across one hundred and fifty nine phases. The statuses are
+Six hundred and fifty nine features across one hundred and sixty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-1000 tests, on Node 18, 20 and 22, and on Windows in CI.
+1100 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2559,14 +2559,29 @@ A `<widget class="...">` tree is a real component boundary somebody drew with th
 **656. input-swing reads a NetBeans style GUI builder's initComponents method exactly as it is generated, no separate declarative file to read** 🔨
 The method is found by the GEN-BEGIN/GEN-END or editor fold markers a builder brackets it with, cut into statements by a scanner that knows Java's own strings and comments, and each statement classified against the handful of shapes a builder always writes: a field declared and instantiated, a caption set with `setText` only when the argument is a plain string literal, a label paired to its field through `setLabelFor`, radio buttons grouped by a shared ButtonGroup, a combo box's items taken only from literal `addItem` calls, and a click matched from the generated anonymous ActionListener straight through to its real handler, kept as existing and how many lines it ran and never read for what it does. GroupLayout and GridBagLayout, which bury a form's containment inside their own builder calls, are named as present and never reproduced, with every control rendered in the order it was declared. A caption built at runtime, a combo box filled by code, and any statement outside these shapes are named through ctx.unverified rather than approximated. test/swing.test.js holds it.
 
+## Phase 160: the GNOME desktop
+
+**657. input-glade reads GTK Builder's .glade files, GTK2 and GTK3's own declarative UI format, and lowers the widget tree onto the dialect the rest of the tool already reads** 🔨
+An `<object class="...">` tree is a real component boundary somebody drew with the Glade Interface Designer, so it becomes a screen the way input-qt already reads one from a Qt Designer form, laid out in the document order the file's own `<child>` wrappers recorded. GtkWindow, GtkDialog, GtkBox, GtkGrid, GtkFrame and GtkScrolledWindow lower onto a div, a GtkFrame's label becomes a heading, a GtkLabel's mnemonic_widget pairs it to its field the way a Qt buddy does, a GtkEntry's visibility becomes a password field, and a GtkComboBoxText's inline items become real options. A GtkButton wires its own `<signal name="clicked">` child straight to an output, simpler than chasing Qt's separate connections section, and a GtkRadioButton's group property names another radio's id directly rather than a shared button group, so grouping is resolved transitively rather than by name. A property GtkBuilder encoded as a nested object rather than plain text, a combo box bound to a model instead of inline items, a widget class outside GTK's own set, and a `<placeholder/>` left where the Designer never filled one are each named rather than approximated. Because Qt Designer's own `.ui` files can share this format's shape under the same extension in the wild, this reader answers only to `.glade`, leaving `.ui` entirely to input-qt. GLADE.md carries every file's widget tree, what lowered and every gap. test/glade.test.js holds it.
+
+## Phase 161: wxWidgets
+
+**658. input-fbp reads wxFormBuilder's .fbp project files, the visual designer for wxWidgets, and follows the toolkit's own radio grouping rule exactly rather than guessing at proximity** 🔨
+An `<object class="...">` tree is a real component boundary somebody placed with the designer, so it becomes a screen the way input-qt does from a Qt Designer form, laid out in the document order the sizers already recorded: a sizeritem or a spacer unwrapped to the one widget it holds or skipped outright, a plain sizer recursed through transparently, and a wxStaticBoxSizer's own label kept as a heading the way a Qt QGroupBox's title already is. A wxChoice, wxComboBox or wxRadioBox's choices property, a single string of quoted literals, is parsed to real options rather than split on whitespace; a wxTextCtrl's style is read for wxTE_PASSWORD and wxTE_MULTILINE since wxWidgets has no separate multiline class of its own; a wxButton's OnButtonClick event names the handler wired, the same wiring Qt's connections section already names. wxWidgets' own radio grouping rule is followed exactly: a wxRadioButton's wxRB_GROUP style starts a new group that every radio after it joins, across sizers, until the next wxRB_GROUP one starts another. A property this reader does not interpret is named by its own name only, never its value, and a widget class with no vocabulary entry is named rather than approximated. test/fbp.test.js holds it.
+
+## Phase 162: the enterprise's own printed page
+
+**659. input-jasperreports reads JasperReports' .jrxml band layouts as the document they are, a read only screen with no input, button or event to wire** 🔨
+Every invoice, statement and printed report a Java back office produced was very often designed as a .jrxml band layout in iReport or Jaspersoft Studio, and it is a document the way a PDF data sheet is, so title, pageHeader, columnHeader, detail, columnFooter, pageFooter and summary each become a section in the order the page prints them; background, noData and lastPageFooter are read and named present but never laid out, since none of the three is the plain top to bottom flow the rest already is, and a group's own header and footer bands are named the same way, since which rows belong to a group is a data grouping this reader does not compute. A bare `$F{name}`, `$P{name}` or `$V{name}` reference is the one shape this reader evaluates, lowered onto the dialect's own interpolation the way a field, a parameter or a report variable is honestly read; anything a textField expression does beyond that single reference, a SimpleDateFormat call, string concatenation, a conditional, is a computed value this reader does not evaluate, named through the report rather than partly reproduced, and an image's source expression and a subreport are named the same restrained way. JASPERREPORTS.md carries every report's parameters, fields, bands and gaps in one place. test/jasperreports.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 609 |
+| new in this branch | 612 |
 | planned | 3 |
-| total | 656 |
+| total | 659 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

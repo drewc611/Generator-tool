@@ -13,8 +13,8 @@ const KEEP = new Set([
   ".woff", ".woff2", ".ttf", ".otf", ".eot",
   // A native executable is a legacy front end too: its dialogs and menus are resources a reader lifts.
   ".exe", ".dll",
-  // Desktop form definitions: WinForms designer code, XAML, VB6, Delphi and Qt Designer form files.
-  ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm", ".ui",
+  // Desktop form definitions: WinForms designer code, XAML, VB6, Delphi, Qt Designer and GTK Builder form files.
+  ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm", ".ui", ".fbp", ".glade",
   // Windows resource scripts and .NET resource files: the source of a dialog and the captions a designer localized.
   ".rc", ".rc2", ".resx",
   // An Electron app keeps its front end in one archive beside the executable.
@@ -23,6 +23,8 @@ const KEEP = new Set([
   ".mxml",
   // A Swing form a GUI builder wrote straight into the source, no separate declarative file of its own.
   ".java",
+  // JasperReports' own report definition: a document layout the way a PDF is, not a source file of any framework.
+  ".jrxml",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
