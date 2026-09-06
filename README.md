@@ -10,9 +10,9 @@ about where the plugin classes come from. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 193 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 1037 passing, 1039 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
+![node --test running the portamp suite: 1038 passing, 1039 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1037
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1038
 tests pass across 141 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing it does not already
 know about: the one alert it raises on `input-fetch` is the site copy writing
