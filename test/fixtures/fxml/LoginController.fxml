@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<GridPane xmlns:fx="http://javafx.com/fxml" xmlns="http://javafx.com/javafx" fx:controller="com.example.LoginController">
+  <Label text="Username" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+  <TextField fx:id="usernameField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+  <Label text="Password" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+  <PasswordField fx:id="passwordField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+  <CheckBox fx:id="rememberCheck" text="Remember me" GridPane.rowIndex="2"/>
+  <ComboBox fx:id="roleBox" GridPane.rowIndex="3">
+    <items>
+      <FXCollections fx:factory="observableArrayList">
+        <String fx:value="Administrator"/>
+        <String fx:value="User"/>
+      </FXCollections>
+    </items>
+  </ComboBox>
+  <Button text="Login" onAction="#handleLogin" GridPane.rowIndex="4"/>
+</GridPane>

@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and six in five classes, and the core has never learned
+Plugins that ship, two hundred and eight in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -619,6 +619,27 @@ within the window, and a DataWindow, a separate `.srd`/`.pbl` artifact,
 is named rather than guessed at. test/ssrs.test.js and
 test/powerbuilder.test.js hold both.
 
+10.12 reaches JavaFX and closes the loop on NetBeans' own designer.
+input-fxml reads a `.fxml` file's container and control tree the way
+input-qt and input-glade already read a desktop form: a button's own
+`onAction="#method"` attribute becomes an output named after the
+controller method it calls, radios group by an explicit `toggleGroup`
+reference however far apart the two controls sit and fall back to
+consecutive siblings only when neither carries one, and an attached
+property, positioning a parent container assigns a child, is dropped as
+the layout it is with no per-control note, since there would be one per
+positioned control and it would be noise rather than a gap.
+input-netbeansform reads the `.form` XML sidecar the Matisse designer
+saves beside the same class input-swing already reverse engineers from
+generated code, so what input-swing has to infer this reader is simply
+told: a label's `labelFor` and a radio's `buttonGroup` are
+`<ComponentRef>` references resolved against `<NonVisualComponents>`, the
+file's own ground truth, and an `<Events><EventHandler>` names a button's
+wiring directly, its handler stripped of the `ActionPerformed` suffix and
+never run through the case folding that would flatten a name like
+`loginButton` into one word. test/fxml.test.js and
+test/netbeansform.test.js hold both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -684,8 +705,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and sixty five features in
-one hundred and sixty eight phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and sixty seven features in
+one hundred and seventy phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

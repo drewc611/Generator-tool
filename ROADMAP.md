@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and sixty five features across one hundred and sixty eight phases. The statuses are
+Six hundred and sixty seven features across one hundred and seventy phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2604,14 +2604,24 @@ PageHeader, Body and PageFooter, RDL's own names for the parts input-jasperrepor
 **665. input-powerbuilder reads Sybase/Appeon PowerBuilder's exported .srw window sources, and finds each control's real property block by walking past the shell that only declares it exists** 🔨
 A `.srw` file forward-declares every control's name and PowerBuilder class before the file's real content, so this reader takes the forward section for names and classes only and never for a value; a control's actual properties live in a second, later `type <name> from <class> within <window>` block that sits outside `forward`, and telling the two apart is one parent check in a small block stack, not a second pass over the file. Statictext becomes a paragraph, singlelineedit an input whose own `password` property makes it one, multilineedit a textarea, checkbox and radiobutton lower the ordinary way, radios grouped by a run of consecutive siblings in the window's own declaration order since a `.srw` states no group of its own; a dropdownlistbox's inline `string item[]` array becomes real options, and a commandbutton wires an output from its own `event <name>::clicked` block found elsewhere in the file, any other event on it named as behaviour the port must reimplement rather than invented wiring. A groupbox's own children are never reparented beneath it, because PowerBuilder places every control flat within the window with no tree to reflect, only a heading from its own text; a DataWindow is named as the separate `.srd`/`.pbl` artifact it is, an empty structural table standing in for it. An opaque property, one whose type keyword is not `integer`, `string` or `boolean`, is named by key and never by value, and a control class with no vocabulary entry is named rather than approximated. test/powerbuilder.test.js holds it.
 
+## Phase 169: the desktop Java toolkit that outlived Swing's own editors
+
+**666. input-fxml reads JavaFX's .fxml files, an attached property dropped as the layout it is with no per-control note to spell out** 🔨
+A container or control tree in a `.fxml` file is a real component boundary somebody drew with Scene Builder or by hand, so it becomes a screen the way input-qt and input-glade already do from a desktop form, laid out in the document order the file's own nesting recorded. A GridPane, VBox, HBox and the rest of JavaFX's own containers lower onto a div; a label, a text field with a password field read as one, a checkbox, and a combo box filled from a plain inline `<items><FXCollections fx:factory="observableArrayList">` list of literal strings all lower the ordinary way; a button's own `onAction="#method"` attribute becomes an output named after the controller method it calls, simpler than chasing a separate connections section. Radios group by an explicit `toggleGroup` reference, an id or an inline `<ToggleGroup fx:id>`, resolved however far apart the two controls sit in the file, and fall back to a run of consecutive siblings, this reader's own structural convenience, only when neither carries one. An attached property, positioning a parent container assigns a child through its own dotted element or attribute form, carries no rendering meaning this reader reproduces and is dropped without a per-control note, since there would be one per positioned control and it would be noise rather than a gap; a combo box filled from code, a button whose handler is a binding expression rather than a controller method, and an element outside JavaFX's own control set are each named through FXML.md rather than approximated. test/fxml.test.js holds it.
+
+## Phase 170: the generated method the other NetBeans reader could not see
+
+**667. input-netbeansform reads a NetBeans GUI Builder's own .form XML sidecar directly, an explicit label and button-group reference read as the ground truth it is rather than a proximity guess** 🔨
+Where input-swing reverse engineers a generated initComponents method, a `.form` file is the Matisse designer's own declarative save format sitting beside the same class's `.java` file, and it states outright what input-swing has to infer: a `<Property>`'s bare `value` attribute or one of its typed child shapes (`<String value>`, an ordered `<StringArray>` of `<StringItem>`, a `<ComponentRef name>`) is read for real, and anything else is kept opaque by its own child tag name rather than guessed at; an `<Events><EventHandler event listener handler>` names a button's wiring directly, its handler stripped of the `ActionPerformed` suffix and never run through the same case folding that would flatten a name like `loginButton` into one word; a label's own `labelFor` and a radio's own `buttonGroup` are `<ComponentRef>` references resolved against `<NonVisualComponents>`, the file's own ground truth, with a run of consecutive siblings kept only as the fallback for a radio group with no reference at all. JPanel, JScrollPane and JSplitPane lower to a div, JTextField, JFormattedTextField, JSpinner and JPasswordField to an input, JTextArea to a textarea, JCheckBox, JRadioButton, JComboBox and JButton the ordinary way, and JTable to a header only placeholder; a widget class with no vocabulary entry is named through NETBEANSFORM.md rather than approximated. test/netbeansform.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 618 |
+| new in this branch | 620 |
 | planned | 3 |
-| total | 665 |
+| total | 667 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
