@@ -1,0 +1,18 @@
+)ATTR DEFAULT(%+_)
+ % TYPE(TEXT) INTENS(HIGH)
+ _ TYPE(INPUT) CAP(ON)
+ + TYPE(TEXT) INTENS(LOW)
+ # TYPE(OUTPUT) INTENS(LOW)
+)BODY EXPAND(!!)
+%CUSTOMER MAINTENANCE
++--------------------------------------------------------------
++
+%Cust No ===>_ZCUSTNO
+%Name    ===>_ZCUSTNAM
+%Status  ===>#ZSTATUS
+)INIT
+ .ZVARS = '(ZCUSTNO,ZCUSTNAM,ZSTATUS)'
+ &ZSTATUS = 'ACTIVE'
+)PROC
+ VER (&ZCUSTNO,NB,NUM)
+)END

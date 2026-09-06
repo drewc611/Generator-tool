@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and sixty nine features across one hundred and seventy two phases. The statuses are
+Six hundred and seventy one features across one hundred and seventy four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2624,14 +2624,24 @@ A `DFHMSD` opens a mapset and a `DFHMDI` opens one map inside it, a real screen 
 **669. input-informix reads Informix 4GL/ESQL .per screen forms, the SCREEN block's own row and column position read directly off the ASCII art rather than from a coordinate attribute** 🔨
 A `.per` file's `SCREEN` section is a literal character grid between `{` and `}`, so unlike every other desktop or mainframe reader in this tool, position is not stated in an attribute at all, it is where the text sits in the block; a bracketed run, `[tag]`, is a field placeholder whose own width is the bracket's width and whose tag, read from the `ATTRIBUTES` section's `tag = table.column, MODIFIER;` statements, resolves what it binds to and how, while everything outside brackets is a literal caption kept exactly as written. `NOENTRY` renders a field read only rather than as a real input, and `REQUIRED` is named for the port to enforce rather than written as an invented HTML attribute this reader has not verified matches the port's own validation; a `COMMENTS = "..."` string is carried onto the rendered field as a title, an honest reuse of real text rather than a guess. Like BMS, a `.per` file names no button and no event, since the actual 4GL program that reads a screen's fields lives elsewhere, so this reader too produces zero outputs; a field placeholder with no matching attributes statement and an attributes statement whose tag never appears on screen are each named as the mismatch they are rather than silently dropped or bound anyway. test/informix.test.js holds it.
 
+## Phase 173: the interface declared inside the language itself
+
+**670. input-cobolscreen reads a standard COBOL program's SCREEN SECTION, one 01 level entry per screen, and produces no output because the section states none** 🔨
+Since the COBOL-85 standard, a program's DATA DIVISION can carry a `SCREEN SECTION.` declaring a character-cell terminal screen directly in COBOL's own level-number syntax, no separate designer file at all; each `01` level entry is a real screen boundary the same way a `DFHMDI` map or a storyboard scene is, so more than one in a file becomes more than one screen, read top to bottom in declaration order. A `VALUE "literal"` is a caption; a `PIC` clause together with `USING` or `TO` is a real input, its hyphenated COBOL data name camelCased into a legal field name, while `PIC` with `FROM` is read only, the program writing to the screen but the operator never typing into it. `BLANK SCREEN` is a screen clearing directive, not a field, and formatting clauses (`HIGHLIGHT`, `REVERSE-VIDEO`, colors) are never named per occurrence, the same restraint every other reader already keeps over what it does not translate. There is no button, no submit and no event anywhere in a SCREEN SECTION, since the actual `ACCEPT`/`DISPLAY` statements and what a function key does live entirely in the PROCEDURE DIVISION this reader does not read, so it is honest that it produces zero outputs; a `PIC` clause naming none of `USING`/`FROM`/`TO` and a relative `LINE PLUS`/`COLUMN PLUS` position whose exact placement this reader does not compute are each named rather than guessed. test/cobolscreen.test.js holds it.
+
+## Phase 174: the mainframe dialog the operator drove by hand
+
+**671. input-ispf reads IBM ISPF Dialog Manager .panel definitions, a field's own variable name read directly off the body text beside it rather than from a separate declaration** 🔨
+An ISPF panel's `)BODY` section is a literal character grid the same way a `.per` screen block is, read row by row with position coming from where each run of text sits rather than a coordinate attribute; but where Informix marks a field with brackets, ISPF marks it with a single attribute character whose meaning, `TYPE(TEXT)`, `TYPE(INPUT)` or `TYPE(OUTPUT)`, is resolved from a `)ATTR` section when the panel declares one, and otherwise falls back to ISPF's own three real built-in defaults. The text immediately following an input or output attribute character, up to the next blank or attribute character, is literally the panel's own variable name, a naming mechanism no other reader in the tool uses, since nothing declares the field elsewhere; a `TYPE(OUTPUT)` field is read only the same honest way an Informix `NOENTRY` field already is. `)INIT` and `)PROC` hold real Dialog Manager statements, variable defaults and `VER` validation calls, named as present once per panel and never read for meaning. Like every mainframe format this tool has read, a panel's `)BODY` names no button and no event at all, driven instead by PF keys and `)PROC` logic outside it, so this reader is honest that it produces zero outputs; an attribute character with no `)ATTR` entry and no built-in default, and a body run that does not resolve to a clean variable name, are each named rather than guessed. test/ispf.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 622 |
+| new in this branch | 624 |
 | planned | 3 |
-| total | 669 |
+| total | 671 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

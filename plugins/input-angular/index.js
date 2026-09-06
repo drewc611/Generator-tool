@@ -33,6 +33,10 @@ const KEEP = new Set([
   ".bms",
   // Informix 4GL/ESQL's own screen form: a character-cell terminal layout, ASCII art rather than markup.
   ".per",
+  // A standard COBOL program's own SCREEN SECTION: a character-cell terminal screen declared directly in source.
+  ".cbl", ".cob",
+  // IBM ISPF Dialog Manager's own panel definition: a character-cell terminal screen, plain text rather than markup.
+  ".panel",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
