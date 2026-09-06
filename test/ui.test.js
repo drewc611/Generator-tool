@@ -39,9 +39,10 @@ test("the whole ui is under the budget the spec set", async () => {
   // the run comparison as a tooltip below the head, so its list stops
   // overrunning the header bar, bought the last ten. The intake, a drop zone
   // that hands what a person drops to the run with the flags they pressed,
-  // bought the raise to 1750. The budget still exists so growth stays a
+  // bought the raise to 1750; the site copy, a URL handed through the fetch
+  // command's gates, bought 1800. The budget still exists so growth stays a
   // decision, not a drift.
-  assert.ok(js + html + lib < 1750, `${js + html + lib} lines, the spec allows under 1750`);
+  assert.ok(js + html + lib < 1800, `${js + html + lib} lines, the spec allows under 1800`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once

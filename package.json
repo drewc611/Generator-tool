@@ -1,7 +1,7 @@
 {
   "name": "portamp",
-  "version": "10.1.0",
-  "description": "A tiny plugin host that ports legacy front ends. Thirty two input plugins read Angular, AngularJS, Vue, Knockout, Backbone, jQuery, Ember, Marko, Liquid, Twig, XSLT and more, or a running app with no source; it recognises what it is; it emits React, Vue, Svelte, Angular, Lit or a custom element, arranged for Next, Remix, Astro, Nuxt, SvelteKit or Eleventy, with the proofs beside them.",
+  "version": "10.2.0",
+  "description": "A tiny plugin host that ports legacy front ends. Forty nine input plugins read Angular, AngularJS, Vue, Knockout, Backbone, jQuery, Ember, Marko, Liquid, Twig, XSLT and more, or a running app with no source; it recognises what it is; it emits React, Vue, Svelte, Angular, Lit or a custom element, arranged for Next, Remix, Astro, Nuxt, SvelteKit or Eleventy, with the proofs beside them.",
   "type": "module",
   "bin": {
     "portamp": "src/cli.js"
@@ -27,6 +27,7 @@
     "plugins": "node src/cli.js plugins",
     "test": "node --test test/*.test.js",
     "ci-local": "node tools/ci-local.mjs",
+    "pack:check": "node src/cli.js publish-check",
     "record": "node src/cli.js run --allow-live --only input-record"
   },
   "keywords": [
@@ -46,7 +47,6 @@
   ],
   "dependencies": {},
   "license": "UNLICENSED",
-  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/drewc611/portamp.git"

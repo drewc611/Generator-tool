@@ -4,7 +4,8 @@ import { dirname, extname, join, resolve, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { pascal } from "../dsp-ir/emit.js";
-import { RERUN_FLAGS, intakePath, rerunOptions, rerunPatch } from "./lib.js";
+import { RERUN_FLAGS, intakePath, rerunOptions, rerunPatch, siteUrl } from "./lib.js";
+import { fetchForRun } from "../input-fetch/index.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -338,6 +339,22 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         const files = await intake.put(rel, bytes);
         return send(200, TYPES[".json"], JSON.stringify({ ok: true, path: rel, files: files.length }));
       }
+      // A site address: the intake copies it through the fetch command's own gates (an attestation on disk,
+      // --allow-live, the attested domains), so a URL typed into the page can do nothing the command line could not.
+      if (url.pathname === "/intake/fetch" && req.method === "POST") {
+        if (!intake?.fetch) return send(501, TYPES[".json"], '{"error":"this server was started without an intake that can copy a site"}');
+        let asked;
+        try { asked = JSON.parse((await readBody(req, 65536)).toString("utf8") || "{}"); } catch (err) { return send(400, TYPES[".json"], JSON.stringify({ error: `not json: ${err.message}` })); }
+        const target = siteUrl(asked.url);
+        if (!target) return send(400, TYPES[".json"], '{"error":"the url must be http or https"}');
+        try {
+          const manifest = await intake.fetch(target);
+          return send(200, TYPES[".json"], JSON.stringify({ ok: true, pages: manifest.pages.length, assets: manifest.assets.length, skipped: manifest.skipped.length, dir: manifest.dir }));
+        } catch (err) {
+          // A refusal is a result the page shows, in the policy's own words; nothing about it is softened here.
+          return send(403, TYPES[".json"], JSON.stringify({ ok: false, error: err.message }));
+        }
+      }
       if (url.pathname === "/intake" && req.method === "DELETE") {
         if (!intake) return send(501, TYPES[".json"], '{"error":"this server was started without an intake"}');
         await intake.clear();
@@ -475,7 +492,7 @@ export default {
   commands: {
     ui: {
       describe: "serve the last run on 127.0.0.1; drop an .exe, a screenshot or a folder on it to port that; --watch reruns on change",
-      async run({ config, log, args, runPipeline }) {
+      async run({ config, log, args, policy, runPipeline }) {
         const runPath = join(config.out, ".portamp", "run.json");
         const already = await readFile(runPath, "utf8").then(() => true).catch(() => false);
 
@@ -490,6 +507,13 @@ export default {
         // rides on top of the command line's, and the tree, screenshots and flags it was started with come back
         // for every rerun that does not ask otherwise, the watch's included.
         const intake = createIntake(join(config.out, ".portamp", "intake"));
+        // A site the page asks for lands in the intake under its host, through the same gates as `portamp fetch`.
+        intake.fetch = async (target) => {
+          const host = new URL(target).host.replace(/[^\w.-]/g, "_");
+          const manifest = await fetchForRun({ url: target, dir: join(intake.dir, `site-${host}`), policy, log, depth: 2, maxPages: 50 });
+          manifest.dir = `site-${host}`;
+          return manifest;
+        };
         const original = { src: config.src, shots: config.shots, flags: Object.fromEntries(RERUN_FLAGS.map((f) => [f, config[f]])) };
         const rerun = async (options = {}) => {
           Object.assign(config, rerunPatch(original, intake.dir, rerunOptions(options)));

@@ -40,6 +40,7 @@ const DOES = {
   "input-webcomponents": "vanilla custom elements: observedAttributes as inputs, CustomEvent as outputs, innerHTML lowered",
   "input-ember": "ember components: Glimmer blocks with block params, @args, {{on}} and {{action}}, <Input @value>, yield; one .hbs, one reader",
   "input-exe": "a native Windows executable: its dialog templates as screens, menus as menu bars, the string table and version block read from the .rsrc section with no dependency; .NET forms named as code",
+  "input-fetch": "portamp fetch <url>: copies one origin's pages and assets into a folder behind --allow-live and the attestation, robots.txt honoured, every skip written down; the folder is then what input-static ports",
   "input-underscore": "the templates input-backbone deferred: <%= %> lowered to the dialect",
   "input-handlebars": "#if, #each and the empty state in else, lowered to the dialect",
   "input-jinja": "server rendered pages read as screens; python logic respelled as JS",

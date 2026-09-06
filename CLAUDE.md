@@ -22,6 +22,7 @@ npm test                     # node --test, no framework
 node src/cli.js run -v       # timings per plugin
 node src/cli.js ui --watch   # the console, rerunning as the source changes
 node tools/ci-local.mjs --only smarty   # the CI's own exercise steps, locally, before a push
+node src/cli.js fetch https://old.example.com --out fetched --allow-live   # copy a site to port; needs portamp.authorization.json
 ```
 
 No install step. No build step. Node 18 or newer, zero runtime dependencies.
@@ -75,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and eighty four in five classes, and the core has never learned
+Plugins that ship, a hundred and eighty five in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -83,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-fetch
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -421,6 +422,16 @@ port; the server hands bytes to the intake the command owns and writes
 nothing itself. test/exe.test.js, test/shots.test.js and test/ui.test.js
 hold it.
 
+10.2 reaches a site you can reach but do not have, and ships. input-fetch
+copies one origin's pages and assets into a folder behind the recorder's two
+gates (--allow-live and the attestation), robots.txt honoured, every skip
+written into FETCH.md, and the folder is what input-static ports; the console
+takes a URL through the same function. The package is proven installed:
+test/installed.test.js packs the tarball, unpacks it away from the checkout
+and runs the shipped cli from there, and a v* tag publishes with provenance
+once a person adds NPM_TOKEN. test/fetch.test.js and test/installed.test.js
+hold it.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -486,11 +497,13 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and thirty four features in
-one hundred and forty seven phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and thirty six features in
+one hundred and forty eight phases, statuses honest. What remains open, and why:
 
-1. **npm publish.** One command that belongs to a person;
-   docs/PUBLISHING.md waits beside it.
+1. **npm publish.** The workflow is written: a v* tag runs the suite,
+   publish-check, the tag against the version and the token's presence, then
+   publishes with provenance. What remains is a person's: adding NPM_TOKEN;
+   docs/PUBLISHING.md says how.
 2. **Growing the calibration corpus.** Twenty two labelled miniatures now, two
    per archetype, enough for a leave one out cross validation; real labelled apps
    would make the confidence numbers mean more.

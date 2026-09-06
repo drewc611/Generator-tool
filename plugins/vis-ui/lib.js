@@ -164,6 +164,14 @@ export function rerunOptions(body) {
   return { source, flags };
 }
 
+/** A site address the intake may be asked to copy: http or https, nothing else, or null. */
+export function siteUrl(raw) {
+  try {
+    const u = new URL(String(raw ?? "").trim());
+    return /^https?:$/.test(u.protocol) ? u.href : null;
+  } catch { return null; }
+}
+
 /**
  * A path a dropped file may land at inside the intake: relative, forward slashed, no empty, dot or dot dot segment,
  * no control character, and short. Anything else is null and the upload is refused.

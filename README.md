@@ -7,14 +7,17 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 184 plugins, and the literal output of
+lines of core, no runtime dependencies, 185 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 959 passing, 960 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
+![node --test running the portamp suite: 965 passing, 966 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 959
-tests pass across 128 test files with `node --test` and no framework, and
-CodeQL's javascript-security-extended query finds nothing. CI reruns the same
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 965
+tests pass across 130 test files with `node --test` and no framework, and
+CodeQL's javascript-security-extended query finds nothing it does not already
+know about: the three alerts it raises on `input-fetch` are the site copy
+writing network data to a folder, which is what copying a site is, and each
+carries a suppression comment saying so beside the write. CI reruns the same
 suite on Node 18, 20 and 22 and on Windows, and asserts the same screen written
 in two dialects emits byte identical output across all four targets.</sub>
 
@@ -34,9 +37,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 184 plugin(s)
+node src/cli.js plugins      # 185 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 960 tests, node --test, no framework
+npm test                     # 966 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -68,8 +71,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 41,613 lines of JavaScript in src and plugins |
-| Tests | 14,386 lines, 960 cases across 128 files |
+| Every line of the tool | 43,168 lines of JavaScript in src and plugins |
+| Tests | 14,624 lines, 966 cases across 130 files |
 | Source on disk | src 27 KB, plugins 2.0 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -79,7 +82,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and thirty four features, and every
+The core grew from 527 lines to 718 across six hundred and thirty six features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -120,9 +123,9 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The 184 it ships with
+## The 185 it ships with
 
-![The plugin rack: 184 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 185 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## Yes, there is a transformer in it
 
@@ -443,6 +446,31 @@ of into `PALETTE.md`, and `dsp-tokens` takes exactly one thing from them,
 the page background, with the screenshot named in the provenance. The ink
 is deliberately not taken, because a header bar and body text are both
 dark and a pixel share cannot tell them apart.
+
+## A site you can reach becomes a folder you own
+
+When the source is gone but the site is up, `portamp fetch <url>` copies it:
+one origin, link by link to a depth, with the stylesheets, scripts, images
+and fonts the pages name, saved byte for byte under the paths the site served
+them at. The folder is then what `--site true` ports, exactly as it ports a
+folder of old pages. It stands behind the recorder's two gates, `--allow-live`
+and `portamp.authorization.json` naming who owns the system, honours
+`robots.txt`, sends no cookie or credential, never submits a form, never
+fetches from another host, and writes every request it skipped and why into
+`FETCH.md`, so a missing page is a known gap rather than a page the site
+lacked. The console's intake takes the same URL through the same function.
+
+## Install it
+
+```bash
+npm install -g portamp     # once the v* tag publishes; docs/PUBLISHING.md says how
+portamp plugins            # 185 plugin(s)
+portamp ui                 # the console, with its intake
+```
+
+`test/installed.test.js` packs the real tarball, unpacks it away from the
+checkout and runs the shipped command from there, so what ships is proven to
+work without the repository around it.
 
 ## The port stops repeating itself
 
@@ -1039,8 +1067,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and thirty four features in
-one hundred and forty seven phases, forty four shipped, five hundred and eighty seven new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and thirty six features in
+one hundred and forty eight phases, forty four shipped, five hundred and eighty nine new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and thirty four features across one hundred and forty seven phases. The statuses are
+Six hundred and thirty six features across one hundred and forty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2467,14 +2467,22 @@ The console could show a run and run it again, but everything it ran over was a 
 **634. The executable reader, the PNG decoder and the console's intake read again** 🔨
 A review pass over 10.0, each finding fixed with the input that exposed it. A caption spelling a JavaScript keyword (a group box named Export, a checkbox named Default, a static Class beside an edit) became a field the emitted component could not declare; a reserved word gets a suffix. A doubled ampersand is a literal one, and the mnemonic was looked for before it was set aside, so `Search && Replace` named a space as its access key; the pair is set aside first. Every default push button was treated as OK and made the form's submit; only IDOK is, and a default button with another id is its own event, named as what Enter fired in the original. The creation data count on a control had DIALOG and DIALOGEX swapped, so a control carrying creation data threw every control after it out of alignment; DIALOGEX counts the bytes that follow and a DIALOG's word counts itself. An RVA in a section's virtual tail, zero fill in memory, was followed through the file into the next section's bytes and parsed as a dialog; only the raw bytes map, and the phantom is named. A string the block ended inside was reported as the message; it is kept as far as it goes and marked cut off, in the problems, the notes and STRINGS.md. A version value with a pipe or a line break broke the DIALOGS.md table; every cell is escaped the same way. The PNG decoder honoured tRNS for palette images only, so a colour keyed transparent border in a greyscale or truecolour image was counted as the picture's colour; the key is compared at the image's own depth and the pixel is transparent. The console's rerun wrote every offered flag, pressed or not, onto the live config and never restored what the command line gave, so `--vue true` was switched off by the first run and the watch ran with whatever the last rerun left; a pressed key now rides on top of the command line's flags, an unpressed one leaves the command line's value in force, every rerun is patched from the originals, and the watch reruns through the same door. And the server captured the screenshots directory once at startup, so an intake rerun's screenshots were looked for in the wrong place; it asks where they are each time. test/exe.test.js, test/shots.test.js and test/ui.test.js hold it.
 
+## Phase 148: a site you can reach, and a package you can install
+
+**635. The package is proven installed, and the release is a tag** 🔨
+publish-check proved the file list npm would pack; nothing proved the files in it worked away from the checkout, where a plugin that reached for example/, test/ or node_modules/ would still find them and the first person to install would not. test/installed.test.js packs the real tarball, unpacks it with the platform's tar into a temp directory and runs the shipped cli from there, with the temp directory as cwd and no repository around it: the roster it loads is the checkout's roster name for name, and a run over the example writes PORT_NOTES.md and the port's source. CI runs that file alone as its own step so the failure names itself, and the same step runs locally through ci-local. The release workflow gains an npm job beside the desktop installers: on a v* tag it runs the suite and publish-check, fails naming both values when the tag is not v plus package.json's version, fails naming the secret and where a person adds it when NPM_TOKEN is absent, and only then publishes with provenance under id-token: write and contents: read, the token read into one step and written nowhere else. package.json counts its readers honestly, forty nine input plugins, pack:check names publish-check, and the private flag that refused every publish is gone at the owner's word. docs/PUBLISHING.md describes that flow and nothing else. test/installed.test.js and test/publish.test.js hold it.
+
+**636. input-fetch copies a site you can reach but do not have, behind the recorder's gates, and the console takes a URL** 🔨
+The no source path had a recorder and a black box reader, both driving a browser; it had no way to take a plain site's pages. `portamp fetch <url>` copies one origin the way a careful person would: link by link to a depth, with the stylesheets, scripts, images and fonts the pages and the stylesheets name, saved byte for byte under the paths the site served them at, so input-static and the site engine read the copy exactly as they read a folder of old pages. Every request asks the policy first, so nothing moves without --allow-live and, where the attestation names domains, a domain it names, and the command refuses outright without portamp.authorization.json, the same two gates input-record stands behind. robots.txt is read and its rules for every agent honoured; a redirect is followed on the origin and the page saved once under the address it lives at; a redirect off the origin, a page beyond the depth, one over the page or byte or file limit, a 404 and a request with no answer are each skipped with the reason; a form's action is recorded and never submitted; another host is named and never fetched; no cookie or credential is sent. FETCH.md and portamp.fetch.json in the copy list all of it, and when a run reads such a folder the manifest's gaps become the run's notes, so a page the copy skipped is never mistaken for a page the site lacked. The console's intake gains a URL: the page hands it to the server, the server to the fetch command's own function, so a URL typed into the page can do nothing the command line could not, and a refusal is shown in the policy's own words. test/fetch.test.js holds it, against a site the test serves itself.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 587 |
+| new in this branch | 589 |
 | planned | 3 |
-| total | 634 |
+| total | 636 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

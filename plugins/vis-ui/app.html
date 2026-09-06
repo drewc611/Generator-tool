@@ -333,6 +333,10 @@
       <button class="key" data-flag="svelte" aria-pressed="false" title="Emit Svelte beside React">svelte</button>
     </div>
     <div class="transport">
+      <input id="site-url" type="url" placeholder="https://old.example.com — copy a site (needs --allow-live and an attestation)" aria-label="site address to copy into the intake" style="flex:1;min-width:0;font:inherit;font-size:9px;padding:3px 5px;background:#0d1a14;color:var(--p-hi);border:1px solid var(--edge-lo)">
+      <button class="key" id="fetch-site" title="Copy the site's pages into the intake, through the same gates as portamp fetch">copy site</button>
+    </div>
+    <div class="transport">
       <button class="key run" id="port-intake" title="Run the pipeline over what was dropped">▶ port intake</button>
       <button class="key" id="pick-dir-key" title="Pick a whole folder">folder</button>
       <button class="key" id="clear-intake" title="Empty the intake">clear</button>
@@ -826,7 +830,7 @@ async function rerun(options = {}) {
   button.textContent = "· running";
   $("now").textContent = options.source === "intake" ? "running the pipeline over the intake" : "running the pipeline";
   try {
-    const body = JSON.stringify({ source: options.source ?? "src", flags: flagsOn() });
+    const body = JSON.stringify({ source: options.source ?? "src", flags: { ...flagsOn(), ...(options.flags ?? {}) } });
     const result = await fetch("/rerun", { method: "POST", headers: { "Content-Type": "application/json" }, body }).then((r) => r.json());
     if (!result.ok) {
       $("now").textContent = "stopped: " + (result.error ?? "unknown").split("\n")[0];
@@ -876,6 +880,17 @@ $("pick").addEventListener("change", picked);
 $("pick-dir").addEventListener("change", picked);
 $("pick-dir-key").addEventListener("click", () => $("pick-dir").click());
 $("port-intake").addEventListener("click", () => rerun({ source: "intake" }));
+// A site address goes to the server, which hands it to the fetch command's gates; a refusal is shown in its own words.
+$("fetch-site").addEventListener("click", async () => {
+  const status = $("intake-status");
+  const url = $("site-url").value.trim();
+  if (!url) { status.textContent = "type a site address first"; return; }
+  status.textContent = "copying " + url + " into the intake";
+  const r = await fetch("/intake/fetch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) }).then((r) => r.json()).catch((err) => ({ error: err.message }));
+  if (!r.ok) { status.textContent = "refused: " + (r.error ?? "unknown"); return; }
+  status.textContent = r.pages + " page(s) and " + r.assets + " asset(s) copied, " + r.skipped + " skipped (FETCH.md in the intake says why)";
+  await rerun({ source: "intake", flags: { site: true } });
+});
 $("clear-intake").addEventListener("click", async () => { await fetch("/intake", { method: "DELETE" }); $("intake-status").textContent = "intake emptied"; });
 const drop = $("drop");
 drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
