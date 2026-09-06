@@ -57,6 +57,12 @@ jobs:
       - name: tests, without the optional dependencies
         run: npm test
 
+      # npm test runs this file too, from inside the checkout. Here it runs
+      # alone so a failure names itself: the tarball is what ships, and it is
+      # unpacked and run from a directory with no repository around it.
+      - name: the packed tarball installs and runs on its own
+        run: node --test test/installed.test.js
+
       - name: pipeline runs end to end, without the optional dependencies
         run: npm run demo
 
@@ -65,10 +71,12 @@ jobs:
       # honesty debt is counted and bounded, not merely listed.
       - name: the demo holds offline and under the unverified ceiling
         run: |
-          # 15, not 14: dsp-learn adds one honest unverified item, its learned
-          # archetype reading, which is a proposal for a person to confirm.
+          # 16, not 14: dsp-learn adds one honest unverified item, its learned
+          # archetype reading, which is a proposal for a person to confirm; and
+          # input-shots names the example's two zero byte placeholder screenshots
+          # as ones it could not decode, in one note.
           node src/cli.js run --src example/legacy --shots example/screenshots \
-            --out /tmp/gated-demo --offline --max-unverified 15
+            --out /tmp/gated-demo --offline --max-unverified 16
           test -s /tmp/gated-demo/PORT_NOTES.md
 
       # The console is part of the run, not beside it: boot it against the
@@ -108,7 +116,9 @@ jobs:
       # whether an optional dependency happens to be installed.
       - name: the reader does not change what the run reports
         run: |
-          npm run demo 2>&1 | grep -q "1 component(s), 3 call(s), 2 interceptor(s)"
+          # grep reads the whole output: a -q that quits at the match closes the pipe under the demo, whose next
+          # write then fails, and with pipefail the step fails on a race rather than on a fact.
+          npm run demo 2>&1 | grep "1 component(s), 3 call(s), 2 interceptor(s)" > /dev/null
 
       # One IR, two dialects in, four targets out. If any pair diverges the
       # claim that the middle is framework blind is decoration.

@@ -13,6 +13,8 @@ const KEEP = new Set([
   ".woff", ".woff2", ".ttf", ".otf", ".eot",
   // A native executable is a legacy front end too: its dialogs and menus are resources a reader lifts.
   ".exe", ".dll",
+  // Desktop form definitions: WinForms designer code, XAML, VB6 and Delphi form files.
+  ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;

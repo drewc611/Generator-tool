@@ -35,6 +35,7 @@ export default {
         return;
       }
       let measured = 0;
+      const undecoded = [];
       for (const e of entries) {
         if (!IMG.has(extname(e))) continue;
         const p = join(ctx.config.shots, e);
@@ -52,12 +53,14 @@ export default {
         // catalogued only, because decoding those needs a dependency this reader does not take.
         if (extname(e).toLowerCase() === ".png") {
           const image = decodePng(bytes);
-          if (image.error) ctx.unverified(`${e} could not be decoded (${image.error}); it is catalogued, not measured.`);
+          if (image.error) undecoded.push(`${e} (${image.error})`);
           else { shot.width = image.width; shot.height = image.height; shot.palette = palette(image); measured += 1; }
         }
         ctx.sources.screenshots.push(shot);
       }
       if (measured) log.info(`${measured} PNG screenshot(s) measured: size and the colours their pixels are made of`);
+      // One note for the run, not one per file: the files are named in it.
+      if (undecoded.length) ctx.unverified(`${undecoded.length} screenshot(s) could not be decoded and are catalogued, not measured: ${undecoded.join("; ")}.`);
       const observed = await readFile(join(ctx.config.shots, "observed.json"), "utf8").catch(() => null);
       if (observed) {
         try {

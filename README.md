@@ -53,10 +53,10 @@ emit      1 token pair(s) under AA, 0 of them badly
 verify    parity report written, 14 item(s) unverified
 
 done  34 file(s) written to ./out
-      14 item(s) could not be verified, see PORT_NOTES.md
+      15 item(s) could not be verified, see PORT_NOTES.md
 ```
 
-Fourteen unverified items on a tiny example is the tool working, not failing.
+Fifteen unverified items on a tiny example is the tool working, not failing.
 Each one is a thing it declined to guess.
 
 ## The size of it
