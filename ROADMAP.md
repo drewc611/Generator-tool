@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and seventy seven features across one hundred and eighty phases. The statuses are
+Six hundred and seventy nine features across one hundred and eighty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2664,14 +2664,24 @@ A `DEFINE VARIABLE name AS type LABEL "text"` and `DEFINE BUTTON name LABEL "tex
 **677. input-pbwin reads PowerBASIC for Windows .bas source, a control's field name taken from its own numeric id since DDT gives it no other** 🔨
 PowerBASIC's Dynamic Dialog Tools build a window entirely through `DIALOG NEW ... TO handle` and `CONTROL ADD type, handle, id, "text", x, y, w, h` statements, one screen per `DIALOG NEW`; unlike every other statement-built screen this tool reads, a DDT control's identity is a plain integer id, not a variable a value was assigned to or a name a keyword argument bound, so this reader names each field after its own id, a naming convention it documents rather than a name PowerBASIC itself gives. A `CHECKBOX`'s own text is its label, paired directly, and an `OPTION` groups by a run of consecutive statements, the same restraint input-autoit already keeps for its own ungrouped radios; a `BUTTON` wires from its own trailing `CALL procname` clause on the same statement, the cleanest wiring reference this tool's statement-built readers get, needing no separate event loop to match against the way input-autoit's `Case`/`If` search does. A `CONTROL ADD` naming a handle no `DIALOG NEW` opened, an unrecognised control type and a button with no `CALL` clause are each named rather than guessed. test/pbwin.test.js holds it.
 
+## Phase 181: the desktop before the builder existed
+
+**678. input-awt reads hand written Java AWT/Swing .java files, a file already carrying input-swing's own generated-code markers left to it entirely** 🔨
+Before GUI builders were common, and still today when a developer deliberately avoids one, a Java window is built through plain `new ClassName(...)` construction and `add(...)` calls, no designer file and no generated `initComponents` method at all; this reader shares the same `.java` extension input-swing and input-gwt already scan, importing input-swing's own generated-code marker check directly rather than a second copy of it, so the two readers can never disagree about which file belongs to which. A `JLabel`/`Label` with a literal constructor argument is a caption; a `JTextField`/`JCheckBox`/their AWT equivalents take their field name from whichever variable the construction was assigned to, since nothing else names them, and a construction never assigned to anything is a real gap. A button wires from a clean, single, zero-argument method call passed to `addActionListener`; an anonymous inner class or a multi-statement lambda body is named present rather than read for what it does. A non-literal caption, an unassigned field, a `JComboBox`'s inline options and an unwired button are each named rather than guessed. test/awt.test.js holds it.
+
+## Phase 182: the code-only sibling of the file this tool already reads declaratively
+
+**679. input-uikit reads raw Objective-C UIKit view construction in .m files, a button's own @selector(methodName) the cleanest wiring reference any statement-built reader in this tool gets** 🔨
+The same screen input-storyboard already reads from a `.storyboard` or `.xib` file can be built entirely in code instead, `[[UILabel alloc] initWithFrame:...]` and `[UIButton buttonWithType:...]` construction followed by `addSubview:`, common in pre-Storyboard iOS code and still written today by choice; this reader is that code-only sibling, one screen per file, controls rendered in the order their own construction statement appears rather than the order they were added to the view. A field's name comes from the variable its construction was assigned to, the same rule input-awt keeps for Java; `secureTextEntry` marks a password field, a real UIKit property rather than a guessed one. A button wires from its own `addTarget:action:forControlEvents:` call, and `@selector(methodName)` names the real method directly, the same clean, unambiguous reference PowerBASIC's `CALL procname` already gives this tool's statement-built readers, needing no lambda body or event loop to search through. A non-literal caption or title, an unassigned field, a `UITextView`'s content and a button with no target at all are each named rather than guessed. test/uikit.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 630 |
+| new in this branch | 632 |
 | planned | 3 |
-| total | 677 |
+| total | 679 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

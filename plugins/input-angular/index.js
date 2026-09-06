@@ -49,6 +49,8 @@ const KEEP = new Set([
   ".bas",
   // Progress OpenEdge ABL (4GL): DEFINE VARIABLE/BUTTON and FORM ... WITH FRAME declared directly in procedure source, no designer file of its own.
   ".p",
+  // Raw Objective-C UIKit view construction: alloc/init and addSubview: calls built directly in source, no designer file of its own.
+  ".m",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;

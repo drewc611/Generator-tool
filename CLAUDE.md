@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and eighteen in five classes, and the core has never learned
+Plugins that ship, two hundred and twenty in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform  input-cics  input-informix  input-cobolscreen  input-ispf  input-xbase  input-fluid  input-tk  input-autoit  input-openedge  input-pbwin
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform  input-cics  input-informix  input-cobolscreen  input-ispf  input-xbase  input-fluid  input-tk  input-autoit  input-openedge  input-pbwin  input-awt  input-uikit
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -734,6 +734,26 @@ a name their own `FORM`/`DIALOG` block references with nothing declared
 for it, rather than inventing a field. test/openedge.test.js and
 test/pbwin.test.js hold both.
 
+10.18 reaches the desktop and the mobile screen from before either had a
+builder. input-awt reads hand written Java AWT/Swing `.java` files built
+through plain `new ClassName(...)` construction and `add(...)` calls, no
+designer and no generated `initComponents`; it shares the same `.java`
+extension input-swing and input-gwt already scan, importing input-swing's
+own generated-code marker check directly rather than a second copy of it,
+so the two readers can never disagree about which file belongs to which.
+input-uikit reads the code-only sibling of what input-storyboard already
+reads declaratively: raw Objective-C UIKit view construction in `.m`
+files, `[[UILabel alloc] initWithFrame:...]` and `addSubview:`, common
+before Storyboards existed and still written today by choice. Both name
+a field after the variable its construction was assigned to, since
+neither language's own construction call binds a name any other way;
+input-uikit's button wires from `@selector(methodName)`, a real, clean,
+unambiguous method reference, while input-awt's resolves only a clean,
+single, zero-argument method call passed to `addActionListener`, an
+anonymous inner class or a multi-statement lambda named present rather
+than read for what it does. test/awt.test.js and test/uikit.test.js hold
+both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -799,8 +819,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and seventy seven features in
-one hundred and eighty phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and seventy nine features in
+one hundred and eighty two phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
