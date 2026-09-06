@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and seventy three features across one hundred and seventy six phases. The statuses are
+Six hundred and seventy five features across one hundred and seventy eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2644,14 +2644,24 @@ Where every other reader in this tool finds a screen declared, xBase's `@ row, c
 **673. input-fluid reads FLTK's FLUID .fl designer files, a radio button grouped by its shared immediate parent, the one real structural signal the format gives** 🔨
 A `.fl` file is a brace nested, Tcl-like widget tree, the fourth native GUI toolkit format this tool reads after Qt Designer's `.ui`, GTK Builder's `.glade` and wxFormBuilder's `.fbp`, so a root `Fl_Window` becomes a screen the same way a form in any of the other three does, and more than one root window across a file's `Function {}` blocks becomes more than one screen. A control's own `label` is read straight off its node, paired to the field directly rather than through a separate mnemonic or buddy reference, since FLUID attaches the caption to the input itself; a `callback` resolves to an output only when its C++ body is a clean `functionName(...)` call, and is named present rather than invented when it is anything else, the same restraint input-fxml already keeps over a binding expression it will not evaluate. FLTK gives `Fl_Round_Button` no explicit group reference at all, grouping instead by runtime behaviour, any `Fl_Group` holding more than one becomes a group automatically, so this reader groups radios by their shared immediate parent container, the one honest structural signal the format actually provides, rather than a consecutive siblings guess. A messy callback, an unrecognised widget class and a choice filled from code are each named through FLUID.md rather than approximated. test/fluid.test.js holds it.
 
+## Phase 177: the toolkit that has not changed its widget commands in decades
+
+**674. input-tk reads Tcl/Tk scripts for their widget-creation commands, radio buttons grouped by a shared -variable, the real reference the language gives** 🔨
+A Tk GUI is built by ordinary executable Tcl statements, `label`, `entry`, `checkbutton`, `radiobutton` and `button` calls each taking `-option value` pairs, with no separate declarative designer file at all, so this reader scans a whole `.tcl` file for the recognised widget-creation commands wherever they occur, a `ttk::`-prefixed command read the same as its classic equivalent. An `entry`'s `-textvariable` names its bound field, a `-show` value marks it a password, and a `checkbutton`'s `-variable` does the same; a `radiobutton`'s own `-variable` is Tk's real grouping mechanism, every radio sharing one variable belongs to one group however far apart in the file, a stronger signal than any consecutive-siblings fallback this tool's other readers fall back to when a format gives none. A `button`'s `-command` resolves to an output only when it is a bare proc name; a brace-quoted inline script is named present rather than evaluated, and its own text is never printed. A backslash at end of line continues one logical command onto the next, joined the same way input-cics, input-cobolscreen and input-xbase already tolerate their own formats' continuations; an unbound entry or checkbutton and an unrecognised widget command are each named rather than guessed. test/tk.test.js holds it.
+
+## Phase 178: the automation language whose screen has no designer at all
+
+**675. input-autoit reads AutoIt .au3 scripts, a field's name taken from the variable a GUICtrlCreate call's return value was assigned to, since the language gives it no other** 🔨
+An AutoIt script opens one window with `GUICreate` and populates it with `GUICtrlCreate*` calls, positional arguments only, no keyword binding the way Tcl's `-textvariable` or COBOL's `USING` gives a field its name, so this reader reads the field's name from whichever variable the call's own return value was assigned to, `$custNo = GUICtrlCreateInput(...)` naming the field `custNo`; a call left unassigned is a real gap, named rather than invented. `GUICtrlCreatePassword` is its own dedicated function, a genuine signal rather than a style flag to infer from. AutoIt wires a button entirely through its event loop, so this reader resolves a button's action by matching its own variable against a `Case`/`If` block in the file's `GUIGetMsg` loop and reading the one clean function call inside it, naming anything more complex present rather than approximated; radios, given no explicit grouping reference at all, group by a run of consecutive `GUICtrlCreateRadio` calls, this reader's own structural convenience the same restraint input-uno, input-powerbuilder and input-fxml already keep for their own ungrouped formats. test/autoit.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 626 |
+| new in this branch | 628 |
 | planned | 3 |
-| total | 673 |
+| total | 675 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

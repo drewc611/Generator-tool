@@ -41,6 +41,10 @@ const KEEP = new Set([
   ".prg",
   // FLTK's own FLUID designer file: a brace nested widget tree, not markup.
   ".fl",
+  // Tcl/Tk scripts: a GUI built directly by executable widget-creation commands, no designer file of its own.
+  ".tcl",
+  // AutoIt scripts: a GUI built directly by executable GUICtrlCreate* calls, no designer file of its own.
+  ".au3",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
