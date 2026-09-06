@@ -63,6 +63,7 @@ const DESCRIBES = [
   [/^EQUIVALENCE\.md$/, "the same screen through two dialects, compared byte for byte per target"],
   [/^ERA\.md$/, "the markup dated by its signals, with the evidence for the years"],
   [/^EVENTS\.md$/, "listeners added and never removed, the leak a port inherits"],
+  [/^EXTJS\.md$/, "every Ext.define and Ext.create call's xtype tree, what lowered and what was named as a gap"],
   [/^FLAGS\.md$/, "feature flags and their reads, so the port keeps every branch on purpose"],
   [/^FOCUS\.md$/, "the focus order recorded against the reading order"],
   [/^FONTS\.md$/, "each font face's formats and display setting, and the gaps"],

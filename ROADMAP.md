@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and fifty features across one hundred and fifty three phases. The statuses are
+Six hundred and fifty one features across one hundred and fifty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2529,14 +2529,19 @@ The console offered seven flags because that was what fit in a wrapping row: two
 
 Making room for them found what a fixed fourteen year old layout does not forgive: the sparkline that draws plugins per stage set no floor under itself, so once the intake needed real height the flex column starved it to nothing, and its bars, each an unshrinkable line of text-free `<i>` tags with no ceiling on how many render, painted straight through the layout below when a run this size (a hundred and eighty eight plugins, run on portamp by portamp) gave a stage a bar count in three figures. The chart now holds a fixed slice of the deck regardless of what else grows, its bars a fixed three cells scaled to a ratio rather than one cell per plugin, and its own column no longer lets an empty pixel-art tag shrink to nothing while its own label refuses to move an inch. The deck's fixed height rose once, on the record, to hold all of it with nothing hidden behind anything else. test/ui.test.js holds the panel against the server's own list; the sparkline is proven at three sizes so a small run and a run of the whole plugin set still draw the same shape.
 
+## Phase 154: the enterprise desk
+
+**651. input-extjs reads Sencha ExtJS, the classic Ext.define and Ext.create API, and lowers a real component boundary onto the dialect the rest of the tool already reads** 🔨
+An xtype config tree is a real component boundary somebody drew on purpose, so a panel, a form, a textfield, a combobox with its inline store data, a checkbox, a button and a grid lower onto the dialect the way input-vb6 and input-exe already lower a form, rather than the inventory input-jquery is left with when a library declares no boundaries at all. A structural scanner over the source, string, comment and brace aware and no dependency, finds every `Ext.define` and `Ext.create` call and reads the object literal each is handed as a tree of keys and values; a function or a bare reference bound to `handler` or `listeners.click` is kept only as where it sits and how many lines it runs, never as its body, because a handler's own behaviour is exactly what this tool refuses to guess at. A combobox's inline store data becomes real options; a store named elsewhere, a layout other than the default, a `vtype` validator, an unresolved combo and an `Ext.define` that extends a base class the reader does not recognise are each named through the report rather than approximated, and an `Ext.data.Store` or `Ext.data.Model` beside a screen is read as the data definition it is and kept out of the screen tree entirely. EXTJS.md carries every class this run read, what it became, and what was named as a gap. test/extjs.test.js holds it, including a full pipeline run proving a login form ports to a real React component with no handler body, store name or ExtJS syntax surviving into the port or its notes.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 603 |
+| new in this branch | 604 |
 | planned | 3 |
-| total | 650 |
+| total | 651 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

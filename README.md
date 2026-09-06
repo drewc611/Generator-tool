@@ -7,13 +7,13 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 192 plugins, and the literal output of
+lines of core, no runtime dependencies, 193 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 1032 passing, 1033 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
+![node --test running the portamp suite: 1037 passing, 1039 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1032
-tests pass across 140 test files with `node --test` and no framework, and
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1037
+tests pass across 141 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing it does not already
 know about: the one alert it raises on `input-fetch` is the site copy writing
 network data to a folder, which is what copying a site is, and the write
@@ -37,9 +37,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 192 plugin(s)
+node src/cli.js plugins      # 193 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 1033 tests, node --test, no framework
+npm test                     # 1039 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -71,8 +71,8 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 48,189 lines of JavaScript in src and plugins |
-| Tests | 17,088 lines, 1033 cases across 140 files |
+| Every line of the tool | 48,924 lines of JavaScript in src and plugins |
+| Tests | 17,229 lines, 1039 cases across 141 files |
 | Source on disk | src 27 KB, plugins 2.3 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -82,7 +82,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and fifty features, and every
+The core grew from 527 lines to 718 across six hundred and fifty one features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -123,9 +123,9 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The 192 it ships with
+## The 193 it ships with
 
-![The plugin rack: 192 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 193 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## Yes, there is a transformer in it
 
@@ -513,7 +513,7 @@ lacked. The console's intake takes the same URL through the same function.
 
 ```bash
 npm install -g portamp     # once the v* tag publishes; docs/PUBLISHING.md says how
-portamp plugins            # 192 plugin(s)
+portamp plugins            # 193 plugin(s)
 portamp ui                 # the console, with its intake
 ```
 
@@ -1121,8 +1121,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and fifty features in
-one hundred and fifty three phases, forty four shipped, six hundred and three new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and fifty one features in
+one hundred and fifty four phases, forty four shipped, six hundred and four new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
