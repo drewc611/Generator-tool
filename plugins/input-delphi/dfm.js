@@ -97,6 +97,9 @@ export function readDfm(source) {
     const prop = /^([\w.]+)\s*=\s*(.*)$/.exec(line);
     if (!prop) { problems.push(`line ${n + 1} inside ${stack[stack.length - 1].name} is neither a property nor a block and was skipped`); continue; }
     let raw = prop[2];
+    // The IDE wraps a long string onto the lines after `Name = `, each ending in + but the last; the first is taken here
+    // and the + loop below joins the rest.
+    if (raw === "" && n + 1 < lines.length && /^'/.test(lines[n + 1].trim())) raw = lines[++n].trim();
     // A list or binary block runs until its bracket closes; a collection until its last `end>`; a string until no line ends in +.
     if (raw[0] === "(" || raw[0] === "{") while (matchBracket(raw, 0, { strings: raw[0] === "(", ticks: false }) < 0 && n + 1 < lines.length) raw += "\n" + lines[++n].trim();
     else if (raw[0] === "<" && !/>$/.test(raw)) {

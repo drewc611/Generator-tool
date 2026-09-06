@@ -63,7 +63,9 @@ test("a URL's local path, a page's links, a stylesheet's urls and robots.txt rul
   assert.equal(localPath("http://x/products/"), "products/index.html");
   assert.equal(localPath("http://x/a/b.html"), "a/b.html");
   assert.equal(localPath("http://x/css/site.css"), "css/site.css");
-  assert.equal(localPath("http://x/team?dept=sales&x=1"), "team/index~dept_sales_x_1.html", "a query string names another document and stays in the name");
+  assert.match(localPath("http://x/team?dept=sales&x=1"), /^team\/index~dept_sales_x_1-[0-9a-f]{6}\.html$/, "a query string names another document and stays in the name, with a hash of the exact string");
+  assert.notEqual(localPath("http://x/p?q=a%20b"), localPath("http://x/p?q=a_20b"), "two queries that clean to the same letters land in two files");
+  assert.equal(localPath("http://x/docs/%zz"), "docs/%zz/index.html", "a literal percent that is not an escape is kept, not thrown on");
   assert.equal(localPath("http://x/../../etc/passwd"), "etc/passwd/index.html", "the URL parser has already collapsed the climb");
   const links = linksIn(`<a href="/a">a</a><a href='b.html'>b</a><a href=#top>t</a><a href="javascript:void(0)">j</a><link rel="stylesheet" href="s.css"><link rel="canonical" href="/canon"><script src="/j.js"></script><img src="i.png" srcset="i2.png 2x, i3.png 3x"><form action="/go"><!-- <a href="/commented">x</a> -->`, "http://x/dir/page.html");
   assert.deepEqual(links, [
@@ -83,7 +85,7 @@ test("the copy takes one origin to a depth, honours robots.txt, keeps assets a s
   t.after(() => rm(dir, { recursive: true, force: true }));
   const policy = new Policy({ allowLive: true, allowedDomains: ["acme.example"], log: quiet });
   const m = await fetchSite({ url: `${base}/`, dir, policy, log: quiet, depth: 2, maxPages: 50 });
-  assert.deepEqual(m.pages.map((p) => p.file).sort(), ["about/index.html", "deep/one/index.html", "index.html", "products/index.html", "products/widget.html", "team/index~dept_sales.html"]);
+  assert.deepEqual(m.pages.map((p) => p.file.replace(/-[0-9a-f]{6}\.html$/, ".html")).sort(), ["about/index.html", "deep/one/index.html", "index.html", "products/index.html", "products/widget.html", "team/index~dept_sales.html"]);
   assert.equal(m.pages.find((p) => p.file === "index.html").title, "Acme &amp; Co", "the title is recorded as served, not decoded");
   assert.deepEqual(m.assets.map((a) => a.file).sort(), ["css/print.css", "css/site.css", "fonts/f.woff2", "img/bg.png", "img/logo.png", "js/app.js"], "the stylesheet's own import, background and font are fetched too");
   assert.equal(await readFile(join(dir, "index.html"), "utf8"), SITE["/"][1], "a page is saved byte for byte");
@@ -96,7 +98,7 @@ test("the copy takes one origin to a depth, honours robots.txt, keeps assets a s
   assert.match(reasons["/old"], /^redirected to http:\/\/127\.0\.0\.1:\d+\/about, which is saved under its own address$/, "the page is saved once, under the address it lives at");
   assert.deepEqual(m.external, ["cdn.example.net"], "another host is named, never fetched");
   assert.deepEqual(m.forms, ["/search"], "a form's action is recorded, never submitted");
-  assert.deepEqual(m.robots, ["/private"]);
+  assert.deepEqual(m.robots, [{ allow: false, pattern: "/private" }]);
   assert.ok(!hits.some((h) => /cdn|elsewhere/.test(h)));
   const md = await readFile(join(dir, "FETCH.md"), "utf8");
   assert.match(md, /^# The copy\n/); assert.match(md, /\| http:\/\/127\.0\.0\.1:\d+\/about \| about\/index\.html \| 1 \| \d+ \| 4 \| About \|/);
@@ -123,11 +125,12 @@ test("the limits hold and are named: a page limit, a byte limit, a file too big,
   assert.deepEqual(gone.skipped.map((s) => s.reason), ["HTTP 404"]);
   const big = await fetchSite({ url: `${base}/big`, dir: join(dir, "big"), policy, log: quiet });
   assert.match(big.skipped[0].reason, /over the file limit/);
-  // A response object shaped like fetch's, with the url a redirect off the origin would leave it at.
-  const elsewhere = async () => ({ ok: true, status: 200, url: "https://elsewhere.example.org/x", headers: new Headers({ "content-type": "text/html" }), arrayBuffer: async () => new TextEncoder().encode("<html></html>").buffer });
-  const away = await fetchSite({ url: `${base}/away`, dir: join(dir, "away"), policy, log: quiet, fetchImpl: elsewhere });
+  // A redirect off the origin is recorded and never followed: the other host sees no request at all.
+  const asked = [];
+  const away = await fetchSite({ url: `${base}/away`, dir: join(dir, "away"), policy, log: quiet, fetchImpl: (u, o) => { asked.push(u); return fetch(u, o); } });
   assert.ok(away.skipped.some((s) => /redirected off the origin to elsewhere\.example\.org/.test(s.reason)));
   assert.deepEqual(away.external, ["elsewhere.example.org"]);
+  assert.ok(asked.every((u) => u.startsWith(base)), `no request left the origin: ${asked.join(" ")}`);
 });
 
 test("the gates hold: no live calls without --allow-live, no domain outside the attestation, offline outranks both, no attestation no copy", async (t) => {

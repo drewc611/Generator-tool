@@ -147,9 +147,9 @@ export const RERUN_FLAGS = ["transformer", "train", "train-reverse", "train-sort
  * What a rerun sets on the run's config: the source and screenshots it reads, and every offered flag, a pressed
  * key on top of what the command line said and the command line's own value back for every key not pressed.
  */
-export function rerunPatch(original, intakeDir, { source, flags }) {
+export function rerunPatch(original, intakeDir, { source, flags, dir = null }) {
   const patch = {
-    src: source === "intake" ? intakeDir : original.src,
+    src: source === "intake" ? (dir ? `${intakeDir}/${dir}` : intakeDir) : original.src,
     shots: source === "intake" ? intakeDir : original.shots,
   };
   for (const flag of RERUN_FLAGS) patch[flag] = Object.hasOwn(flags, flag) ? flags[flag] : original.flags[flag];
@@ -161,7 +161,9 @@ export function rerunOptions(body) {
   const source = body?.source === "intake" ? "intake" : "src";
   const flags = {};
   for (const flag of RERUN_FLAGS) if (body?.flags && Object.hasOwn(body.flags, flag)) flags[flag] = Boolean(body.flags[flag]);
-  return { source, flags };
+  // A folder inside the intake, a copied site's own, may be the source; it is held to the intake's path rule.
+  const dir = source === "intake" && body?.dir ? intakePath(body.dir) : null;
+  return { source, flags, dir };
 }
 
 /** A site address the intake may be asked to copy: http or https, nothing else, or null. */

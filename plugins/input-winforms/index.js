@@ -155,17 +155,19 @@ export function lowerForm(read, note) {
       const attrs = [];
       if (c.kind !== "radio") radioGroup = null;
       if (cap.accesskey && !["text", "group", "tabpage", "panel"].includes(c.kind)) attrs.push(`accesskey="${cap.accesskey}"`);
-      if (!c.enabled && !["text", "group", "tabpage", "panel", "menu"].includes(c.kind)) { attrs.push("disabled"); notes.disabled.push(cap.text || c.name); }
+      // A field's Text is a value, never a caption: the notes and the state name use the control's name for it.
+      const said = FIELD.has(c.kind) ? stem(c.name) : cap.text || c.name;
+      if (!c.enabled && !["text", "group", "tabpage", "panel", "menu"].includes(c.kind)) { attrs.push("disabled"); notes.disabled.push(said); }
       // A control that starts hidden is shown by a state the designer cannot see; the port drives it by name.
-      const shown = hidden ? unique(`${nameOf(c)}Shown`) : null;
-      if (shown) { attrs.push(`ng-show="shown.${shown}"`); notes.hidden.push(cap.text || c.name); }
+      const shown = hidden ? unique(`${FIELD.has(c.kind) ? stem(c.name) : nameOf(c)}Shown`) : null;
+      if (shown) { attrs.push(`ng-show="shown.${shown}"`); notes.hidden.push(said); }
       const a = attrs.length ? " " + attrs.join(" ") : "";
       switch (c.kind) {
         case "text": {
           // A label sits on the row of the field it names, to its left, or on the row above it.
           const next = own.slice(i + 1).find((d) => !d.rendered && d.kind !== "text");
           const near = next && c.location && next.location && ((Math.abs(next.location[1] - c.location[1]) <= 8 && next.location[0] >= c.location[0]) || (next.location[1] > c.location[1] && next.location[1] - c.location[1] <= 30 && Math.abs(next.location[0] - c.location[0]) <= 12));
-          if (!hidden && next && FIELD.has(next.kind) && near) { next.labelText = cap.text; lines.push(`${pad}<label for="${(next.htmlId = `f-${kebab(cap.text) || kebab(next.name)}`)}"${a}>${esc(cap.text)}</label>`); }
+          if (!hidden && next && FIELD.has(next.kind) && near && next.labelText == null) { next.labelText = cap.text; lines.push(`${pad}<label for="${(next.htmlId = `f-${kebab(cap.text) || kebab(next.name)}`)}"${a}>${esc(cap.text)}</label>`); }
           else if (cap.text) lines.push(`${pad}<p${a}>${esc(cap.text)}</p>`);
           break;
         }
@@ -286,7 +288,16 @@ export function lowerForm(read, note) {
         case "contextmenu": case "menuitem": case "separator": case "striplabel": break;
         case "frame": notes.skipped.push(`the web browser ${c.name} shows a page the code navigates to; nothing carried`); lines.push(`${pad}<iframe title="${esc(stem(c.name))}"${a}></iframe>`); break;
         case "scrollbar": notes.skipped.push(`a scroll bar (${c.name}) scrolls what the port lays out; nothing carried`); break;
-        default: notes.unknown.push(`${c.fullType ?? c.type} (${c.name})`); lines.push(`${pad}<div class="${kebab(c.type) || "control"}"${a}></div>`); break;
+        default: {
+          // A container this reader does not know (a ToolStripContainer's panels, a third party group) still holds
+          // its children, placed on it or on one of its named panels; they render inside it rather than vanish.
+          notes.unknown.push(`${c.fullType ?? c.type} (${c.name})`);
+          const holders = [...new Set(all.filter((k) => k.parent === c.name || String(k.parent ?? "").startsWith(`${c.name}.`)).map((k) => k.parent))];
+          const inside = holders.flatMap((h) => render(h, depth + 1));
+          if (inside.length) lines.push(`${pad}<div class="${kebab(c.type) || "control"}"${a}>`, ...inside, `${pad}</div>`);
+          else lines.push(`${pad}<div class="${kebab(c.type) || "control"}"${a}></div>`);
+          break;
+        }
       }
       c.rendered = true;
     }
@@ -294,6 +305,8 @@ export function lowerForm(read, note) {
   };
 
   const body = render("", 1);
+  // A property the scanner could not read exactly is named, never guessed at; a concatenated Text is the common one.
+  for (const c of all) if (c.unreadProps?.length) notes.skipped.push(`${c.name}: ${[...new Set(c.unreadProps)].join(", ")} could not be read exactly and left out`);
   // A context menu is not in any container; it opens on the control that names it, which the port must wire.
   for (const c of all.filter((c) => c.kind === "contextmenu")) {
     const owners = all.filter((o) => o.contextMenu === c.name).map((o) => o.name);

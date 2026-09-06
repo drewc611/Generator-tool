@@ -511,8 +511,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and forty one features in
-one hundred and forty nine phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and forty two features in
+one hundred and fifty phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

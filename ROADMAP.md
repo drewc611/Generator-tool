@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and forty one features across one hundred and forty nine phases. The statuses are
+Six hundred and forty two features across one hundred and fifty phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2492,14 +2492,19 @@ A .frm is text: one `Begin VB.Form` block nesting a block per control with its c
 **641. input-delphi reads a Delphi or Lazarus form file: the .dfm, .fmx and .lfm's components, radio groups, tab pages, main menu, ModalResult buttons and the data components that draw nothing become a screen** 🔨
 A text form file is nested `object name: TClass … end` blocks, each a list of properties; a value is a string with doubled quotes and `#13#10` codes, a list in parentheses spanning lines, a collection of `item … end` blocks in angle brackets, or binary data in braces, and input-delphi joins the lines a value spans by matching its bracket rather than by pattern. It lowers through the lowering input-vb6 shares, so a `TLabel` with `FocusControl` is an explicit label that geometry never overrides, a `TRadioGroup` with `Items.Strings` is a fieldset of radios and a `TComboBox` with them a select of real options, while one without is a list the port is handed; `TMemo` is a textarea whose lines are noted to exist and never printed, `TSpinEdit` a number, `TTrackBar` a range, `TDateTimePicker` a date or a time by its `Kind`, `TPageControl` a tablist with every page in the template and which page shows named as state, `TGroupBox` a fieldset, `TPanel` a section, a `TDBGrid` a table whose columns the code supplies, and a `TDB*` control the control it wraps with a note that a data source binds it. `ModalResult = 1` or `bkOK` is the submit and `ModalResult = 2`, `bkCancel` or `Cancel = True` the cancel; `Default = True` is the submit where no ModalResult says otherwise. A `TMainMenu` is the menu bar and a `TPopupMenu` one named as the context menu it was, with `ShortCut = 16463` decoded to `Ctrl+O`. A component with no rectangle draws nothing and is named in FORMS_DELPHI.md as what the port must supply: a data source, a query whose SQL is present and not printed, a connection, a timer whose OnTimer is behaviour. FireMonkey's `Position.X`, `Size.Width` and `Text` read the same, a binary dfm is refused by its `TPF0` signature with the setting that writes text, and no property value other than a caption is printed. test/delphi.test.js holds it.
 
+## Phase 150: the twentieth review pass
+
+**642. The site copy, the console's intake and the four desktop form readers read again** 🔨
+A review pass over 10.2 and 10.3, each finding fixed with the input that exposed it. The fetcher let fetch follow redirects, so a hop to another host was requested and its body downloaded before the policy was asked about that host; the fetcher follows each hop itself, asks the policy before every one, records a hop off the origin and never requests it, and stops after five. A robots rule with a wildcard was cut at the star, so `Disallow: /*.php$` blocked every page, and Allow lines were ignored; rules are patterns as the standard spells them, the longest match decides and an Allow wins a tie. A link with a literal percent threw out of the whole copy and a page under a path already saved as a file aborted it; a bad escape is kept as written and a page that cannot be saved is a skip with its reason, and two queries that clean to the same letters no longer share a file. The console reran a copied site from the intake's root, where the copy's manifest was not and its routes would have carried the folder's name; the rerun names the copy's own folder, held to the intake's path rule. The shared form lowering called push on a Set, so a Delphi menu item with a drawing handler killed the extract stage; it is a behaviour named. Delphi's IDE wraps a long caption onto the lines after `Caption =`, which the reader skipped as neither property nor block; the wrapped string is read whole. The WinForms and XAML readers printed a disabled or hidden text box's initial value in a note and baked it into the shown state's name, where the report withheld it; a field's Text is a value and its name is used instead, in the XAML layout report too. A second label on a field's row relabelled it and renamed its field; a field already labelled is left alone. A control placed on a container the reader did not know vanished, and a property the scanner could not read exactly was dropped in silence; children render inside the unknown container, in WinForms and the shared lowering alike, and each unread property is named. VB6's MsgBox was read from any line carrying the word, a string or a comment included, and a message continued with an underscore was cut at its first line; it is read as a call only, outside strings and comments, with continuation lines joined. test/review20.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 594 |
+| new in this branch | 595 |
 | planned | 3 |
-| total | 641 |
+| total | 642 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

@@ -17,6 +17,17 @@ import { splitCommas } from "../dsp-ir/text.js";
  */
 
 /** One property value: a string with its doubled quotes undone, a number with its `'True` comment dropped, a .frx pointer, or the raw token. */
+/** A line without its comment: an apostrophe or Rem outside every string ends it. */
+function uncomment(line) {
+  let inString = false;
+  for (let k = 0; k < line.length; k += 1) {
+    const c = line[k];
+    if (c === '"') inString = !inString;
+    else if (!inString && (c === "'" || /^rem\b/i.test(line.slice(k)) && /^\s*$/.test(line.slice(0, k)))) return line.slice(0, k);
+  }
+  return line;
+}
+
 export function parseValue(raw) {
   const s = String(raw).trim();
   if (/^\$?"[^"]*\.frx":[0-9A-Fa-f]+/.test(s)) return { frx: true };
@@ -81,7 +92,9 @@ export function readFrm(source) {
     const line = lines[i];
     const attr = /^Attribute\s+VB_Name\s*=\s*"([^"]*)"/.exec(line.trim());
     if (attr) { name = attr[1]; continue; }
-    const stripped = line.replace(/^\s*(?:'|Rem\b).*$/i, "");
+    // A trailing comment is dropped outside strings, and a statement continued with _ is read as one line.
+    let stripped = uncomment(line);
+    while (/\s_$/.test(stripped) && i + 1 < lines.length) stripped = stripped.replace(/\s_$/, " ") + uncomment(lines[++i]).trim();
     if (!stripped.trim()) continue;
     // A form file holds one form; a second Begin block after the first closed is in the code's place and is not read.
     const second = /^\s*Begin\s+(\S+)\s+(\S+)/.exec(stripped);
@@ -91,7 +104,10 @@ export function readFrm(source) {
     const proc = PROCEDURE.exec(stripped);
     if (proc) current = proc[1];
     if (/^\s*End\s+(Sub|Function|Property)\b/i.test(stripped)) { current = null; continue; }
-    const msg = /\bMsgBox\b\s*\(?\s*(.*)$/i.exec(stripped);
+    // MsgBox as a call (a statement, after Call, or as a function's value), never the word inside a string.
+    const blank = stripped.replace(/"(?:[^"]|"")*"/g, (m) => " ".repeat(m.length));
+    const at = /(?:^|[=:(,]|\bCall\b|\bThen\b|\bElse\b)\s*MsgBox\b/i.exec(blank);
+    const msg = at ? /^\s*\(?\s*(.*)$/.exec(stripped.slice(at.index + at[0].length)) : null;
     if (msg) {
       // The first argument is the message; a title in the third is not read, and neither is anything that is not a literal.
       const first = splitCommas(msg[1], { ticks: false })[0] ?? "";

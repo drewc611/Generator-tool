@@ -20,12 +20,20 @@ const ASSET_EXT = /\.(css|js|mjs|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|eot|p
 /** The file a URL is saved as, under the folder: a page path with no extension becomes a folder's index. */
 export function localPath(url) {
   const u = new URL(url);
-  let pathname = decodeURIComponent(u.pathname).replace(/\/+/g, "/");
+  // A percent escape that is not one (a literal % in an old link) is kept as written rather than thrown on.
+  let decoded;
+  try { decoded = decodeURIComponent(u.pathname); } catch { decoded = u.pathname; }
+  let pathname = decoded.replace(/\/+/g, "/");
   if (pathname.endsWith("/")) pathname += "index.html";
   else if (!/\.[a-z0-9]{1,8}$/i.test(pathname.split("/").pop())) pathname += "/index.html";
-  // A query string names a different document; it is kept in the file name so two do not collide.
-  const query = u.search ? `~${u.search.slice(1).replace(/[^\w.-]+/g, "_").slice(0, 80)}` : "";
-  if (query) pathname = pathname.replace(/(\.[a-z0-9]{1,8})$/i, `${query}$1`);
+  // A query string names a different document; its readable part and a short hash of the exact string are kept in the
+  // file name, so two queries that clean to the same letters still land in two files.
+  if (u.search) {
+    let h = 0x811c9dc5;
+    for (const c of u.search) { h ^= c.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+    const query = `~${u.search.slice(1).replace(/[^\w.-]+/g, "_").slice(0, 80)}-${h.toString(16).padStart(8, "0").slice(0, 6)}`;
+    pathname = pathname.replace(/(\.[a-z0-9]{1,8})$/i, `${query}$1`);
+  }
   return pathname.replace(/^\//, "").split("/").map((p) => (p === ".." || p === "." ? "_" : p)).join("/");
 }
 
@@ -67,8 +75,11 @@ export function cssLinks(css, base) {
   return out;
 }
 
-/** The Disallow lines that apply to every agent in a robots.txt, as path prefixes. */
-export function robotsDisallow(text) {
+/**
+ * The Allow and Disallow lines that apply to every agent (or to portamp by name) in a robots.txt, in order. A rule is
+ * a path pattern: `*` matches anything and a final `$` is the end of the path, as the robots standard spells them.
+ */
+export function robotsRules(text) {
   const rules = [];
   let applies = false;
   for (const raw of String(text ?? "").split(/\r?\n/)) {
@@ -79,14 +90,29 @@ export function robotsDisallow(text) {
     const field = m[1].toLowerCase();
     const value = m[2].trim();
     if (field === "user-agent") applies = value === "*" || /portamp/i.test(value);
-    else if (field === "disallow" && applies && value) rules.push(value);
+    else if ((field === "disallow" || field === "allow") && applies && value) rules.push({ allow: field === "allow", pattern: value });
   }
   return rules;
 }
 
+/** The Disallow patterns alone, as the report lists them. */
+export const robotsDisallow = (text) => robotsRules(text).filter((r) => !r.allow).map((r) => r.pattern);
+
+const ruleMatches = (pattern, path) => {
+  const anchored = pattern.endsWith("$");
+  const body = (anchored ? pattern.slice(0, -1) : pattern).split("*").map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*");
+  return new RegExp(`^${body}${anchored ? "$" : ""}`).test(path);
+};
+
+/** The most specific rule that matches decides, the longest pattern; on a tie the allow wins, as the standard says. */
 const disallowed = (rules, url) => {
-  const path = new URL(url).pathname;
-  return rules.some((r) => path.startsWith(r.replace(/\*.*$/, "")));
+  const path = new URL(url).pathname + new URL(url).search;
+  let best = null;
+  for (const r of rules) {
+    if (!ruleMatches(r.pattern, path)) continue;
+    if (!best || r.pattern.length > best.pattern.length || (r.pattern.length === best.pattern.length && r.allow)) best = r;
+  }
+  return Boolean(best && !best.allow);
 };
 
 /**
@@ -101,27 +127,42 @@ export async function fetchSite({ url, dir, policy, log = { info() {}, debug() {
   const origin = start.origin;
   const manifest = { start: start.href, origin, startedAt: new Date().toISOString(), pages: [], assets: [], skipped: [], redirects: [], external: new Set(), forms: new Set(), bytes: 0, robots: [] };
 
+  // Redirects are followed here, not by fetch, so every hop asks the policy before a byte moves and a hop off the
+  // origin is recorded and never requested.
   const get = async (target, accept) => {
-    policy.assertLiveAllowed(target);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      // No cookies, no credentials, no stored session: the copy is what an anonymous visitor sees.
-      const res = await fetchImpl(target, { redirect: "follow", signal: controller.signal, headers: { "user-agent": userAgent, accept } });
+    let url = target;
+    for (let hop = 0; ; hop += 1) {
+      policy.assertLiveAllowed(url);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      let res;
+      try {
+        // No cookies, no credentials, no stored session: the copy is what an anonymous visitor sees.
+        res = await fetchImpl(url, { redirect: "manual", signal: controller.signal, headers: { "user-agent": userAgent, accept } });
+      } finally {
+        clearTimeout(timer);
+      }
+      const location = res.headers.get("location");
+      if ([301, 302, 303, 307, 308].includes(res.status) && location) {
+        let to;
+        try { to = new URL(location, url).href.replace(/#.*$/, ""); } catch { return { res, url, badRedirect: location }; }
+        if (hop >= 5) return { res, url, redirectLoop: true };
+        if (new URL(to).origin !== origin) return { res, url, off: to };
+        url = to;
+        continue;
+      }
       const type = res.headers.get("content-type") ?? "";
       const length = Number(res.headers.get("content-length") ?? 0);
-      if (length > maxFileBytes) return { res, type, body: null, tooBig: true };
+      if (length > maxFileBytes) return { res, url, type, body: null, tooBig: true };
       const buffer = Buffer.from(await res.arrayBuffer());
-      return { res, type, body: buffer.length > maxFileBytes ? null : buffer, tooBig: buffer.length > maxFileBytes };
-    } finally {
-      clearTimeout(timer);
+      return { res, url, type, body: buffer.length > maxFileBytes ? null : buffer, tooBig: buffer.length > maxFileBytes };
     }
   };
 
   // robots.txt first: a site that asked not to be crawled somewhere is not crawled there.
   try {
     const robots = await get(`${origin}/robots.txt`, "text/plain");
-    if (robots.res.ok && robots.body) manifest.robots = robotsDisallow(robots.body.toString("utf8"));
+    if (robots.res.ok && robots.body) manifest.robots = robotsRules(robots.body.toString("utf8"));
   } catch (err) {
     if (err?.name === "PolicyViolation" || /Refusing to call/.test(err?.message ?? "")) throw err;
     manifest.skipped.push({ url: `${origin}/robots.txt`, reason: `robots.txt could not be read (${err.message}); no rule applied` });
@@ -130,10 +171,16 @@ export async function fetchSite({ url, dir, policy, log = { info() {}, debug() {
   const save = async (target, body) => {
     const rel = localPath(target);
     const file = join(dir, rel);
-    await mkdir(dirname(file), { recursive: true });
-    // Network data written to a file is what a copy is: the path is this module's (localPath, under dir), the
-    // origin is one the policy allowed, and the bytes are kept as served so the port reads the real page.
-    await writeFile(file, body); // codeql[js/http-to-file-access]
+    try {
+      await mkdir(dirname(file), { recursive: true });
+      // Network data written to a file is what a copy is: the path is this module's (localPath, under dir), the
+      // origin is one the policy allowed, and the bytes are kept as served so the port reads the real page.
+      await writeFile(file, body); // codeql[js/http-to-file-access]
+    } catch (err) {
+      // A page at /v2.0 saved as a file leaves /v2.0/intro nowhere to go; the second is a skip, not an abort.
+      manifest.skipped.push({ url: target, reason: `could not be saved as ${rel} (${err.code ?? err.message})` });
+      return null;
+    }
     return rel;
   };
 
@@ -164,24 +211,26 @@ export async function fetchSite({ url, dir, policy, log = { info() {}, debug() {
       manifest.skipped.push({ url: item.url, reason: err.name === "AbortError" ? `no answer within ${timeoutMs} ms` : err.message });
       continue;
     }
-    const { res, type, body, tooBig } = got;
-    if (res.url && res.url.replace(/#.*$/, "") !== item.url) {
+    const { res, url: landed, type, body, tooBig, off, redirectLoop, badRedirect } = got;
+    if (off) { manifest.redirects.push({ from: item.url, to: off }); manifest.skipped.push({ url: item.url, reason: `redirected off the origin to ${new URL(off).host}` }); manifest.external.add(new URL(off).host); continue; }
+    if (redirectLoop) { manifest.skipped.push({ url: item.url, reason: "more than five redirects" }); continue; }
+    if (badRedirect) { manifest.skipped.push({ url: item.url, reason: "redirected to an address that is not a URL" }); continue; }
+    if (landed !== item.url) {
       // A redirect is recorded and the page is saved once, under the address it lives at, never as a second copy.
-      const to = res.url.replace(/#.*$/, "");
-      manifest.redirects.push({ from: item.url, to });
-      if (new URL(to).origin !== origin) { manifest.skipped.push({ url: item.url, reason: `redirected off the origin to ${new URL(to).host}` }); manifest.external.add(new URL(to).host); continue; }
-      if (seen.has(to)) { manifest.skipped.push({ url: item.url, reason: `redirected to ${to}, which is saved under its own address` }); continue; }
-      seen.add(to);
-      item = { ...item, url: to };
+      manifest.redirects.push({ from: item.url, to: landed });
+      if (seen.has(landed)) { manifest.skipped.push({ url: item.url, reason: `redirected to ${landed}, which is saved under its own address` }); continue; }
+      seen.add(landed);
+      item = { ...item, url: landed };
     }
     if (!res.ok) { manifest.skipped.push({ url: item.url, reason: `HTTP ${res.status}` }); continue; }
     if (tooBig || !body) { manifest.skipped.push({ url: item.url, reason: `over the file limit of ${maxFileBytes} bytes` }); continue; }
     if (!PAGE_TYPES.test(type)) {
       // A link that turned out to be a file is an asset after all.
-      if (manifest.bytes + body.length <= maxBytes) { const rel = await save(item.url, body); manifest.assets.push({ url: item.url, file: rel, type: type.split(";")[0], bytes: body.length }); manifest.bytes += body.length; }
+      if (manifest.bytes + body.length <= maxBytes) { const rel = await save(item.url, body); if (rel) { manifest.assets.push({ url: item.url, file: rel, type: type.split(";")[0], bytes: body.length }); manifest.bytes += body.length; } }
       continue;
     }
     const rel = await save(item.url, body);
+    if (!rel) continue;
     manifest.bytes += body.length;
     const html = body.toString("utf8");
     const links = linksIn(html, res.url || item.url);
@@ -199,10 +248,13 @@ export async function fetchSite({ url, dir, policy, log = { info() {}, debug() {
       manifest.skipped.push({ url: item.url, reason: err.name === "AbortError" ? `no answer within ${timeoutMs} ms` : err.message });
       continue;
     }
-    const { res, type, body, tooBig } = got;
+    const { res, type, body, tooBig, off, redirectLoop, badRedirect } = got;
+    if (off) { manifest.skipped.push({ url: item.url, reason: `redirected off the origin to ${new URL(off).host}` }); manifest.external.add(new URL(off).host); continue; }
+    if (redirectLoop || badRedirect) { manifest.skipped.push({ url: item.url, reason: redirectLoop ? "more than five redirects" : "redirected to an address that is not a URL" }); continue; }
     if (!res.ok) { manifest.skipped.push({ url: item.url, reason: `HTTP ${res.status}` }); continue; }
     if (tooBig || !body) { manifest.skipped.push({ url: item.url, reason: `over the file limit of ${maxFileBytes} bytes` }); continue; }
     const rel = await save(item.url, body);
+    if (!rel) continue;
     manifest.bytes += body.length;
     manifest.assets.push({ url: item.url, file: rel, type: type.split(";")[0], bytes: body.length });
     // A stylesheet names fonts and images of its own.
@@ -242,7 +294,7 @@ export function fetchReport(m) {
     ...(m.forms.length ? m.forms.map((f) => `- ${f}`) : ["None."]), "",
     "A form's action was recorded and never submitted.", "",
     "## robots.txt", "",
-    ...(m.robots.length ? m.robots.map((r) => `- Disallow: ${r}`) : ["No rule applied to every agent."]), "",
+    ...(m.robots.length ? m.robots.map((r) => `- ${r.allow ? "Allow" : "Disallow"}: ${r.pattern}`) : ["No rule applied to every agent."]), "",
   ];
   return out.join("\n");
 }

@@ -291,7 +291,8 @@ export function lowerXaml(source, rel, note = () => {}) {
 
   const common = (node, kind) => {
     const attrs = [];
-    const what = caption(node, null).text || xattr(node, "Name") || node.name;
+    // A field's Text is a value, never a caption: notes and state names use the control's name for it.
+    const what = FIELD.has(kind) ? xattr(node, "Name") || node.name : caption(node, null).text || xattr(node, "Name") || node.name;
     const enabled = attr(node, "IsEnabled");
     const eb = readBinding(parseExtension(enabled));
     if (eb && kind !== "text") attrs.push(`ng-disabled="!${bound(eb, null, `${node.name} IsEnabled`)}"`);
@@ -602,7 +603,8 @@ export function lowerXaml(source, rel, note = () => {}) {
     const cell = ["Grid.Row", "Grid.Column", "Grid.RowSpan", "Grid.ColumnSpan", "Canvas.Left", "Canvas.Top", "DockPanel.Dock"].map((k) => [k.split(".")[1].toLowerCase(), attr(node, k)]).filter(([, v]) => v !== null).map(([k, v]) => `${k} ${v}`);
     const bindings = node.el.attrs.filter((at) => parseExtension(at.value) && !/^xmlns/.test(at.name)).map((at) => `${at.name}=${decodeEntities(at.value)}`);
     const cap = caption(node, null, false);
-    const literal = cap.literal ? ` "${cap.text.replace(/"/g, "'")}"` : "";
+    // A field's Text is a value the report withholds; a caption is what a person saw and is printed.
+    const literal = ["input", "textarea"].includes(kindOf(node.tag)) ? (cap.literal ? " (initial value withheld)" : "") : cap.literal ? ` "${cap.text.replace(/"/g, "'")}"` : "";
     const line = `${pad}- ${node.name}${shape}${nm ? ` \`${nm}\`` : ""}${literal}${cell.length ? ` [${cell.join(", ")}]` : ""}${bindings.length ? ` ${bindings.join(" ")}` : ""}`;
     const kids = [...ordered(node), ...Object.entries(node.props).filter(([k]) => /^(itemtemplate|columns|view|contextmenu|content|header|items)$/.test(k)).flatMap(([, v]) => v)];
     return [line, ...kids.flatMap((k) => layoutLines(k, depth + 1))];

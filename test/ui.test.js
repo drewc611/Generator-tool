@@ -388,9 +388,12 @@ test("an intake path is a relative file path and nothing else", () => {
 });
 
 test("a rerun request carries only the flags the console offers, as booleans, and the source", () => {
-  assert.deepEqual(rerunOptions(undefined), { source: "src", flags: {} });
-  assert.deepEqual(rerunOptions({ source: "intake", flags: { transformer: 1, vue: false, allowLive: true, "max-kb": 0 } }), { source: "intake", flags: { transformer: true, vue: false } }, "a policy switch or a ceiling is never a flag a page can set");
-  assert.deepEqual(rerunOptions({ source: "/etc" }), { source: "src", flags: {} });
+  assert.deepEqual(rerunOptions(undefined), { source: "src", flags: {}, dir: null });
+  assert.deepEqual(rerunOptions({ source: "intake", flags: { transformer: 1, vue: false, allowLive: true, "max-kb": 0 } }), { source: "intake", flags: { transformer: true, vue: false }, dir: null }, "a policy switch or a ceiling is never a flag a page can set");
+  assert.deepEqual(rerunOptions({ source: "/etc" }), { source: "src", flags: {}, dir: null });
+  assert.equal(rerunOptions({ source: "intake", dir: "site-old.example.com" }).dir, "site-old.example.com", "a copied site's own folder may be the source");
+  assert.equal(rerunOptions({ source: "intake", dir: "../out" }).dir, null, "held to the intake's path rule");
+  assert.equal(rerunOptions({ source: "src", dir: "site-x" }).dir, null, "a folder means nothing outside the intake");
   assert.ok(!RERUN_FLAGS.some((f) => /allow|offline|max|only|skip/.test(f)), "nothing that weakens a gate is offered");
 });
 
@@ -429,9 +432,9 @@ test("the server hands uploads to the intake and reruns pointed at it; without o
   assert.deepEqual(await fetch(`${address}/intake.json`).then((r) => r.json()), { dir: intake.dir, files: [{ path: "site/index.html", bytes: 1 }] });
   const ran = await fetch(`${address}/rerun`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: "intake", flags: { transformer: true, allowLive: true } }) }).then((r) => r.json());
   assert.equal(ran.ok, true);
-  assert.deepEqual(reruns, [{ source: "intake", flags: { transformer: true } }], "the rerun gets the source and the offered flags, nothing else");
+  assert.deepEqual(reruns, [{ source: "intake", flags: { transformer: true }, dir: null }], "the rerun gets the source and the offered flags, nothing else");
   await fetch(`${address}/rerun`, { method: "POST" });
-  assert.deepEqual(reruns[1], { source: "src", flags: {} }, "an empty request is the plain rerun it always was");
+  assert.deepEqual(reruns[1], { source: "src", flags: {}, dir: null }, "an empty request is the plain rerun it always was");
   assert.deepEqual(await fetch(`${address}/intake`, { method: "DELETE" }).then((r) => r.json()), { ok: true });
   assert.deepEqual(intake.files, []);
 });
@@ -454,7 +457,8 @@ test("the nineteenth review pass: a rerun's flags ride on the command line's and
   assert.equal(plain.src, "/tree"); assert.equal(plain.shots, "/tree/shots"); assert.equal(plain.vue, true, "a flag from the command line stays on when the console presses nothing");
   assert.equal(plain.transformer, undefined, "a flag the command line never gave stays ungiven");
   const pressed = rerunPatch(original, intake, rerunOptions({ source: "intake", flags: { transformer: true } }));
-  assert.equal(pressed.src, intake); assert.equal(pressed.shots, intake); assert.equal(pressed.transformer, true); assert.equal(pressed.vue, true, "a pressed key adds to the command line's flags");
+  assert.equal(pressed.src, intake); assert.equal(pressed.shots, intake);
+  assert.equal(rerunPatch(original, intake, rerunOptions({ source: "intake", dir: "site-old.example.com" })).src, `${intake}/site-old.example.com`, "a copied site is read from its own folder, so its manifest is found and its routes start at its root"); assert.equal(pressed.transformer, true); assert.equal(pressed.vue, true, "a pressed key adds to the command line's flags");
   const off = rerunPatch(original, intake, rerunOptions({ flags: { vue: false } }));
   assert.equal(off.vue, false, "an explicit false in a request still turns a flag off for that run");
   assert.equal(rerunPatch(original, intake, rerunOptions({})).vue, true, "and the next plain rerun has it back");

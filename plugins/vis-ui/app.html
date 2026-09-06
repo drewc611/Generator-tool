@@ -830,7 +830,7 @@ async function rerun(options = {}) {
   button.textContent = "· running";
   $("now").textContent = options.source === "intake" ? "running the pipeline over the intake" : "running the pipeline";
   try {
-    const body = JSON.stringify({ source: options.source ?? "src", flags: { ...flagsOn(), ...(options.flags ?? {}) } });
+    const body = JSON.stringify({ source: options.source ?? "src", dir: options.dir ?? null, flags: { ...flagsOn(), ...(options.flags ?? {}) } });
     const result = await fetch("/rerun", { method: "POST", headers: { "Content-Type": "application/json" }, body }).then((r) => r.json());
     if (!result.ok) {
       $("now").textContent = "stopped: " + (result.error ?? "unknown").split("\n")[0];
@@ -889,7 +889,7 @@ $("fetch-site").addEventListener("click", async () => {
   const r = await fetch("/intake/fetch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) }).then((r) => r.json()).catch((err) => ({ error: err.message }));
   if (!r.ok) { status.textContent = "refused: " + (r.error ?? "unknown"); return; }
   status.textContent = r.pages + " page(s) and " + r.assets + " asset(s) copied, " + r.skipped + " skipped (FETCH.md in the intake says why)";
-  await rerun({ source: "intake", flags: { site: true } });
+  await rerun({ source: "intake", dir: r.dir, flags: { site: true } });
 });
 $("clear-intake").addEventListener("click", async () => { await fetch("/intake", { method: "DELETE" }); $("intake-status").textContent = "intake emptied"; });
 const drop = $("drop");

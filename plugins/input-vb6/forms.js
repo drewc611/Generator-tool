@@ -218,7 +218,14 @@ export function lowerForm(form, note) {
         case "listview": notes.skipped.push(`the list view ${c.name} is a table whose columns and rows the code supplies`); push(`<table class="list-view"${a}></table>`); break;
         case "tree": notes.skipped.push(`the tree view ${c.name} has nodes the code supplies`); push(`<ul role="tree"${a}></ul>`); break;
         case "decoration": notes.skipped.push(`${c.name} (${c.className}) is drawn decoration; nothing carried`); break;
-        default: notes.unknown.push(`${c.className} (${c.name})`); push(`<div class="${kebab(c.className.replace(/^VB\.|^T/, "")) || "control"}"${a}></div>`); break;
+        default: {
+          // A container this reader does not know still holds its children; they render inside it rather than vanish.
+          notes.unknown.push(`${c.className} (${c.name})`);
+          const inside = (c.children ?? []).length ? render(c.children, depth + 1, c) : [];
+          if (inside.length) { push(`<div class="${kebab(c.className.replace(/^VB\.|^T/, "")) || "control"}"${a}>`); lines.push(...inside); push("</div>"); }
+          else push(`<div class="${kebab(c.className.replace(/^VB\.|^T/, "")) || "control"}"${a}></div>`);
+          break;
+        }
       }
       if (c.kind !== "radio") radioGroup = null;
     }
@@ -241,7 +248,7 @@ export function lowerForm(form, note) {
   for (const e of form.events ?? []) behaviours.add(`${form.name} ${e}`);
   for (const nv of form.nonvisual) for (const e of nv.events ?? []) behaviours.add(`${nv.name} ${e}`);
   for (const o of form.orphans ?? []) behaviours.add(`${o} (no control by that name)`);
-  for (const m of form.menus) walk(m.items, (it) => { for (const e of it.events ?? []) if (e !== "Click") behaviours.push(`${it.name} ${e}`); });
+  for (const m of form.menus) walk(m.items, (it) => { for (const e of it.events ?? []) if (e !== "Click") behaviours.add(`${it.name} ${e}`); });
 
   if (notes.lists.length) {
     const frx = notes.lists.filter((l) => l.from === "frx").map((l) => l.field);
