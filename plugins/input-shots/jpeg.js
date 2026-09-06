@@ -36,6 +36,8 @@ function huffmanTable(counts, symbols) {
     mincode[len] = code;
     code += counts[len - 1];
     k += counts[len - 1];
+    // More codes of one length than the bits allow would make a code the prefix of another, so decoding it is a guess.
+    if (code > 1 << len) return null;
     maxcode[len] = counts[len - 1] ? code - 1 : -1;
     code <<= 1;
   }
@@ -147,6 +149,8 @@ export function decodeJpeg(bytes) {
         const precision = d[at] >> 4;
         const id = d[at] & 15;
         at += 1;
+        if (id > 3 || precision > 1) return { error: `quantization table ${id} with precision ${precision} is not one the format allows` };
+        if (at + (precision ? 128 : 64) > d.length) return { error: `quantization table ${id} runs past its segment` };
         const table = new Int32Array(64);
         for (let k = 0; k < 64; k += 1) { table[ZIGZAG[k]] = precision ? u16(d, at) : d[at]; at += precision ? 2 : 1; }
         qt[id] = table;
@@ -158,14 +162,17 @@ export function decodeJpeg(bytes) {
         const id = d[at] & 15;
         const counts = Array.from(d.subarray(at + 1, at + 17));
         const total = counts.reduce((s, n) => s + n, 0);
-        const symbols = Array.from(d.subarray(at + 17, at + 17 + total));
+        if (total > 256 || at + 17 + total > d.length) return { error: `Huffman table ${cls}/${id} declares ${total} symbols and its segment ${total > 256 ? "may hold at most 256" : "carries fewer"}` };
+        const table = huffmanTable(counts, Array.from(d.subarray(at + 17, at + 17 + total)));
+        if (!table) return { error: `Huffman table ${cls}/${id} has more codes than its lengths allow` };
         at += 17 + total;
-        (cls ? ac : dc)[id] = huffmanTable(counts, symbols);
+        (cls ? ac : dc)[id] = table;
       }
-    } else if (seg.marker === 0xdd) restart = u16(d, 0);
+    } else if (seg.marker === 0xdd) restart = d.length >= 2 ? u16(d, 0) : 0;
     else if (seg.marker >= 0xc0 && seg.marker <= 0xcf && seg.marker !== 0xc4 && seg.marker !== 0xc8 && seg.marker !== 0xcc) {
       if (FRAME_NAMES[seg.marker]) return { error: `${FRAME_NAMES[seg.marker]} is not decoded; save it baseline` };
       if (frame) return { error: "two frames in one file" };
+      if (d.length < 6 || d.length < 6 + d[5] * 3) return { error: "the frame header is cut short" };
       if (d[0] !== 8) return { error: `a ${d[0]} bit JPEG is not decoded; save it eight bit` };
       const height = u16(d, 1);
       const width = u16(d, 3);
@@ -175,6 +182,7 @@ export function decodeJpeg(bytes) {
       if (n !== 1 && n !== 3) return { error: `${n} components is not a frame this reader decodes` };
       const components = [];
       for (let i = 0; i < n; i += 1) components.push({ id: d[6 + i * 3], h: d[7 + i * 3] >> 4, v: d[7 + i * 3] & 15, tq: d[8 + i * 3] });
+      if (new Set(components.map((c) => c.id)).size !== n) return { error: "the frame declares one component id twice" };
       const hmax = Math.max(...components.map((c) => c.h));
       const vmax = Math.max(...components.map((c) => c.v));
       const mcux = Math.ceil(width / (8 * hmax));
@@ -190,6 +198,7 @@ export function decodeJpeg(bytes) {
     } else if (seg.marker === 0xda) {
       if (!frame) return { error: "a scan before any frame" };
       const n = d[0];
+      if (!n || n > 4 || d.length < 1 + n * 2) return { error: `a scan naming ${n ?? 0} components is not one the format allows` };
       const parts = [];
       for (let i = 0; i < n; i += 1) {
         const c = frame.components.find((k) => k.id === d[1 + i * 2]);
@@ -199,6 +208,7 @@ export function decodeJpeg(bytes) {
         c.q = qt[c.tq];
         if (!c.dc || !c.ac) return { error: `the scan uses Huffman table ${d[2 + i * 2] >> 4}/${d[2 + i * 2] & 15}, which was never defined` };
         if (!c.q) return { error: `component ${c.id} quantizes with table ${c.tq}, which was never defined` };
+        c.scanned = true;
         parts.push(c);
       }
       const failed = decodeScan(seg.scan, frame, parts, restart);
@@ -208,6 +218,9 @@ export function decodeJpeg(bytes) {
   }
   if (!frame) return { error: "no frame in the file" };
   if (!scans) return { error: "no scan in the file" };
+  // A plane no scan wrote would come out as a flat colour that looks like a picture and is not.
+  const unscanned = frame.components.find((c) => !c.scanned);
+  if (unscanned) return { error: `component ${unscanned.id} is declared by the frame and never scanned` };
   return orient(toRgba(frame, adobe), orientation);
 }
 
@@ -225,6 +238,8 @@ function decodeScan(data, frame, parts, restart) {
       if (byte === 0xff) {
         const next = data[pos];
         if (next === 0) pos += 1;
+        // A file cut between a stuffed pair ends here; stepping back onto the 0xff would hide that the data ran out.
+        else if (next === undefined) { marker = true; byte = 0; }
         else { marker = true; byte = 0; pos -= 1; }
       }
       bitBuf = byte;

@@ -1195,6 +1195,6 @@ jobs:
       - name: the roadmap count is the number the file claims
         run: |
           count=$(grep -c '^\*\*[0-9]*\. ' ROADMAP.md)
-          if [ "$count" != "647" ]; then
-            echo "ROADMAP.md holds $count entries and claims 647"; exit 1
+          if [ "$count" != "648" ]; then
+            echo "ROADMAP.md holds $count entries and claims 648"; exit 1
           fi

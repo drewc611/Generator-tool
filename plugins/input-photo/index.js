@@ -63,6 +63,8 @@ export function lowerPhoto(read, { name, width, height }) {
     return id;
   };
   const near = (a, b) => b && a.y + a.h <= b.y && b.y - (a.y + a.h) <= a.h * 2.2 && Math.abs(a.x - b.x) <= Math.max(a.w, b.w) * 0.5;
+  // A paper form writes the label on the same row, just left of the box, with the box's middle level with the writing.
+  const beside = (a, b) => b && b.x >= a.x + a.w && b.x - (a.x + a.w) <= a.h * 3 && a.y + a.h / 2 >= b.y && a.y + a.h / 2 <= b.y + b.h;
   const lines = [];
   const walk = (regions, parent, pad) => {
     for (let i = 0; i < regions.length; i += 1) {
@@ -71,8 +73,8 @@ export function lowerPhoto(read, { name, width, height }) {
       switch (r.kind) {
         case "text": {
           const next = regions[i + 1];
-          // Writing just above a field, lined up with it, is the field's label.
-          if (next && next.kind === "field" && near(r, next) && !next.labelled) {
+          // Writing just above a field, lined up with it, or just left of it on the same row, is the field's label.
+          if (next && next.kind === "field" && (near(r, next) || beside(r, next)) && !next.labelled) {
             const field = unique("field");
             next.labelled = field;
             lines.push(`${pad}<label for="f-${kebab(field)}" ${at}>{{${word("label", r, `labels the field ${field}`)}}}</label>`);
@@ -126,7 +128,12 @@ export function lowerPhoto(read, { name, width, height }) {
         }
         case "image": lines.push(`${pad}<span class="image" role="img" aria-label="${unique("image")}" ${at}></span>`); break;
         case "mark": lines.push(`${pad}<span class="mark" role="img" aria-label="${unique("mark")}" ${at}></span>`); break;
-        default: lines.push(`${pad}<div class="box" ${at}></div>`); break;
+        case "box": lines.push(`${pad}<div class="box" ${at}></div>`); break;
+        default:
+          // A kind the segmenter learns before this lowering does is placed, not dropped, and the gap is named.
+          notes.push(`a region read as "${r.kind}" has no lowering yet and was placed as a plain box`);
+          lines.push(`${pad}<div class="box" ${at}></div>`);
+          break;
       }
     }
   };
