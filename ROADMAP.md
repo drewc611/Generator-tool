@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and sixty seven features across one hundred and seventy phases. The statuses are
+Six hundred and sixty nine features across one hundred and seventy two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2614,14 +2614,24 @@ A container or control tree in a `.fxml` file is a real component boundary someb
 **667. input-netbeansform reads a NetBeans GUI Builder's own .form XML sidecar directly, an explicit label and button-group reference read as the ground truth it is rather than a proximity guess** 🔨
 Where input-swing reverse engineers a generated initComponents method, a `.form` file is the Matisse designer's own declarative save format sitting beside the same class's `.java` file, and it states outright what input-swing has to infer: a `<Property>`'s bare `value` attribute or one of its typed child shapes (`<String value>`, an ordered `<StringArray>` of `<StringItem>`, a `<ComponentRef name>`) is read for real, and anything else is kept opaque by its own child tag name rather than guessed at; an `<Events><EventHandler event listener handler>` names a button's wiring directly, its handler stripped of the `ActionPerformed` suffix and never run through the same case folding that would flatten a name like `loginButton` into one word; a label's own `labelFor` and a radio's own `buttonGroup` are `<ComponentRef>` references resolved against `<NonVisualComponents>`, the file's own ground truth, with a run of consecutive siblings kept only as the fallback for a radio group with no reference at all. JPanel, JScrollPane and JSplitPane lower to a div, JTextField, JFormattedTextField, JSpinner and JPasswordField to an input, JTextArea to a textarea, JCheckBox, JRadioButton, JComboBox and JButton the ordinary way, and JTable to a header only placeholder; a widget class with no vocabulary entry is named through NETBEANSFORM.md rather than approximated. test/netbeansform.test.js holds it.
 
+## Phase 171: the mainframe green screen
+
+**668. input-cics reads IBM CICS BMS .bms map definitions, a mainframe 3270 screen's macro assembler source rather than markup, and produces no output because BMS states none** 🔨
+A `DFHMSD` opens a mapset and a `DFHMDI` opens one map inside it, a real screen boundary the same way a scene is in a storyboard, so a mapset with more than one `DFHMDI` becomes more than one screen; a `DFHMDF` defines one field, positioned absolutely by `POS=(row,col)` with no container to nest it in, so fields are ordered by position rather than by declaration, the same "no tree, sort by position" reading input-exe already gives a native dialog template. A field's own assembler label, present only on some, is the symbolic name CICS and COBOL code refer to it by and becomes its field name; `ATTRB=(PROT)` with an `INITIAL` literal is a caption, `ATTRB=(UNPROT)` is a real input, and a protected field with neither is empty screen furniture, skipped. There is no button, no submit and no event anywhere in BMS, since a 3270 screen is driven by whichever program the operator's AID key handed control to, a fact BMS itself never states, so this reader is honest that it produces zero outputs; an unlabeled unprotected field, a `GRPNAME` grouping and an `INITIAL` value that is not a clean quoted literal are each named rather than guessed. test/cics.test.js holds it.
+
+## Phase 172: the screen drawn as the text it is
+
+**669. input-informix reads Informix 4GL/ESQL .per screen forms, the SCREEN block's own row and column position read directly off the ASCII art rather than from a coordinate attribute** 🔨
+A `.per` file's `SCREEN` section is a literal character grid between `{` and `}`, so unlike every other desktop or mainframe reader in this tool, position is not stated in an attribute at all, it is where the text sits in the block; a bracketed run, `[tag]`, is a field placeholder whose own width is the bracket's width and whose tag, read from the `ATTRIBUTES` section's `tag = table.column, MODIFIER;` statements, resolves what it binds to and how, while everything outside brackets is a literal caption kept exactly as written. `NOENTRY` renders a field read only rather than as a real input, and `REQUIRED` is named for the port to enforce rather than written as an invented HTML attribute this reader has not verified matches the port's own validation; a `COMMENTS = "..."` string is carried onto the rendered field as a title, an honest reuse of real text rather than a guess. Like BMS, a `.per` file names no button and no event, since the actual 4GL program that reads a screen's fields lives elsewhere, so this reader too produces zero outputs; a field placeholder with no matching attributes statement and an attributes statement whose tag never appears on screen are each named as the mismatch they are rather than silently dropped or bound anyway. test/informix.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 620 |
+| new in this branch | 622 |
 | planned | 3 |
-| total | 667 |
+| total | 669 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

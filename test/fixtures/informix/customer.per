@@ -1,0 +1,34 @@
+DATABASE stores7
+
+SCREEN SIZE 20 BY 78
+{
+Customer Maintenance
+
+Customer Number: [f001    ]      Name: [f002                    ]
+
+Address:         [f003                              ]
+                 [f004                              ]
+
+Status: [f005]   Active
+
+Unbound field: [f009]
+
+Comments:
+[f006                                                             ]
+[f006                                                             ]
+}
+
+TABLES
+customer
+
+ATTRIBUTES
+f001 = customer.customer_num, REQUIRED, COMMENTS = "The unique customer id";
+f002 = customer.fname, REVERSE;
+f003 = customer.addr1;
+f004 = customer.addr2;
+f005 = customer.active_flag, NOENTRY;
+f006 = customer.notes, NOENTRY;
+f008 = customer.zip_code;
+
+INSTRUCTIONS
+END

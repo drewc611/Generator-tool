@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and eight in five classes, and the core has never learned
+Plugins that ship, two hundred and ten in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform  input-cics  input-informix
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -640,6 +640,28 @@ never run through the case folding that would flatten a name like
 `loginButton` into one word. test/fxml.test.js and
 test/netbeansform.test.js hold both.
 
+10.13 reaches the two places a screen was never markup at all. input-cics
+reads IBM CICS BMS `.bms` map definitions, a mainframe 3270 screen's macro
+assembler source: a `DFHMDI` opens one map, a real screen boundary the way
+a storyboard scene is, and a `DFHMDF` field is positioned absolutely by
+`POS=(row,col)` with no container to nest it in, so fields are ordered by
+position rather than declaration; `ATTRB=(PROT)` with an `INITIAL` is a
+caption, `ATTRB=(UNPROT)` a real input. BMS states no button, no submit and
+no event at all, since a 3270 screen is driven by whichever program the
+operator's AID key handed control to, so this reader is honest that it
+produces zero outputs. input-informix reads Informix 4GL/ESQL `.per` screen
+forms, where position is not an attribute but the literal row and column a
+`[tag]` placeholder sits at inside the `SCREEN` section's own ASCII art; the
+`ATTRIBUTES` section's `tag = table.column, MODIFIER;` statements resolve
+what each placeholder binds to, `NOENTRY` renders read only rather than as
+an input, and `REQUIRED` is named for the port to enforce rather than
+written as an attribute this reader has not verified. Like BMS, a `.per`
+file names no button and no event, so this reader too produces zero
+outputs; a placeholder with no matching attributes statement and an
+attributes statement whose tag never appears on screen are each named as
+the mismatch they are. test/cics.test.js and test/informix.test.js hold
+both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -705,8 +727,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and sixty seven features in
-one hundred and seventy phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and sixty nine features in
+one hundred and seventy two phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

@@ -29,6 +29,10 @@ const KEEP = new Set([
   ".rptdesign",
   // SQL Server Reporting Services' own report definition: a document layout the same way, laid out in Report Builder.
   ".rdl",
+  // IBM CICS BMS: a mainframe 3270 screen's map definition, assembler macro source rather than markup.
+  ".bms",
+  // Informix 4GL/ESQL's own screen form: a character-cell terminal layout, ASCII art rather than markup.
+  ".per",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
