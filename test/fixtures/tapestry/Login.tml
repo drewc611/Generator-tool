@@ -1,0 +1,22 @@
+<html xmlns:t="http://tapestry.apache.org/schema/component.xsd">
+<body>
+  <h1>Sign in</h1>
+  <form t:type="form" t:id="loginForm">
+    <label>Username</label>
+    <input t:type="textfield" t:id="username" t:value="username"/>
+    <label>Password</label>
+    <input t:type="passwordfield" t:id="password" t:value="password"/>
+    <t:checkbox t:id="rememberMe" t:value="rememberMe"/> Remember me
+    <select t:type="select" t:id="role" t:model="roleModel" t:value="selectedRole"/>
+    <input t:type="submit" t:id="loginButton" t:value="literal:Login"/>
+    <t:if test="loginFailed">
+      <p class="error">Invalid credentials</p>
+    </t:if>
+    <ul>
+      <t:loop source="recentLogins" value="loginEntry">
+        <li>${loginEntry.username}</li>
+      </t:loop>
+    </ul>
+  </form>
+</body>
+</html>

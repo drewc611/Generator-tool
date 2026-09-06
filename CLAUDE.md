@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and two in five classes, and the core has never learned
+Plugins that ship, two hundred and four in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -572,6 +572,30 @@ what BIRT would actually compute, and a list, BIRT's own repeating
 container, is named present with its dataset and never inlined. test/uno.test.js
 and test/birt.test.js hold both.
 
+10.10 reaches the desk Interface Builder built and the enterprise intranet
+framework the other readers skipped. input-storyboard reads Apple's
+.storyboard and .xib files: a scene is a real screen boundary the way a Qt
+Designer form or a UNO dialog is, so a multi scene storyboard becomes one
+screen per scene, each named from its own view controller's customClass or,
+absent one, the scene's own id; a .xib is the same vocabulary with no scene
+wrapper at all, read through the identical code path. A switch reads its
+nearest label as its caption when one sits beside it, a segmented control's
+inline segments become real options, a button's touchUpInside action wires
+an output the way every other reader already names a handler, and a segue
+is named as the navigation it is and never wired, since routing between
+scenes is out of scope for a single screen reader. input-tapestry reads
+Apache Tapestry's .tml templates, which stay valid HTML with t: namespaced
+attributes and elements marking exactly the spots a designer's plain markup
+turns dynamic, so only what actually carries Tapestry meaning is
+translated and everything else passes through unchanged: t:type="textfield"
+and "passwordfield" become a real input with ng-model, t:if and t:loop wrap
+their contents in the same ng-if and ng-repeat containers input-jinja and
+input-twig already use, and a bare ${property} becomes {{ property }}. A
+select's unresolved t:model and a submit button's convention bound handler
+stay named gaps rather than invented wiring, the same restraint input-qt
+and input-glade already keep over what a form's own code, not its markup,
+decides. test/storyboard.test.js and test/tapestry.test.js hold both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -637,8 +661,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and sixty one features in
-one hundred and sixty four phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and sixty three features in
+one hundred and sixty six phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

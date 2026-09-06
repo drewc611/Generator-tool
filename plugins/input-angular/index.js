@@ -7,14 +7,14 @@ import { readWithRegex } from "./regex.js";
 // framework sources, the old web's server pages and includes, and the assets
 // a page renders, which the site engine copies through as the bytes they are.
 const KEEP = new Set([
-  ".ts", ".js", ".jsx", ".tsx", ".html", ".scss", ".css", ".vue", ".riot", ".tag", ".svelte", ".hbs", ".handlebars", ".marko", ".liquid", ".twig", ".xsl", ".xslt", ".cshtml", ".ftl", ".ftlh", ".vm", ".vtl", ".pug", ".jade", ".tpl", ".jspf", ".jspx", ".cfm", ".cfml", ".haml", ".slim", ".ejs", ".njk", ".nunjucks", ".peb", ".pebble", ".volt",
+  ".ts", ".js", ".jsx", ".tsx", ".html", ".scss", ".css", ".vue", ".riot", ".tag", ".svelte", ".hbs", ".handlebars", ".marko", ".liquid", ".twig", ".xsl", ".xslt", ".cshtml", ".ftl", ".ftlh", ".vm", ".vtl", ".pug", ".jade", ".tpl", ".jspf", ".jspx", ".cfm", ".cfml", ".haml", ".slim", ".ejs", ".njk", ".nunjucks", ".peb", ".pebble", ".volt", ".tml",
   ".htm", ".shtml", ".php", ".asp", ".jsp", ".inc", ".txt", ".xml", ".pdf",
   ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp",
   ".woff", ".woff2", ".ttf", ".otf", ".eot",
   // A native executable is a legacy front end too: its dialogs and menus are resources a reader lifts.
   ".exe", ".dll",
   // Desktop form definitions: WinForms designer code, XAML, VB6, Delphi, Qt Designer and GTK Builder form files.
-  ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm", ".ui", ".fbp", ".glade", ".xdl",
+  ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm", ".ui", ".fbp", ".glade", ".xdl", ".storyboard", ".xib",
   // Windows resource scripts and .NET resource files: the source of a dialog and the captions a designer localized.
   ".rc", ".rc2", ".resx",
   // An Electron app keeps its front end in one archive beside the executable.

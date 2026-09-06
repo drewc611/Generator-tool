@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and sixty one features across one hundred and sixty four phases. The statuses are
+Six hundred and sixty three features across one hundred and sixty six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2584,14 +2584,24 @@ A `<dlg:bulletinboard>` is a real component boundary somebody drew with the Dial
 **661. input-birt reads Eclipse BIRT's .rptdesign reports, a table's own header, detail and footer bands kept as a real thead, tbody and tfoot rather than a flow this reader would have to invent** 🔨
 Eclipse BIRT ran banking, insurance and government back office reporting alongside JasperReports from the mid two thousands onward, visually designed in the BIRT Report Designer, and it is a document the way a JasperReports layout is, so a page header, a body and a page footer each become a section in the order the page prints them. A bare resultSetColumn reference is the one value read for real, lowered onto the dialect's own interpolation; a data element's computed expression, an aggregate or any other formula, is named rather than evaluated, and named the same way when a real file carries both a resultSetColumn and an expression, since the expression is what BIRT would actually compute. A list, BIRT's own repeating container, is named present with the dataset it binds to and never inlined, the same deliberate boundary a subreport already draws; a grid is named as the layout only table it is, its rows read the same way a table's are. test/birt.test.js holds it.
 
+## Phase 165: the desk Interface Builder built
+
+**662. input-storyboard reads Apple's .storyboard and .xib files, one screen per scene, with a segue named as the navigation it is and never wired** 🔨
+A `.storyboard`'s `<scene>` is a real screen boundary the way a Qt Designer form or a UNO dialog is, so a multi scene storyboard becomes one screen per scene, each named from its own view controller's customClass or, absent one, the scene's own id; a `.xib` is the same vocabulary with no `<scene>` wrapper at all, read through the identical code path. A label, a text field with its secure entry read as a password, a text view, a switch with the nearest label read as its caption when one sits beside it, a segmented control's inline segments as real options, and a button's `<connections><action eventType="touchUpInside">` wired the way every other reader already names a handler, all lower onto the shared dialect; an image view is named as existing and never rendered, a table or collection view lands as a header only placeholder, and a `<segue>` is named as the navigation it is and never wired, because routing between scenes is out of scope for a single screen reader. A control with no honest equivalent is named through the report, never approximated. test/storyboard.test.js holds it.
+
+## Phase 166: the enterprise intranet framework the other readers skipped
+
+**663. input-tapestry reads Apache Tapestry's .tml templates, translating only what actually carries Tapestry meaning and leaving the rest of the markup exactly as a designer wrote it** 🔨
+A `.tml` template is valid HTML with `t:` namespaced attributes and elements marking exactly the spots a designer's plain markup turns dynamic, so `t:type="textfield"` and `"passwordfield"` on any element become a real text or password input with ng-model, `t:type="checkbox"` and the `<t:checkbox>` element form both become a real checkbox the same way, `<t:if test="...">` and `<t:loop source="..." value="...">` wrap their contents in the same ng-if and ng-repeat containers input-jinja and input-twig already use for `{% if %}` and `{% for %}`, and a bare `${property.path}` becomes `{{ property.path }}` verbatim. Two things Tapestry hides in the Java class behind the template stay honest gaps: a select's `t:model` names a SelectModel this reader cannot see, so its options are named the way input-qt and input-glade already name an unresolved combo box, and a submit button gets no invented ng-click, since Tapestry wires its handler by naming convention, never written in the template at all; a `${...}` expression with a method call or an operator is a computed value this reader does not evaluate, and a `t:type` or `t:` namespaced element with no vocabulary entry is named rather than approximated, its wrapper dropped and its content kept rather than guessed at. test/tapestry.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 614 |
+| new in this branch | 616 |
 | planned | 3 |
-| total | 661 |
+| total | 663 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
