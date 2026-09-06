@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred in five classes, and the core has never learned
+Plugins that ship, two hundred and two in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -549,6 +549,29 @@ class, a property or an expression with no honest equivalent rather than
 approximating it. test/glade.test.js, test/fbp.test.js and
 test/jasperreports.test.js hold them.
 
+10.9 reaches the office suite's own dialog editor and the enterprise's other
+report designer. input-uno reads LibreOffice and OpenOffice Basic's .xdl
+UNO dialog files, flat and absolutely positioned with no layout manager to
+reproduce: a control's every property is an attribute rather than a nested
+element, unlike Qt's or GTK Builder's own shapes, and a checkbox's dlg:value
+can name either a caption or a checked state default with nothing in the
+file to tell them apart, so a bare zero or one with no dlg:label beside it
+is named rather than guessed. Radio buttons group by an explicit
+dlg:radiogroup when a file writes one and, failing that, by a run of
+consecutive siblings this reader names as its own structural convenience
+rather than a rule the format states. input-birt reads Eclipse BIRT's
+.rptdesign reports, which ran banking, insurance and government back office
+reporting alongside JasperReports from the mid two thousands onward: a
+table's own header, detail and footer bands are kept as a real thead, tbody
+and tfoot rather than a flow this reader would have to invent, because BIRT
+drew a grid and the port keeps the grid. A bare resultSetColumn reference is
+the one value read for real, lowered onto the dialect's own interpolation; a
+computed expression is named rather than evaluated, even where a file
+carries both a resultSetColumn and an expression, since the expression is
+what BIRT would actually compute, and a list, BIRT's own repeating
+container, is named present with its dataset and never inlined. test/uno.test.js
+and test/birt.test.js hold both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -614,8 +637,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and fifty nine features in
-one hundred and sixty two phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and sixty one features in
+one hundred and sixty four phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

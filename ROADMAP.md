@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and fifty nine features across one hundred and sixty two phases. The statuses are
+Six hundred and sixty one features across one hundred and sixty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2574,14 +2574,24 @@ An `<object class="...">` tree is a real component boundary somebody placed with
 **659. input-jasperreports reads JasperReports' .jrxml band layouts as the document they are, a read only screen with no input, button or event to wire** 🔨
 Every invoice, statement and printed report a Java back office produced was very often designed as a .jrxml band layout in iReport or Jaspersoft Studio, and it is a document the way a PDF data sheet is, so title, pageHeader, columnHeader, detail, columnFooter, pageFooter and summary each become a section in the order the page prints them; background, noData and lastPageFooter are read and named present but never laid out, since none of the three is the plain top to bottom flow the rest already is, and a group's own header and footer bands are named the same way, since which rows belong to a group is a data grouping this reader does not compute. A bare `$F{name}`, `$P{name}` or `$V{name}` reference is the one shape this reader evaluates, lowered onto the dialect's own interpolation the way a field, a parameter or a report variable is honestly read; anything a textField expression does beyond that single reference, a SimpleDateFormat call, string concatenation, a conditional, is a computed value this reader does not evaluate, named through the report rather than partly reproduced, and an image's source expression and a subreport are named the same restrained way. JASPERREPORTS.md carries every report's parameters, fields, bands and gaps in one place. test/jasperreports.test.js holds it.
 
+## Phase 163: the office suite's own dialog editor
+
+**660. input-uno reads LibreOffice and OpenOffice Basic's .xdl UNO dialog files, flat and absolutely positioned with no layout manager to reproduce** 🔨
+A `<dlg:bulletinboard>` is a real component boundary somebody drew with the Dialog Editor the Basic IDE has shipped since the early 2000s, so a text, a textfield, a checkbox, a menulist with its inline `<dlg:menupopup>` items and a button wired through an on-performaction `<script:event>` lower onto the dialect the way input-qt already lowers a Qt Designer form. A control's every property is an attribute rather than a nested element, unlike Qt's or GTK Builder's own shapes, and a checkbox's `dlg:value` can name either a caption or a checked state default with nothing in the file to tell them apart, so a bare zero or one with no `dlg:label` beside it is named rather than guessed. Radio buttons group by an explicit `<dlg:radiogroup>` when a file writes one and, failing that, by a run of consecutive siblings this reader names as its own structural convenience rather than a rule the format states. test/uno.test.js holds it.
+
+## Phase 164: the enterprise's other report designer
+
+**661. input-birt reads Eclipse BIRT's .rptdesign reports, a table's own header, detail and footer bands kept as a real thead, tbody and tfoot rather than a flow this reader would have to invent** 🔨
+Eclipse BIRT ran banking, insurance and government back office reporting alongside JasperReports from the mid two thousands onward, visually designed in the BIRT Report Designer, and it is a document the way a JasperReports layout is, so a page header, a body and a page footer each become a section in the order the page prints them. A bare resultSetColumn reference is the one value read for real, lowered onto the dialect's own interpolation; a data element's computed expression, an aggregate or any other formula, is named rather than evaluated, and named the same way when a real file carries both a resultSetColumn and an expression, since the expression is what BIRT would actually compute. A list, BIRT's own repeating container, is named present with the dataset it binds to and never inlined, the same deliberate boundary a subreport already draws; a grid is named as the layout only table it is, its rows read the same way a table's are. test/birt.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 612 |
+| new in this branch | 614 |
 | planned | 3 |
-| total | 659 |
+| total | 661 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

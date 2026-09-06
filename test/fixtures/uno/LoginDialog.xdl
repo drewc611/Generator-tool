@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="LoginDialog" dlg:left="100" dlg:top="100" dlg:width="200" dlg:height="150" dlg:title="Sign in">
+  <dlg:bulletinboard>
+    <dlg:text dlg:id="usernameLabel" dlg:tab-index="0" dlg:left="10" dlg:top="10" dlg:width="80" dlg:height="10" dlg:value="Username"/>
+    <dlg:textfield dlg:id="usernameField" dlg:tab-index="1" dlg:left="10" dlg:top="22" dlg:width="120" dlg:height="12"/>
+    <dlg:textfield dlg:id="passwordField" dlg:tab-index="2" dlg:left="10" dlg:top="38" dlg:width="120" dlg:height="12" dlg:echochar="*"/>
+    <dlg:checkbox dlg:id="rememberCheck" dlg:tab-index="3" dlg:left="10" dlg:top="54" dlg:width="120" dlg:height="10" dlg:value="Remember me"/>
+    <dlg:menulist dlg:id="roleList" dlg:tab-index="4" dlg:left="10" dlg:top="68" dlg:width="120" dlg:height="12" dlg:spin="true">
+      <dlg:menupopup>
+        <dlg:menuitem dlg:value="Administrator"/>
+        <dlg:menuitem dlg:value="User"/>
+      </dlg:menupopup>
+    </dlg:menulist>
+    <dlg:button dlg:id="loginButton" dlg:tab-index="5" dlg:left="10" dlg:top="86" dlg:width="80" dlg:height="14" dlg:value="Login">
+      <script:event script:event-name="on-performaction" script:macro-name="LoginDialog.onLoginClick" script:language="Basic"/>
+    </dlg:button>
+  </dlg:bulletinboard>
+</dlg:window>
