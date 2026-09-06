@@ -23,7 +23,7 @@ const KEEP = new Set([
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
 
-async function walk(dir, root, out = []) {
+async function walk(dir, root, out = [], skipped = []) {
   let entries = [];
   try { entries = await readdir(dir); } catch { return out; }
   for (const e of entries.sort()) {
@@ -31,12 +31,17 @@ async function walk(dir, root, out = []) {
     const p = join(dir, e);
     const s = await stat(p).catch(() => null);
     if (!s) continue;
-    if (s.isDirectory()) await walk(p, root, out);
+    if (s.isDirectory()) { await walk(p, root, out, skipped); continue; }
+    const rel = relative(root, p).split(sep).join("/");
     // rel always uses forward slashes, whatever the platform, so every
     // plugin that reads it can split on one separator.
     // .htaccess has no extension to keep; the server's own redirect
     // declarations are exactly the evidence the site engine reads.
-    else if (KEEP.has(extname(e)) || e === ".htaccess" || /^\.env(\.[\w.-]+)?$/.test(e)) out.push({ path: p, rel: relative(root, p).split(sep).join("/") });
+    if (KEEP.has(extname(e)) || e === ".htaccess" || /^\.env(\.[\w.-]+)?$/.test(e)) out.push({ path: p, rel });
+    // A file the scan never looked inside is named, not silently dropped, so
+    // the census can answer "what did this run not even look at" honestly
+    // instead of a file simply never having existed as far as the run knew.
+    else skipped.push({ rel, ext: extname(e) || "(no extension)" });
   }
   return out;
 }
@@ -73,9 +78,11 @@ export default {
   class: "input",
   setup({ on, log }) {
     on("scan", async (ctx) => {
-      const files = await walk(ctx.config.src, ctx.config.src);
+      const skipped = [];
+      const files = await walk(ctx.config.src, ctx.config.src, [], skipped);
       ctx.sources.files = files;
-      log.info(`${files.length} file(s) under ${ctx.config.src}`);
+      ctx.sources.skipped = skipped;
+      log.info(`${files.length} file(s) under ${ctx.config.src}${skipped.length ? `, ${skipped.length} not looked inside` : ""}`);
       if (!files.length) ctx.unverified("No legacy source was found to read.");
     });
 

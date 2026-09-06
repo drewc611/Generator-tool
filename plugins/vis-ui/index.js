@@ -113,6 +113,10 @@ export function buildRun(ctx, self = null) {
     // earlier in this stage. The console shows them instead of re-deriving.
     coverage: ctx.coverage ?? null,
     parity: ctx.report?.parity ?? [],
+    // vis-readers' census: which file became which screen, by which reader,
+    // and which files the scan never opened at all. So "did it understand
+    // what I gave it" has an answer riding the same sidecar as everything else.
+    readers: ctx.readers ?? null,
   };
 }
 

@@ -869,6 +869,14 @@ async function rerun(options = {}) {
     }
     await refresh();
     $("now").textContent = "done in " + result.ms + "ms";
+    // The moment a person just dropped something is the moment they want to know
+    // whether it was understood, not a run's worth of numbers later.
+    if (options.source === "intake" && run.readers) {
+      const gap = (run.readers.notScanned?.length ?? 0) + (run.readers.unread?.length ?? 0);
+      $("intake-status").textContent = gap
+        ? `read ${run.readers.screens.length} screen(s) from what was dropped; ${gap} file(s) not understood yet, see READERS.md`
+        : `read ${run.readers.screens.length} screen(s) from what was dropped`;
+    }
   } catch (err) {
     $("now").textContent = "could not run: " + err.message;
   } finally {

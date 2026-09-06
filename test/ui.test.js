@@ -89,6 +89,17 @@ test("the unverified count matches what the run reported", async (t) => {
   }
 });
 
+test("the run carries the readers census, so the console can say whether what was dropped was understood", async (t) => {
+  const { ctx, cleanup } = await ctxFor();
+  t.after(cleanup);
+  const run = buildRun(ctx);
+  assert.deepEqual(run.readers, ctx.readers ?? null);
+  if (run.readers) assert.ok(Array.isArray(run.readers.notScanned), "a file the scan never opened is its own named row");
+  const html = await readFile(join(ROOT, "plugins/vis-ui/app.html"), "utf8");
+  assert.match(html, /run\.readers\.notScanned/, "the console reads the census back to answer whether a drop was understood");
+  assert.match(html, /options\.source === "intake" && run\.readers/, "only a drop, not the plain run button, gets this status line");
+});
+
 test("a screen carries its component, its screenshot and whether they matched", async (t) => {
   const { ctx, cleanup } = await ctxFor();
   t.after(cleanup);

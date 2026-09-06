@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and fifty one features across one hundred and fifty four phases. The statuses are
+Six hundred and fifty two features across one hundred and fifty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2534,14 +2534,19 @@ Making room for them found what a fixed fourteen year old layout does not forgiv
 **651. input-extjs reads Sencha ExtJS, the classic Ext.define and Ext.create API, and lowers a real component boundary onto the dialect the rest of the tool already reads** 🔨
 An xtype config tree is a real component boundary somebody drew on purpose, so a panel, a form, a textfield, a combobox with its inline store data, a checkbox, a button and a grid lower onto the dialect the way input-vb6 and input-exe already lower a form, rather than the inventory input-jquery is left with when a library declares no boundaries at all. A structural scanner over the source, string, comment and brace aware and no dependency, finds every `Ext.define` and `Ext.create` call and reads the object literal each is handed as a tree of keys and values; a function or a bare reference bound to `handler` or `listeners.click` is kept only as where it sits and how many lines it runs, never as its body, because a handler's own behaviour is exactly what this tool refuses to guess at. A combobox's inline store data becomes real options; a store named elsewhere, a layout other than the default, a `vtype` validator, an unresolved combo and an `Ext.define` that extends a base class the reader does not recognise are each named through the report rather than approximated, and an `Ext.data.Store` or `Ext.data.Model` beside a screen is read as the data definition it is and kept out of the screen tree entirely. EXTJS.md carries every class this run read, what it became, and what was named as a gap. test/extjs.test.js holds it, including a full pipeline run proving a login form ports to a real React component with no handler body, store name or ExtJS syntax surviving into the port or its notes.
 
+## Phase 155: what the scan never opened is named too
+
+**652. Every file the scan does not open is its own named row, not a silent absence, so dropping something the tool cannot yet read gets an honest answer instead of nothing at all** 🔨
+The scan kept a whitelist of extensions it would even look inside, so a file that landed on the console's intake or in a source tree with an extension no reader has asked for simply never existed as far as the run knew: not read, not named, not counted anywhere, indistinguishable from a file that was never dropped at all. That silence is exactly what the readers census exists to close for the files the scan already kept, and it now closes it for the ones the scan never opened too. The scan names every file it steps over as it walks the tree, and vis-readers' census carries the list as its own row, distinct from a markup file a reader looked at and did not recognise, because failing to open a file and failing to recognise its contents are different gaps with different fixes. READERS.md gets a Not scanned section naming each one, and the run's own report names the count with the first few files, the same bounded shape every other gap in this tool is reported in. The console reads the same census back over the sidecar every other measurement rides, so the moment after a drop is the moment it says plainly: read as a screen, or not understood yet, and where to look. test/readers-census.test.js and test/ui.test.js hold it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 604 |
+| new in this branch | 605 |
 | planned | 3 |
-| total | 651 |
+| total | 652 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

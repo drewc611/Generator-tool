@@ -10,15 +10,18 @@
  * Every file the scan kept lands in one of four rows: a screen, with the
  * reader that read it; a script the analyzers scanned that produced no
  * screen; a style, asset or data file the port carries or measures; or
- * markup no reader claimed, which is the row a port owner reads first. It
- * runs at verify so the census is what the readers actually did.
+ * markup no reader claimed, which is the row a port owner reads first. A
+ * fifth row, named separately because it is a different kind of gap, is
+ * every file the scan did not even look inside: its extension is not one any
+ * reader has asked for, so it was never a candidate. It runs at verify so the
+ * census is what the readers actually did.
  */
 
 const MARKUP = /\.(html?|shtml|php|asp|jsp|inc|hbs|handlebars|mustache|marko|liquid|twig|jinja2?|j2|tpl|ejs|erb|njk|nunjucks|peb|pebble|volt|xslt?|cshtml|ftlh?|vm|vtl|pug|jade|cfml?|haml|slim|vue|riot|tag|svelte|jsx|tsx|xhtml|jsf|aspx|ascx|master)$/i;
 const SCRIPT = /\.(js|mjs|cjs|ts)$/i;
 const STYLE = /\.(css|scss|less)$/i;
 
-export function census(files, screens) {
+export function census(files, screens, skipped = []) {
   const byFile = new Map();
   for (const s of screens) {
     if (s.file) byFile.set(s.file.replace(/^\.\//, ""), s.readBy ?? "a reader");
@@ -44,7 +47,13 @@ export function census(files, screens) {
   }
   const byReader = new Map();
   for (const s of rows.screens) byReader.set(s.reader, (byReader.get(s.reader) ?? 0) + 1);
-  return { ...rows, byReader: [...byReader.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])), total: files.length };
+  const notScanned = skipped.map((f) => f.rel).sort();
+  return {
+    ...rows,
+    byReader: [...byReader.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+    notScanned,
+    total: files.length + skipped.length,
+  };
 }
 
 export default {
@@ -53,14 +62,23 @@ export default {
   class: "vis",
   setup({ on, log }) {
     on("verify", async (ctx) => {
-      if (!ctx.sources?.files?.length) return log.debug("no source files to account for");
-      const c = census(ctx.sources.files, ctx.screens);
+      if (!ctx.sources?.files?.length && !ctx.sources?.skipped?.length) return log.debug("no source files to account for");
+      const c = census(ctx.sources.files, ctx.screens, ctx.sources.skipped ?? []);
       ctx.readers = c;
-      log.info(`${c.screens.length} file(s) read as screens by ${c.byReader.length} reader(s), ${c.composed.length} composed into them, ${c.unread.length} markup file(s) no reader claimed`);
+      log.info(
+        `${c.screens.length} file(s) read as screens by ${c.byReader.length} reader(s), ${c.composed.length} composed into them, ` +
+          `${c.unread.length} markup file(s) no reader claimed, ${c.notScanned.length} file(s) not scanned at all`
+      );
       if (c.unread.length) {
         ctx.unverified(
           `READERS.md names ${c.unread.length} markup file(s) no reader claimed (${c.unread.slice(0, 3).join(", ")}${c.unread.length > 3 ? ", ..." : ""}); ` +
           `the port has nothing from them, and whether each is a page the port needs is a person's call.`
+        );
+      }
+      if (c.notScanned.length) {
+        ctx.unverified(
+          `READERS.md names ${c.notScanned.length} file(s) this run never looked inside, its extension not one any reader has asked for ` +
+          `(${c.notScanned.slice(0, 3).join(", ")}${c.notScanned.length > 3 ? ", ..." : ""}); a file dropped on the console and not read yet ends up here.`
         );
       }
       await ctx.write("READERS.md", render(c));
@@ -72,7 +90,7 @@ function render(c) {
   const list = (items) => (items.length ? items.map((f) => `- \`${f}\``).join("\n") : "none");
   return `# What each reader claimed, file by file
 
-${c.total} file(s) reached the scan. Each is in exactly one row below. COVERAGE.md
+${c.total} file(s) were in the source tree. Each is in exactly one row below. COVERAGE.md
 counts screens; this counts files, so "what did the run not even look at" has an
 answer instead of an assumption.
 
@@ -84,6 +102,7 @@ answer instead of an assumption.
 | styles | ${c.styles.length} |
 | assets and data | ${c.assets.length} |
 | markup no reader claimed | ${c.unread.length} |
+| not scanned: the extension is not one any reader asked for | ${c.notScanned.length} |
 
 ## By reader
 
@@ -94,6 +113,12 @@ ${c.byReader.length ? c.byReader.map(([r, n]) => `- **${r}**: ${n} file(s)`).joi
 ${c.unread.length
     ? `${list(c.unread)}\n\nEach of these is a page or template in a shape no reader recognised, or one a reader looked at and found no component in. The port carries nothing from them. Whether each is a page the port needs, and which reader should learn its shape, is a person's call.`
     : "Every markup file the scan kept was read by a reader."}
+
+## Not scanned
+
+${c.notScanned.length
+    ? `${list(c.notScanned)}\n\nThe scan never opened these: their extension is not one any reader has asked for, so this is a gap in what the tool reads, not a judgement about what they hold. A person dropping a file on the console and finding it here has an honest answer, not a silent miss.`
+    : "Every file in the tree was at least opened by the scan."}
 
 ## Read as a screen
 

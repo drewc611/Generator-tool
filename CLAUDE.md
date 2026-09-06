@@ -487,6 +487,16 @@ validator and every handler and listener are named as existing and never read
 for what they do; an Ext.data.Store or Model beside a screen is read as the
 data definition it is, never mistaken for one. test/extjs.test.js holds it.
 
+10.6.1 closes a silence the readers census could not see: a file whose
+extension no reader has asked for never reached the scan at all, so it was
+indistinguishable from a file never dropped. The scan now names every file it
+steps over as it walks the tree, and the census carries the list as its own
+row, separate from a markup file a reader looked at and did not recognise.
+The console reads the same census back over the run's own sidecar, so the
+moment after a drop is the moment it says plainly whether the file became a
+screen or not, and where READERS.md says why. test/readers-census.test.js and
+test/ui.test.js hold it.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -552,8 +562,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and fifty one features in
-one hundred and fifty four phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and fifty two features in
+one hundred and fifty five phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
