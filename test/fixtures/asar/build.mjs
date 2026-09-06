@@ -25,9 +25,17 @@ export function buildAsar(files) {
     }
     return out;
   };
-  const json = new TextEncoder().encode(JSON.stringify({ files: tree(files) }));
+  return buildAsarRaw({ files: tree(files) }, Buffer.concat(blobs.map((b) => Buffer.from(b))));
+}
+
+/**
+ * Any header object laid out verbatim over a run of bytes, so a test can hand the reader a header Electron would
+ * never write: a folder whose files are a list, a size spelled as a string, an offset that is not digits.
+ */
+export function buildAsarRaw(header, blobs = Buffer.alloc(0)) {
+  const json = new TextEncoder().encode(typeof header === "string" ? header : JSON.stringify(header));
   const pad = (4 - (json.length % 4)) % 4;
   const payload = 4 + json.length + pad;
-  const header = [...u32(payload), ...u32(json.length), ...json, ...new Array(pad).fill(0)];
-  return Buffer.from([...u32(4), ...u32(header.length), ...header, ...blobs.flatMap((b) => [...b])]);
+  const pickle = [...u32(payload), ...u32(json.length), ...json, ...new Array(pad).fill(0)];
+  return Buffer.from([...u32(4), ...u32(pickle.length), ...pickle, ...blobs]);
 }

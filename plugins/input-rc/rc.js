@@ -22,21 +22,26 @@ const KNOWN = { APSTUDIO_INVOKED: false, RC_INVOKED: true, _WIN32: true, WIN32: 
 
 /**
  * Comments blanked to spaces so every offset and line number survives. A string is skipped whole, its "" doubling
- * and \ escapes included, because a comment marker inside one is text.
+ * and \ escapes included, because a comment marker inside one is text. A comment that never closes blanks the
+ * rest of the file, which is what rc.exe would refuse, so it is named with the line it opened on.
  */
-export function stripComments(text) {
+export function stripComments(text, problems = []) {
   let out = "";
   let i = 0;
+  const lineAt = (at) => text.slice(0, at).split("\n").length;
   while (i < text.length) {
     const c = text[i];
     if (c === '"') {
-      const end = stringEnd(text, i);
+      const closed = stringEnd(text, i);
+      // An unterminated string is the tokenizer's to name; here it runs to its line end so the next line is read whole.
+      const end = closed === -1 ? lineEnd(text, i) : closed;
       out += text.slice(i, end);
       i = end;
     } else if (c === "/" && text[i + 1] === "/") {
       while (i < text.length && text[i] !== "\n") { out += " "; i += 1; }
     } else if (c === "/" && text[i + 1] === "*") {
       const close = text.indexOf("*/", i + 2);
+      if (close === -1) problems.push(`line ${lineAt(i)}: a comment opened with /* never closes; everything after it is blank`);
       const end = close === -1 ? text.length : close + 2;
       out += text.slice(i, end).replace(/[^\n]/g, " ");
       i = end;
@@ -45,19 +50,28 @@ export function stripComments(text) {
   return out;
 }
 
-/** The index just past the closing quote of the string opening at `at`, or the end of the text when it never closes. */
+const lineEnd = (text, at) => { const nl = text.indexOf("\n", at); return nl === -1 ? text.length : nl; };
+
+/**
+ * The index just past the closing quote of the string opening at `at`, or -1 when the line ends first. A string
+ * cannot span lines in a resource script, so one that reaches the newline is unterminated rather than long.
+ */
 function stringEnd(text, at) {
   let i = at + 1;
   while (i < text.length) {
     const c = text[i];
+    if (c === "\n") return -1;
     if (c === "\\") { i += 2; continue; }
     if (c === '"') { if (text[i + 1] === '"') { i += 2; continue; } return i + 1; }
     i += 1;
   }
-  return text.length;
+  return -1;
 }
 
-/** The characters a string literal spells: "" is one quote, and the C escapes rc.exe honours are decoded. */
+/**
+ * The characters a string literal spells: "" is one quote, and the C escapes rc.exe honours are decoded. A NUL
+ * ends the string, because the compiled template's string ends there and the binary reader reads no further.
+ */
 function decodeString(raw) {
   let out = "";
   for (let i = 0; i < raw.length; i += 1) {
@@ -75,7 +89,8 @@ function decodeString(raw) {
     else if (/[0-7]/.test(n)) { const m = /^[0-7]{1,3}/.exec(raw.slice(i)); out += String.fromCharCode(parseInt(m[0], 8)); i += m[0].length - 1; }
     else out += n;
   }
-  return out;
+  const nul = out.indexOf("\0");
+  return nul === -1 ? out : out.slice(0, nul);
 }
 
 /**
@@ -83,7 +98,8 @@ function decodeString(raw) {
  * files named by #include, the #define table in order, and every condition the reader could not decide.
  */
 export function preprocess(text, { defines: inherited = [] } = {}) {
-  const lines = stripComments(text).split(/\r?\n/);
+  const problems = [];
+  const lines = stripComments(text, problems).split(/\r?\n/);
   const out = [];
   const includes = [];
   const defines = [...inherited];
@@ -91,7 +107,6 @@ export function preprocess(text, { defines: inherited = [] } = {}) {
   // A name the script itself takes back is known to be undefined; one it never mentions is not known either way.
   const undefined_ = new Set();
   const unevaluated = [];
-  const problems = [];
   // Each open conditional: whether its current branch is live, whether a branch has already been taken, and whether
   // the reader decided it or merely took the first branch.
   const stack = [];
@@ -99,7 +114,7 @@ export function preprocess(text, { defines: inherited = [] } = {}) {
   const isDefined = (name) => (name in KNOWN ? KNOWN[name] : defined.has(name) ? true : undefined_.has(name) ? false : null);
   const open = (truth, n, source) => {
     const parentLive = live();
-    const frame = { live: parentLive && truth !== false, taken: truth !== false, parentLive, decided: truth !== null, n, source, elseSkipped: false };
+    const frame = { live: parentLive && truth !== false, taken: truth !== false, parentLive, decided: truth !== null, n, source, elseSkipped: false, closed: false };
     if (truth === null) unevaluated.push(frame);
     stack.push(frame);
   };
@@ -118,6 +133,7 @@ export function preprocess(text, { defines: inherited = [] } = {}) {
       case "elif": {
         const f = stack.at(-1);
         if (!f) { problems.push(`line ${n}: #elif with no #if`); break; }
+        if (f.closed) { problems.push(`line ${n}: #elif after #else; skipped`); f.live = false; break; }
         if (f.taken) { f.live = false; break; }
         const t = evaluate(rest, isDefined);
         if (t === null && f.decided) { f.decided = false; unevaluated.push({ ...f, n, source: line.trim() }); }
@@ -127,8 +143,9 @@ export function preprocess(text, { defines: inherited = [] } = {}) {
       case "else": {
         const f = stack.at(-1);
         if (!f) { problems.push(`line ${n}: #else with no #if`); break; }
+        if (f.closed) { problems.push(`line ${n}: a second #else for one #if; skipped`); f.live = false; break; }
         if (!f.decided && f.taken) f.elseSkipped = true;
-        f.live = f.parentLive && !f.taken; f.taken = true;
+        f.live = f.parentLive && !f.taken; f.taken = true; f.closed = true;
         break;
       }
       case "endif": if (stack.length) stack.pop(); else problems.push(`line ${n}: #endif with no #if`); break;
@@ -142,29 +159,45 @@ export function preprocess(text, { defines: inherited = [] } = {}) {
   return { lines: out, includes, defines, unevaluated, problems };
 }
 
+/** The longest expression this reader evaluates; a longer one was not written by a person and is named, not decided. */
+const MAX_EXPRESSION = 512;
+
 /**
  * An #if expression over defined(X), names, numbers, !, && and ||, or null the moment it meets a name whose truth the
- * reader does not know. Both sides of every operator are read, so a name after a true || is still checked.
+ * reader does not know. Both sides of every operator are read, so a name after a true || is still checked. An
+ * expression that does not parse, a missing operand, an unclosed bracket or a token left over, is null too, so a
+ * condition rc.exe would reject is read as one branch and named rather than decided false in silence.
  */
 function evaluate(expr, isDefined) {
+  if (expr.length > MAX_EXPRESSION) return null;
   let unknown = false;
   const truth = (name) => { const t = isDefined(name); if (t === null) unknown = true; return t ? "1" : "0"; };
   const src = expr.replace(/defined\s*\(\s*(\w+)\s*\)|defined\s+(\w+)/g, (m, a, b) => truth(a ?? b)).replace(/\b[A-Za-z_]\w*\b/g, (name) => truth(name));
   if (unknown || /[^\d!&|()\s]/.test(src)) return null;
   const tokens = src.match(/\d+|&&|\|\||[!()]/g) ?? [];
   let i = 0;
+  let bad = false;
   const or = () => { let v = and(); while (tokens[i] === "||") { i += 1; const r = and(); v = v || r; } return v; };
   const and = () => { let v = not(); while (tokens[i] === "&&") { i += 1; const r = not(); v = v && r; } return v; };
   const not = () => {
-    if (tokens[i] === "!") { i += 1; return !not(); }
-    if (tokens[i] === "(") { i += 1; const v = or(); i += 1; return v; }
-    return Number(tokens[i++] ?? 0) !== 0;
+    let flip = false;
+    while (tokens[i] === "!") { i += 1; flip = !flip; }
+    let v;
+    if (tokens[i] === "(") { i += 1; v = or(); if (tokens[i] === ")") i += 1; else bad = true; }
+    else if (/^\d+$/.test(tokens[i] ?? "")) v = Number(tokens[i++]) !== 0;
+    else { bad = true; v = false; }
+    return flip ? !v : v;
   };
-  return tokens.length ? or() : null;
+  if (!tokens.length) return null;
+  const v = or();
+  return bad || i !== tokens.length ? null : v;
 }
 
-/** One line's tokens: identifiers, numbers, decoded strings and single character punctuation. */
-function tokenize(text) {
+/**
+ * One line's tokens: identifiers, numbers, decoded strings and single character punctuation. A string the line ends
+ * inside is what rc.exe stops on, so the line is named and yields no tokens rather than a caption cut short.
+ */
+function tokenize(text, n, problems) {
   const out = [];
   let i = 0;
   while (i < text.length) {
@@ -173,6 +206,7 @@ function tokenize(text) {
     if (c === '"' || (c === "L" && text[i + 1] === '"')) {
       const at = c === "L" ? i + 1 : i;
       const end = stringEnd(text, at);
+      if (end === -1) { problems.push(`line ${n}: a string opened at column ${at + 1} never closes; the line is skipped`); return []; }
       out.push({ t: "str", v: decodeString(text.slice(at + 1, end - 1)), raw: text.slice(at, end) });
       i = end;
       continue;
@@ -191,9 +225,9 @@ const upper = (tok) => (tok && tok.t === "id" ? tok.v.toUpperCase() : tok?.t ===
 const raw = (tokens) => tokens.map((t) => t.raw).join(" ");
 
 /** Lines joined into statements: a line ending in a comma or a bar, or followed by one starting with either, continues. */
-function statements(lines) {
+function statements(lines, problems) {
   const out = [];
-  const tokenized = lines.map((l) => ({ tokens: tokenize(l.text), n: l.n })).filter((l) => l.tokens.length);
+  const tokenized = lines.map((l) => ({ tokens: tokenize(l.text, l.n, problems), n: l.n })).filter((l) => l.tokens.length);
   let cur = null;
   for (let i = 0; i < tokenized.length; i += 1) {
     const l = tokenized[i];
@@ -239,14 +273,21 @@ function args(tokens) {
   return out;
 }
 
+/** How deep a popup may nest before the reader stops, the number pe.js reads a compiled menu to. */
+const MAX_MENU_DEPTH = 16;
+
 const MEMORY = new Set(["DISCARDABLE", "PRELOAD", "LOADONCALL", "FIXED", "MOVEABLE", "PURE", "IMPURE", "SHARED", "NONSHARED"]);
 const OPTIONS = new Set(["STYLE", "EXSTYLE", "CAPTION", "FONT", "MENU", "CLASS", "LANGUAGE", "CHARACTERISTICS", "VERSION", "FILEVERSION", "PRODUCTVERSION", "FILEFLAGSMASK", "FILEFLAGS", "FILEOS", "FILETYPE", "FILESUBTYPE"]);
 const SKIPPED_TYPES = new Set(["TEXTINCLUDE", "DESIGNINFO", "GUIDELINES"]);
 const IMAGE_TYPES = new Set(["ICON", "BITMAP", "CURSOR"]);
 
-/** A numeric expression: a literal, a name in the table, parentheses, or a sum or difference of those; null otherwise. */
+/**
+ * A numeric expression: a literal, a name in the table, parentheses, or a sum or difference of those; null otherwise.
+ * One longer than a person writes is null too, since the bracket matching is quadratic and the split recursive.
+ */
 export function numeric(text, symbols) {
   let s = String(text).trim();
+  if (s.length > MAX_EXPRESSION) return null;
   while (s.startsWith("(") && matchBracket(s, 0, { strings: false }) === s.length) s = s.slice(1, -1).trim();
   const lit = /^(-?)\s*(0x[0-9a-f]+|\d+)L?$/i.exec(s);
   if (lit) return (lit[1] ? -1 : 1) * Number(lit[2]);
@@ -284,35 +325,49 @@ export function buildSymbols(defineLists) {
   return symbols;
 }
 
+/**
+ * A script's or header's bytes as text. Visual Studio saves a resource script as UTF 16 with a byte order mark as
+ * readily as UTF 8, and read as UTF 8 the wide characters become NULs between letters that no statement matches. The
+ * mark says which it is; a text still holding NULs after that is not text this reader decodes, and says so.
+ */
+export function decodeText(bytes) {
+  const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let text;
+  if (b[0] === 0xff && b[1] === 0xfe) text = new TextDecoder("utf-16le").decode(b.subarray(2));
+  else if (b[0] === 0xfe && b[1] === 0xff) text = new TextDecoder("utf-16be").decode(b.subarray(2));
+  else text = new TextDecoder("utf-8").decode(b).replace(/^\ufeff/, "");
+  return text.includes("\0") ? { error: "holds NUL bytes; it is not text this reader decodes" } : { text };
+}
+
 /** The #define table of a header, every conditional the editor guards skipped the way rc.exe skips it. */
 export function readHeader(text) {
   return preprocess(text).defines;
 }
 
-/** A style expression evaluated left to right over a base: a name or number ORs in, NOT clears; an unknown name is reported. */
+/**
+ * A style expression evaluated left to right over a base: a name or number ORs in, NOT clears; an unknown name is
+ * reported. A bracketed group is one value applied where it closes, held on a stack rather than a recursion so the
+ * nesting a script can write has no depth the reader falls over at.
+ */
 function styleOf(tokens, base, symbols, unknown) {
   let value = base;
   let negate = false;
+  const outer = [];
   const apply = (bits) => { value = negate ? (value & ~bits) >>> 0 : (value | bits) >>> 0; negate = false; };
-  for (let i = 0; i < tokens.length; i += 1) {
-    const t = tokens[i];
+  for (const t of tokens) {
     if (t.t === "op" && (t.v === "|" || t.v === "+")) continue;
     if (t.t === "id" && t.v.toUpperCase() === "NOT") { negate = true; continue; }
     if (t.t === "num") { apply(t.v); continue; }
-    if (t.t === "op" && t.v === "(") {
-      let depth = 0; let j = i;
-      for (; j < tokens.length; j += 1) { if (tokens[j].v === "(") depth += 1; else if (tokens[j].v === ")") { depth -= 1; if (!depth) break; } }
-      apply(styleOf(tokens.slice(i + 1, j), 0, symbols, unknown));
-      i = j;
-      continue;
-    }
+    if (t.t === "op" && t.v === "(") { outer.push({ value, negate }); value = 0; negate = false; continue; }
+    if (t.t === "op" && t.v === ")") { if (outer.length) { const inner = value; ({ value, negate } = outer.pop()); apply(inner); } continue; }
     if (t.t === "id") {
       if (t.v in STYLE_BITS) apply(STYLE_BITS[t.v]);
       else if (symbols.has(t.v)) apply(symbols.get(t.v));
       else { unknown.add(t.v); negate = false; }
-      continue;
     }
   }
+  // A group never closed is applied as far as it got, as if the bracket closed at the line's end.
+  while (outer.length) { const inner = value; ({ value, negate } = outer.pop()); apply(inner); }
   return value >>> 0;
 }
 
@@ -358,10 +413,15 @@ export function readScript(text, { headers = [], inherited = [] } = {}) {
   const resourceId = (tok, n) => (tok.t === "str" ? tok.v : idOf([tok], n));
 
   const readControl = (node, ex) => {
+    if (!node.tokens.length) { problems.push(`line ${node.n}: a BEGIN block hangs on no statement; skipped`); return null; }
     const kw = upper(node.tokens[0]);
+    // A control statement takes no block; one written after it is a nesting rc.exe rejects, so its lines are not read as controls.
+    if (node.children) problems.push(`line ${node.n}: ${kw} is followed by a BEGIN block it cannot take; the block is skipped`);
     const a = args(node.tokens.slice(1));
     const c = { helpId: 0, exStyle: 0, style: 0, x: 0, y: 0, cx: 0, cy: 0, id: null, className: "", caption: "", captionOrdinal: null, name: null, line: node.n, styles: "" };
     const finish = (idTokens, styleTokens, exTokens, helpTokens, base) => {
+      // Every control statement names an id; one with the slot empty is a statement rc.exe rejects.
+      if (!idTokens?.length) { problems.push(`line ${node.n}: ${kw} has no id; skipped`); return null; }
       c.name = idTokens?.length === 1 && idTokens[0].t === "id" ? idTokens[0].v : null;
       c.id = idOf(idTokens, node.n);
       c.styles = styleTokens ? raw(styleTokens) : "";
@@ -441,7 +501,10 @@ export function readScript(text, { headers = [], inherited = [] } = {}) {
 
   const readMenuItems = (nodes, ex, menu, depth) => {
     const list = [];
+    // The same ceiling readMenu keeps for a compiled menu, so a script and its binary agree on what is too deep.
+    if (depth > MAX_MENU_DEPTH) { problems.push(`line ${nodes[0]?.n ?? menu.line}: the menu nests deeper than any menu bar; the items below are not read`); return list; }
     for (const node of nodes) {
+      if (!node.tokens.length) { problems.push(`line ${node.n}: a BEGIN block hangs on no statement; skipped`); continue; }
       const kw = upper(node.tokens[0]);
       const a = args(node.tokens.slice(1));
       if (kw === "POPUP") {
@@ -469,15 +532,15 @@ export function readScript(text, { headers = [], inherited = [] } = {}) {
       const kw = upper(o.tokens[0]);
       if (kw === "FILEVERSION" || kw === "PRODUCTVERSION") out.fixedVersion[kw] = args(o.tokens.slice(1)).map((t) => num(t, o.n, kw)).join(".");
     }
-    const walk = (nodes) => {
-      for (const node of nodes) {
-        const kw = upper(node.tokens[0]);
-        const a = args(node.tokens.slice(1));
-        if (kw === "VALUE" && a[0]?.[0]?.t === "str" && a[1]?.[0]?.t === "str") out.version[a[0][0].v] = text1(a[1]);
-        if (node.children) walk(node.children);
-      }
-    };
-    walk(body);
+    // The BLOCKs nest as deep as the script says; a stack instead of a recursion keeps a deep one from a stack overflow.
+    const pending = [...body];
+    while (pending.length) {
+      const node = pending.shift();
+      const kw = upper(node.tokens[0]);
+      const a = args(node.tokens.slice(1));
+      if (kw === "VALUE" && a[0]?.[0]?.t === "str" && a[1]?.[0]?.t === "str") out.version[a[0][0].v] = text1(a[1]);
+      if (node.children) pending.unshift(...node.children);
+    }
   };
 
   const readAccelerators = (first, body, line) => {
@@ -496,7 +559,7 @@ export function readScript(text, { headers = [], inherited = [] } = {}) {
     out.accelerators.push(table);
   };
 
-  const nodes = nest(statements(pre.lines), problems);
+  const nodes = nest(statements(pre.lines, problems), problems);
   for (let i = 0; i < nodes.length; i += 1) {
     const node = nodes[i];
     const first = node.tokens[0];
@@ -517,9 +580,9 @@ export function readScript(text, { headers = [], inherited = [] } = {}) {
       for (const s of body ?? []) {
         const toks = s.tokens.filter((t) => !(t.t === "op" && t.v === ","));
         const idTokens = toks.filter((t) => t.t !== "str");
-        const entry = { name: idTokens.length === 1 && idTokens[0].t === "id" ? idTokens[0].v : null, id: idOf(idTokens, s.n), text: text1(toks) };
-        if (!toks.some((t) => t.t === "str")) problems.push(`line ${s.n}: a string table entry with no string; skipped`);
-        else out.strings.push(entry);
+        if (!toks.some((t) => t.t === "str")) { problems.push(`line ${s.n}: a string table entry with no string; skipped`); continue; }
+        if (!idTokens.length) { problems.push(`line ${s.n}: a string table entry with no id; skipped`); continue; }
+        out.strings.push({ name: idTokens.length === 1 && idTokens[0].t === "id" ? idTokens[0].v : null, id: idOf(idTokens, s.n), text: text1(toks) });
       }
       continue;
     }
@@ -530,9 +593,15 @@ export function readScript(text, { headers = [], inherited = [] } = {}) {
     let k = 2;
     while (MEMORY.has(upper(node.tokens[k]))) k += 1;
     const header = node.tokens.slice(k);
-    if (type === "DIALOG" || type === "DIALOGEX") { const { options, body } = gather(); readDialog(first, type, header, options, body ?? [], node.n); continue; }
+    if (type === "DIALOG" || type === "DIALOGEX") {
+      const { options, body } = gather();
+      if (!body) problems.push(`line ${node.n}: ${type} ${name} has no BEGIN block; read with no controls`);
+      readDialog(first, type, header, options, body ?? [], node.n);
+      continue;
+    }
     if (type === "MENU" || type === "MENUEX") {
       const { body } = gather();
+      if (!body) problems.push(`line ${node.n}: ${type} ${name} has no BEGIN block; read with no items`);
       const menu = { name, id: resourceId(first, node.n), ex: type === "MENUEX", items: [], accelerators: [], line: node.n };
       menu.items = readMenuItems(body ?? [], menu.ex, menu, 0);
       out.menus.push(menu);

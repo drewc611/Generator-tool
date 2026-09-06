@@ -275,11 +275,19 @@ export function createIntake(dir) {
       if (/\.(zip|asar)$/i.test(rel)) {
         const { entries, error } = /\.zip$/i.test(rel) ? readZip(bytes) : readAsar(bytes);
         if (error) refused.push({ entry: rel, reason: error });
+        // Two entries that fold onto one path keep the first; a file standing where a folder is needed is a refusal, never a thrown drop.
+        const landed = new Map();
         for (const entry of entries ?? []) {
           if (entry.directory) continue;
           const got = entry.bytes();
           if (got.error) { refused.push({ entry: entry.name, reason: got.error }); continue; }
-          if (!(await place(`${rel.replace(/\.(zip|asar)$/i, "")}/${entry.name.replace(/^\/+/, "")}`, got.bytes))) refused.push({ entry: entry.name, reason: "the path climbs out of the intake" });
+          const at = `${rel.replace(/\.(zip|asar)$/i, "")}/${entry.name.replace(/^\/+/, "")}`;
+          const folded = intakePath(at);
+          if (folded && landed.has(folded)) { refused.push({ entry: entry.name, reason: `another entry, ${landed.get(folded)}, already landed at ${folded}` }); continue; }
+          try {
+            if (!(await place(at, got.bytes))) { refused.push({ entry: entry.name, reason: "the path climbs out of the intake" }); continue; }
+          } catch (err) { refused.push({ entry: entry.name, reason: `could not be written (${err.code ?? err.message})` }); continue; }
+          landed.set(folded, entry.name);
         }
       } else if (!(await place(rel, bytes))) {
         throw new Error("a file may only land inside the intake");

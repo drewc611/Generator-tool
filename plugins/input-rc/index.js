@@ -3,7 +3,7 @@ import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { pascal } from "../dsp-ir/emit.js";
 import { readInputs } from "../dsp-ir/text.js";
 import { kindOf, lowerDialog, lowerMenu } from "../input-exe/index.js";
-import { preprocess, readHeader, readScript } from "./rc.js";
+import { decodeText, preprocess, readHeader, readScript } from "./rc.js";
 
 /**
  * Reads Windows resource scripts, the source form of what input-exe reads
@@ -105,7 +105,7 @@ export default {
       const unique = (base) => { let s = base; let n = 2; while (selectors.has(s)) s = `${base}-${n++}`; selectors.add(s); return s; };
       const headerCache = new Map();
       const header = async (path) => {
-        if (!headerCache.has(path)) headerCache.set(path, await readFile(path, "utf8").then(readHeader).catch(() => null));
+        if (!headerCache.has(path)) headerCache.set(path, await readFile(path).then((bytes) => decodeText(bytes).text ?? null).then((t) => (t === null ? null : readHeader(t))).catch(() => null));
         return headerCache.get(path);
       };
       // An .rc2 is compiled inside the .rc that includes it, so it reads the includer's symbols; the .rc files go first.
@@ -115,9 +115,12 @@ export default {
       let dialogs = 0;
       let menus = 0;
       for (const file of ordered) {
-        const text = await readFile(file.path, "utf8").catch(() => null);
+        const bytes = await readFile(file.path).catch(() => null);
         const rel = file.rel.replace(/^\.\//, "");
-        if (text === null) { ctx.unverified(`${rel}: unreadable; nothing was read from it.`); continue; }
+        if (bytes === null) { ctx.unverified(`${rel}: unreadable; nothing was read from it.`); continue; }
+        const decoded = decodeText(bytes);
+        if (decoded.error) { ctx.unverified(`${rel}: ${decoded.error}; nothing was read from it.`); continue; }
+        const text = decoded.text;
         const dir = dirname(file.path);
         // The headers: every #include the script names that exists beside it, and resource.h beside it whether named or not.
         const { includes } = preprocess(text);

@@ -15,28 +15,47 @@ import { readAsar } from "./asar.js";
  * writes files, and the run writes only into its output.
  */
 
-/** Unpack an archive's files under a directory through a path check; returns what landed and what was refused. */
+/**
+ * Unpack an archive's files under a directory through a path check; returns what landed and what was refused. Two
+ * entries can name one path once backslashes are folded, and a header can list a file where a folder is needed;
+ * the first to land keeps the path and the rest are refused by name, because a silent overwrite is a file lost.
+ */
 export async function unpackAsar(bytes, dir, { keep = (rel) => rel } = {}) {
   const { entries, error } = readAsar(bytes);
   const refused = [];
   const written = [];
   if (error) return { written, refused: [{ entry: "(archive)", reason: error }] };
+  const landed = new Map();
   for (const entry of entries) {
     const rel = keep(entry.name);
     if (!rel) { refused.push({ entry: entry.name, reason: "the path climbs out of the folder" }); continue; }
     const got = entry.bytes();
     if (got.error) { refused.push({ entry: entry.name, reason: got.error }); continue; }
+    if (landed.has(rel)) { refused.push({ entry: entry.name, reason: `another entry, ${landed.get(rel)}, already landed at ${rel}` }); continue; }
     const target = join(dir, rel);
-    await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, got.bytes);
+    try {
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, got.bytes);
+    } catch (err) {
+      refused.push({ entry: entry.name, reason: `cannot be written at ${rel} (${err.code ?? "error"}): a file and a folder share a name, or the folder is not writable` });
+      continue;
+    }
+    landed.set(rel, entry.name);
     written.push(rel);
   }
   return { written, refused };
 }
 
-/** A path inside an archive as a relative path under the folder, or null when it climbs out. */
+/**
+ * A path inside an archive as a relative path under the folder, or null when it climbs out. A root, whether a
+ * leading slash or a drive letter, is dropped so the file lands under the folder; a control character is refused
+ * because no file system takes one and the write would fail.
+ */
 export const safeAsarPath = (name) => {
-  const parts = String(name).replace(/\\/g, "/").split("/").filter((p) => p && p !== ".");
+  const text = String(name);
+  if (/[\u0000-\u001f\u007f]/.test(text)) return null;
+  const parts = text.replace(/\\/g, "/").split("/").filter((p) => p && p !== ".");
+  if (parts.length && /^[A-Za-z]:$/.test(parts[0])) parts.shift();
   return parts.length && parts.every((p) => p !== "..") ? parts.join("/") : null;
 };
 

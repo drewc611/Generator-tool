@@ -532,7 +532,7 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and forty eight features in
+The full picture is ROADMAP.md: six hundred and forty nine features in
 one hundred and fifty two phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,

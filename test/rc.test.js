@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -314,4 +314,123 @@ test("what the reader cannot read is a problem named, never an exception, and a 
   assert.ok(!run.ctx.report.unverified.some((n) => /afxres/.test(n)), "the SDK's own header is not missing");
   const report = await readFile(join(run.out, "RESOURCES.md"), "utf8");
   assert.match(report, /### dialog IDD_ONE \(IDD_ONE \(1\), DIALOG, line 4\)/);
+});
+
+/**
+ * The twenty first review pass. What a script can spell that rc.exe would
+ * refuse, or that a person never writes, is fed to the reader here: a string
+ * or a comment that never closes, a condition that does not parse, a second
+ * #else, a DIALOG or MENU with no block, a control or a string with no id, a
+ * block hanging on nothing, popups and version blocks nested past any menu,
+ * expressions long enough to make the bracket matching quadratic and the
+ * splitting recursive. Each is a problem by line, none an exception or a
+ * silent decision, and the shapes a real script does write read as the
+ * compiled template stores them.
+ */
+test("the twenty first review pass: what never closes, never parses or nests without end is a problem by line, and the escapes, ids and DIALOGEX fields read as the template stores them", () => {
+  const problems = [];
+  assert.equal(stripComments('A /* open\nB "x" // c\nC', problems), "A        \n          \n ", "an unterminated comment blanks to the end, every line its own length");
+  assert.deepEqual(problems, ["line 1: a comment opened with /* never closes; everything after it is blank"]);
+  assert.equal(stripComments('LTEXT "oops, 1 // still text?\nCTEXT "ok" // gone\n'), 'LTEXT "oops, 1 // still text?\nCTEXT "ok"        \n', "an unterminated string ends at its line, so the next line's comment is still a comment");
+
+  const open = readScript('IDD DIALOG 0,0,10,10\nBEGIN\n  LTEXT "never ends, IDC_STATIC, 1,1,1,1\n  PUSHBUTTON "Go", IDOK, 1,1,1,1\n  PUSHBUTTON "No id", , 1,1,1,1\n  PUSHBUTTON "Hang", 5, 1,1,1,1\n  BEGIN\n  END\n  BEGIN\n  END\nEND\nIDR MENU\nBEGIN\n  BEGIN\n  END\n  MENUITEM "a", 1\nEND\nIDD2 DIALOG 0,0,10,10\nCAPTION "x"\nIDR2 MENU\nSTRINGTABLE\nBEGIN\n  "orphan"\n  IDS_BASE + 1 "one"\n  (IDS_BASE+2), "two"\n  IDS_BASE*2 "three"\nEND\n#define IDS_BASE 100\n', {});
+  assert.deepEqual(open.problems, [
+    "line 3: a string opened at column 9 never closes; the line is skipped",
+    "line 5: PUSHBUTTON has no id; skipped",
+    "line 6: PUSHBUTTON is followed by a BEGIN block it cannot take; the block is skipped",
+    "line 9: a BEGIN block hangs on no statement; skipped",
+    "line 14: a BEGIN block hangs on no statement; skipped",
+    "line 18: DIALOG IDD2 has no BEGIN block; read with no controls",
+    "line 20: MENU IDR2 has no BEGIN block; read with no items",
+    "line 23: a string table entry with no id; skipped",
+    "line 26: the id `IDS_BASE * 2` could not be read as a number or a name",
+  ], "a block after a control, a block on nothing, a resource with no block, an entry with no id: each is the line it is on");
+  assert.deepEqual(open.dialogs[0].controls.map((c) => [c.caption, c.id]), [["Go", 1], ["Hang", 5]], "the unterminated line and the control with no id are gone; the rest read");
+  assert.deepEqual(open.menus.map((m) => [m.name, m.items.length]), [["IDR", 1], ["IDR2", 0]]);
+  assert.deepEqual(open.strings.map((s) => [s.id, s.text]), [[101, "one"], [102, "two"], ["IDS_BASE * 2", "three"]], "an id that is an expression resolves; one the reader cannot read keeps its spelling and is named");
+
+  const pre = (src) => { const p = preprocess(src); return { kept: p.lines.map((l) => l.text).filter(Boolean), unevaluated: p.unevaluated.length, problems: p.problems }; };
+  for (const bad of ["(", "1 &&", "!!!", ")(", "1 > 0", "", "1 1", "(1"]) assert.deepEqual(pre(`#if ${bad}\nA\n#else\nB\n#endif\n`), { kept: ["A"], unevaluated: 1, problems: [] }, `#if ${bad} does not parse, so it is not decided false in silence: the first branch is read and the condition named`);
+  assert.deepEqual(pre("#if !!1 && (0 || !0)\nA\n#else\nB\n#endif\n"), { kept: ["A"], unevaluated: 0, problems: [] }, "a run of bangs and a bracket still evaluate");
+  assert.deepEqual(pre("#if 1\nA\n#else\nB\n#else\nC\n#elif 1\nD\n#endif\n"), { kept: ["A"], unevaluated: 0, problems: ["line 5: a second #else for one #if; skipped", "line 7: #elif after #else; skipped"] });
+  assert.deepEqual(pre(`#if ${"!".repeat(100000)}1\nA\n#endif\n`), { kept: ["A"], unevaluated: 1, problems: [] }, "an expression longer than any person writes is named, not walked");
+  assert.deepEqual(pre(`#if ${"(".repeat(100000)}1${")".repeat(100000)}\nA\n#endif\n`).kept, ["A"]);
+  let nested = "";
+  for (let i = 0; i < 100; i += 1) nested += "#ifdef _WIN32\n";
+  nested += "A\n";
+  for (let i = 0; i < 100; i += 1) nested += "#endif\n";
+  assert.deepEqual(pre(nested), { kept: ["A"], unevaluated: 0, problems: [] }, "a hundred nested conditionals");
+  assert.deepEqual(pre("\\\n#define X 1\n").kept, ["\\"], "a line that is only a backslash is a line, not a continuation of nothing");
+  assert.deepEqual(preprocess('#include "self.rc"\n#include "self.rc"\n').includes.map((i) => i.file), ["self.rc", "self.rc"], "includes are listed, never followed, so a file including itself cannot loop the preprocessor");
+
+  const none = new Map();
+  assert.equal(numeric(`${"(".repeat(100000)}1${")".repeat(100000)}`, none), null, "past the length cap an expression is not a number the reader knows");
+  assert.equal(numeric(Array(30000).fill("1").join("+"), none), null);
+  assert.equal(numeric(`${"(".repeat(60)}1${")".repeat(60)}`, none), 1); assert.equal(numeric(Array(100).fill("1").join("+"), none), 100, "within it, the same shapes read");
+
+  let popups = "IDR MENU\nBEGIN\n";
+  for (let i = 0; i < 20000; i += 1) popups += `POPUP "P${i}"\nBEGIN\n`;
+  popups += 'MENUITEM "leaf", 1\n';
+  for (let i = 0; i < 20000; i += 1) popups += "END\n";
+  const deep = readScript(`${popups}END\n`, {});
+  const depthOf = (items) => (items.length ? 1 + Math.max(0, ...items.map((i) => (i.children ? depthOf(i.children) : 0))) : 0);
+  assert.equal(depthOf(deep.menus[0].items), 17, "the menu is read to the depth pe.js reads a compiled menu");
+  assert.deepEqual(deep.problems, ["line 37: the menu nests deeper than any menu bar; the items below are not read"]);
+  let blocks = "1 VERSIONINFO\nBEGIN\n";
+  for (let i = 0; i < 20000; i += 1) blocks += 'BLOCK "b"\nBEGIN\n';
+  blocks += 'VALUE "ProductName", "deep"\n';
+  for (let i = 0; i < 20000; i += 1) blocks += "END\n";
+  assert.deepEqual(readScript(`${blocks}END\n`, {}).version, { ProductName: "deep" }, "a version block nested past any stack is walked, not recursed");
+  const wide = readScript(`IDD DIALOG 0,0,10,10\nBEGIN\n  LTEXT "x", -1, 1,1,1,1, ${"(".repeat(50000)}WS_BORDER${")".repeat(50000)}\n  LTEXT "y", -1, 1,1,1,1, ${"WS_BORDER | ".repeat(50000)}NOT WS_VISIBLE\n  LTEXT "z", -1, 1,1,1,1, ${"1,".repeat(100000)}1\nEND\n`, {});
+  assert.equal(wide.dialogs[0].controls[0].style, (WS_CHILD | WS_VISIBLE | S.WS_GROUP | S.WS_BORDER) >>> 0, "brackets in a style expression are a stack, not a recursion");
+  assert.equal(wide.dialogs[0].controls[1].style, (WS_CHILD | S.WS_GROUP | S.WS_BORDER) >>> 0);
+  assert.equal(wide.dialogs[0].controls.length, 3, "a hundred thousand tokens on one line tokenize in linear time");
+
+  const shapes = readScript([
+    "IDD DIALOGEX 0, 0, 100, 50, 0x1234",
+    "EXSTYLE WS_EX_TOPMOST | WS_EX_TOOLWINDOW",
+    'CAPTION "Say ""hi""\\tnow\\nthen\\\\ \\"x\\" \\101\\x42 \\0 gone"',
+    "BEGIN",
+    '  PUSHBUTTON "Go", IDOK, -5, -1, 40, 14, BS_FLAT, WS_EX_CLIENTEDGE, 77',
+    '  CONTROL "c", 5, "Button", BS_FLAT, 1, 1, 1, 1, WS_EX_STATICEDGE, 99',
+    "  EDITTEXT 6, 1, 1, 1, 1, ES_LEFT, , 44",
+    '  LTEXT "a", 65535, 1,1,1,1',
+    '  LTEXT "b", IDC_STATIC, 1,1,1,1',
+    '  LTEXT "c", -1, 1,1,1,1',
+    '  LTEXT "d", (-1), 1,1,1,1',
+    '  CONTROL "e", 7, "BUTTON", 0, 1,1,1,1',
+    '  CONTROL "f", 8, BUTTON, 0, 1,1,1,1',
+    '  CONTROL "g", 9, "static", 0, 1,1,1,1',
+    '  CONTROL "h", 10, "SysListView32", 0, 1,1,1,1',
+    "END",
+  ].join("\n"), {});
+  assert.deepEqual(shapes.problems, []);
+  const [d] = shapes.dialogs;
+  assert.equal(d.helpId, 0x1234); assert.equal(d.exStyle, (S.WS_EX_TOPMOST | S.WS_EX_TOOLWINDOW) >>> 0, "a DIALOGEX help id and EXSTYLE");
+  assert.equal(d.title, 'Say "hi"\tnow\nthen\\ "x" AB ', "doubled quotes, the C escapes, an octal and a hex escape decode, and the string ends at its NUL as the compiled template's does");
+  assert.deepEqual(d.controls.slice(0, 3).map((c) => [c.x, c.y, c.helpId, c.exStyle]), [[-5, -1, 77, S.WS_EX_CLIENTEDGE], [1, 1, 99, S.WS_EX_STATICEDGE], [1, 1, 44, 0]], "a negative coordinate is the signed short the template stores; a control's help id and extended style read for both statement forms");
+  assert.deepEqual(d.controls.slice(3, 7).map((c) => c.id), [65535, 65535, 65535, 65535], "65535, IDC_STATIC, -1 and (-1) are the one no id");
+  assert.deepEqual(d.controls.slice(7).map((c) => c.className), ["Button", "Button", "Static", "SysListView32"], "a class in a string or as a bare atom is the atom rc.exe writes; a common control class keeps its spelling");
+});
+
+test("the twenty first review pass: a UTF 16 script decodes by its mark, one holding NULs with no mark is named, and scripts including each other read once", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "portamp-rc-review-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const utf16 = (text) => Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(text, "utf16le")]);
+  await writeFile(join(dir, "app.rc"), utf16('#include "resource.h"\nIDD_WIDE DIALOGEX 0, 0, 100, 40\nCAPTION "Wide"\nBEGIN\n  PUSHBUTTON "Go", IDC_GO, 1, 1, 40, 14\n  DEFPUSHBUTTON "OK", IDOK, 50, 20, 40, 14\nEND\n#include "res\\extra.rc2"\n'));
+  await writeFile(join(dir, "resource.h"), utf16('#include "resource.h"\n#define IDD_WIDE 7\n#define IDC_GO 1001\n#define IDR_BACK 9\n'));
+  await mkdir(join(dir, "res"));
+  await writeFile(join(dir, "res", "extra.rc2"), '﻿#include "..\\app.rc"\nIDR_BACK MENU\nBEGIN\n  MENUITEM "Back", IDC_GO\nEND\n');
+  await writeFile(join(dir, "raw.rc"), Buffer.from('I\0D\0D\0 \0D\0I\0A\0L\0O\0G\0\n\0', "latin1"));
+  const run = await runPipeline({ src: dir, shots: join(dir, "no-shots") });
+  t.after(run.cleanup);
+  assert.equal(run.error, null);
+  assert.deepEqual(run.ctx.screens.map((s) => [s.selector, s.file]), [["dialog-wide", "app.rc"], ["menu-9", "res/extra.rc2"]], "the UTF 16 script and header read as text, the .rc2 resolves its id through the .rc that includes it, and the two including each other read once each");
+  assert.deepEqual(run.ctx.screens[0].outputs, ["go", "ok"]);
+  const notes = run.ctx.report.unverified;
+  assert.ok(notes.some((n) => n === "raw.rc: holds NUL bytes; it is not text this reader decodes; nothing was read from it."), "a script of wide characters with no mark is named, not read as resources of one letter each");
+  assert.ok(!notes.some((n) => /raw\.rc:.*resource\(s\)/.test(n)) && !notes.some((n) => /id\(s\) .* are defined in no header/.test(n)), "no resource is invented from it, and every id in the marked files resolved");
+  const report = await readFile(join(run.out, "RESOURCES.md"), "utf8");
+  assert.match(report, /### Wide \(IDD_WIDE \(7\), DIALOGEX, line 2\)/);
+  assert.ok(!/## raw\.rc/.test(report), "a script nothing was read from has no section");
 });

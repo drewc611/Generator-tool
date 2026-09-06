@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and forty eight features across one hundred and fifty two phases. The statuses are
+Six hundred and forty nine features across one hundred and fifty two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2519,14 +2519,17 @@ Take a picture of a screen, a sketch on paper, a printed form or a whiteboard an
 **648. The twenty first review pass: the photograph reader read again** 🔨
 The JPEG decoder was fed the shapes the format forbids and the shapes it barely allows, and eight of the former came back as pictures that were not: a file cut between a stuffed pair decoded to grey with no complaint because the bit reader stepped back onto the trailing marker byte, a scan naming no components or only the luma one came back as a flat colour, a frame repeating a component id blamed the scan, an empty frame header spoke of "a undefined bit JPEG", a quantization table short of its sixty four entries filled with zeros, and a Huffman table with too many symbols, too few, or more codes than its lengths allow was decoded into garbage rather than refused. Each is now a named reason, a component no scan wrote fails the file, and the suite's encoder learned to write every code sixteen bits long so the decoder's last row is exercised; a one pixel picture, a strip twenty thousand wide, vertical only sampling, truncation at every byte of a scan and an Exif directory pointing past its block were checked and held. The segmenter needed no fix: a black page, one dot, five thousand dots, a card in a card and two buttons in a row all read as they should and are now asserted. The lowering learned that writing on the same row just left of a field labels it, the way a paper form is written, and names a region kind it has not met instead of silently boxing it. test/jpeg.test.js and test/photo.test.js hold it.
 
+**649. The twenty first review pass: the archive and resource script readers read again** 🔨
+The asar reader stopped trusting the header it was handed: a files field that was a list or a string had yielded one entry per character with a native method as its link, a size spelled as a string or a boolean or left out had become a file, an offset in hex or empty had been read as zero, and a tree past sixty four folders had been dropped without a word. Each shape is now a reason by entry name, the ceiling names the folder it stopped at, and unpacking refuses a NUL in a name, drops a drive root the way it drops a leading slash, refuses the second of two entries that fold onto one path instead of overwriting the first, and turns a file standing where a folder is needed into a refusal instead of an exception; the console intake reads through the same guard, and the intake itself now refuses the second of two archive entries that fold onto one path and a file standing where a folder is needed, with the code, instead of overwriting or throwing the whole drop. The resource script reader learned to name what rc.exe would refuse: a string or a comment that never closes, a condition that does not parse (which had been decided false in silence), a second else, a dialog or menu with no block, a control or string with no id, a block hanging on a control or on nothing. Popups are read to the same sixteen levels the binary reader keeps, the version walk and the style brackets moved from recursion onto stacks, and expressions past a length no person writes are named rather than walked, closing four stack overflows and a quadratic bracket match. A script Visual Studio saved as UTF 16 is decoded by its mark, a NUL ridden one with no mark is named and yields nothing, and a NUL escape ends a caption where the compiled template's does. test/asar.test.js and test/rc.test.js hold it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 601 |
+| new in this branch | 602 |
 | planned | 3 |
-| total | 648 |
+| total | 649 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
