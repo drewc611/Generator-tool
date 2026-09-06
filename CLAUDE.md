@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and ninety three in five classes, and the core has never learned
+Plugins that ship, a hundred and ninety seven in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -497,6 +497,33 @@ moment after a drop is the moment it says plainly whether the file became a
 screen or not, and where READERS.md says why. test/readers-census.test.js and
 test/ui.test.js hold it.
 
+10.7 reaches four more of the desk and the RIA era at once. input-gwt reads
+Google Web Toolkit's UiBinder, a .ui.xml widget tree paired with its .java
+class: panels recurse into their children, a ui:field names a widget's own
+field, a list box's inline <g:item> children become real options, and a
+button wires ng-click to its resolved @UiHandler, kept only as existing and
+how long it runs. input-flex reads Adobe Flex's MXML, an Application or
+WindowedApplication tree with its script held in the same file as CDATA the
+way a Vue single file component holds its script beside its template: a
+Panel's title becomes a heading, a click is matched against the functions
+the script block declares, and a {expression} data binding is named rather
+than printed as if it were the words a person saw. input-qt reads Qt
+Designer's .ui XML forms, a widget tree laid out in the document order its
+own layouts recorded, with the connections section's signal and slot wiring
+read the way every other reader already names a handler: a promoted widget,
+an opaque property (a size policy, a palette) and a button with no
+clicked() connection are each named rather than approximated. input-swing
+reads Java Swing the way a NetBeans style GUI builder actually writes it, no
+separate declarative file, only a generated initComponents method found by
+its own GEN markers: a caption taken only where setText carries a literal, a
+label paired to its field through setLabelFor, and a click matched from the
+generated anonymous listener straight through to its real handler, kept as
+existing and how many lines it ran. All four lower onto the same AngularJS
+attribute dialect every other reader targets, so a widget from any one of
+them reaches React, Vue and Svelte exactly as an Angular component does.
+test/gwt.test.js, test/flex.test.js, test/qt.test.js and test/swing.test.js
+hold them.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -562,8 +589,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and fifty two features in
-one hundred and fifty five phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and fifty six features in
+one hundred and fifty nine phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:fx="http://ns.adobe.com/mxml/2009" layout="vertical">
+  <fx:Script>
+    <![CDATA[
+      import mx.controls.Alert;
+
+      [Bindable]
+      private var errorMessage:String = "";
+
+      private function onLogin(event:MouseEvent):void {
+        if (usernameInput.text.length == 0) {
+          errorMessage = "Username is required";
+          return;
+        }
+        Alert.show("Logging in as " + usernameInput.text);
+      }
+    ]]>
+  </fx:Script>
+
+  <mx:Panel title="Sign in">
+    <mx:Form>
+      <mx:FormItem label="Username">
+        <mx:TextInput id="usernameInput"/>
+      </mx:FormItem>
+      <mx:FormItem label="Password">
+        <mx:TextInput id="passwordInput" displayAsPassword="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="">
+        <mx:CheckBox id="rememberBox" label="Remember me"/>
+      </mx:FormItem>
+      <mx:FormItem label="Role">
+        <mx:ComboBox id="roleBox">
+          <mx:dataProvider>
+            <mx:ArrayCollection>
+              <mx:source>
+                <mx:Object label="Administrator" data="admin"/>
+                <mx:Object label="User" data="user"/>
+              </mx:source>
+            </mx:ArrayCollection>
+          </mx:dataProvider>
+        </mx:ComboBox>
+      </mx:FormItem>
+      <mx:Button label="Login" click="onLogin(event)"/>
+    </mx:Form>
+  </mx:Panel>
+</mx:Application>

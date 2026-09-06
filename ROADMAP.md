@@ -1,13 +1,13 @@
 # The roadmap, all of it
 
-Six hundred and fifty two features across one hundred and fifty five phases. The statuses are
+Six hundred and fifty six features across one hundred and fifty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
 bad idea gets deleted rather than built.
 
 The count that matters more: everything marked shipped or new runs today, under
-844 tests, on Node 18, 20 and 22, and on Windows in CI.
+1000 tests, on Node 18, 20 and 22, and on Windows in CI.
 
 
 ## Phase 1 · A host that stays out of the way
@@ -2539,14 +2539,34 @@ An xtype config tree is a real component boundary somebody drew on purpose, so a
 **652. Every file the scan does not open is its own named row, not a silent absence, so dropping something the tool cannot yet read gets an honest answer instead of nothing at all** 🔨
 The scan kept a whitelist of extensions it would even look inside, so a file that landed on the console's intake or in a source tree with an extension no reader has asked for simply never existed as far as the run knew: not read, not named, not counted anywhere, indistinguishable from a file that was never dropped at all. That silence is exactly what the readers census exists to close for the files the scan already kept, and it now closes it for the ones the scan never opened too. The scan names every file it steps over as it walks the tree, and vis-readers' census carries the list as its own row, distinct from a markup file a reader looked at and did not recognise, because failing to open a file and failing to recognise its contents are different gaps with different fixes. READERS.md gets a Not scanned section naming each one, and the run's own report names the count with the first few files, the same bounded shape every other gap in this tool is reported in. The console reads the same census back over the sidecar every other measurement rides, so the moment after a drop is the moment it says plainly: read as a screen, or not understood yet, and where to look. test/readers-census.test.js and test/ui.test.js hold it.
 
+## Phase 156: Google Web Toolkit
+
+**653. input-gwt reads UiBinder, a .ui.xml widget tree paired with its .java class, and lowers it onto the dialect the rest of the tool already reads** 🔨
+A view is two files together, and both are read: a `.ui.xml` widget tree structurally parsed with its namespace prefixes kept separate from tag names, and its paired `.java` class scanned only far enough to find which `@UiHandler` methods exist and how long each runs, never what it does. HTMLPanel and the other panels recurse into their children, labels and checkboxes carry their literal text, a list box's inline `<g:item>` children become real options, and a button wires `ng-click` to an event named from its resolved handler where one is found. A `{...}` template expression, a `<ui:with>` resource injection and a widget from an unrecognised import namespace are each named rather than approximated, and a `.ui.xml` with no paired `.java` beside it still becomes a screen, with the missing pairing said plainly. GWT.md carries every file's widget tree, what lowered, and every gap. test/gwt.test.js holds it.
+
+## Phase 157: Adobe Flex
+
+**654. input-flex reads MXML, the RIA framework whose script lives in the same file as its markup, and separates the two the way the rest of the tool already separates template from behaviour** 🔨
+An Application or WindowedApplication tree is read structurally, shielding every CDATA block before the markup pass so a Script element's ActionScript is never mistaken for tags; a Panel's title becomes a heading, a text input and a password style text input become fields, and a checkbox and a combo box backed by an inline ArrayCollection lower onto the dialect the rest of the tool already reads. The script sitting in the same file is scanned only for the functions it declares and the properties it marks Bindable, comment and string aware the way input-rc and input-vb6 already scan their own languages, so a button naming a real function is wired and one naming nothing found is named as a gap instead. A curly brace data binding is recognised wherever it sits and becomes the dialect's own interpolation rather than a value printed as if it were literal; a dataProvider bound to a variable, an mx:Style block and a custom component are each named rather than approximated. test/flex.test.js holds it.
+
+## Phase 158: Qt Designer
+
+**655. input-qt reads Qt Designer's .ui XML forms, laid out in the document order its own layouts recorded, with its signal and slot wiring read as the handler naming it is** 🔨
+A `<widget class="...">` tree is a real component boundary somebody drew with the Designer, so it becomes a screen the way input-winforms and input-delphi already read one from a form. QDialog, QGroupBox and the other containers lower onto a div, a QLabel's buddy pairs it to its field, a QLineEdit's echo mode becomes a password field, a QComboBox's inline items become real options, and a QPushButton's `clicked()` connection in the file's own `<connections>` section becomes an output named after the slot it calls. A property whose value is not a string, a bool or a number (a size policy, a palette, a geometry) is named by its name and type alone, never printed; a promoted widget is named with the class it is promoted to, and a widget class with no vocabulary entry is named rather than approximated. test/qt.test.js holds it.
+
+## Phase 159: Java Swing
+
+**656. input-swing reads a NetBeans style GUI builder's initComponents method exactly as it is generated, no separate declarative file to read** 🔨
+The method is found by the GEN-BEGIN/GEN-END or editor fold markers a builder brackets it with, cut into statements by a scanner that knows Java's own strings and comments, and each statement classified against the handful of shapes a builder always writes: a field declared and instantiated, a caption set with `setText` only when the argument is a plain string literal, a label paired to its field through `setLabelFor`, radio buttons grouped by a shared ButtonGroup, a combo box's items taken only from literal `addItem` calls, and a click matched from the generated anonymous ActionListener straight through to its real handler, kept as existing and how many lines it ran and never read for what it does. GroupLayout and GridBagLayout, which bury a form's containment inside their own builder calls, are named as present and never reproduced, with every control rendered in the order it was declared. A caption built at runtime, a combo box filled by code, and any statement outside these shapes are named through ctx.unverified rather than approximated. test/swing.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 605 |
+| new in this branch | 609 |
 | planned | 3 |
-| total | 652 |
+| total | 656 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
