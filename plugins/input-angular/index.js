@@ -37,6 +37,10 @@ const KEEP = new Set([
   ".cbl", ".cob",
   // IBM ISPF Dialog Manager's own panel definition: a character-cell terminal screen, plain text rather than markup.
   ".panel",
+  // dBase/Clipper/FoxPro program source: a character-cell terminal screen built with @ SAY/GET statements in code.
+  ".prg",
+  // FLTK's own FLUID designer file: a brace nested widget tree, not markup.
+  ".fl",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;

@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and twelve in five classes, and the core has never learned
+Plugins that ship, two hundred and fourteen in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform  input-cics  input-informix  input-cobolscreen  input-ispf
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform  input-cics  input-informix  input-cobolscreen  input-ispf  input-xbase  input-fluid
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -681,6 +681,24 @@ PLUS/COLUMN PLUS position, and an attribute character with no )ATTR entry
 and no built-in default are each named rather than guessed.
 test/cobolscreen.test.js and test/ispf.test.js hold both.
 
+10.15 reaches a screen built one executable statement at a time, and the
+fourth native GUI toolkit this tool reads. input-xbase reads dBase,
+Clipper and FoxPro `.prg` source for its `@ row, col SAY/GET` statements,
+interspersed anywhere in the file with no wrapping section at all; a
+`READ` statement is the one real boundary the language gives, closing
+every statement since the previous one into a screen, so several `READ`s
+make several screens. `PICTURE` is never translated, and `VALID`, `WHEN`,
+`RANGE` and `DEFAULT` are each named present rather than evaluated.
+input-fluid reads FLTK's FLUID `.fl` designer files, brace nested the way
+Qt Designer's `.ui`, GTK Builder's `.glade` and wxFormBuilder's `.fbp`
+already are, so a root `Fl_Window` becomes a screen the same way a form in
+any of the other three does; a control's own label is read straight off
+its node, a callback resolves to an output only from a clean
+`functionName(...)` call, and `Fl_Round_Button` groups by its shared
+immediate parent container, the one real structural signal FLTK's own
+runtime grouping behaviour gives, rather than a consecutive siblings
+guess. test/xbase.test.js and test/fluid.test.js hold both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -746,8 +764,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and seventy one features in
-one hundred and seventy four phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and seventy three features in
+one hundred and seventy six phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and seventy one features across one hundred and seventy four phases. The statuses are
+Six hundred and seventy three features across one hundred and seventy six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2634,14 +2634,24 @@ Since the COBOL-85 standard, a program's DATA DIVISION can carry a `SCREEN SECTI
 **671. input-ispf reads IBM ISPF Dialog Manager .panel definitions, a field's own variable name read directly off the body text beside it rather than from a separate declaration** 🔨
 An ISPF panel's `)BODY` section is a literal character grid the same way a `.per` screen block is, read row by row with position coming from where each run of text sits rather than a coordinate attribute; but where Informix marks a field with brackets, ISPF marks it with a single attribute character whose meaning, `TYPE(TEXT)`, `TYPE(INPUT)` or `TYPE(OUTPUT)`, is resolved from a `)ATTR` section when the panel declares one, and otherwise falls back to ISPF's own three real built-in defaults. The text immediately following an input or output attribute character, up to the next blank or attribute character, is literally the panel's own variable name, a naming mechanism no other reader in the tool uses, since nothing declares the field elsewhere; a `TYPE(OUTPUT)` field is read only the same honest way an Informix `NOENTRY` field already is. `)INIT` and `)PROC` hold real Dialog Manager statements, variable defaults and `VER` validation calls, named as present once per panel and never read for meaning. Like every mainframe format this tool has read, a panel's `)BODY` names no button and no event at all, driven instead by PF keys and `)PROC` logic outside it, so this reader is honest that it produces zero outputs; an attribute character with no `)ATTR` entry and no built-in default, and a body run that does not resolve to a clean variable name, are each named rather than guessed. test/ispf.test.js holds it.
 
+## Phase 175: the screen built one executable statement at a time
+
+**672. input-xbase reads dBase/Clipper/FoxPro .prg source for its @ row, col SAY/GET statements, a READ closing the run since the last one as the real screen boundary it is** 🔨
+Where every other reader in this tool finds a screen declared, xBase's `@ row, col SAY "..." GET variable` statements are ordinary executable code, interspersed anywhere in a `.prg` file among assignments and control flow, with no wrapping section or region marker at all; a `READ` statement is the one real, load-bearing boundary the language itself gives, closing every `SAY`/`GET` statement since the file's start or the previous `READ` into one screen, so a file with several `READ`s becomes several screens. A bare `SAY` is a caption; `SAY` with `GET` pairs it to a real input bound to the GET's own variable, and a `GET` alone is an unlabelled input; a trailing semicolon continues one logical statement onto the next physical line, joined before parsing the same way input-cics and input-cobolscreen already tolerate their own formats' line continuations. `PICTURE` is formatting this reader does not translate, and `VALID`, `WHEN`, `RANGE` and `DEFAULT` are each named present on their field rather than evaluated, since what a validation expression actually checks is a decision this reader cannot verify. Like every legacy format with no separate event mechanism, xBase decides what a `READ` returning means entirely in code around the screen statements, so this reader is honest that it produces zero outputs; an `@` statement with no clean row, col pair is named as the structural problem it is rather than skipped silently. test/xbase.test.js holds it.
+
+## Phase 176: the fourth native toolkit this tool reads
+
+**673. input-fluid reads FLTK's FLUID .fl designer files, a radio button grouped by its shared immediate parent, the one real structural signal the format gives** 🔨
+A `.fl` file is a brace nested, Tcl-like widget tree, the fourth native GUI toolkit format this tool reads after Qt Designer's `.ui`, GTK Builder's `.glade` and wxFormBuilder's `.fbp`, so a root `Fl_Window` becomes a screen the same way a form in any of the other three does, and more than one root window across a file's `Function {}` blocks becomes more than one screen. A control's own `label` is read straight off its node, paired to the field directly rather than through a separate mnemonic or buddy reference, since FLUID attaches the caption to the input itself; a `callback` resolves to an output only when its C++ body is a clean `functionName(...)` call, and is named present rather than invented when it is anything else, the same restraint input-fxml already keeps over a binding expression it will not evaluate. FLTK gives `Fl_Round_Button` no explicit group reference at all, grouping instead by runtime behaviour, any `Fl_Group` holding more than one becomes a group automatically, so this reader groups radios by their shared immediate parent container, the one honest structural signal the format actually provides, rather than a consecutive siblings guess. A messy callback, an unrecognised widget class and a choice filled from code are each named through FLUID.md rather than approximated. test/fluid.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 624 |
+| new in this branch | 626 |
 | planned | 3 |
-| total | 671 |
+| total | 673 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
