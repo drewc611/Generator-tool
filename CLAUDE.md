@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and eighty five in five classes, and the core has never learned
+Plugins that ship, a hundred and eighty nine in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-fetch
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -432,6 +432,20 @@ and runs the shipped cli from there, and a v* tag publishes with provenance
 once a person adds NPM_TOKEN. test/fetch.test.js and test/installed.test.js
 hold it.
 
+10.3 reads the desktop's own forms. input-winforms reads the
+InitializeComponent body of a *.Designer.cs or *.Designer.vb with a scanner
+that knows both languages' strings; input-xaml reads a WPF, UWP, Xamarin or
+MAUI window, page or control as the XML it is with its bindings; input-vb6
+reads a .frm's blocks and its code's wired handlers and MsgBox messages, the
+binary .frx named not read; input-delphi reads a .dfm, .fmx or .lfm's object
+blocks with their string lists and collections. All four lower onto the shared
+dialect with the choices input-exe makes for a native dialog, so a form from
+any of the five reaches React, Vue and Svelte the same way, and each writes
+its own report. The console's intake unpacks a zip with node's own zlib,
+every entry held to the intake's path rule. test/winforms.test.js,
+test/xaml.test.js, test/vb6.test.js, test/delphi.test.js and test/zip.test.js
+hold it.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -497,8 +511,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and thirty six features in
-one hundred and forty eight phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and forty one features in
+one hundred and forty nine phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

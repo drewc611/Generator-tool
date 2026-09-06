@@ -7,13 +7,13 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The chassis is a joke
 about where the plugin classes come from. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 185 plugins, and the literal output of
+lines of core, no runtime dependencies, 189 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 965 passing, 966 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
+![node --test running the portamp suite: 995 passing, 996 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 965
-tests pass across 130 test files with `node --test` and no framework, and
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 995
+tests pass across 135 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing it does not already
 know about: the three alerts it raises on `input-fetch` are the site copy
 writing network data to a folder, which is what copying a site is, and each
@@ -37,9 +37,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 185 plugin(s)
+node src/cli.js plugins      # 189 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 966 tests, node --test, no framework
+npm test                     # 996 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -71,9 +71,9 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 43,168 lines of JavaScript in src and plugins |
-| Tests | 14,624 lines, 966 cases across 130 files |
-| Source on disk | src 27 KB, plugins 2.0 MB |
+| Every line of the tool | 45,711 lines of JavaScript in src and plugins |
+| Tests | 15,687 lines, 996 cases across 135 files |
+| Source on disk | src 27 KB, plugins 2.1 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
@@ -82,7 +82,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and thirty six features, and every
+The core grew from 527 lines to 718 across six hundred and forty one features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -123,9 +123,9 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The 185 it ships with
+## The 189 it ships with
 
-![The plugin rack: 185 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 189 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## Yes, there is a transformer in it
 
@@ -440,6 +440,20 @@ the far end, with `DIALOGS.md` holding every control's rectangle in dialog
 units, `MENUS.md` every menu, `STRINGS.md` every message. A .NET assembly
 keeps its forms in code, so the reader says so rather than pretending.
 
+The desktop's own form files read the same way, through the same choices, so
+a form from any of them reaches React, Vue and Svelte as the executable's
+dialog does: `input-winforms` reads the `InitializeComponent` body of a
+`*.Designer.cs` or `*.Designer.vb` with a scanner that knows both languages'
+strings; `input-xaml` reads a WPF, UWP, Xamarin.Forms or MAUI window, page or
+control as the XML it is, bindings included; `input-vb6` reads a `.frm`'s
+blocks, the handlers its code wires and the messages `MsgBox` shows, with the
+binary `.frx` named and never read; `input-delphi` reads a `.dfm`, `.fmx` or
+`.lfm`'s object blocks with their string lists and collections. Each writes
+its own report (`WINFORMS.md`, `LAYOUT.md`, `FORMS_VB6.md`,
+`FORMS_DELPHI.md`), names every handler as behaviour to reimplement rather than
+reading code, and prints no value but a caption. A zip dropped on the console
+is unpacked with Node's own zlib, every entry held to the intake's path rule.
+
 A PNG screenshot is measured too, not just catalogued: `input-shots`
 decodes it with Node's own inflate, counts the colours its pixels are made
 of into `PALETTE.md`, and `dsp-tokens` takes exactly one thing from them,
@@ -464,7 +478,7 @@ lacked. The console's intake takes the same URL through the same function.
 
 ```bash
 npm install -g portamp     # once the v* tag publishes; docs/PUBLISHING.md says how
-portamp plugins            # 185 plugin(s)
+portamp plugins            # 189 plugin(s)
 portamp ui                 # the console, with its intake
 ```
 
@@ -1067,8 +1081,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and thirty six features in
-one hundred and forty eight phases, forty four shipped, five hundred and eighty nine new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and forty one features in
+one hundred and forty nine phases, forty four shipped, five hundred and ninety four new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

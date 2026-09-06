@@ -40,9 +40,9 @@ test("the whole ui is under the budget the spec set", async () => {
   // overrunning the header bar, bought the last ten. The intake, a drop zone
   // that hands what a person drops to the run with the flags they pressed,
   // bought the raise to 1750; the site copy, a URL handed through the fetch
-  // command's gates, bought 1800. The budget still exists so growth stays a
-  // decision, not a drift.
-  assert.ok(js + html + lib < 1800, `${js + html + lib} lines, the spec allows under 1800`);
+  // command's gates, bought 1800; an archive unpacked on the intake, 1850. The
+  // budget still exists so growth stays a decision, not a drift.
+  assert.ok(js + html + lib < 1850, `${js + html + lib} lines, the spec allows under 1850`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once
@@ -399,8 +399,8 @@ test("the intake writes what it is handed under the run's sidecar, lists it, ref
   t.after(() => rm(dir, { recursive: true, force: true }));
   const intake = createIntake(join(dir, "out", ".portamp", "intake"));
   assert.deepEqual(await intake.list(), [], "an intake that does not exist yet is empty, not an error");
-  const files = await intake.put("pages/index.html", Buffer.from("<h1>hi</h1>"));
-  assert.deepEqual(files, [{ path: "pages/index.html", bytes: 11 }]);
+  const { files, refused } = await intake.put("pages/index.html", Buffer.from("<h1>hi</h1>"));
+  assert.deepEqual(files, [{ path: "pages/index.html", bytes: 11 }]); assert.deepEqual(refused, []);
   await intake.put("ledger.exe", Buffer.from("MZ"));
   assert.deepEqual((await intake.list()).map((f) => f.path), ["ledger.exe", "pages/index.html"]);
   await assert.rejects(() => intake.put("../outside.txt", Buffer.from("x")), /only land inside the intake/);
@@ -418,11 +418,11 @@ test("the server hands uploads to the intake and reruns pointed at it; without o
 
   const puts = [];
   const reruns = [];
-  const intake = { dir: join(out, ".portamp", "intake"), files: [], async put(rel, bytes) { puts.push([rel, bytes.length]); this.files.push(rel); return this.files.map((p) => ({ path: p, bytes: 1 })); }, async clear() { this.files = []; }, async list() { return this.files.map((p) => ({ path: p, bytes: 1 })); } };
+  const intake = { dir: join(out, ".portamp", "intake"), files: [], async put(rel, bytes) { puts.push([rel, bytes.length]); this.files.push(rel); return { files: this.files.map((p) => ({ path: p, bytes: 1 })), refused: [] }; }, async clear() { this.files = []; }, async list() { return this.files.map((p) => ({ path: p, bytes: 1 })); } };
   const { server, address } = await serve({ outDir: out, shotsDir: join(dir, "shots"), port: 0, log: quiet, intake, rerun: async (o) => { reruns.push(o); } });
   t.after(() => new Promise((done) => server.close(done)));
   const put = await fetch(`${address}/intake?path=${encodeURIComponent("site/index.html")}`, { method: "POST", body: "<p>old</p>" }).then((r) => r.json());
-  assert.deepEqual(put, { ok: true, path: "site/index.html", files: 1 });
+  assert.deepEqual(put, { ok: true, path: "site/index.html", files: 1, refused: [] });
   assert.deepEqual(puts, [["site/index.html", 10]]);
   assert.equal((await fetch(`${address}/intake?path=${encodeURIComponent("../escape.html")}`, { method: "POST", body: "x" })).status, 400);
   assert.equal((await fetch(`${address}/intake`, { method: "POST", body: "x" })).status, 400, "no path, no file");

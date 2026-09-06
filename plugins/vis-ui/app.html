@@ -871,7 +871,7 @@ async function intake(items) {
     const r = await fetch("/intake?path=" + encodeURIComponent(path), { method: "POST", body: file }).then((r) => r.json()).catch((err) => ({ error: err.message }));
     if (!r.ok) { status.textContent = "refused " + path + ": " + (r.error ?? "unknown"); return; }
     sent += 1;
-    status.textContent = r.files + " file(s) in the intake";
+    status.textContent = r.files + " file(s) in the intake" + (r.refused?.length ? "; " + r.refused.length + " archive entr(ies) refused: " + r.refused.map((x) => x.entry + " (" + x.reason + ")").join(", ") : "");
   }
   if (sent) await rerun({ source: "intake" });
 }

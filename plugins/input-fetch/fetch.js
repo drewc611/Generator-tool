@@ -37,7 +37,9 @@ export function linksIn(html, base) {
     if (!value || /^(#|javascript:|mailto:|tel:|data:|blob:)/i.test(value)) return;
     try { out.push({ url: new URL(value, base).href.replace(/#.*$/, ""), kind }); } catch { /* not a URL */ }
   };
-  const text = html.replace(/<!--[\s\S]*?-->/g, "");
+  // Comments are removed until none is left, so a comment whose removal exposes another does not hide a link.
+  let text = html;
+  for (let prev = null; prev !== text;) { prev = text; text = text.replace(/<!--[\s\S]*?-->/g, ""); }
   for (const m of text.matchAll(/<a\b[^>]*?\shref\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/gi)) add(m[2] ?? m[3] ?? m[4], "page");
   for (const m of text.matchAll(/<link\b[^>]*>/gi)) {
     const tag = m[0];

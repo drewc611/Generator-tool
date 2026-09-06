@@ -6,6 +6,7 @@ import { spawn } from "node:child_process";
 import { pascal } from "../dsp-ir/emit.js";
 import { RERUN_FLAGS, intakePath, rerunOptions, rerunPatch, siteUrl } from "./lib.js";
 import { fetchForRun } from "../input-fetch/index.js";
+import { readZip } from "./zip.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -255,15 +256,33 @@ export function createIntake(dir) {
     }
     return out.sort((a, b) => a.path.localeCompare(b.path));
   };
+  const place = async (rel, bytes) => {
+    const clean = intakePath(rel);
+    const target = clean ? within(dir, clean) : null;
+    if (!target) return false;
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, bytes);
+    return true;
+  };
   return {
     dir,
     list: () => list(),
+    /** A file lands as named; an archive is unpacked under its own name, every entry held to the same path rule. */
     async put(rel, bytes) {
-      const target = intakePath(rel) ? within(dir, intakePath(rel)) : null;
-      if (!target) throw new Error("a file may only land inside the intake");
-      await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, bytes);
-      return list();
+      const refused = [];
+      if (/\.zip$/i.test(rel)) {
+        const { entries, error } = readZip(bytes);
+        if (error) refused.push({ entry: rel, reason: error });
+        for (const entry of entries ?? []) {
+          if (entry.directory) continue;
+          const got = entry.bytes();
+          if (got.error) { refused.push({ entry: entry.name, reason: got.error }); continue; }
+          if (!(await place(`${rel.replace(/\.zip$/i, "")}/${entry.name.replace(/^\/+/, "")}`, got.bytes))) refused.push({ entry: entry.name, reason: "the path climbs out of the intake" });
+        }
+      } else if (!(await place(rel, bytes))) {
+        throw new Error("a file may only land inside the intake");
+      }
+      return { files: await list(), refused };
     },
     async clear() { await rm(dir, { recursive: true, force: true }); },
   };
@@ -336,8 +355,8 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         if (!rel) return send(400, TYPES[".json"], '{"error":"the path must be a relative file path with no . or .. segment"}');
         let bytes;
         try { bytes = await readBody(req, 256 * 1024 * 1024); } catch (err) { return send(err.status ?? 500, TYPES[".json"], JSON.stringify({ error: err.message })); }
-        const files = await intake.put(rel, bytes);
-        return send(200, TYPES[".json"], JSON.stringify({ ok: true, path: rel, files: files.length }));
+        const put = await intake.put(rel, bytes);
+        return send(200, TYPES[".json"], JSON.stringify({ ok: true, path: rel, files: put.files.length, refused: put.refused }));
       }
       // A site address: the intake copies it through the fetch command's own gates (an attestation on disk,
       // --allow-live, the attested domains), so a URL typed into the page can do nothing the command line could not.

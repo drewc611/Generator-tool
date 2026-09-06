@@ -1,0 +1,10 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <SolidColorBrush x:Key="AccentBrush" Color="#FF3366CC"/>
+  <Style x:Key="FieldStyle" TargetType="TextBox">
+    <Setter Property="Padding" Value="4"/>
+  </Style>
+  <Style TargetType="Button">
+    <Setter Property="MinWidth" Value="80"/>
+  </Style>
+</ResourceDictionary>
