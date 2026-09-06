@@ -62,15 +62,22 @@ function unfilter(data, width, height, bpp, stride) {
   return { rows: out };
 }
 
-/** One sample of `depth` bits from a row, scaled to eight bits (a palette index is never scaled). */
-function sample(row, index, depth, scale) {
+/** One sample of `depth` bits from a row at its full depth, as the file wrote it. */
+function rawSample(row, index, depth) {
   if (depth === 8) return row[index];
-  if (depth === 16) return row[index * 2];
+  if (depth === 16) return (row[index * 2] << 8) | row[index * 2 + 1];
   const perByte = 8 / depth;
   const byte = row[Math.floor(index / perByte)];
   const shift = 8 - depth * ((index % perByte) + 1);
-  const v = (byte >> shift) & ((1 << depth) - 1);
-  return scale ? Math.round((v * 255) / ((1 << depth) - 1)) : v;
+  return (byte >> shift) & ((1 << depth) - 1);
+}
+
+/** One sample scaled to eight bits (a palette index is never scaled). */
+function sample(row, index, depth, scale) {
+  const v = rawSample(row, index, depth);
+  if (!scale || depth === 8) return v;
+  if (depth === 16) return v >> 8;
+  return Math.round((v * 255) / ((1 << depth) - 1));
 }
 
 /** The image as RGBA bytes with its size, or the reason it could not be decoded. */
@@ -102,14 +109,28 @@ export function decodePng(bytes) {
   const plte = chunks.find((c) => c.type === "PLTE")?.data ?? null;
   const trns = chunks.find((c) => c.type === "tRNS")?.data ?? null;
   if (colorType === 3 && !plte) return { error: "a palette image with no PLTE chunk" };
+  // A greyscale or truecolour image may name one colour as transparent in tRNS, two bytes per sample at the
+  // image's own depth; a pixel equal to it is transparent and never counted as a colour the picture is made of.
+  const key16 = (at) => (trns && trns.length >= at + 2 ? (trns[at] << 8) | trns[at + 1] : null);
+  const keyGray = colorType === 0 ? key16(0) : null;
+  const keyRgb = colorType === 2 && key16(4) !== null ? [key16(0), key16(2), key16(4)] : null;
   const pixels = new Uint8Array(width * height * 4);
   for (let y = 0; y < height; y += 1) {
     const row = filtered.rows.subarray(y * stride, (y + 1) * stride);
     for (let x = 0; x < width; x += 1) {
       const o = (y * width + x) * 4;
       switch (colorType) {
-        case 0: { const g = sample(row, x, depth, true); pixels[o] = g; pixels[o + 1] = g; pixels[o + 2] = g; pixels[o + 3] = 255; break; }
-        case 2: { for (let k = 0; k < 3; k += 1) pixels[o + k] = sample(row, x * 3 + k, depth, true); pixels[o + 3] = 255; break; }
+        case 0: {
+          const g = sample(row, x, depth, true);
+          pixels[o] = g; pixels[o + 1] = g; pixels[o + 2] = g;
+          pixels[o + 3] = keyGray !== null && rawSample(row, x, depth) === keyGray ? 0 : 255;
+          break;
+        }
+        case 2: {
+          for (let k = 0; k < 3; k += 1) pixels[o + k] = sample(row, x * 3 + k, depth, true);
+          pixels[o + 3] = keyRgb && [0, 1, 2].every((k) => rawSample(row, x * 3 + k, depth) === keyRgb[k]) ? 0 : 255;
+          break;
+        }
         case 3: {
           const i = sample(row, x, depth, false);
           pixels[o] = plte[i * 3] ?? 0; pixels[o + 1] = plte[i * 3 + 1] ?? 0; pixels[o + 2] = plte[i * 3 + 2] ?? 0;

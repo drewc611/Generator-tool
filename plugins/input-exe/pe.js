@@ -70,7 +70,9 @@ export function readHeaders(bytes) {
 /** A relative virtual address as a file offset, through the section that holds it. */
 function fileOffset(headers, rva) {
   for (const s of headers.sections) {
-    const span = Math.max(s.virtualSize ?? 0, s.rawSize ?? 0);
+    // Only the bytes the file holds map: a section's virtual tail past its raw size is zero fill in memory and,
+    // followed through the file, would be the next section's bytes read as this one's.
+    const span = Math.min(s.virtualSize || s.rawSize || 0, s.rawSize ?? 0);
     if (rva >= s.virtualAddress && rva < s.virtualAddress + span) return rva - s.virtualAddress + s.rawPointer;
   }
   return null;
@@ -179,8 +181,9 @@ export function readDialog(bytes) {
     c.captionOrdinal = caption.ordinal ? caption.value : null;
     const extra = r.u16(at);
     if (extra === null) { dialog.problems.push(`control ${i + 1} is truncated after its caption`); dialog.controls.push(c); break; }
-    // In a DIALOGEX the count includes its own two bytes; in a DIALOG it is the data that follows.
-    at += 2 + (extra ? (ex ? extra - 2 : extra) : 0);
+    // DIALOGEX counts the creation data bytes that follow the word; a DIALOG's first word, when it is not zero, is
+    // the size of the creation data including that word itself.
+    at += ex ? 2 + extra : extra || 2;
     dialog.controls.push(c);
   }
   return dialog;
@@ -238,22 +241,28 @@ export function readMenu(bytes) {
   return { ex: false, items: items(0), problems };
 }
 
-/** A string table block: sixteen length prefixed strings whose ids follow from the block's id. */
+/**
+ * A string table block: sixteen length prefixed strings whose ids follow from the block's id. A string the block
+ * ends inside is kept as far as it goes and named, so a shortened message is never reported as the message.
+ */
 export function readStringBlock(bytes, blockId) {
   const r = new Reader(bytes);
-  const out = [];
+  const strings = [];
+  const problems = [];
   let at = 0;
   for (let i = 0; i < 16; i += 1) {
     const len = r.u16(at);
     if (len === null) break;
     at += 2;
     if (!len) continue;
+    const id = (blockId - 1) * 16 + i;
     let text = "";
     for (let k = 0; k < len; k += 1) { const c = r.u16(at + k * 2); if (c === null) break; text += String.fromCharCode(c); }
+    if (text.length < len) problems.push(`string ${id} is cut off after ${text.length} of ${len} characters`);
     at += len * 2;
-    out.push({ id: (blockId - 1) * 16 + i, text });
+    strings.push({ id, text, truncated: text.length < len });
   }
-  return out;
+  return { strings, problems };
 }
 
 /** The StringFileInfo pairs of a VS_VERSIONINFO block: ProductName, FileDescription and the rest. */
@@ -289,13 +298,14 @@ export function readExecutable(bytes) {
   const { leaves, problems } = readResources(bytes, headers);
   const dialogs = leaves.filter((l) => l.type === RT.DIALOG).map((l) => ({ id: l.id, language: l.language, ...readDialog(l.bytes) }));
   const menus = leaves.filter((l) => l.type === RT.MENU).map((l) => ({ id: l.id, language: l.language, ...readMenu(l.bytes) }));
-  const strings = leaves.filter((l) => l.type === RT.STRING && Number.isInteger(l.id)).flatMap((l) => readStringBlock(l.bytes, l.id));
+  const blocks = leaves.filter((l) => l.type === RT.STRING && Number.isInteger(l.id)).map((l) => readStringBlock(l.bytes, l.id));
+  const strings = blocks.flatMap((b) => b.strings);
   const version = leaves.filter((l) => l.type === RT.VERSION).map((l) => readVersion(l.bytes))[0] ?? {};
   const types = [...new Set(leaves.map((l) => l.type))];
   return {
     machine: headers.machine, plus: headers.plus, clr: headers.clr,
     hasResources: Boolean(headers.directories[2]?.rva),
     dialogs, menus, strings, version, types,
-    problems: [...headers.problems, ...problems, ...dialogs.flatMap((d) => d.problems.map((p) => `dialog ${d.id}: ${p}`)), ...menus.flatMap((m) => m.problems.map((p) => `menu ${m.id}: ${p}`))],
+    problems: [...headers.problems, ...problems, ...dialogs.flatMap((d) => d.problems.map((p) => `dialog ${d.id}: ${p}`)), ...menus.flatMap((m) => m.problems.map((p) => `menu ${m.id}: ${p}`)), ...blocks.flatMap((b) => b.problems)],
   };
 }

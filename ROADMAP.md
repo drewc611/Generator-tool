@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and thirty three features across one hundred and forty six phases. The statuses are
+Six hundred and thirty four features across one hundred and forty seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2462,14 +2462,19 @@ input-shots used to record a screenshot's name and byte count and match it to a 
 **633. The console has an intake: drop an executable, a screenshot or a folder of old pages on it, press the flags, and the run reads exactly that** 🔨
 The console could show a run and run it again, but everything it ran over was a path typed at the command line, and the transformer's flags were the command line's too. It now has a drop zone: files or a whole folder (dragged, or picked with the folder picker) are sent one request each to `POST /intake?path=`, the path held to a relative file path with no dot or dot dot segment, and land in the intake the `ui` command owns under the run's own sidecar directory, never in the port; the server hands bytes to that intake and writes nothing itself, which the suite still asserts of the server's whole body. A rerun request names its source, the intake or the tree the command was started with, and the flags the console offers as pressed keys (transformer, train, reverse, sort, vue, svelte); anything else in the request is dropped, and no switch that weakens a gate is offered. The command points the run's source and screenshots at the intake for that rerun and back at the originals for the next plain one, because the core reads the config when a run starts and the command it was handed to is what may change it. So an .exe becomes dialog screens, a PNG a measured screenshot, a folder of pages a site, from the browser, and the transformer's reports appear in the reports tab of the run that asked for them. `GET /intake.json` lists what is held and `DELETE /intake` empties it. The console's line budget rose to 1750 for it, on the record. test/ui.test.js holds it.
 
+## Phase 147: the nineteenth review pass
+
+**634. The executable reader, the PNG decoder and the console's intake read again** 🔨
+A review pass over 10.0, each finding fixed with the input that exposed it. A caption spelling a JavaScript keyword (a group box named Export, a checkbox named Default, a static Class beside an edit) became a field the emitted component could not declare; a reserved word gets a suffix. A doubled ampersand is a literal one, and the mnemonic was looked for before it was set aside, so `Search && Replace` named a space as its access key; the pair is set aside first. Every default push button was treated as OK and made the form's submit; only IDOK is, and a default button with another id is its own event, named as what Enter fired in the original. The creation data count on a control had DIALOG and DIALOGEX swapped, so a control carrying creation data threw every control after it out of alignment; DIALOGEX counts the bytes that follow and a DIALOG's word counts itself. An RVA in a section's virtual tail, zero fill in memory, was followed through the file into the next section's bytes and parsed as a dialog; only the raw bytes map, and the phantom is named. A string the block ended inside was reported as the message; it is kept as far as it goes and marked cut off, in the problems, the notes and STRINGS.md. A version value with a pipe or a line break broke the DIALOGS.md table; every cell is escaped the same way. The PNG decoder honoured tRNS for palette images only, so a colour keyed transparent border in a greyscale or truecolour image was counted as the picture's colour; the key is compared at the image's own depth and the pixel is transparent. The console's rerun wrote every offered flag, pressed or not, onto the live config and never restored what the command line gave, so `--vue true` was switched off by the first run and the watch ran with whatever the last rerun left; a pressed key now rides on top of the command line's flags, an unpressed one leaves the command line's value in force, every rerun is patched from the originals, and the watch reruns through the same door. And the server captured the screenshots directory once at startup, so an intake rerun's screenshots were looked for in the wrong place; it asks where they are each time. test/exe.test.js, test/shots.test.js and test/ui.test.js hold it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 586 |
+| new in this branch | 587 |
 | planned | 3 |
-| total | 633 |
+| total | 634 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

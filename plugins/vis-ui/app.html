@@ -816,7 +816,8 @@ $("all").addEventListener("click", () => selectStage(null));
 
 // Running the tool again is the one thing this window is allowed to cause, over the tree it was started with or
 // over the intake, with the flags pressed below.
-const flagsOn = () => Object.fromEntries([...document.querySelectorAll("#flags .key")].map((k) => [k.dataset.flag, k.getAttribute("aria-pressed") === "true"]));
+// Only a pressed key travels: an unpressed one leaves the command line's own value in force.
+const flagsOn = () => Object.fromEntries([...document.querySelectorAll("#flags .key")].filter((k) => k.getAttribute("aria-pressed") === "true").map((k) => [k.dataset.flag, true]));
 document.querySelectorAll("#flags .key").forEach((k) => k.addEventListener("click", () => k.setAttribute("aria-pressed", String(k.getAttribute("aria-pressed") !== "true"))));
 async function rerun(options = {}) {
   const button = $("run");

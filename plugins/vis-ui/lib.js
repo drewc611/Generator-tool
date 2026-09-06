@@ -143,6 +143,19 @@ export function compareRuns(current, previous) {
 /** The flags the console offers a rerun; anything else in a request is dropped, never passed to the run. */
 export const RERUN_FLAGS = ["transformer", "train", "train-reverse", "train-sort", "train-math", "vue", "svelte", "lit", "html", "site", "export", "components"];
 
+/**
+ * What a rerun sets on the run's config: the source and screenshots it reads, and every offered flag, a pressed
+ * key on top of what the command line said and the command line's own value back for every key not pressed.
+ */
+export function rerunPatch(original, intakeDir, { source, flags }) {
+  const patch = {
+    src: source === "intake" ? intakeDir : original.src,
+    shots: source === "intake" ? intakeDir : original.shots,
+  };
+  for (const flag of RERUN_FLAGS) patch[flag] = Object.hasOwn(flags, flag) ? flags[flag] : original.flags[flag];
+  return patch;
+}
+
 /** A rerun request reduced to what the console may ask: the source to read and the offered flags as booleans. */
 export function rerunOptions(body) {
   const source = body?.source === "intake" ? "intake" : "src";

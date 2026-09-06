@@ -486,8 +486,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and thirty three features in
-one hundred and forty six phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and thirty four features in
+one hundred and forty seven phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** One command that belongs to a person;
    docs/PUBLISHING.md waits beside it.

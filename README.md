@@ -10,9 +10,9 @@ about where the plugin classes come from. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 184 plugins, and the literal output of
 `npm run demo`.</sub>
 
-![node --test running the portamp suite: 955 passing, 956 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
+![node --test running the portamp suite: 959 passing, 960 tests, 0 failing, 1 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from the transformer and the learned archetype model to the executable reader, the measured screenshot and the console's intake](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 955
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 959
 tests pass across 128 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing. CI reruns the same
 suite on Node 18, 20 and 22 and on Windows, and asserts the same screen written
@@ -36,7 +36,7 @@ writes components instead of audio, and `vis` shows you what you got.
 git clone https://github.com/drewc611/portamp && cd portamp
 node src/cli.js plugins      # 184 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 956 tests, node --test, no framework
+npm test                     # 960 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -69,7 +69,7 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | --- | --- |
 | Core | **718 lines** across four files |
 | Every line of the tool | 41,613 lines of JavaScript in src and plugins |
-| Tests | 14,270 lines, 956 cases across 128 files |
+| Tests | 14,386 lines, 960 cases across 128 files |
 | Source on disk | src 27 KB, plugins 2.0 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
@@ -79,7 +79,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and thirty three features, and every
+The core grew from 527 lines to 718 across six hundred and thirty four features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -1039,8 +1039,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and thirty three features in
-one hundred and forty six phases, forty four shipped, five hundred and eighty six new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and thirty four features in
+one hundred and forty seven phases, forty four shipped, five hundred and eighty seven new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

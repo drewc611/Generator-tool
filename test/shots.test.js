@@ -114,3 +114,17 @@ test("a run over dropped screenshots measures them, writes PALETTE.md and carrie
   if (declared.length) assert.equal(run.ctx.tokens.color.bg, "#FBFAF8");
   assert.ok(!run.ctx.tokens.provenance.some((e) => /^ink from the pixels/.test(e)), "the ink is never named from pixels");
 });
+
+test("the nineteenth review pass: a colour key in tRNS makes a greyscale or truecolour pixel transparent, at every depth", () => {
+  const rgb = decodePng(encodePng({ width: 4, height: 1, colorType: 2, trns: [0, 255, 0, 0, 0, 255], pixel: (x) => (x === 1 ? [255, 0, 255] : [10, 20, 30]) }));
+  assert.deepEqual([...rgb.pixels.subarray(4, 8)], [255, 0, 255, 0], "the keyed magenta pixel is transparent");
+  assert.deepEqual([...rgb.pixels.subarray(0, 4)], [10, 20, 30, 255]);
+  assert.deepEqual(palette(rgb).map((p) => p.hex), ["#0A141E"], "a keyed pixel is never a colour the picture is made of");
+  const rgb16 = decodePng(encodePng({ width: 2, height: 1, colorType: 2, depth: 16, trns: [7, 0, 8, 0, 9, 0], pixel: (x) => (x === 0 ? [7, 8, 9] : [7, 8, 10]) }));
+  assert.equal(rgb16.pixels[3], 0, "a sixteen bit key is compared at sixteen bits"); assert.equal(rgb16.pixels[7], 255);
+  const gray = decodePng(encodePng({ width: 4, height: 1, colorType: 0, depth: 4, trns: [0, 15], pixel: (x) => [x === 2 ? 15 : 3] }));
+  assert.deepEqual([...gray.pixels.subarray(8, 12)], [255, 255, 255, 0], "a four bit grey key matches the raw sample, not the scaled one");
+  assert.equal(gray.pixels[3], 255);
+  const none = decodePng(encodePng({ width: 2, height: 1, colorType: 2, pixel: () => [255, 0, 255] }));
+  assert.equal(none.pixels[3], 255, "no tRNS, nothing transparent");
+});

@@ -44,7 +44,10 @@ export function dialogTemplate(d) {
     out.push(...klass(c));
     if (c.captionOrdinal !== undefined) out.push(...u16(0xffff), ...u16(c.captionOrdinal));
     else out.push(...wsz(c.caption ?? ""));
-    out.push(...u16(0));
+    // Creation data: DIALOGEX counts the bytes that follow; a DIALOG's word counts itself too, or is zero.
+    const extra = c.extra ?? [];
+    if (ex) out.push(...u16(extra.length), ...extra);
+    else out.push(...(extra.length ? [...u16(extra.length + 2), ...extra] : u16(0)));
   }
   return out;
 }
@@ -109,7 +112,7 @@ export function versionBlock(pairs) {
 }
 
 /** The whole file: headers, then a resource tree holding every resource given. */
-export function buildExe({ dialogs = [], menus = [], strings = [], version = null, clr = false, plus = false, raw = [] } = {}) {
+export function buildExe({ dialogs = [], menus = [], strings = [], version = null, clr = false, plus = false, raw = [], phantom = false } = {}) {
   const RSRC_VA = 0x2000;
   const RSRC_RAW = 0x200;
   const byType = new Map();
@@ -134,6 +137,9 @@ export function buildExe({ dialogs = [], menus = [], strings = [], version = nul
   for (const [t, entries] of types) for (const e of entries) { cursor = (cursor + 3) & ~3; blobAt.set(`${t}/${e.id}`, cursor); cursor += e.bytes.length; }
   const clrAt = clr ? ((cursor + 3) & ~3) : 0;
   if (clr) cursor = clrAt + 72;
+  // A phantom points the last resource's data into the section's virtual tail: zero fill in memory, and in the
+  // file the bytes of whatever follows the section.
+  const virtualSize = phantom ? cursor + 0x400 : cursor;
   const rsrc = new Array(cursor).fill(0);
   const write = (at, arr) => { for (let i = 0; i < arr.length; i += 1) rsrc[at + i] = arr[i]; };
   const table = (at, entries) => {
@@ -145,7 +151,9 @@ export function buildExe({ dialogs = [], menus = [], strings = [], version = nul
     table(typeDirAt.get(t), entries.map((e) => ({ name: e.id, offset: 0x80000000 | idDirAt.get(`${t}/${e.id}`) })));
     for (const e of entries) {
       table(idDirAt.get(`${t}/${e.id}`), [{ name: 1033, offset: dataEntryAt.get(`${t}/${e.id}`) }]);
-      write(dataEntryAt.get(`${t}/${e.id}`), [...u32(RSRC_VA + blobAt.get(`${t}/${e.id}`)), ...u32(e.bytes.length), ...u32(0), ...u32(0)]);
+      const last = types.at(-1)[0] === t && entries.at(-1) === e;
+      const rva = phantom && last ? RSRC_VA + cursor + 0x40 : RSRC_VA + blobAt.get(`${t}/${e.id}`);
+      write(dataEntryAt.get(`${t}/${e.id}`), [...u32(rva), ...u32(e.bytes.length), ...u32(0), ...u32(0)]);
       write(blobAt.get(`${t}/${e.id}`), e.bytes);
     }
   }
@@ -171,9 +179,11 @@ export function buildExe({ dialogs = [], menus = [], strings = [], version = nul
   if (clr) { put32(directories + 14 * 8, RSRC_VA + clrAt); put32(directories + 14 * 8 + 4, 72); }
   const section = optional + optionalSize;
   ".rsrc".split("").forEach((c, i) => { header[section + i] = c.charCodeAt(0); });
-  put32(section + 8, rsrc.length);
+  put32(section + 8, virtualSize);
   put32(section + 12, RSRC_VA);
   put32(section + 16, rsrc.length);
   put32(section + 20, RSRC_RAW);
-  return Buffer.from([...header, ...rsrc]);
+  // With a phantom, the bytes after the section are a second copy of the resources, so a reader that followed
+  // the RVA through the file would find something that parses instead of nothing.
+  return Buffer.from([...header, ...rsrc, ...(phantom ? rsrc : [])]);
 }

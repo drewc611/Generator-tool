@@ -4,7 +4,7 @@ import { dirname, extname, join, resolve, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { pascal } from "../dsp-ir/emit.js";
-import { intakePath, rerunOptions } from "./lib.js";
+import { RERUN_FLAGS, intakePath, rerunOptions, rerunPatch } from "./lib.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -270,6 +270,8 @@ export function createIntake(dir) {
 
 export async function serve({ outDir, shotsDir, port = 4321, log = console, rerun = null, intake = null }) {
   const runPath = join(outDir, ".portamp", "run.json");
+  // The screenshots directory may move with the run (an intake rerun reads the intake), so it is asked for each time.
+  const shotsAt = () => (typeof shotsDir === "function" ? shotsDir() : shotsDir);
   const shell = await readFile(join(here, "app.html"), "utf8");
 
   const server = createServer(async (req, res) => {
@@ -385,7 +387,7 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
       }
 
       if (url.pathname.startsWith("/shots/")) {
-        const file = within(shotsDir, decodeURIComponent(url.pathname.slice(7)));
+        const file = within(shotsAt(), decodeURIComponent(url.pathname.slice(7)));
         if (!file) return send(403, TYPES[".json"], '{"error":"outside the shots directory"}');
         // Read the file before answering. Writing the header first and then
         // discovering the stream failed leaves no way to say so.
@@ -483,21 +485,19 @@ export default {
           log.info("serving the last run. Pass --fresh to run the pipeline again.\n");
         }
 
-        // A rerun from the console may point the run at the intake and switch an offered flag on. The core reads
-        // the config when a run starts, so the command the config was handed to is what changes it, and the tree
-        // and screenshots it was started with come back the moment a rerun asks for them.
+        // A rerun from the console may point the run at the intake and press an offered flag. The core reads the
+        // config when a run starts, so the command the config was handed to is what changes it: a pressed flag
+        // rides on top of the command line's, and the tree, screenshots and flags it was started with come back
+        // for every rerun that does not ask otherwise, the watch's included.
         const intake = createIntake(join(config.out, ".portamp", "intake"));
-        const original = { src: config.src, shots: config.shots };
+        const original = { src: config.src, shots: config.shots, flags: Object.fromEntries(RERUN_FLAGS.map((f) => [f, config[f]])) };
         const rerun = async (options = {}) => {
-          const { source, flags } = rerunOptions(options);
-          config.src = source === "intake" ? intake.dir : original.src;
-          config.shots = source === "intake" ? intake.dir : original.shots;
-          for (const [flag, on] of Object.entries(flags)) config[flag] = on;
+          Object.assign(config, rerunPatch(original, intake.dir, rerunOptions(options)));
           return runPipeline();
         };
         const { server, address } = await serve({
           outDir: config.out,
-          shotsDir: config.shots,
+          shotsDir: () => config.shots,
           port: Number(args.port) || 4321,
           log,
           rerun,
@@ -518,7 +518,7 @@ export default {
             if (running) { queued = true; return; }
             running = true;
             try {
-              const ctx = await runPipeline();
+              const ctx = await rerun();
               log.info(`${new Date().toLocaleTimeString()}  ${what}: ${ctx.written.length} file(s), ${ctx.report.unverified.length} unverified`);
             } catch (err) {
               log.error(`${what}: ${err.message}`);

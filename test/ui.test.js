@@ -150,7 +150,7 @@ test("the ui never writes into the port", async () => {
 import {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
   sparklinePoints, keyAction, STAGE_KEYS, offlineNotice, isTextFile, reportsIn,
-  intakePath, rerunOptions, RERUN_FLAGS,
+  intakePath, rerunOptions, rerunPatch, RERUN_FLAGS,
 } from "../plugins/vis-ui/lib.js";
 import { createIntake } from "../plugins/vis-ui/index.js";
 
@@ -443,5 +443,37 @@ test("the console page carries the intake: a drop zone, a folder picker, the off
   const flags = [...html.matchAll(/data-flag="([\w-]+)"/g)].map((m) => m[1]);
   assert.ok(flags.every((f) => RERUN_FLAGS.includes(f)), "every flag the page offers is one the server accepts");
   const source = await readFile(join(ROOT, "plugins/vis-ui/index.js"), "utf8");
-  assert.match(source, /config\.src = source === "intake" \? intake\.dir : original\.src/, "a rerun over the intake reads the intake, and the next plain rerun reads the tree again");
+  assert.match(source, /Object\.assign\(config, rerunPatch\(original, intake\.dir, rerunOptions\(options\)\)\)/, "a rerun over the intake reads the intake, and the next plain rerun reads the tree again");
+});
+
+test("the nineteenth review pass: a rerun's flags ride on the command line's and come back, and the shots directory follows the run", async (t) => {
+  const original = { src: "/tree", shots: "/tree/shots", flags: { vue: true } };
+  const intake = "/out/.portamp/intake";
+  const plain = rerunPatch(original, intake, rerunOptions({}));
+  assert.equal(plain.src, "/tree"); assert.equal(plain.shots, "/tree/shots"); assert.equal(plain.vue, true, "a flag from the command line stays on when the console presses nothing");
+  assert.equal(plain.transformer, undefined, "a flag the command line never gave stays ungiven");
+  const pressed = rerunPatch(original, intake, rerunOptions({ source: "intake", flags: { transformer: true } }));
+  assert.equal(pressed.src, intake); assert.equal(pressed.shots, intake); assert.equal(pressed.transformer, true); assert.equal(pressed.vue, true, "a pressed key adds to the command line's flags");
+  const off = rerunPatch(original, intake, rerunOptions({ flags: { vue: false } }));
+  assert.equal(off.vue, false, "an explicit false in a request still turns a flag off for that run");
+  assert.equal(rerunPatch(original, intake, rerunOptions({})).vue, true, "and the next plain rerun has it back");
+
+  const html = await readFile(join(ROOT, "plugins/vis-ui/app.html"), "utf8");
+  assert.match(html, /filter\(\(k\) => k\.getAttribute\("aria-pressed"\) === "true"\)\.map\(\(k\) => \[k\.dataset\.flag, true\]\)/, "the page sends only pressed keys");
+  const source = await readFile(join(ROOT, "plugins/vis-ui/index.js"), "utf8");
+  assert.match(source, /shotsDir: \(\) => config\.shots/, "the server asks where the screenshots are each time");
+  assert.match(source, /const ctx = await rerun\(\);/, "the watch reruns through the same door, so it reads the tree and flags the command was given");
+
+  const dir = await mkdtemp(join(tmpdir(), "portamp-shots-move-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const out = join(dir, "out"); const a = join(dir, "a"); const b = join(dir, "b");
+  await mkdir(join(out, ".portamp"), { recursive: true }); await mkdir(a); await mkdir(b);
+  await writeFile(join(out, ".portamp", "run.json"), JSON.stringify({ ranAt: "2026-09-06T00:00:00.000Z", plugins: [], screens: [], endpoints: [], unverified: [], files: [], provenance: {}, tokens: null, notes: [], improvements: [] }));
+  await writeFile(join(a, "home.png"), "A"); await writeFile(join(b, "home.png"), "B");
+  let where = a;
+  const { server, address } = await serve({ outDir: out, shotsDir: () => where, port: 0, log: quiet });
+  t.after(() => new Promise((done) => server.close(done)));
+  assert.equal(await fetch(`${address}/shots/home.png`).then((r) => r.text()), "A");
+  where = b;
+  assert.equal(await fetch(`${address}/shots/home.png`).then((r) => r.text()), "B", "after an intake rerun the console serves the intake's screenshots");
 });

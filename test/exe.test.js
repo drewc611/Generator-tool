@@ -67,7 +67,7 @@ test("the PE reader finds the resource tree and reads dialogs, menus, strings an
   assert.equal(file.items[0].text, "&File"); assert.equal(file.items[0].children[1].separator, true); assert.equal(file.items[0].children[2].id, 40002);
   assert.equal(file.items[1].children[0].disabled, true);
   assert.equal(edit.ex, true); assert.equal(edit.items[0].children[1].checked, true); assert.equal(edit.items[0].children[1].id, 6);
-  assert.deepEqual(read.strings, [{ id: 300, text: "Saved." }, { id: 317, text: "Could not save." }]);
+  assert.deepEqual(read.strings, [{ id: 300, text: "Saved.", truncated: false }, { id: 317, text: "Could not save.", truncated: false }]);
   assert.deepEqual(read.version, { ProductName: "Ledger", FileDescription: "Ledger desktop", ProductVersion: "4.2.0" });
   assert.equal(readExecutable(buildExe({ ...FIXTURE, plus: true })).plus, true, "PE32+ moves the data directories and is read the same");
 });
@@ -158,4 +158,74 @@ test("an executable in the source tree becomes screens, three reports and notes,
   assert.match(notes, /ledger\.exe: 2 string table entr\(ies\)/);
   assert.match(await readFile(join(run.out, "READERS.md"), "utf8"), /ledger\.exe/, "the census counts the executable as read");
   assert.ok(!run.ctx.report.unverified.some((n) => /no reader claimed/.test(n) && /exe|dll/.test(n)), "no executable is an unread markup file");
+});
+
+/**
+ * The nineteenth review pass, over this reader: a caption that spells a JavaScript
+ * keyword, a literal ampersand, a default button that is not OK, creation data
+ * on a control, a resource pointing into a section's virtual tail, a string the
+ * block ends inside, and a version value with a pipe in it.
+ */
+test("the nineteenth review pass: keywords, literal ampersands, the default button, creation data, the virtual tail, cut strings", () => {
+  const notes = [];
+  const reserved = lowerDialog({ ...readDialog(Buffer.from(dialogTemplate({ id: 5, title: "Options", controls: [
+    { className: "Button", caption: "Export", id: 10, x: 0, y: 0, cx: 100, cy: 40, style: 7 },
+    { className: "Button", caption: "&Default", id: 11, x: 4, y: 10, cx: 40, cy: 10, style: 9 | WS_GROUP },
+    { className: "Button", caption: "Custom", id: 12, x: 50, y: 10, cx: 40, cy: 10, style: 9 },
+    { className: "Static", caption: "Class:", id: 65535, x: 0, y: 50, cx: 30, cy: 8 },
+    { className: "Edit", caption: "", id: 13, x: 40, y: 48, cx: 60, cy: 12 },
+    { className: "Button", caption: "Search && Replace", id: 14, x: 0, y: 70, cx: 80, cy: 14, style: 3 },
+    { className: "Button", caption: "R&&D &Options", id: 15, x: 0, y: 90, cx: 80, cy: 14 },
+    { className: "Button", caption: "Next >", id: 0x3024, x: 0, y: 110, cx: 40, cy: 14, style: 1 },
+    { className: "Button", caption: "Cancel", id: 2, x: 50, y: 110, cx: 40, cy: 14 },
+  ] }))), id: 5 }, (n) => notes.push(n));
+  assert.match(reserved.template, /ng-model="exportField" value="default"/, "a group box captioned Export names a field the emitted JavaScript can declare");
+  assert.match(reserved.template, /<input id="f-class" type="text" ng-model="classField">/);
+  assert.match(reserved.template, /<label><input type="checkbox" ng-model="searchReplace"> Search &amp; Replace<\/label>/, "a doubled ampersand is a literal one and names no access key");
+  assert.match(reserved.template, /ng-click="onRDOptions\(\)" accesskey="o">R&amp;D Options</, "the mnemonic is the single ampersand, not the escaped pair");
+  assert.match(reserved.template, /<button type="button" ng-click="onNext\(\)">Next &gt;<\/button>/, "a default push button that is not IDOK is its own event, never the submit");
+  assert.ok(!/type="submit"/.test(reserved.template) && !/<form/.test(reserved.template), "no IDOK, no form");
+  assert.ok(notes.some((n) => /the default button is Next > \(id 12324\), which Enter fired in the original; the port raises onNext from a click only/.test(n)));
+  assert.doesNotMatch(reserved.template, /accesskey=" "/);
+
+  const withData = { id: 6, title: "Data", controls: [
+    { className: "Edit", caption: "", id: 20, x: 1, y: 1, cx: 10, cy: 10, extra: [1, 2, 3, 4] },
+    { className: "Button", caption: "After", id: 21, x: 1, y: 20, cx: 10, cy: 10, extra: [9, 9, 9] },
+    { className: "Static", caption: "Last", id: 22, x: 1, y: 40, cx: 10, cy: 10 },
+  ] };
+  for (const ex of [true, false]) {
+    const d = readDialog(Buffer.from(dialogTemplate({ ...withData, ex })));
+    assert.deepEqual(d.problems, [], `creation data in a ${ex ? "DIALOGEX" : "DIALOG"} keeps the controls after it aligned`);
+    assert.deepEqual(d.controls.map((c) => [c.className, c.caption, c.id]), [["Edit", "", 20], ["Button", "After", 21], ["Static", "Last", 22]]);
+  }
+
+  const phantom = readExecutable(buildExe({ ...FIXTURE, phantom: true }));
+  assert.ok(phantom.problems.some((p) => /a resource's data lies outside the file/.test(p)), "an RVA in the section's virtual tail is zero fill, not the next section's bytes");
+  assert.equal(phantom.dialogs.length + phantom.menus.length + (phantom.version.ProductName ? 1 : 0) + (phantom.strings.length ? 1 : 0), 5, "every other resource still reads; only the phantom is refused");
+
+  const block = Buffer.from([6, 0, ...[..."Saved."].flatMap((c) => [c.charCodeAt(0), 0]), 40, 0, ...[..."Could not"].flatMap((c) => [c.charCodeAt(0), 0])]);
+  const cut = readExecutable(buildExe({ raw: [{ type: 6, id: 20, bytes: [...block] }] }));
+  assert.deepEqual(cut.strings, [{ id: 304, text: "Saved.", truncated: false }, { id: 305, text: "Could not", truncated: true }]);
+  assert.deepEqual(cut.problems, ["string 305 is cut off after 9 of 40 characters"]);
+});
+
+test("the nineteenth review pass: a version value with a pipe, a keyword field and a cut string reach the reports whole", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "portamp-exe2-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const block = [3, 0, ...[..."Hi!"].flatMap((c) => [c.charCodeAt(0), 0]), 40, 0, ...[..."Could not"].flatMap((c) => [c.charCodeAt(0), 0])];
+  await writeFile(join(dir, "pipes.exe"), buildExe({
+    dialogs: [{ id: 7, title: "Import", controls: [{ className: "Static", caption: "Class:", id: 65535, x: 0, y: 0, cx: 30, cy: 8 }, { className: "Edit", caption: "", id: 1, x: 40, y: 0, cx: 60, cy: 12 }, { className: "Button", caption: "OK", id: 1, x: 0, y: 20, cx: 40, cy: 14, style: 1 }] }],
+    version: { ProductName: "Ledger | Accounts", FileDescription: "Two\nlines" },
+    raw: [{ type: 6, id: 20, bytes: block }],
+  }));
+  const run = await runPipeline({ src: dir, shots: join(dir, "no-shots") });
+  t.after(run.cleanup);
+  assert.equal(run.error, null);
+  const dialogs = await readFile(join(run.out, "DIALOGS.md"), "utf8");
+  assert.match(dialogs, /\| ProductName \| Ledger \\\| Accounts \|/); assert.match(dialogs, /\| FileDescription \| Two lines \|/);
+  const strings = await readFile(join(run.out, "STRINGS.md"), "utf8");
+  assert.match(strings, /\| 305 \| Could not \(cut off in the file\) \|/);
+  assert.ok(run.ctx.report.unverified.some((n) => /pipes\.exe: string 305 is cut off in the file/.test(n)));
+  const jsx = await readFile(join(run.out, "src/features/DialogImport/DialogImport.jsx"), "utf8");
+  assert.match(jsx, /const \[classField, setClassField\] = useState\(""\);/, "the emitted component declares a name JavaScript allows");
 });
