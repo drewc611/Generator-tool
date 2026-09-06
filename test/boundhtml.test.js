@@ -78,7 +78,7 @@ test("the fixtures that drifted through the round trip hold: pug and haml throug
   }
 });
 
-test("the thirteenth review pass: a model with a nested handler, tuple and chained entries maps, an index named, placeholder content, void and model conflicts, a tagless wrapper, and a wrapping loop", () => {
+test("the thirteenth review pass: a model with a nested handler, tuple and chained entries maps, an index spelled, placeholder content, void and model conflicts, a tagless wrapper, and a wrapping loop", () => {
   const notes = []; const note = (n) => notes.push(n);
   assert.equal(
     lowerBody(`<input value={x} onChange={(e) => { setX(e.target.value); changed(); }} /><input value={y} onChange={(e) => setForm({...form, name: e.target.value})} class="k" />`, note),
@@ -87,11 +87,12 @@ test("the thirteenth review pass: a model with a nested handler, tuple and chain
   const back = lowerBody(`<>{pairs.map(([a, b]) => (<li key={a}>{a}{b}</li>))}{Object.entries(x).filter(f).map(([a, b]) => (<li>{a}</li>))}{Object.entries(x).map(([a, b], i) => (<li key={a}>{i}</li>))}{items.map((it, idx) => (<li key={idx}>{idx}</li>))}</>`, note);
   assert.ok(!/ng-repeat="\(a, b\) in pairs"/.test(back), "a map over tuples is not the object entries loop");
   assert.ok(!/in x\)\.filter|in Object\.entries/.test(back), "a chain after Object.entries is not spliced into a loop");
-  assert.match(back, /<li ng-repeat="\(a, b\) in x">\{\{ i \}\}<\/li>/);
-  assert.match(back, /<li ng-repeat="it in items">\{\{ idx \}\}<\/li>/);
+  // Since the eighteenth pass the index is spelled the dialect's way inside its rows rather than named and left.
+  assert.match(back, /<li ng-repeat="\(a, b\) in x">\{\{ \$index \}\}<\/li>/);
+  assert.match(back, /<li ng-repeat="it in items">\{\{ \$index \}\}<\/li>/);
   assert.ok(notes.some((n) => /destructured tuples has no dialect loop/.test(n)));
   assert.ok(notes.some((n) => /chain after Object\.entries has no dialect loop/.test(n)));
-  assert.ok(notes.some((n) => /The map index `i` maps to \$index/.test(n)) && notes.some((n) => /The map index `idx` maps to \$index/.test(n)));
+  assert.ok(!notes.some((n) => /maps to \$index/.test(n)), "a rewritten index needs no note");
   assert.equal(lowerSvelte(`{#each Object.entries(x).filter(f) as [k, v]}<dt>{k}</dt>{/each}`, note), `<dt>{{ k }}</dt>`, "an each the dialect cannot spell keeps its rows once, with no marker leaking as an expression");
   assert.ok(notes.some((n) => /chain after Object\.entries that the dialect cannot spell/.test(n)));
 

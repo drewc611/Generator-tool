@@ -1,5 +1,5 @@
 import { isElementName } from "../dsp-ir/ir.js";
-import { toSvelte } from "./print.js";
+import { toSvelte, modelTarget } from "./print.js";
 import { pascal, unique } from "../dsp-ir/emit.js";
 
 
@@ -59,10 +59,10 @@ export default {
 };
 
 const COMPONENT = ({ name, props, result, collection, screen, referenced = [] }) => {
-  const state = (result?.models ?? []).map((m) => {
-    const leaf = m.split(".").pop().replace(/[^\w$]/g, "");
-    return `  let ${leaf} = "";`;
-  }).join("\n");
+  const state = [...new Set((result?.models ?? []).map((m) => {
+    const { bind, init } = modelTarget(m);
+    return `  let ${bind.replace(/\[[\s\S]*$/, "")} = ${init};`;
+  }))].join("\n");
 
   const empty = collection === "data"
     ? "!data || (Array.isArray(data) && data.length === 0)"

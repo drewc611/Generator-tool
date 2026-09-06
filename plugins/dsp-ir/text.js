@@ -18,6 +18,9 @@ const isClose = (c) => c === ")" || c === "]" || c === "}";
  * (false inside markup, where an apostrophe is prose); `ticks` whether a
  * backtick does (true for JS, false for C# and the Java template languages).
  */
+/** A name spelled literally inside a RegExp source, every meta character escaped. */
+export const regexEscape = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export function matchBracket(text, open, { strings = true, ticks = true } = {}) {
   const close = CLOSERS[text[open]];
   if (!close) return -1;

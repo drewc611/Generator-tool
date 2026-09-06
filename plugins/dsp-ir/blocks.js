@@ -91,7 +91,12 @@ export function lowerBlocks(source, note = () => {}) {
       const track = parts.find((p) => p.startsWith("track "))?.slice(6).trim();
       if (!loop) { note(`An @for head could not be read: \`${head}\`. The block is kept as text.`); continue; }
       const key = track && track !== "$index" ? ` [key]="${track}"` : "";
-      replacement = `<ng-container *ngFor="let ${loop[1]} of ${attrSafe(loop[2].trim())}"${key}>${body.slice(1, -1)}</ng-container>`;
+      // `let i = $index` names the index; the attribute dialect spells that `index as i`. A let over $count, $first
+      // and the rest has no spelling there, so it is named and its body keeps the name as written.
+      const lets = parts.slice(1).map((p) => /^let\s+([\w$]+)\s*=\s*(\$\w+)$/.exec(p)).filter(Boolean);
+      const index = lets.find((l) => l[2] === "$index");
+      for (const l of lets) if (l !== index) note(`\`let ${l[1]} = ${l[2]}\` on an @for has no equivalent in the port; \`${l[1]}\` is left as written in the body.`);
+      replacement = `<ng-container *ngFor="let ${loop[1]} of ${attrSafe(loop[2].trim())}${index ? `; index as ${index[1]}` : ""}"${key}>${body.slice(1, -1)}</ng-container>`;
 
       const empty = /^\s*@empty\s*\{/.exec(text.slice(end));
       if (empty) {

@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import { pascal } from "../dsp-ir/emit.js";
-import { matchBracket } from "../dsp-ir/text.js";
+import { VOID } from "../dsp-ir/parse.js";
+import { matchBracket, regexEscape } from "../dsp-ir/text.js";
 
 /**
  * portamp reads what it writes.
@@ -39,6 +40,79 @@ function injectAttr(jsx, attr) {
   return jsx.replace(/<([a-zA-Z][\w.-]*)/, (m, tag) => `<${tag} ${attr}`);
 }
 
+/**
+ * The dialect spells a loop's index $index and the loop above it $parent.$index. Each lowered row carries the name its
+ * map gave the index; one pass over the finished markup walks the rows as they nest and spells every read of a name by
+ * how many loops up it lives, so `i` inside the inner rows is $parent.$index and inside its own $index. Only code is
+ * rewritten, {{ }} and a directive's value; copy and a static attribute value are never touched, a word in copy is not
+ * a name; a read inside a template string is named and the string left whole.
+ */
+function spellIndexes(markup, note) {
+  const stack = [];
+  const frames = () => stack.map((s) => s.index).filter(Boolean);
+  const code = (c, names) => {
+    if (!names.length) return c;
+    const re = new RegExp(`'(?:\\\\.|[^'\\\\])*'|"(?:\\\\.|[^"\\\\])*"|\`(?:\\\\.|[^\`\\\\])*\`|(?<![\\w$.])(?:${names.map(regexEscape).join("|")})(?![\\w$])`, "g");
+    return c.replace(re, (m) => {
+      if (/^['"]/.test(m)) return m;
+      if (/^\`/.test(m)) {
+        const read = names.find((n) => new RegExp(`(?<![\\w$.])${regexEscape(n)}(?![\\w$])`).test(m));
+        if (read) note(`The map index \`${read}\` is read inside a template string; the string is left as written.`);
+        return m;
+      }
+      return `${"$parent.".repeat(names.length - 1 - names.lastIndexOf(m))}$index`;
+    });
+  };
+  const braces = (text, names) => text.replace(/\{\{([\s\S]*?)\}\}/g, (m, inner) => `{{${code(inner, names)}}}`);
+  const quoted = (attr, value, names) => `${attr}=${value[0]}${code(value.slice(1, -1), names)}${value[0]}`;
+  let out = "";
+  let i = 0;
+  while (i < markup.length) {
+    if (markup.startsWith("{{", i)) {
+      const close = markup.indexOf("}}", i);
+      if (close === -1) { out += markup.slice(i); break; }
+      out += braces(markup.slice(i, close + 2), frames());
+      i = close + 2;
+      continue;
+    }
+    if (markup[i] === "<" && /[a-zA-Z/]/.test(markup[i + 1] ?? "")) {
+      // The tag ends at the first > outside a quoted value or an interpolation, which may carry one of its own.
+      let j = i + 1;
+      while (j < markup.length && markup[j] !== ">") {
+        if (markup[j] === '"' || markup[j] === "'") { const q = markup.indexOf(markup[j], j + 1); j = q === -1 ? markup.length : q + 1; continue; }
+        if (markup.startsWith("{{", j)) { const q = markup.indexOf("}}", j); j = q === -1 ? markup.length : q + 2; continue; }
+        j += 1;
+      }
+      const tag = markup.slice(i, j + 1);
+      i = j + 1;
+      const closing = /^<\/([\w.:-]+)/.exec(tag);
+      if (closing) {
+        const at = stack.map((s) => s.tag).lastIndexOf(closing[1]);
+        if (at !== -1) stack.length = at;
+        out += tag;
+        continue;
+      }
+      const name = /^<([\w.:-]+)/.exec(tag)?.[1] ?? "";
+      let own = null;
+      const outside = frames();
+      const rewritten = tag.replace(/\s+portamp-index="([^"]*)"/, (m, v) => { own = v; return ""; })
+        .replace(/(\s)([\w:.-]+)=("[^"]*"|'[^']*'|\{\{[\s\S]*?\}\})/g, (m, gap, attr, value) => {
+          // The list a repeat walks is read outside its own rows; everything else on the element is a row's.
+          const names = attr === "ng-repeat" ? outside : own ? [...outside, own] : outside;
+          if (/^\{\{/.test(value)) return `${gap}${attr}=${braces(value, names)}`;
+          if (/^ng-/.test(attr)) return gap + quoted(attr, value, names);
+          return `${gap}${attr}=${braces(value, names)}`;
+        });
+      if (!/\/>$/.test(tag) && !VOID.has(name.toLowerCase())) stack.push({ tag: name, index: own });
+      out += rewritten;
+      continue;
+    }
+    out += markup[i];
+    i += 1;
+  }
+  return out;
+}
+
 /** Strip a `key={...}` attribute, which the dialect does not carry. */
 const dropKey = (jsx) => jsx.replace(/\s+key=\{[^}]*\}/, "");
 
@@ -60,7 +134,7 @@ function handlerCall(expr) {
  * conditional inside a loop all come across. `note` records what could not be
  * reversed rather than guessing at it.
  */
-export function lowerReact(jsx, note = () => {}) {
+export function lowerReact(jsx, note = () => {}, nested = false) {
   let out = "";
   let i = 0;
   while (i < jsx.length) {
@@ -77,8 +151,6 @@ export function lowerReact(jsx, note = () => {}) {
     const entries = new RegExp(`^Object\\.entries\\(${LIST}\\)\\s*\\.\\s*map\\s*\\(\\s*\\(?\\s*\\[\\s*([\\w$]+)\\s*,\\s*([\\w$]+)\\s*\\]\\s*(?:,\\s*([\\w$]+)\\s*)?\\)?\\s*=>\\s*([\\s\\S]*)$`).exec(inner);
     const plain = entries ? null : new RegExp(`^${LIST}\\s*\\.\\s*map\\s*\\(\\s*\\(?\\s*([\\w$]+)\\s*(?:,\\s*([\\w$]+)\\s*)?\\)?\\s*=>\\s*([\\s\\S]*)$`).exec(inner);
     const loop = entries ? { list: entries[1], head: `(${entries[2]}, ${entries[3]})`, index: entries[4], body: entries[5] } : plain ? { list: plain[1], head: plain[2], index: plain[3], body: plain[4] } : null;
-    // A map index the dialect spells $index; any other name is left as written and named.
-    if (loop?.index && !/^\$index\d*$/.test(loop.index)) note(`The map index \`${loop.index}\` maps to $index in the dialect; it is left as written in the row.`);
     // A map over destructured tuples, pairs.map(([a, b]) => ...), is not the object entries loop and has no dialect spelling.
     const tuples = !loop && new RegExp(`^${LIST}\\s*\\.\\s*map\\s*\\(\\s*\\(?\\s*\\[`).test(inner);
     if (tuples && /<[a-zA-Z]/.test(inner)) note(/^Object\.entries\(/.test(inner) ? "A .map over a chain after Object.entries has no dialect loop; its rows were kept once and left as written." : "A .map over destructured tuples has no dialect loop; its rows were kept once and the names are left as written.");
@@ -89,23 +161,25 @@ export function lowerReact(jsx, note = () => {}) {
       // strip every trailing paren, not just one. key is dropped before the
       // recursion so its expression is never read as interpolation.
       const body = dropKey(loop.body.replace(/^\(\s*/, "").replace(/[\s)]+$/, "").trim());
-      out += injectAttr(lowerReact(body, note), `ng-repeat="${loop.head} in ${loop.list}"`);
+      // The row carries the name its map gave the index until the pass over the whole markup spells it by depth.
+      const rows = injectAttr(lowerReact(body, note, true), `ng-repeat="${loop.head} in ${loop.list}"`);
+      out += loop.index ? injectAttr(rows, `portamp-index="${loop.index}"`) : rows;
     } else if (cond && /<[a-zA-Z]/.test(cond[2])) {
       const body = cond[2].replace(/^\(\s*/, "").replace(/[\s)]+$/, "").trim();
-      out += injectAttr(lowerReact(body, note), `ng-if="${cond[1].trim()}"`);
+      out += injectAttr(lowerReact(body, note, true), `ng-if="${cond[1].trim()}"`);
     } else if (/\?/.test(inner) && /:/.test(inner) && /<[a-zA-Z]/.test(inner)) {
       note("A JSX ternary was left as written; a conditional with two branches is a person's call to split.");
       out += `{{ ${inner} }}`;
     } else if (/<[a-zA-Z]/.test(inner)) {
       // A brace holding markup this pass could not classify: recurse so its
       // own children still lower, rather than dropping them.
-      out += lowerReact(inner, note);
+      out += lowerReact(inner, note, true);
     } else {
       out += `{{ ${inner} }}`;
     }
     i = end + 1;
   }
-  return out;
+  return nested ? out : spellIndexes(out, note);
 }
 
 /** Lower a component's whole return body: attributes first, then structure. */

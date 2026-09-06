@@ -33,24 +33,42 @@ const SLOT = new Set(["ng-content", "slot"]);
  * expressions and handlers. A printer that must respell names does it here
  * rather than walking the shape itself.
  */
-export function mapExpressions(node, fn) {
+export function mapExpressions(node, fn, names = false) {
   if (!node) return node;
   const parts = (ps) => ps.map((p) => (p.expression !== undefined ? { ...p, expression: fn(p.expression) } : p));
+  const walk = (c) => mapExpressions(c, fn, names);
   switch (node.kind) {
     case "text": return { ...node, parts: parts(node.parts) };
-    case "when": return { ...node, test: fn(node.test), children: node.children.map((c) => mapExpressions(c, fn)) };
-    case "each": return { ...node, list: fn(node.list), key: node.key === null || node.key === undefined ? node.key : fn(String(node.key)), children: node.children.map((c) => mapExpressions(c, fn)) };
+    case "when": return { ...node, test: fn(node.test), children: node.children.map(walk) };
+    // A loop's index is a name, not an expression; it is mapped only when asked, by a printer renaming the dialect's $index.
+    case "each": return { ...node, list: fn(node.list), index: names && node.index ? fn(node.index) : node.index, key: node.key === null || node.key === undefined ? node.key : fn(String(node.key)), children: node.children.map(walk) };
     case "html": return { ...node, expression: fn(node.expression) };
     case "element": return {
       ...node,
+      tagExpression: node.tagExpression ? fn(node.tagExpression) : node.tagExpression,
+      model: node.model ? fn(node.model) : node.model,
       attrs: node.attrs.map((a) => (a.kind === "bound" ? { ...a, expression: fn(a.expression) } : a.kind === "template" ? { ...a, parts: parts(a.parts) } : a)),
       classes: node.classes.map((c) => (c.kind === "conditional" ? { ...c, when: fn(c.when) } : c.kind === "expression" ? { ...c, expression: fn(c.expression) } : c)),
       styles: node.styles.map((s) => (s.expression ? { ...s, expression: fn(s.expression) } : s)),
       events: node.events.map((e) => ({ ...e, handler: fn(e.handler) })),
-      children: node.children.map((c) => mapExpressions(c, fn)),
+      children: node.children.map(walk),
     };
-    default: return node.children ? { ...node, children: node.children.map((c) => mapExpressions(c, fn)) } : node;
+    default: return node.children ? { ...node, children: node.children.map(walk) } : node;
   }
+}
+
+/**
+ * The dialect's $index is a name not every target can own: Svelte reads a $ prefix as a store, and Angular declares
+ * $index itself in every loop, so an outer loop's would be shadowed by the inner. The first candidate no read, local
+ * or model of the screen already uses becomes the base, the depth's numeral kept; when every candidate is taken the
+ * first is used and the note says what it shadows.
+ */
+export function indexRename(ir, candidates) {
+  const taken = new Set([...ir.reads, ...ir.locals, ...ir.models.map((m) => m.split(/[.[]/)[0])]);
+  const free = candidates.find((c) => ![...taken].some((t) => new RegExp(`^${c}\\d*$`).test(t)));
+  const base = free ?? candidates[0];
+  if (!free) ir.notes.push(`Every name for the loop index (${candidates.join(", ")}) is already read by this screen; \`${base}\` was used and shadows what it read.`);
+  return (code) => String(code).replace(/(?<![\w$.])\$index(\d*)\b/g, `${base}$1`);
 }
 
 /** The html node an element carries as its only content, or null: the one shape every printer puts on the element itself. */
@@ -188,7 +206,8 @@ export const DIALECTS = {
       return {
         item: m[1],
         list: m[2].trim(),
-        index: /index\s+as\s+([\w$]+)/.exec(value)?.[1] ?? null,
+        // `index as i` and the older `let i = index` name the same thing.
+        index: /index\s+as\s+([\w$]+)/.exec(value)?.[1] ?? /let\s+([\w$]+)\s*=\s*index\b/.exec(value)?.[1] ?? null,
         trackBy: /trackBy\s*:\s*([\w$.]+)/.exec(value)?.[1] ?? null,
       };
     },
@@ -343,10 +362,12 @@ export function buildIr(html, { dialect, components = [] } = {}) {
     if (d.name === "angular") {
       code = code.replace(/\b([\w$]+)\.emit\(/g, (m, name) => `${callback(name)}(`);
     }
-    code = code.replace(/(?:\$parent\.)*\$index\b/g, (m) => {
-      const up = (m.match(/\$parent\./g) ?? []).length;
+    // knockout spells the same two things $index() and $parentContext.$index(); a read no open loop answers is kept
+    // as written and said, never resolved to a loop it is not in.
+    code = code.replace(/(?:\$parent(?:Context)?\.)*\$index\b(?:\(\))?/g, (m) => {
+      const up = (m.match(/\$parent(?:Context)?\./g) ?? []).length;
       const frame = loops[loops.length - 1 - up];
-      if (!frame) return m;
+      if (!frame) { note(`\`${m}\` names a loop index no loop open at that point provides; it was kept as written.`); return m; }
       frame.used = true;
       return frame.name;
     });
@@ -371,6 +392,7 @@ export function buildIr(html, { dialect, components = [] } = {}) {
     notes,
     models: [...models],
     reads: [...reads].filter((n) => !locals.has(n) && !modelRoots.has(n)).sort(),
+    locals: [...locals].sort(),
     collections: [...lists],
   };
 }
@@ -519,15 +541,18 @@ function convert(node, d, ctx) {
     else ctx.note(`<${node.tag}> switches on nothing readable; its cases render unconditionally.`);
   }
 
-  // A repeated node's children are converted inside its loop: its index has a name of its own, distinct from any
-  // loop around it, so a body reading $index in a nested loop never reads the outer one by accident.
+  // A repeated node is converted inside its own loop: its index has a name of its own, distinct from any loop around
+  // it, so a body reading $index in a nested loop never reads the outer one by accident. Everything a row owns is read
+  // inside the frame: the element, or where the dialect repeats the children the children alone, the html binding, the
+  // key, and a condition the dialect evaluates per row. The list is the one expression read outside it.
   const pre = structural.each !== undefined ? d.loop(structural.each) : null;
   const frame = pre ? { name: pre.index && pre.index !== "$index" ? pre.index : ctx.loops.length ? `$index${ctx.loops.length + 1}` : "$index", used: Boolean(pre.index) } : null;
-  if (frame) ctx.loops.push(frame);
+  const list = pre ? loopList(pre, ctx) : null;
+  if (frame && !d.loopWrapsChildren) ctx.loops.push(frame);
   // Bound html replaces the element's children, never the element: the tag
   // and its attributes are the author's and every target keeps them.
-  const element = buildElement(node, d, ctx, childSw);
-  if (frame) ctx.loops.pop();
+  const element = buildElement(node, d, ctx, childSw, d.loopWrapsChildren ? frame : null);
+  if (frame && d.loopWrapsChildren) ctx.loops.push(frame);
   if (structural.html !== undefined) {
     // A control's value is its content; a model and bound html cannot both be, so the model stays.
     if (element.model) ctx.note(`<${node.tag}> binds both a model and html; a control's value is its content, so the html binding was dropped.`);
@@ -535,6 +560,8 @@ function convert(node, d, ctx) {
   }
 
   let out = element;
+  // The each node built below, so its index can be settled once every expression a row owns has been read.
+  let each = null;
 
   if (structural.each !== undefined) {
     // The frame's name is the loop's index wherever the dialect spelled $index, in the key too.
@@ -544,9 +571,7 @@ function convert(node, d, ctx) {
     } else if (d.loopWrapsChildren && element.kind === "element") {
       if (boundHtml(element)) ctx.note(`<${node.tag}> both repeats its children and binds html per row; the html has no row element of its own, so each row is a div carrying it.`);
       ctx.locals.add(loop.item);
-      if (loop.index) ctx.locals.add(loop.index);
-      const list = loopList(loop, ctx);
-      element.children = [{
+      each = {
         kind: "each",
         list,
         item: loop.item,
@@ -554,12 +579,11 @@ function convert(node, d, ctx) {
         object: Boolean(loop.object),
         key: loop.key ? ctx.expr(loop.key) : loop.index ?? `${loop.item}.id ?? ${loop.item}`,
         children: element.children,
-      }];
+      };
+      element.children = [each];
       out = element;
     } else {
       ctx.locals.add(loop.item);
-      if (loop.index) ctx.locals.add(loop.index);
-      const list = loopList(loop, ctx);
       if (loop.trackBy) ctx.expr(loop.trackBy.split(".")[0]);
       if (loop.note) ctx.note(loop.note);
       const authored = element.kind === "element" ? element.attrs.find((a) => a.name === "key") : null;
@@ -576,7 +600,7 @@ function convert(node, d, ctx) {
       if (!loop.key && !loop.trackBy && !loop.index && !authored) {
         ctx.note(`<${node.tag}> is repeated without a stable key. It falls back to \`${loop.item}.id\`; give it one if the rows can reorder.`);
       }
-      out = {
+      each = {
         kind: "each",
         list,
         item: loop.item,
@@ -590,6 +614,7 @@ function convert(node, d, ctx) {
           : loop.index ?? `${loop.item}.id ?? ${loop.item}`,
         children: [out],
       };
+      out = each;
     }
   }
 
@@ -598,8 +623,14 @@ function convert(node, d, ctx) {
   // its row exists; outside it would reference a name nothing defines.
   if (structural.when !== undefined && structural.each !== undefined && d.name === "angularjs" && out.kind === "each") {
     out.children = [{ kind: "when", test: ctx.expr(String(structural.when)), line: node.line ?? null, children: out.children }];
-    return out;
   }
+  if (frame) {
+    ctx.loops.pop();
+    // The key or the moved condition may be what read the index; the loop carries its name only once something did.
+    if (each) each.index = frame.used ? frame.name : null;
+    if (each?.index) ctx.locals.add(each.index);
+  }
+  if (structural.when !== undefined && structural.each !== undefined && d.name === "angularjs" && out.kind === "each") return out;
 
   if (structural.when !== undefined) {
     const raw = String(structural.when);
@@ -667,7 +698,7 @@ function literalElement(node, d) {
   };
 }
 
-function buildElement(node, d, ctx, sw = null) {
+function buildElement(node, d, ctx, sw = null, rowFrame = null) {
   const attrs = [];
   const classes = [];
   const styles = [];
@@ -882,8 +913,15 @@ function buildElement(node, d, ctx, sw = null) {
     modelModifiers,
     children: textParts ? [{ kind: "text", parts: textParts }]
       : optionsLoop ? [optionsLoop]
-      : convertList(node.children, d, ctx, sw),
+      : rows(rowFrame, ctx, () => convertList(node.children, d, ctx, sw)),
   };
+}
+
+/** Where a dialect repeats an element's children rather than the element, only the children are inside the loop. */
+function rows(frame, ctx, convert) {
+  if (!frame) return convert();
+  ctx.loops.push(frame);
+  try { return convert(); } finally { ctx.loops.pop(); }
 }
 
 export function interpolate(text, expr) {

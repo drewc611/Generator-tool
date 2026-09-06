@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and twenty nine features across one hundred and forty four phases. The statuses are
+Six hundred and thirty features across one hundred and forty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2446,14 +2446,19 @@ A review pass over the two new readers, each finding fixed with the input that e
 **629. Every loop's index is one name in the IR, $parent.$index is the loop above, and Svelte's index is not a store** 🔨
 The dialect spells every loop's index `$index` and the loop above it `$parent.$index`, and every printer named each level `$index`, so a nested loop shadowed the outer and a body reading the outer index read the inner one, a wrong value that looked right in every target at once. The IR now converts a repeated node's children inside a frame for its loop, with a name of its own, `$index` for the outermost and `$index2`, `$index3` beneath, resolves a body's `$index` to the innermost frame and each `$parent.` to the frame above, spells the key the same way, and carries the index only when the loop named one or the body read it, so a body reading `$index` under a loop that tracked nothing gets its index where before the name reached the port unbound. An authored index name is kept as the frame's own. Svelte reserves a `$` prefixed name for a store subscription, so its printer spells `$index` and `$index2` as `index` and `index2` throughout the loop's subtree, through one expression walker in the IR that the Lit printer now rides too instead of its own copy. test/loopindex.test.js holds the IR, four printers and an EJS grid through the pipeline.
 
+## Phase 145: the eighteenth review pass
+
+**630. The loop frame stays open for everything a row owns, Angular aliases every index, and a React map's index is spelled by depth** 🔨
+A review pass over the nested index change, each finding fixed with the input that exposed it. The frame a loop opened closed before the row's own key, its html binding and the condition AngularJS evaluates per row were read, so `ng-if="$index > 0"` on a repeated row, `track by row.id + '-' + $index` and a bound html reading `$index` each resolved to the loop above or to nothing; every expression a row owns is now read inside its loop, the list alone outside it, and the loop takes its index name once the key or the moved condition turns out to be what read it. Where knockout repeats the children the element's own attributes are outside the rows and were inside; they are outside. knockout spells the same two things `$index()` and `$parentContext.$index()`, and neither was read; both are. A `$parent.$index` beyond the loops open was silently left; a read no open loop answers is kept as written and said. Angular declares `$index` itself in every `@for`, so a nested loop's `$index2` was undeclared and an outer `$index` read inside the inner loop was the inner's; every index is a `let` alias of Angular's own, named through the same rename Svelte uses, which now picks the first of index, idx and nth the screen does not already read rather than colliding with a prop named index, and the block reader carries `let i = $index` back as `index as i` so the emitted Angular reads back byte for byte. Lit's `repeat` calls its key function with the index too, so a key reading it has it. `mapExpressions` skipped an element's dynamic tag and its model; it maps both. A Svelte model indexed into a collection, `vals[$index]`, was bound to a name mangled from it; it binds `vals[idx]` and declares the collection. And the React reader named a map index that was not spelled `$index` and left it as written, so a body reading `i` reached the port reading a prop that does not exist; each row carries the name its map gave the index until one pass over the finished markup spells every read by how many loops up it lives, `$index` in its own rows and `$parent.$index` in the rows below, in code only, copy and static attribute values never touched, and a read inside a template string named rather than rewritten. test/loopindex.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 582 |
+| new in this branch | 583 |
 | planned | 3 |
-| total | 629 |
+| total | 630 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

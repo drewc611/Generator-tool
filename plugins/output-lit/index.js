@@ -82,7 +82,9 @@ function print(node, depth, scope = null) {
     }
     case "each": {
       const inner = node.children.map((c) => print(c, depth + 1, scope)).filter(Boolean).join("\n");
-      return `${indent}\${repeat(${node.list} ?? [], (${node.item}) => ${node.key}, (${node.item}${node.index ? `, ${node.index}` : ""}) => html\`\n${inner}\n${indent}\`)}`;
+      // repeat calls the key function with the item and the index, so a key that reads the index has it under its name.
+      const params = `${node.item}${node.index ? `, ${node.index}` : ""}`;
+      return `${indent}\${repeat(${node.list} ?? [], (${params}) => ${node.key}, (${params}) => html\`\n${inner}\n${indent}\`)}`;
     }
     case "element": {
       if (!node.tag) return node.children.map((c) => print(c, depth, scope)).filter(Boolean).join("\n");
