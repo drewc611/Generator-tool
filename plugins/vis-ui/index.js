@@ -1,9 +1,13 @@
 import { createServer } from "node:http";
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readdir, readFile, mkdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, extname, join, resolve, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { pascal } from "../dsp-ir/emit.js";
+import { RERUN_FLAGS, intakePath, rerunOptions, rerunPatch, siteUrl } from "./lib.js";
+import { fetchForRun } from "../input-fetch/index.js";
+import { readZip } from "./zip.js";
+import { readAsar } from "../input-asar/asar.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -221,8 +225,83 @@ function within(base, requested) {
   return rel && !rel.startsWith("..") && !rel.startsWith(sep) ? full : null;
 }
 
-export async function serve({ outDir, shotsDir, port = 4321, log = console, rerun = null }) {
+/** A request body up to a limit, or a 413 shaped error past it. */
+function readBody(req, limit) {
+  return new Promise((done, fail) => {
+    const chunks = [];
+    let size = 0;
+    req.on("data", (c) => {
+      size += c.length;
+      if (size > limit) { const err = new Error(`the body is over ${limit} bytes`); err.status = 413; req.destroy(); fail(err); return; }
+      chunks.push(c);
+    });
+    req.on("end", () => done(Buffer.concat(chunks)));
+    req.on("error", fail);
+  });
+}
+
+/**
+ * The console's intake: what a person dropped on it, written under the run's
+ * own sidecar directory and never into the port. A rerun pointed at it reads
+ * exactly those files, so an executable, a screenshot or a folder of old pages
+ * becomes a port without a path typed anywhere. The server hands bytes here
+ * and writes nothing itself.
+ */
+export function createIntake(dir) {
+  const list = async (at = dir, base = "") => {
+    const out = [];
+    for (const e of await readdir(at, { withFileTypes: true }).catch(() => [])) {
+      const rel = base ? `${base}/${e.name}` : e.name;
+      if (e.isDirectory()) out.push(...(await list(join(at, e.name), rel)));
+      else out.push({ path: rel, bytes: (await stat(join(at, e.name))).size });
+    }
+    return out.sort((a, b) => a.path.localeCompare(b.path));
+  };
+  const place = async (rel, bytes) => {
+    const clean = intakePath(rel);
+    const target = clean ? within(dir, clean) : null;
+    if (!target) return false;
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, bytes);
+    return true;
+  };
+  return {
+    dir,
+    list: () => list(),
+    /** A file lands as named; an archive is unpacked under its own name, every entry held to the same path rule. */
+    async put(rel, bytes) {
+      const refused = [];
+      // A zip or an Electron asar: both are a folder in one file, and both land as that folder.
+      if (/\.(zip|asar)$/i.test(rel)) {
+        const { entries, error } = /\.zip$/i.test(rel) ? readZip(bytes) : readAsar(bytes);
+        if (error) refused.push({ entry: rel, reason: error });
+        // Two entries that fold onto one path keep the first; a file standing where a folder is needed is a refusal, never a thrown drop.
+        const landed = new Map();
+        for (const entry of entries ?? []) {
+          if (entry.directory) continue;
+          const got = entry.bytes();
+          if (got.error) { refused.push({ entry: entry.name, reason: got.error }); continue; }
+          const at = `${rel.replace(/\.(zip|asar)$/i, "")}/${entry.name.replace(/^\/+/, "")}`;
+          const folded = intakePath(at);
+          if (folded && landed.has(folded)) { refused.push({ entry: entry.name, reason: `another entry, ${landed.get(folded)}, already landed at ${folded}` }); continue; }
+          try {
+            if (!(await place(at, got.bytes))) { refused.push({ entry: entry.name, reason: "the path climbs out of the intake" }); continue; }
+          } catch (err) { refused.push({ entry: entry.name, reason: `could not be written (${err.code ?? err.message})` }); continue; }
+          landed.set(folded, entry.name);
+        }
+      } else if (!(await place(rel, bytes))) {
+        throw new Error("a file may only land inside the intake");
+      }
+      return { files: await list(), refused };
+    },
+    async clear() { await rm(dir, { recursive: true, force: true }); },
+  };
+}
+
+export async function serve({ outDir, shotsDir, port = 4321, log = console, rerun = null, intake = null }) {
   const runPath = join(outDir, ".portamp", "run.json");
+  // The screenshots directory may move with the run (an intake rerun reads the intake), so it is asked for each time.
+  const shotsAt = () => (typeof shotsDir === "function" ? shotsDir() : shotsDir);
   const shell = await readFile(join(here, "app.html"), "utf8");
 
   const server = createServer(async (req, res) => {
@@ -269,12 +348,49 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         if (!rerun) return send(501, TYPES[".json"], '{"error":"this server was started without a way to re run"}');
         const started = Date.now();
         try {
-          await rerun();
+          // The request may name the source (the intake, or the tree the command was given) and the offered flags.
+          const text = (await readBody(req, 65536)).toString("utf8");
+          await rerun(rerunOptions(text ? JSON.parse(text) : {}));
           return send(200, TYPES[".json"], JSON.stringify({ ok: true, ms: Date.now() - started }));
         } catch (err) {
           // A policy stop is a result, not a crash. The UI shows it.
           return send(200, TYPES[".json"], JSON.stringify({ ok: false, error: err.message, ms: Date.now() - started }));
         }
+      }
+      // What a person handed the console lands in the intake the command owns; this server writes nothing itself,
+      // and the port's own files are never the target.
+      if (url.pathname === "/intake" && req.method === "POST") {
+        if (!intake) return send(501, TYPES[".json"], '{"error":"this server was started without an intake"}');
+        const rel = intakePath(url.searchParams.get("path") ?? "");
+        if (!rel) return send(400, TYPES[".json"], '{"error":"the path must be a relative file path with no . or .. segment"}');
+        let bytes;
+        try { bytes = await readBody(req, 256 * 1024 * 1024); } catch (err) { return send(err.status ?? 500, TYPES[".json"], JSON.stringify({ error: err.message })); }
+        const put = await intake.put(rel, bytes);
+        return send(200, TYPES[".json"], JSON.stringify({ ok: true, path: rel, files: put.files.length, refused: put.refused }));
+      }
+      // A site address: the intake copies it through the fetch command's own gates (an attestation on disk,
+      // --allow-live, the attested domains), so a URL typed into the page can do nothing the command line could not.
+      if (url.pathname === "/intake/fetch" && req.method === "POST") {
+        if (!intake?.fetch) return send(501, TYPES[".json"], '{"error":"this server was started without an intake that can copy a site"}');
+        let asked;
+        try { asked = JSON.parse((await readBody(req, 65536)).toString("utf8") || "{}"); } catch (err) { return send(400, TYPES[".json"], JSON.stringify({ error: `not json: ${err.message}` })); }
+        const target = siteUrl(asked.url);
+        if (!target) return send(400, TYPES[".json"], '{"error":"the url must be http or https"}');
+        try {
+          const manifest = await intake.fetch(target);
+          return send(200, TYPES[".json"], JSON.stringify({ ok: true, pages: manifest.pages.length, assets: manifest.assets.length, skipped: manifest.skipped.length, dir: manifest.dir }));
+        } catch (err) {
+          // A refusal is a result the page shows, in the policy's own words; nothing about it is softened here.
+          return send(403, TYPES[".json"], JSON.stringify({ ok: false, error: err.message }));
+        }
+      }
+      if (url.pathname === "/intake" && req.method === "DELETE") {
+        if (!intake) return send(501, TYPES[".json"], '{"error":"this server was started without an intake"}');
+        await intake.clear();
+        return send(200, TYPES[".json"], '{"ok":true}');
+      }
+      if (url.pathname === "/intake.json") {
+        return send(200, TYPES[".json"], JSON.stringify(intake ? { dir: intake.dir, files: await intake.list() } : { dir: null, files: [] }));
       }
       // The page polls this every few seconds; the timestamp is the version,
       // so an unchanged run costs a 304 instead of the whole document.
@@ -309,9 +425,15 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         const raw = await readFile(join(outDir, ".portamp", "history.jsonl"), "utf8").catch(() => "");
         return send(200, TYPES[".json"], JSON.stringify(raw.split("\n").filter(Boolean).map((line) => JSON.parse(line))));
       }
+      // The run before this one, kept one generation deep, so the console
+      // can hold two runs side by side; "null" is a first run, not an error.
+      if (url.pathname === "/run.previous.json") {
+        const prev = await readFile(join(outDir, ".portamp", "run.previous.json"), "utf8").catch(() => null);
+        return send(200, TYPES[".json"], prev ?? "null");
+      }
 
       if (url.pathname.startsWith("/shots/")) {
-        const file = within(shotsDir, decodeURIComponent(url.pathname.slice(7)));
+        const file = within(shotsAt(), decodeURIComponent(url.pathname.slice(7)));
         if (!file) return send(403, TYPES[".json"], '{"error":"outside the shots directory"}');
         // Read the file before answering. Writing the header first and then
         // discovering the stream failed leaves no way to say so.
@@ -398,8 +520,8 @@ export default {
 
   commands: {
     ui: {
-      describe: "serve the last run on 127.0.0.1; --watch reruns on change",
-      async run({ config, log, args, runPipeline }) {
+      describe: "serve the last run on 127.0.0.1; drop an .exe, a photo, a screenshot or a folder on it to port that, or photograph a screen from a phone; --watch reruns on change",
+      async run({ config, log, args, policy, runPipeline }) {
         const runPath = join(config.out, ".portamp", "run.json");
         const already = await readFile(runPath, "utf8").then(() => true).catch(() => false);
 
@@ -409,12 +531,30 @@ export default {
           log.info("serving the last run. Pass --fresh to run the pipeline again.\n");
         }
 
+        // A rerun from the console may point the run at the intake and press an offered flag. The core reads the
+        // config when a run starts, so the command the config was handed to is what changes it: a pressed flag
+        // rides on top of the command line's, and the tree, screenshots and flags it was started with come back
+        // for every rerun that does not ask otherwise, the watch's included.
+        const intake = createIntake(join(config.out, ".portamp", "intake"));
+        // A site the page asks for lands in the intake under its host, through the same gates as `portamp fetch`.
+        intake.fetch = async (target) => {
+          const host = new URL(target).host.replace(/[^\w.-]/g, "_");
+          const manifest = await fetchForRun({ url: target, dir: join(intake.dir, `site-${host}`), policy, log, depth: 2, maxPages: 50 });
+          manifest.dir = `site-${host}`;
+          return manifest;
+        };
+        const original = { src: config.src, shots: config.shots, flags: Object.fromEntries(RERUN_FLAGS.map((f) => [f, config[f]])) };
+        const rerun = async (options = {}) => {
+          Object.assign(config, rerunPatch(original, intake.dir, rerunOptions(options)));
+          return runPipeline();
+        };
         const { server, address } = await serve({
           outDir: config.out,
-          shotsDir: config.shots,
+          shotsDir: () => config.shots,
           port: Number(args.port) || 4321,
           log,
-          rerun: runPipeline,
+          rerun,
+          intake,
         });
         if (!openBrowser(address)) log.info("could not open a browser, open that address yourself");
 
@@ -431,7 +571,7 @@ export default {
             if (running) { queued = true; return; }
             running = true;
             try {
-              const ctx = await runPipeline();
+              const ctx = await rerun();
               log.info(`${new Date().toLocaleTimeString()}  ${what}: ${ctx.written.length} file(s), ${ctx.report.unverified.length} unverified`);
             } catch (err) {
               log.error(`${what}: ${err.message}`);
@@ -468,6 +608,12 @@ export default {
       // A dry run leaves no trace on disk, this sidecar included.
       if (ctx.config.dryRun) return log.debug("dry run; run.json not written");
       await mkdir(dirname(target), { recursive: true });
+      // The previous run survives one generation, so the console can put two
+      // runs side by side: what changed, what got worse, which notes closed.
+      const previous = await readFile(target, "utf8").catch(() => null);
+      if (previous !== null) {
+        await writeFile(join(ctx.config.out, ".portamp", "run.previous.json"), previous, "utf8");
+      }
       await writeFile(target, JSON.stringify(run, null, 2) + "\n", "utf8");
       log.info(
         `run.json written, ${run.plugins.length} plugin(s), ${run.screens.length} screen(s), ` +

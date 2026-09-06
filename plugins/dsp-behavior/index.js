@@ -1,7 +1,32 @@
+import { readFile } from "node:fs/promises";
 import { buildModel } from "./model.js";
 
 const slug = (text) =>
   String(text).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "screen";
+
+/**
+ * The races the legacy code already fought and won. A debounce or a
+ * cancellation in the source is a bug somebody hit, fixed, and never wrote
+ * down; a port that drops it reintroduces the bug with no history to warn
+ * anyone. Named where they stand so the port keeps them on purpose.
+ */
+const RACE_SIGNS = [
+  { kind: "debounce", re: /debounceTime\s*\(\s*(\d+)/, means: (m) => `input debounced ${m[1]}ms with debounceTime; typing faster than that must not fire requests` },
+  { kind: "debounce", re: /clearTimeout\s*\([\s\S]{0,160}?setTimeout\s*\(/, means: () => "a hand rolled debounce (clearTimeout, then setTimeout); the port needs the same restraint" },
+  { kind: "cancellation", re: /\bswitchMap\s*\(/, means: () => "switchMap drops the stale request when a new one starts; without it, answers can arrive out of order" },
+  { kind: "cancellation", re: /\bexhaustMap\s*\(/, means: () => "exhaustMap ignores triggers while a request is in flight; a port without it double submits" },
+  { kind: "cancellation", re: /\bAbortController\b/, means: () => "an AbortController cancels in flight fetches; the generated client accepts a signal for the same reason" },
+  { kind: "teardown", re: /\btakeUntil\s*\(/, means: () => "takeUntil tears streams down on destroy; the port's effects need the same cleanup" },
+];
+
+export function readRaces(text, rel) {
+  const out = [];
+  for (const sign of RACE_SIGNS) {
+    const m = sign.re.exec(text);
+    if (m) out.push({ kind: sign.kind, file: rel, means: sign.means(m) });
+  }
+  return out;
+}
 
 /**
  * Turns an exploration into the same shape the source readers produce, so
@@ -66,7 +91,33 @@ export default {
       }
     });
 
+    on("plan", async (ctx) => {
+      const races = [];
+      for (const f of ctx.sources.files.filter((f) => /\.(js|ts|jsx|tsx|vue)$/i.test(f.rel) && !/\.min\.|\.spec\.|\.test\./.test(f.rel))) {
+        const text = await readFile(f.path, "utf8").catch(() => "");
+        if (text) races.push(...readRaces(text, f.rel));
+      }
+      if (!races.length) return;
+      ctx.races = races;
+      for (const r of races) {
+        ctx.unverified(`${r.file}: ${r.means}. A race the legacy code already fought; the port must keep the pattern.`);
+      }
+      log.info(`${races.length} race pattern(s) the port must keep`);
+    });
+
     on("emit", async (ctx) => {
+      if (ctx.races?.length) {
+        await ctx.write("RACES.md", [
+          "# The races the legacy code already fought",
+          "",
+          "Each pattern below is a bug somebody hit, fixed, and never wrote",
+          "down. The port keeps the pattern or reintroduces the bug with no",
+          "history to warn anyone.",
+          "",
+          ...ctx.races.map((r) => `- **${r.kind}** in \`${r.file}\`: ${r.means}.`),
+          "",
+        ].join("\n"));
+      }
       if (!ctx.model) return;
       await ctx.write("BEHAVIOR_MODEL.md", render(ctx.model));
     });

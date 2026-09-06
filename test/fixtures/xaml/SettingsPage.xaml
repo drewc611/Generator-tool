@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:res="clr-namespace:Ledger.Mobile.Resources"
+             x:Class="Ledger.Mobile.SettingsPage"
+             Title="Settings">
+  <ScrollView>
+    <VerticalStackLayout Spacing="12" Padding="16">
+      <Label Text="Account" FontAttributes="Bold"/>
+      <Label Text="Email"/>
+      <Entry Placeholder="Email" Keyboard="Email" Text="{Binding Email}"/>
+      <Entry Placeholder="PIN" IsPassword="True" MaxLength="4" Text="{Binding Pin}"/>
+      <Label Text="Currency"/>
+      <Picker Title="Currency" ItemsSource="{Binding Currencies}" SelectedItem="{Binding Currency}"/>
+      <Picker Title="Theme" SelectedIndex="{Binding ThemeIndex}">
+        <Picker.Items>
+          <x:String>Light</x:String>
+          <x:String>Dark</x:String>
+        </Picker.Items>
+      </Picker>
+      <HorizontalStackLayout>
+        <Label Text="Notifications"/>
+        <Switch IsToggled="{Binding Notify}"/>
+      </HorizontalStackLayout>
+      <Slider Minimum="0" Maximum="10" Value="{Binding Limit}"/>
+      <Image Source="logo.png" HeightRequest="48"/>
+      <ActivityIndicator IsRunning="{Binding IsSaving}"/>
+      <Button Text="Save" Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave}"/>
+      <Button Text="{x:Static res:Strings.Reset}" Clicked="Reset_Clicked"/>
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

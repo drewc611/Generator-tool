@@ -1,4 +1,4 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { buildIr, mapExpressions } from "../dsp-ir/ir.js";
 import { identifier, jsString, guardHandler, pascal } from "../dsp-ir/emit.js";
 
 /**
@@ -41,6 +41,10 @@ function attributes(node) {
       const option = own?.kind === "static" ? jsString(own.value) : own?.kind === "bound" ? `(${own.expression})` : null;
       if (option) out.push(`.checked=\${this.${leaf} === ${option}}`, `@change=\${() => { this.${leaf} = ${option}; }}`);
       else out.push(`@change=\${(e) => { this.${leaf} = e.target.value; }}`);
+    } else if (node.modelKind === "select-multiple") {
+      // A multiple select holds an array; the selected options are read from
+      // the event, and each option below says whether it is in the model.
+      out.push(`@change=\${(e) => { this.${leaf} = [...e.target.selectedOptions].map((o) => o.value); }}`);
     } else {
       out.push(`.value=\${this.${leaf}}`, `@input=\${(e) => { this.${leaf} = e.target.value; }}`);
     }
@@ -55,7 +59,7 @@ function attributes(node) {
   return out;
 }
 
-function print(node, depth) {
+function print(node, depth, scope = null) {
   if (!node) return "";
   const indent = pad(depth);
   switch (node.kind) {
@@ -66,25 +70,36 @@ function print(node, depth) {
     }
     case "slot": {
       const name = node.name ? ` name="${node.name.replace(/"/g, "&quot;")}"` : "";
-      const fallback = (node.children ?? []).map((c) => print(c, depth + 1)).filter(Boolean);
+      const fallback = (node.children ?? []).map((c) => print(c, depth + 1, scope)).filter(Boolean);
       if (!fallback.length) return `${indent}<slot${name}></slot>`;
       return [`${indent}<slot${name}>`, ...fallback, `${indent}</slot>`].join("\n");
     }
     case "html": return `${indent}\${unsafeHTML(${node.expression})}`;
-    case "fragment": return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
+    case "fragment": return node.children.map((c) => print(c, depth, scope)).filter(Boolean).join("\n");
     case "when": {
-      const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
+      const inner = node.children.map((c) => print(c, depth + 1, scope)).filter(Boolean).join("\n");
       return `${indent}\${(${node.test}) ? html\`\n${inner}\n${indent}\` : nothing}`;
     }
     case "each": {
-      const inner = node.children.map((c) => print(c, depth + 1)).filter(Boolean).join("\n");
-      return `${indent}\${repeat(${node.list} ?? [], (${node.item}) => ${node.key}, (${node.item}${node.index ? `, ${node.index}` : ""}) => html\`\n${inner}\n${indent}\`)}`;
+      const inner = node.children.map((c) => print(c, depth + 1, scope)).filter(Boolean).join("\n");
+      // repeat calls the key function with the item and the index, so a key that reads the index has it under its name.
+      const params = `${node.item}${node.index ? `, ${node.index}` : ""}`;
+      return `${indent}\${repeat(${node.list} ?? [], (${params}) => ${node.key}, (${params}) => html\`\n${inner}\n${indent}\`)}`;
     }
     case "element": {
-      if (!node.tag) return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
+      if (!node.tag) return node.children.map((c) => print(c, depth, scope)).filter(Boolean).join("\n");
       const props = attributes(node);
+      // Inside a multiple select, an option with a literal value says
+      // whether it is in the model, so the element renders its state.
+      if (scope?.selectModel && node.tag === "option") {
+        const value = node.attrs.find((a) => a.name.toLowerCase() === "value" && a.kind === "static");
+        if (value) props.push(`?selected=\${(this.${scope.selectModel} ?? []).includes(${jsString(value.value)})}`);
+      }
+      const inner = node.modelKind === "select-multiple" && node.model
+        ? { selectModel: node.model.split(".").pop().replace(/[^\w$]/g, "") }
+        : scope;
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = node.children.map((c) => print(c, depth + 1, inner)).filter(Boolean);
       if (!children.length) return `${indent}${open}></${node.tag}>`;
       return [`${indent}${open}>`, ...children, `${indent}</${node.tag}>`].join("\n");
     }
@@ -99,24 +114,7 @@ export function toLit(html, { dialect } = {}) {
   const roots = new Set([...ir.reads, ...ir.models.map((m) => m.split(".")[0])]);
   const withThis = (code) => code.replace(/(^|[^.\w$])([A-Za-z_$][\w$]*)/g, (m, before, name) =>
     roots.has(name) ? `${before}this.${name}` : m);
-  const rewrite = (node) => {
-    if (!node) return node;
-    if (node.kind === "text") return { ...node, parts: node.parts.map((p) => (p.expression !== undefined ? { expression: withThis(p.expression) } : p)) };
-    if (node.kind === "when") return { ...node, test: withThis(node.test), children: node.children.map(rewrite) };
-    if (node.kind === "each") return { ...node, list: withThis(node.list), key: node.key, children: node.children.map(rewrite) };
-    if (node.kind === "html") return { ...node, expression: withThis(node.expression) };
-    if (node.kind === "element") return {
-      ...node,
-      attrs: node.attrs.map((a) => (a.kind === "bound" ? { ...a, expression: withThis(a.expression) } : a.kind === "template" ? { ...a, parts: a.parts.map((p) => (p.expression !== undefined ? { expression: withThis(p.expression) } : p)) } : a)),
-      classes: node.classes.map((c) => (c.kind === "conditional" ? { ...c, when: withThis(c.when) } : c.kind === "expression" ? { ...c, expression: withThis(c.expression) } : c)),
-      styles: node.styles.map((s) => (s.expression ? { ...s, expression: withThis(s.expression) } : s)),
-      events: node.events.map((e) => ({ ...e, handler: withThis(e.handler) })),
-      children: node.children.map(rewrite),
-    };
-    if (node.children) return { ...node, children: node.children.map(rewrite) };
-    return node;
-  };
-  const root = rewrite(ir.root);
+  const root = mapExpressions(ir.root, withThis);
   return { markup: print(root, 3) || `${pad(3)}<!-- nothing to render -->`, ...ir };
 }
 

@@ -27,6 +27,20 @@ export function decodeEntities(value) {
 export function parse(html) {
   const root = { type: "root", children: [] };
   const stack = [root];
+  // Every node remembers the line it started on, so a note about it can say
+  // where it came from instead of only what it is.
+  const breaks = [];
+  for (let i = 0; i < html.length; i += 1) if (html[i] === "\n") breaks.push(i);
+  const lineOf = (index) => {
+    let lo = 0;
+    let hi = breaks.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (breaks[mid] < index) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo + 1;
+  };
   // `--!>` ends a comment too. Treating it as text lets whatever follows a
   // malformed comment be parsed as markup.
   const re = /<!--([\s\S]*?)--!?>|<\/([a-zA-Z][\w:-]*)\s*>|<([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|[^>"'])*?)(\/?)>/g;
@@ -34,16 +48,16 @@ export function parse(html) {
   let match;
 
   const push = (node) => stack[stack.length - 1].children.push(node);
-  const text = (value) => {
-    if (value) push({ type: "text", text: decodeEntities(value) });
+  const text = (value, at) => {
+    if (value) push({ type: "text", text: decodeEntities(value), line: lineOf(at) });
   };
 
   while ((match = re.exec(html))) {
-    text(html.slice(last, match.index));
+    text(html.slice(last, match.index), last);
     last = re.lastIndex;
 
     if (match[1] !== undefined) {
-      push({ type: "comment", text: match[1] });
+      push({ type: "comment", text: match[1], line: lineOf(match.index) });
     } else if (match[2]) {
       // Close the nearest matching open tag. Unbalanced markup closes nothing
       // rather than unwinding the whole document.
@@ -54,12 +68,12 @@ export function parse(html) {
         }
       }
     } else {
-      const node = { type: "element", tag: match[3], attrs: parseAttrs(match[4] ?? ""), children: [] };
+      const node = { type: "element", tag: match[3], attrs: parseAttrs(match[4] ?? ""), children: [], line: lineOf(match.index) };
       push(node);
       if (!match[5] && !VOID.has(node.tag.toLowerCase())) stack.push(node);
     }
   }
-  text(html.slice(last));
+  text(html.slice(last), last);
   return root.children;
 }
 
@@ -97,6 +111,9 @@ export function splitPipes(expression) {
 
 /** Entries of an object literal, or null when it is not one. */
 export function objectLiteralEntries(code) {
+  // A ternary or a call is not an object, and reading one as key: value
+  // pairs turns `late ? 'late' : ''` into a class named `late ? 'late'`.
+  if (!/^\{[\s\S]*\}$/.test(code.trim())) return null;
   const inner = code.trim().replace(/^\{/, "").replace(/\}$/, "");
   const parts = [];
   let depth = 0;

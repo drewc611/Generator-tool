@@ -1,5 +1,53 @@
 import { pixelDiff } from "./pixels.js";
 import { pascal } from "../dsp-ir/emit.js";
+import { buildIr } from "../dsp-ir/ir.js";
+
+/**
+ * The structure diff beside the pixel wipe: a moved div explains a changed
+ * pixel. The recording's element list is compared against the IR of the
+ * emitted screen, by tag counts and by the named interactive controls, and
+ * the differences are said in words. Attributes are not compared; the
+ * recording never carried them, and inventing a comparison would be a
+ * verdict without evidence.
+ */
+export function diffStructure(recordedElements, ir) {
+  const INTERACTIVE = new Set(["button", "a", "input", "select", "textarea"]);
+  const recordedTags = new Map();
+  const recordedControls = [];
+  for (const el of recordedElements ?? []) {
+    const tag = String(el.tag ?? "").toLowerCase();
+    if (!tag) continue;
+    recordedTags.set(tag, (recordedTags.get(tag) ?? 0) + 1);
+    if (INTERACTIVE.has(tag) && el.name) recordedControls.push({ tag, name: String(el.name).trim() });
+  }
+
+  const portedTags = new Map();
+  const portedControls = [];
+  const textOf = (node) => (node.children ?? [])
+    .flatMap((c) => (c.kind === "text" ? c.parts.filter((p) => p.literal !== undefined).map((p) => p.literal) : c.kind === "element" ? [textOf(c)] : []))
+    .join(" ").replace(/\s+/g, " ").trim();
+  const walk = (node) => {
+    if (!node) return;
+    if (node.kind === "element" && node.tag) {
+      portedTags.set(node.tag, (portedTags.get(node.tag) ?? 0) + 1);
+      if (INTERACTIVE.has(node.tag)) {
+        const name = textOf(node);
+        if (name) portedControls.push({ tag: node.tag, name });
+      }
+    }
+    for (const child of node.children ?? []) walk(child);
+  };
+  walk(ir?.root);
+
+  const tagDrift = [];
+  for (const tag of new Set([...recordedTags.keys(), ...portedTags.keys()])) {
+    const was = recordedTags.get(tag) ?? 0;
+    const is = portedTags.get(tag) ?? 0;
+    if (was !== is) tagDrift.push({ tag, recorded: was, ported: is });
+  }
+  const missingControls = recordedControls.filter((r) => !portedControls.some((p) => p.tag === r.tag && p.name.toLowerCase().includes(r.name.toLowerCase())));
+  return { tagDrift, missingControls, recordedControls: recordedControls.length };
+}
 
 
 /**
@@ -37,6 +85,54 @@ export default {
       for (const row of rows.filter((r) => r.skipped)) {
         ctx.unverified(`Pixel diff for ${row.screen} was skipped: ${row.skipped}.`);
       }
+    });
+
+    // The structure diff runs whenever a recording exists: no browser, no
+    // flag, because comparing two lists of elements costs nothing and a
+    // moved div explains a changed pixel better than a percentage does.
+    on("verify", async (ctx) => {
+      const exploration = ctx.sources.exploration;
+      if (!exploration?.screens?.length || !ctx.model?.screens?.length) return;
+      const slugOf = (t) => String(t ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+      const rows = [];
+      for (const rec of exploration.screens) {
+        const named = ctx.model.screens.find((s) => s.id === rec.id);
+        const screen = named ? ctx.screens.find((s) => s.selector === slugOf(named.name)) : null;
+        if (!screen?.template) continue;
+        let ir = null;
+        try { ir = buildIr(screen.template); } catch { continue; }
+        rows.push({ screen: screen.selector, ...diffStructure(rec.elements, ir) });
+      }
+      if (!rows.length) return;
+      ctx.structureDiff = rows;
+      const drifted = rows.filter((r) => r.tagDrift.length || r.missingControls.length);
+      await ctx.write("PARITY_STRUCTURE.md", [
+        "# Structure, recorded against ported",
+        "",
+        "The recording's element list against the IR of each ported screen: tag",
+        "counts and the named interactive controls. A moved div explains a",
+        "changed pixel; a missing button explains a complaint. Attributes are",
+        "not compared, because the recording never carried them.",
+        "",
+        ...rows.flatMap((r) => [
+          `## \`${r.screen}\``,
+          "",
+          r.tagDrift.length
+            ? ["| tag | recorded | ported |", "| --- | --- | --- |", ...r.tagDrift.map((d) => `| \`${d.tag}\` | ${d.recorded} | ${d.ported} |`)].join("\n")
+            : "Tag counts agree.",
+          "",
+          r.missingControls.length
+            ? `Controls the recording shows and the port does not name: ${r.missingControls.map((c) => `\`<${c.tag}> ${c.name}\``).join(", ")}.`
+            : `Every named control the recording shows (${r.recordedControls}) has a namesake in the port.`,
+          "",
+        ]),
+      ].join("\n"));
+      for (const r of drifted) {
+        for (const c of r.missingControls) {
+          ctx.unverified(`Structure: the recording shows a <${c.tag}> named ${JSON.stringify(c.name)} on ${r.screen} and the port does not; a control users had may be gone.`);
+        }
+      }
+      log.info(`structure diff: ${rows.length} screen(s), ${drifted.length} with drift`);
     });
 
     on("verify", async (ctx) => {

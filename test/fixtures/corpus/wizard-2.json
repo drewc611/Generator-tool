@@ -1,0 +1,40 @@
+{
+  "label": "wizard",
+  "html": "<p>Step 3 of 5</p><p>Step</p><input [(ngModel)]=\"card\"><input [(ngModel)]=\"expiry\"><button>Continue</button>",
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/checkout"
+    }
+  ],
+  "model": {
+    "screens": [
+      {
+        "kind": "form"
+      },
+      {
+        "kind": "form"
+      },
+      {
+        "kind": "form"
+      },
+      {
+        "kind": "form"
+      }
+    ],
+    "transitions": [
+      {
+        "from": "a",
+        "to": "b"
+      },
+      {
+        "from": "b",
+        "to": "c"
+      },
+      {
+        "from": "c",
+        "to": "d"
+      }
+    ]
+  }
+}

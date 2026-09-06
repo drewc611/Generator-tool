@@ -1,5 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { securityTotal } from "../vis-security/index.js";
+import { perfTotal } from "../vis-perf/index.js";
+import { leaksTotal } from "../vis-lifecycle/index.js";
 
 /**
  * Two gates, at the two moments they can still do something.
@@ -19,7 +22,7 @@ export default {
       // Binary formats cannot carry a secret these patterns could name, and
       // scanning their bytes decoded as text invents matches. Every format
       // that is text, however obscure, still goes through the gate.
-      const binary = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|otf|eot|mp[34]|webm|ogg|wav|pdf|zip)$/i;
+      const binary = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|otf|eot|mp[34]|webm|ogg|wav|pdf|zip|exe|dll)$/i;
       for (const f of ctx.sources.files) {
         if (binary.test(f.rel)) continue;
         const text = await readFile(f.path, "utf8").catch(() => "");
@@ -94,6 +97,51 @@ export default {
           throw new Error(`${found} accessibility finding(s) against a ceiling of ${max}. A11Y.md names each one; fix them or raise the ceiling knowingly.`);
         }
         log.info(`${found} accessibility finding(s), under the ceiling of ${max}`);
+      }
+
+      // And once more for the trust surface: the security scorecard's count,
+      // capped. The total is reckoned through vis-security's own function from
+      // what the analyzers left at plan, so the gate agrees with the scorecard
+      // and does not depend on which verify handler ran first.
+      const securityCeiling = ctx.config.maxSecurity ?? ctx.config["max-security"];
+      if (securityCeiling !== undefined && securityCeiling !== null && securityCeiling !== false) {
+        const max = Number(securityCeiling);
+        if (!Number.isFinite(max)) throw new Error(`--max-security needs a number, got "${securityCeiling}".`);
+        const found = securityTotal(ctx);
+        if (found > max) {
+          throw new Error(`${found} security item(s) against a ceiling of ${max}. SECURITY_SCORECARD.md names each concern; fix them or raise the ceiling knowingly.`);
+        }
+        log.info(`${found} security item(s), under the ceiling of ${max}`);
+      }
+
+      // And once more for weight and first paint: the performance scorecard's
+      // count, capped, reckoned the same way through vis-perf's own function.
+      // The port's size is not in the count; a byte is not a defect, and
+      // --max-kb already budgets it.
+      const perfCeiling = ctx.config.maxPerf ?? ctx.config["max-perf"];
+      if (perfCeiling !== undefined && perfCeiling !== null && perfCeiling !== false) {
+        const max = Number(perfCeiling);
+        if (!Number.isFinite(max)) throw new Error(`--max-perf needs a number, got "${perfCeiling}".`);
+        const found = perfTotal(ctx);
+        if (found > max) {
+          throw new Error(`${found} performance item(s) against a ceiling of ${max}. PERFORMANCE.md names each concern; fix them or raise the ceiling knowingly.`);
+        }
+        log.info(`${found} performance item(s), under the ceiling of ${max}`);
+      }
+
+      // And once more for what the port has to tear down: the lifecycle
+      // scorecard's count, capped, reckoned the same way through vis-lifecycle's
+      // own function. A storage write is not in the count; it is a persistence
+      // surface, not a teardown the old page forgot.
+      const leaksCeiling = ctx.config.maxLeaks ?? ctx.config["max-leaks"];
+      if (leaksCeiling !== undefined && leaksCeiling !== null && leaksCeiling !== false) {
+        const max = Number(leaksCeiling);
+        if (!Number.isFinite(max)) throw new Error(`--max-leaks needs a number, got "${leaksCeiling}".`);
+        const found = leaksTotal(ctx);
+        if (found > max) {
+          throw new Error(`${found} leak(s) against a ceiling of ${max}. LIFECYCLE_SCORECARD.md names each axis; fix them or raise the ceiling knowingly.`);
+        }
+        log.info(`${found} leak(s), under the ceiling of ${max}`);
       }
 
       const ceiling = ctx.config.maxUnverified ?? ctx.config["max-unverified"];

@@ -46,6 +46,14 @@ export default {
           if (err.code !== "EEXIST") throw err;
           log.info(`wrote plugins/${name}/index.js (the test file already existed)`);
         }
+        // The whole kit: the docs beside the code and a fixture the test can
+        // run against, so an author starts from a working loop, not a stub.
+        const skip = (err) => { if (err.code !== "EEXIST") throw err; };
+        await writeFile(join(dir, "README.md"), DOCS(name, cls), { encoding: "utf8", flag: "wx" }).catch(skip);
+        const fixtureDir = join(process.cwd(), "test", "fixtures", name);
+        await mkdir(fixtureDir, { recursive: true });
+        await writeFile(join(fixtureDir, "sample.html"), FIXTURE(name), { encoding: "utf8", flag: "wx" }).catch(skip);
+        log.info(`docs at plugins/${name}/README.md, a fixture at test/fixtures/${name}/`);
         log.info("It loads on the next run; discovery needs no registration. Now make it honest.");
       },
     },
@@ -108,6 +116,37 @@ export default {
 ${(BODIES[cls] ?? BODIES.general).replaceAll("${subject}", name.split("-").slice(1).join("-"))}
   },
 };
+`;
+
+const DOCS = (name, cls) => `# ${name}
+
+What this plugin knows that the core must not. One paragraph on the claim,
+before any code detail: what it reads, what it derives, and what it refuses
+to guess at.
+
+## Contract
+
+- Class \`${cls}\`, so it subscribes where that class belongs in the pipeline.
+- Anything it cannot determine calls \`ctx.unverified(...)\` and continues.
+- No network without asking the policy object first.
+- One log line per stage.
+
+## Fixture
+
+\`test/fixtures/${name}/\` holds a miniature this plugin's test runs against.
+Grow the fixture with every claim the plugin makes; a claim without a
+fixture is a claim the suite cannot hold.
+`;
+
+const FIXTURE = (name) => `<!DOCTYPE html>
+<html>
+<head><title>${name} fixture</title></head>
+<body>
+<p>The miniature test/fixtures/${name}/ exists so the plugin's claims have
+something to be proven against. Replace this with the smallest input that
+exercises what the plugin reads.</p>
+</body>
+</html>
 `;
 
 const TEST = (name) => `import assert from "node:assert/strict";

@@ -1,0 +1,29 @@
+<dom-module id="user-card">
+  <template>
+    <h3>[[user.name]]</h3>
+    <img src="[[user.avatar]]" alt="avatar">
+    <template is="dom-if" if="[[user.admin]]">
+      <span class="badge">admin</span>
+    </template>
+    <ul>
+      <template is="dom-repeat" items="[[user.roles]]" as="role">
+        <li>[[role]]</li>
+      </template>
+    </ul>
+    <button on-tap="save">Save [[user.name]]</button>
+    <input value="{{query}}">
+  </template>
+  <script>
+    Polymer({
+      is: "user-card",
+      properties: {
+        user: { type: Object },
+        query: { type: String, value: "" }
+      },
+      save: function () {
+        this.dispatchEvent(new CustomEvent("saved"));
+        fetch("/api/users/save");
+      }
+    });
+  </script>
+</dom-module>

@@ -14,12 +14,14 @@
   /* Original artwork in the late 90s skinned player genre. Nothing here is
      traced from, or copied out of, any real player skin. */
   :root {
-    --chassis-hi: #3f3f47; --chassis-lo: #1d1d22; --face: #2b2b31;
-    --edge-hi: #63636f; --edge-lo: #0a0a0c;
-    --lcd: #04120b; --lcd-edge: #0d3a24;
+    /* Black chassis with a dark blue tint; the phosphor greens and amber stay
+       as the readout so the panel reads black and navy with a lit display. */
+    --chassis-hi: #1b2740; --chassis-lo: #070b16; --face: #0d1526;
+    --edge-hi: #2c3f60; --edge-lo: #02030a;
+    --lcd: #030a18; --lcd-edge: #123057;
     --p-hi: #7df3b0; --p-mid: #3fbf7f; --p-dim: #237a52;
     --amber: #f0a830; --amber-dim: #9c6c1d;
-    --sel: #1b3d6b; --ink: #d7d7de; --muted: #8b8b96; --faint: #5d5d68;
+    --sel: #16305c; --ink: #d5dbe8; --muted: #7f8aa3; --faint: #4f5a72;
     --input: #6ee7a8; --dsp: #7dd3fc; --output: #f0a830; --vis: #c4b5fd; --general: #fb7185;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   }
@@ -27,7 +29,7 @@
   html, body { height: 100%; margin: 0; }
   body {
     height: 100vh; overflow: hidden; padding: 5px; gap: 5px;
-    background: #101013; color: var(--ink);
+    background: #04060e; color: var(--ink);
     font: 11px/1.45 var(--mono); letter-spacing: .2px;
     display: grid; grid-template-columns: 276px 1fr;
     grid-template-rows: 42px 128px minmax(0, 1fr) minmax(0, 168px);
@@ -116,6 +118,13 @@
   .key:focus-visible { outline: 1px dotted var(--amber); outline-offset: 1px; }
   .run { flex: 0 0 62px; color: var(--p-hi); }
   .run.busy { color: var(--amber); }
+  /* the intake: what a person drops on the console is what the next run reads */
+  .intake { display: flex; flex-direction: column; gap: 3px; padding: 4px 0 0; flex: none; }
+  .drop { display: block; border: 1px dashed var(--p-dim); color: var(--muted); font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase; padding: 6px; text-align: center; cursor: pointer; }
+  .drop.over, .drop:hover { border-color: var(--amber); color: var(--amber); }
+  .drop input { display: none; }
+  .flags { display: flex; gap: 3px; flex-wrap: wrap; }
+  .flags .key { flex: 1 0 30%; }
 
   /* rack and screens: the playlist */
   .rack { grid-area: rack; }
@@ -226,8 +235,12 @@
   .theme-key { flex: 0 0 auto; align-self: center; padding: 4px 8px; }
   .sort-key { flex: 0 0 auto; padding: 2px 6px; font-size: 8px; margin-right: 6px; }
   .offline { color: var(--amber); }
-  .spark-box { width: 70px; }
+  .spark-box { width: 70px; position: relative; }
   #spark polyline { fill: none; stroke: var(--amber); stroke-width: 1.5; }
+  /* The run comparison drops below the head as a tooltip so its list never overruns the header bar. */
+  #compare { position: absolute; top: calc(100% + 5px); right: 0; z-index: 40; display: none; width: 214px; text-align: left; padding: 6px 9px; font-size: 9.5px; line-height: 1.5; color: var(--p-dim); background: var(--face); border: 1px solid var(--edge-hi); border-radius: 3px; box-shadow: 0 6px 18px #000a; white-space: normal; }
+  .spark-box:hover #compare[data-ready], .spark-box:focus-within #compare[data-ready] { display: block; }
+  #compare h3 { margin: 0 0 4px; font-size: 8.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--faint); } #compare ul { margin: 0; padding-left: 14px; } #compare li { color: var(--p-hi); } #compare p { margin: 3px 0 0; }
 
   /* the notes deck is tabbed: signals, files, reports */
   .tabs { gap: 3px; justify-content: flex-start; }
@@ -277,8 +290,9 @@
     <div class="sub" id="now-sub"></div>
     <div class="sub offline" id="offline" role="status"></div>
   </div>
-  <div class="sunk gauge spark-box" title="unverified per run, oldest first">
+  <div class="sunk gauge spark-box" tabindex="0" title="unverified per run, oldest first; hover for the change since the previous run">
     <svg id="spark" width="54" height="16" viewBox="0 0 54 16" aria-label="unverified count per run, oldest first"><polyline id="spark-line" points="" /></svg>
+    <aside id="compare" aria-label="comparison with the previous run"></aside>
     <span>trend</span>
   </div>
   <div class="gauges">
@@ -304,6 +318,33 @@
   <div class="transport">
     <button class="key run" id="run" title="Run the pipeline again">▶ run</button>
     <button class="key" id="all" aria-pressed="true">all stages</button>
+  </div>
+  <div class="intake" id="intake">
+    <label class="drop" id="drop" tabindex="0">drop an .exe, a photo, a screenshot or a folder of old pages here, or click to pick files
+      <input type="file" id="pick" multiple aria-label="pick files for the intake">
+      <input type="file" id="pick-dir" webkitdirectory aria-label="pick a folder for the intake">
+      <input type="file" id="camera" accept="image/*" capture="environment" aria-label="take a picture of a screen or a page to port">
+    </label>
+    <div class="flags" id="flags" aria-label="flags for the next run">
+      <button class="key" data-flag="transformer" aria-pressed="false" title="Draw the transformer's attention (ATTENTION.md)">transformer</button>
+      <button class="key" data-flag="train" aria-pressed="false" title="Train it on its fixed task (TRAINING.md)">train</button>
+      <button class="key" data-flag="train-reverse" aria-pressed="false" title="Train and grade reversal on held out data (REVERSE.md)">reverse</button>
+      <button class="key" data-flag="train-sort" aria-pressed="false" title="Train and grade sorting on held out data (SORT.md)">sort</button>
+      <button class="key" data-flag="vue" aria-pressed="false" title="Emit Vue beside React">vue</button>
+      <button class="key" data-flag="svelte" aria-pressed="false" title="Emit Svelte beside React">svelte</button>
+      <button class="key" data-flag="photo" aria-pressed="false" title="Read every picture in the intake as a screen by shape (PHOTO.md)">photo</button>
+    </div>
+    <div class="transport">
+      <input id="site-url" type="url" placeholder="https://old.example.com — copy a site (needs --allow-live and an attestation)" aria-label="site address to copy into the intake" style="flex:1;min-width:0;font:inherit;font-size:9px;padding:3px 5px;background:#0d1a14;color:var(--p-hi);border:1px solid var(--edge-lo)">
+      <button class="key" id="fetch-site" title="Copy the site's pages into the intake, through the same gates as portamp fetch">copy site</button>
+    </div>
+    <div class="transport">
+      <button class="key run" id="port-intake" title="Run the pipeline over what was dropped">▶ port intake</button>
+      <button class="key" id="camera-key" title="Take a picture of a screen, a sketch or a paper form; it is read as a screen by shape and the words are left for you to fill">📷 photograph</button>
+      <button class="key" id="pick-dir-key" title="Pick a whole folder">folder</button>
+      <button class="key" id="clear-intake" title="Empty the intake">clear</button>
+    </div>
+    <div class="sub" id="intake-status" role="status" aria-live="polite"></div>
   </div>
 </section>
 
@@ -374,7 +415,7 @@
 <script type="module">
 import {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
-  sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn,
+  sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn, compareRuns,
 } from "/lib.js";
 
 const $ = (id) => document.getElementById(id);
@@ -780,15 +821,20 @@ $("rk-sort").addEventListener("click", () => {
 $("wipe").addEventListener("input", applyWipe);
 $("all").addEventListener("click", () => selectStage(null));
 
-// Running the tool again is the one thing this window is allowed to cause.
-async function rerun() {
+// Running the tool again is the one thing this window is allowed to cause, over the tree it was started with or
+// over the intake, with the flags pressed below.
+// Only a pressed key travels: an unpressed one leaves the command line's own value in force.
+const flagsOn = () => Object.fromEntries([...document.querySelectorAll("#flags .key")].filter((k) => k.getAttribute("aria-pressed") === "true").map((k) => [k.dataset.flag, true]));
+document.querySelectorAll("#flags .key").forEach((k) => k.addEventListener("click", () => k.setAttribute("aria-pressed", String(k.getAttribute("aria-pressed") !== "true"))));
+async function rerun(options = {}) {
   const button = $("run");
   if (button.classList.contains("busy")) return;
   button.classList.add("busy");
   button.textContent = "· running";
-  $("now").textContent = "running the pipeline";
+  $("now").textContent = options.source === "intake" ? "running the pipeline over the intake" : "running the pipeline";
   try {
-    const result = await fetch("/rerun", { method: "POST" }).then((r) => r.json());
+    const body = JSON.stringify({ source: options.source ?? "src", dir: options.dir ?? null, flags: { ...flagsOn(), ...(options.flags ?? {}) } });
+    const result = await fetch("/rerun", { method: "POST", headers: { "Content-Type": "application/json" }, body }).then((r) => r.json());
     if (!result.ok) {
       $("now").textContent = "stopped: " + (result.error ?? "unknown").split("\n")[0];
       $("lamp-unver").classList.add("warn");
@@ -803,11 +849,66 @@ async function rerun() {
     button.textContent = "▶ run";
   }
 }
-$("run").addEventListener("click", rerun);
+$("run").addEventListener("click", () => rerun());
+
+// What a person hands the console goes to its intake, folders walked, then the pipeline runs over exactly that.
+async function filesOf(transfer) {
+  const out = [];
+  const walk = (entry, base) => new Promise((done) => {
+    if (entry.isFile) entry.file((f) => { out.push({ file: f, path: base + f.name }); done(); }, done);
+    else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const next = () => reader.readEntries(async (list) => { if (!list.length) return done(); for (const e of list) await walk(e, base + entry.name + "/"); next(); }, done);
+      next();
+    } else done();
+  });
+  const entries = [...(transfer.items ?? [])].map((i) => i.webkitGetAsEntry?.()).filter(Boolean);
+  if (!entries.length) return [...transfer.files].map((f) => ({ file: f, path: f.webkitRelativePath || f.name }));
+  for (const e of entries) await walk(e, "");
+  return out;
+}
+// Pictures dropped by themselves are screens to read by shape, so the photo flag rides that run without a press.
+const PICTURE = /\.(png|jpe?g)$/i;
+async function intake(items, flags = {}) {
+  const status = $("intake-status");
+  const onlyPictures = items.length > 0 && items.every(({ path }) => PICTURE.test(path));
+  let sent = 0;
+  for (const { file, path } of items) {
+    const r = await fetch("/intake?path=" + encodeURIComponent(path), { method: "POST", body: file }).then((r) => r.json()).catch((err) => ({ error: err.message }));
+    if (!r.ok) { status.textContent = "refused " + path + ": " + (r.error ?? "unknown"); return; }
+    sent += 1;
+    status.textContent = r.files + " file(s) in the intake" + (r.refused?.length ? "; " + r.refused.length + " archive entr(ies) refused: " + r.refused.map((x) => x.entry + " (" + x.reason + ")").join(", ") : "");
+  }
+  if (sent) await rerun({ source: "intake", flags: onlyPictures ? { photo: true, ...flags } : flags });
+}
+const picked = (e) => intake([...e.target.files].map((f) => ({ file: f, path: f.webkitRelativePath || f.name })));
+$("pick").addEventListener("change", picked);
+$("pick-dir").addEventListener("change", picked);
+// A picture taken on the spot lands under its own time, so two in a row are two screens.
+$("camera").addEventListener("change", (e) => intake([...e.target.files].map((f) => ({ file: f, path: "photo-" + new Date().toISOString().replace(/[:.]/g, "-") + (PICTURE.test(f.name) ? f.name.slice(f.name.lastIndexOf(".")) : ".jpg") })), { photo: true }));
+$("camera-key").addEventListener("click", () => $("camera").click());
+$("pick-dir-key").addEventListener("click", () => $("pick-dir").click());
+$("port-intake").addEventListener("click", () => rerun({ source: "intake" }));
+// A site address goes to the server, which hands it to the fetch command's gates; a refusal is shown in its own words.
+$("fetch-site").addEventListener("click", async () => {
+  const status = $("intake-status");
+  const url = $("site-url").value.trim();
+  if (!url) { status.textContent = "type a site address first"; return; }
+  status.textContent = "copying " + url + " into the intake";
+  const r = await fetch("/intake/fetch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) }).then((r) => r.json()).catch((err) => ({ error: err.message }));
+  if (!r.ok) { status.textContent = "refused: " + (r.error ?? "unknown"); return; }
+  status.textContent = r.pages + " page(s) and " + r.assets + " asset(s) copied, " + r.skipped + " skipped (FETCH.md in the intake says why)";
+  await rerun({ source: "intake", dir: r.dir, flags: { site: true } });
+});
+$("clear-intake").addEventListener("click", async () => { await fetch("/intake", { method: "DELETE" }); $("intake-status").textContent = "intake emptied"; });
+const drop = $("drop");
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", async (e) => { e.preventDefault(); drop.classList.remove("over"); intake(await filesOf(e.dataTransfer)); });
 
 function renderAll() {
   renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens();
-  renderEndpoints(); renderUnverified(); renderFiles(); renderReports(); renderTrend();
+  renderEndpoints(); renderUnverified(); renderFiles(); renderReports(); renderTrend(); renderComparison();
 }
 
 // One keymap, decided in lib.js where the suite can read it. Keys inside an
@@ -862,6 +963,21 @@ setInterval(async () => {
     if (await refresh()) $("now-sub").textContent = "refreshed from a newer run";
   } catch { /* the server may be restarting; the next tick asks again */ }
 }, 5000);
+
+// The previous run beside this one, from the one generation the server keeps.
+async function renderComparison() {
+  try {
+    const cmp = compareRuns(run, await fetch("/run.previous.json").then((r) => r.json()));
+    const box = $("compare");
+    if (!cmp || !box) return;
+    const moved = cmp.metrics.filter((m) => m.delta !== 0);
+    box.innerHTML = "<h3>vs the previous run</h3>" +
+      (moved.length ? "<ul>" + moved.map((m) => `<li>${m.name}: ${m.was} → ${m.is}${m.verdict === "level" || m.verdict === "changed" ? "" : ` (${m.verdict})`}</li>`).join("") + "</ul>" : "<p>Nothing moved.</p>") +
+      (cmp.notesClosed.length ? `<p>${cmp.notesClosed.length} note(s) closed.</p>` : "") +
+      (cmp.notesOpened.length ? `<p>${cmp.notesOpened.length} note(s) opened.</p>` : "");
+    box.dataset.ready = "1";
+  } catch { /* no previous run kept yet */ }
+}
 
 // The trend under the readout: the unverified counts of the recorded runs,
 // as a line, with the latest delta in words.

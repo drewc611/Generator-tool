@@ -1,6 +1,7 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { boundHtml, buildIr, indexRename, mapExpressions } from "../dsp-ir/ir.js";
 import { VOID } from "../dsp-ir/parse.js";
 import { singleQuoted } from "../dsp-ir/emit.js";
+import { attrSafe, regexEscape } from "../dsp-ir/text.js";
 
 /**
  * The Angular printer, which closes a loop: portamp reads the old Angular
@@ -14,7 +15,6 @@ import { singleQuoted } from "../dsp-ir/emit.js";
  */
 
 const pad = (depth) => "  ".repeat(depth);
-const attrSafe = (code) => String(code).replace(/"/g, "'");
 
 function classAttribute(classes, out) {
   const literal = classes.filter((c) => c.kind === "literal").map((c) => c.value).join(" ").trim();
@@ -89,14 +89,21 @@ function print(node, depth) {
       if (node.object) {
         return `${indent}@for (entry of ${node.list} | keyvalue; track entry.key) {\n${indent}  @let ${node.index} = entry.key;\n${indent}  @let ${node.item} = entry.value;\n${inner}\n${indent}}`;
       }
-      return `${indent}@for (${node.item} of ${node.list}; track ${node.key}) {\n${inner}\n${indent}}`;
+      // Every @for declares $index of its own, so the loop's index is a let alias of it and the alias never shadows an
+      // outer loop's; in the track expression the alias is not in scope, so there the loop's own index is $index again.
+      const own = node.index ? new RegExp(`(?<![\\w$.])${regexEscape(node.index)}\\b`, "g") : null;
+      const track = own ? String(node.key).replace(own, "$index") : node.key;
+      const alias = node.index ? `; let ${node.index} = $index` : "";
+      return `${indent}@for (${node.item} of ${node.list}; track ${track}${alias}) {\n${inner}\n${indent}}`;
     }
     case "element": {
       if (!node.tag) return node.children.map((c) => print(c, depth)).filter(Boolean).join("\n");
       const props = attributes(node);
+      const html = boundHtml(node);
+      if (html) props.push(`[innerHTML]="${attrSafe(html.expression)}"`);
       const open = `<${node.tag}${props.length ? " " + props.join(" ") : ""}`;
       if (VOID.has(node.tag.toLowerCase())) return `${indent}${open} />`;
-      const children = node.children.map((c) => print(c, depth + 1)).filter(Boolean);
+      const children = html ? [] : node.children.map((c) => print(c, depth + 1)).filter(Boolean);
       if (!children.length) return `${indent}${open}></${node.tag}>`;
       return [`${indent}${open}>`, ...children, `${indent}</${node.tag}>`].join("\n");
     }
@@ -106,5 +113,7 @@ function print(node, depth) {
 
 export function toAngular(html, { dialect } = {}) {
   const ir = buildIr(html, { dialect });
-  return { markup: print(ir.root, 2) || "    <!-- nothing to render -->", ...ir };
+  // The dialect's $index is the name Angular gives every loop's own index; a loop above would be shadowed under it.
+  const root = mapExpressions(ir.root, indexRename(ir, ["index", "idx", "nth"]), true);
+  return { markup: print(root, 2) || "    <!-- nothing to render -->", ...ir };
 }

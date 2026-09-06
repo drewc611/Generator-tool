@@ -1,4 +1,4 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { buildIr, indexRename, mapExpressions } from "../dsp-ir/ir.js";
 import { jsString, guardHandler } from "../dsp-ir/emit.js";
 
 /**
@@ -11,7 +11,17 @@ const pad = (depth) => "  ".repeat(depth);
 const camel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 
-const setterFor = (target) => target.split(".").pop().replace(/[^\w$]/g, "");
+/**
+ * What a model binds and what the component declares for it: the leaf of a dotted path, or for a model indexed into a
+ * collection, `vals[idx]`, the collection's leaf with the index kept, so the binding writes the element it named.
+ */
+export function modelTarget(model) {
+  const bracket = String(model).indexOf("[");
+  if (bracket === -1) return { bind: String(model).split(".").pop().replace(/[^\w$]/g, ""), init: '""' };
+  const root = String(model).slice(0, bracket).split(".").pop().replace(/[^\w$]/g, "");
+  return { bind: root + String(model).slice(bracket), init: "[]" };
+}
+const setterFor = (target) => modelTarget(target).bind;
 
 function classAttribute(classes, out) {
   const literal = classes.filter((c) => c.kind === "literal").map((c) => c.value).join(" ").trim();
@@ -144,7 +154,10 @@ function print(node, depth) {
   }
 }
 
-export function toSvelte(html, { dialect } = {}) {
-  const ir = buildIr(html, { dialect });
-  return { markup: print(ir.root, 1) || "  <!-- nothing to render -->", ...ir };
+export function toSvelte(html, { dialect, components = [] } = {}) {
+  const ir = buildIr(html, { dialect, components });
+  // A $ prefixed name is a store subscription in Svelte, so the dialect's $index and $index2 become index and index2,
+  // or the next name when the screen already reads one of those.
+  const root = mapExpressions(ir.root, indexRename(ir, ["index", "idx", "nth"]), true);
+  return { markup: print(root, 1) || "  <!-- nothing to render -->", ...ir };
 }

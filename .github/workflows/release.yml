@@ -60,3 +60,59 @@ jobs:
             desktop/dist/*.zip
             desktop/dist/*.exe
             desktop/dist/*.AppImage
+
+  # The npm package is the tool itself. It ships from the same version tag,
+  # and only when the tag says what package.json says, so the registry never
+  # carries a version the repository does not. A dry run from the Actions tab
+  # builds installers only; this job needs a tag.
+  npm:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write      # provenance: npm signs the tarball against this run
+      contents: read
+    env:
+      # Whether the secret exists, never the secret. A step's if: cannot read
+      # the secrets context, so the fact is carried across as a boolean.
+      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: the tool itself is green
+        run: npm test
+
+      - name: the package packs clean
+        run: node src/cli.js publish-check
+
+      - name: the tag is the version
+        run: |
+          version="v$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$version" ]; then
+            echo "the tag is $GITHUB_REF_NAME but package.json says $version; bump the version or move the tag, then push the tag again"
+            exit 1
+          fi
+          echo "$GITHUB_REF_NAME is package.json's version"
+
+      - name: the package is not marked private
+        run: |
+          if [ "$(node -p "require('./package.json').private === true")" = "true" ]; then
+            echo '"private": true in package.json refuses every npm publish. A person removes that line on the day the package is meant to ship; nothing here removes it.'
+            exit 1
+          fi
+          echo "package.json does not refuse to publish"
+
+      - name: the token was added by a person
+        if: env.HAS_NPM_TOKEN != 'true'
+        run: |
+          echo "NPM_TOKEN is not set. A person creates a granular access token on npmjs.com that may publish portamp and adds it to this repository under Settings, Secrets and variables, Actions, as NPM_TOKEN. This job never publishes without it and nothing was published."
+          exit 1
+
+      - name: publish with provenance
+        if: env.HAS_NPM_TOKEN == 'true'
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

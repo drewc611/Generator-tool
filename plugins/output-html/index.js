@@ -30,7 +30,7 @@ export default {
       for (const screen of ctx.screens) {
         const name = pascal(screen.selector) || "Screen";
         const tag = kebab(screen.selector).includes("-") ? kebab(screen.selector) : `x-${kebab(screen.selector)}`;
-        const result = screen.template ? toHtml(screen.template) : null;
+        const result = screen.template ? toHtml(screen.template, { components: ctx.screens.map((s) => s.selector) }) : null;
         const props = unique([...screen.inputs, ...(result?.reads ?? []), "loading", "error"]);
         const collection = result?.collections[0] ?? "data";
 

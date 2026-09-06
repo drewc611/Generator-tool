@@ -1,0 +1,7 @@
+<header>
+  <a href="{{ routes.root_url }}">{{ section.settings.title | upcase }}</a>
+  {% if section.settings.show_search %}<input type="search" name="q">{% endif %}
+</header>
+{% schema %}
+{ "name": "Header", "settings": [ { "id": "title", "type": "text", "label": "Title" }, { "id": "show_search", "type": "checkbox", "default": true } ] }
+{% endschema %}

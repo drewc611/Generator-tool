@@ -1,0 +1,35 @@
+object frmSettings: TfrmSettings
+  Left = 300
+  Height = 120
+  Top = 200
+  Width = 300
+  Caption = 'Settings'
+  ClientHeight = 120
+  ClientWidth = 300
+  LCLVersion = '2.2.6.0'
+  object lblFolder: TLabel
+    Left = 8
+    Height = 15
+    Top = 12
+    Width = 40
+    Caption = 'Folder'
+  end
+  object edtFolder: TEdit
+    Left = 64
+    Height = 23
+    Top = 8
+    Width = 220
+    TabOrder = 0
+    Text = 'C:\Ledger'
+  end
+  object btnOk: TButton
+    Left = 200
+    Height = 25
+    Top = 80
+    Width = 84
+    Caption = 'OK'
+    Default = True
+    TabOrder = 1
+    OnClick = btnOkClick
+  end
+end

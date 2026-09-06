@@ -1,0 +1,362 @@
+import { readFile } from "node:fs/promises";
+import { pascal } from "../dsp-ir/emit.js";
+import { readInputs } from "../dsp-ir/text.js";
+import { readExecutable } from "./pe.js";
+
+/**
+ * Reads a native Windows executable as the legacy front end it is. A Win32
+ * program's dialogs are templates in its resource section: every control with
+ * its class, caption, id, position and styles, exactly the evidence a port
+ * needs and none of the code. Each dialog becomes a screen on the shared
+ * dialect, each menu a navigation component, the string table a catalogue,
+ * and the version block the app's name.
+ *
+ * What the resources cannot say is named rather than guessed: a list whose
+ * items the code fills at runtime, a control that starts hidden, an icon the
+ * port does not carry, a control class with no HTML equivalent. A .NET
+ * assembly keeps its forms in code, so this reader says so and reads only
+ * the native resources it does hold.
+ */
+
+const WS_VISIBLE = 0x10000000;
+const WS_DISABLED = 0x08000000;
+const WS_GROUP = 0x00020000;
+
+/**
+ * A caption without its mnemonic ampersand and trailing punctuation, with the access key it named. A doubled
+ * ampersand is a literal one and is set aside before the mnemonic is looked for, so it never names the key.
+ */
+const LITERAL_AMP = String.fromCharCode(1);
+function caption(text) {
+  const raw = String(text ?? "").replace(/&&/g, LITERAL_AMP);
+  const m = /&([^&])/.exec(raw);
+  const clean = raw.replace(/&/g, "").split(LITERAL_AMP).join("&").replace(/(\.\.\.|…|:)\s*$/, "").trim();
+  return { text: clean, accesskey: m ? m[1].toLowerCase() : null };
+}
+
+/** A name the emitted JavaScript can declare: a caption that spells a reserved word gets a suffix. */
+const RESERVED = new Set("break case catch class const continue debugger default delete do else enum export extends false finally for function if import in instanceof new null return super switch this throw true try typeof var void while with yield let static implements interface package private protected public await async arguments eval undefined NaN Infinity".split(" "));
+const declarable = (name) => (RESERVED.has(name) ? `${name}Field` : name);
+
+const camel = (text) => {
+  const p = pascal(String(text).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+  return p ? p.charAt(0).toLowerCase() + p.slice(1) : "";
+};
+const kebab = (text) => String(text).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/** What a control is, from its class and the style bits that class reads. */
+export function kindOf(c) {
+  const style = c.style ?? 0;
+  const klass = String(c.className ?? "");
+  switch (klass.toLowerCase()) {
+    case "button": {
+      const type = style & 0xf;
+      if (type === 2 || type === 3 || type === 5 || type === 6) return "checkbox";
+      if (type === 4 || type === 9) return "radio";
+      if (type === 7) return "group";
+      return type === 1 ? "default-button" : "button";
+    }
+    case "edit": return style & 0x4 ? "textarea" : "input";
+    case "static": {
+      const type = style & 0x1f;
+      if (type === 3 || type === 0xd || type === 0xe) return "image";
+      if ((type >= 4 && type <= 9) || (type >= 0x10 && type <= 0x12)) return "rule";
+      return "text";
+    }
+    case "listbox": return "listbox";
+    case "combobox": return "combobox";
+    case "scrollbar": return "scrollbar";
+    case "syslistview32": return "listview";
+    case "systreeview32": return "treeview";
+    case "systabcontrol32": return "tabs";
+    case "msctls_progress32": return "progress";
+    case "msctls_trackbar32": return "range";
+    case "msctls_updown32": return "spinner";
+    case "sysdatetimepick32": return "date";
+    case "sysmonthcal32": return "date";
+    case "syslink": return "link";
+    case "richedit20w": case "richedit20a": case "richedit50w": case "richedit": return "textarea";
+    default: return "unknown";
+  }
+}
+
+const FIELD = new Set(["input", "textarea", "listbox", "combobox", "range", "date", "spinner"]);
+
+/**
+ * A dialog lowered onto the shared dialect. Controls are laid out in reading
+ * order, a group box holds the controls inside its rectangle, a static text
+ * beside or above a field is that field's label, and consecutive radios form
+ * one group. The absolute layout in dialog units goes to the report.
+ */
+export function lowerDialog(dialog, note) {
+  const controls = dialog.controls.map((c, i) => ({ ...c, kind: kindOf(c), order: i }));
+  const inside = (c, g) => c !== g && c.x >= g.x && c.y >= g.y && c.x + c.cx <= g.x + g.cx && c.y + c.cy <= g.y + g.cy;
+  const groups = controls.filter((c) => c.kind === "group");
+  const parentOf = new Map();
+  for (const c of controls) {
+    // The smallest group box around a control is its parent; a group inside a group nests.
+    const around = groups.filter((g) => inside(c, g)).sort((a, b) => a.cx * a.cy - b.cx * b.cy);
+    if (around.length) parentOf.set(c, around[0]);
+  }
+  const reading = (a, b) => (Math.abs(a.y - b.y) > 4 ? a.y - b.y : a.x - b.x);
+  const names = new Set();
+  const unique = (base) => {
+    const stem = declarable(base || "field");
+    let name = stem;
+    let n = 2;
+    while (names.has(name)) name = `${stem}${n++}`;
+    names.add(name);
+    return name;
+  };
+  const outputs = new Set();
+  const notes = { hidden: [], disabled: [], images: 0, lists: [], unknown: [], skipped: [] };
+  let hasSubmit = false;
+  let hasModel = false;
+  let hasRepeat = false;
+  // Every field the dialog holds, in order; OK hands them all back by name, as the dialog's return did.
+  const fields = [];
+
+  const render = (parent, depth) => {
+    const own = controls.filter((c) => (parentOf.get(c) ?? null) === parent).sort(reading);
+    const lines = [];
+    const pad = "  ".repeat(depth);
+    let radioGroup = null;
+    for (let i = 0; i < own.length; i += 1) {
+      const c = own[i];
+      if (c.rendered) continue;
+      const cap = caption(c.caption);
+      const hidden = !(c.style & WS_VISIBLE);
+      const attrs = [];
+      const name = () => unique(camel(c.labelText ?? cap.text) || `control${c.id}`);
+      if (c.kind !== "radio") radioGroup = null;
+      if (cap.accesskey && c.kind !== "text" && c.kind !== "group") attrs.push(`accesskey="${cap.accesskey}"`);
+      if (c.style & WS_DISABLED && c.kind !== "text" && c.kind !== "group") { attrs.push("disabled"); notes.disabled.push(cap.text || `control ${c.id}`); }
+      // A control that starts hidden is shown by a state the template cannot see; the port drives it by name.
+      const shown = hidden ? unique(`${camel(cap.text) || `control${c.id}`}Shown`) : null;
+      if (shown) { attrs.push(`ng-show="shown.${shown}"`); notes.hidden.push(cap.text || `control ${c.id}`); }
+      const a = attrs.length ? " " + attrs.join(" ") : "";
+      switch (c.kind) {
+        case "text": {
+          // A label sits on the row of the field it names, to its left, or on the row above it.
+          const next = own.slice(i + 1).find((d) => !d.rendered && d.kind !== "text");
+          const labels = !hidden && next && FIELD.has(next.kind) && ((Math.abs(next.y - c.y) <= 6 && next.x >= c.x) || (next.y > c.y && next.y - c.y <= 16 && Math.abs(next.x - c.x) <= 8));
+          if (labels) { next.labelText = cap.text; next.labelled = true; lines.push(`${pad}<label for="${(next.htmlId = `f-${kebab(cap.text) || next.id}`)}"${a}>${esc(cap.text)}</label>`); }
+          else if (cap.text) lines.push(`${pad}<p${a}>${esc(cap.text)}</p>`);
+          break;
+        }
+        case "image": notes.images += 1; lines.push(`${pad}<span class="image" role="img" aria-label="${esc(cap.text || "image")}"${a}></span>`); break;
+        case "rule": lines.push(`${pad}<hr${a}>`); break;
+        case "input": case "textarea": case "date": case "range": case "spinner": {
+          const field = name();
+          const id = c.htmlId ?? `f-${kebab(field)}`;
+          hasModel = true;
+          const type = c.kind === "date" ? "date" : c.kind === "range" ? "range" : c.kind === "spinner" ? "number" : c.style & 0x20 ? "password" : c.style & 0x2000 ? "number" : "text";
+          const ro = c.style & 0x800 ? " readonly" : "";
+          fields.push(field);
+          if (c.kind === "textarea") lines.push(`${pad}<textarea id="${id}" ng-model="${field}"${ro}${a}></textarea>`);
+          else lines.push(`${pad}<input id="${id}" type="${type}" ng-model="${field}"${ro}${a}>`);
+          if (c.kind === "spinner") notes.skipped.push(`the spinner ${field} is a number input; the buddy edit it stepped is the same field`);
+          break;
+        }
+        case "checkbox": {
+          const field = unique(camel(cap.text) || `check${c.id}`);
+          hasModel = true;
+          fields.push(field);
+          lines.push(`${pad}<label><input type="checkbox" ng-model="${field}"${a}> ${esc(cap.text)}</label>`);
+          break;
+        }
+        case "radio": {
+          // WS_GROUP opens a new group; a radio without it joins the one before.
+          if (!radioGroup || c.style & WS_GROUP) { radioGroup = unique(parent ? camel(caption(parent.caption).text) || `choice${c.id}` : `choice${c.id}`); fields.push(radioGroup); }
+          hasModel = true;
+          lines.push(`${pad}<label><input type="radio" ng-model="${radioGroup}" value="${kebab(cap.text) || c.id}"${a}> ${esc(cap.text)}</label>`);
+          break;
+        }
+        case "combobox": case "listbox": {
+          const field = name();
+          const id = c.htmlId ?? `f-${kebab(field)}`;
+          const multiple = c.kind === "listbox" && c.style & 0x8 ? " multiple" : "";
+          hasModel = true; hasRepeat = true;
+          notes.lists.push(field);
+          fields.push(field);
+          lines.push(`${pad}<select id="${id}" ng-model="${field}"${multiple}${a}>`);
+          lines.push(`${pad}  <option ng-repeat="option in ${field}Options">{{ option }}</option>`);
+          lines.push(`${pad}</select>`);
+          break;
+        }
+        case "button": case "default-button": {
+          // IDOK (1) is the form's submit. A default push button with any other id is what Enter fired in the
+          // original; the port raises its own event and says so rather than calling it OK.
+          const isOk = c.id === 1;
+          const isCancel = c.id === 2;
+          const event = isCancel ? "cancel" : camel(cap.text) || `button${c.id}`;
+          if (isOk && !hasSubmit) { hasSubmit = true; outputs.add("ok"); lines.push(`${pad}<button type="submit"${a}>${esc(cap.text)}</button>`); }
+          else {
+            outputs.add(event);
+            if (c.kind === "default-button") notes.skipped.push(`the default button is ${cap.text || c.id} (id ${c.id}), which Enter fired in the original; the port raises on${pascal(event)} from a click only`);
+            lines.push(`${pad}<button type="button" ng-click="on${pascal(event)}()"${a}>${esc(cap.text)}</button>`);
+          }
+          break;
+        }
+        case "group": {
+          lines.push(`${pad}<fieldset${a}>`);
+          if (cap.text) lines.push(`${pad}  <legend>${esc(cap.text)}</legend>`);
+          lines.push(...render(c, depth + 1));
+          lines.push(`${pad}</fieldset>`);
+          break;
+        }
+        case "listview": notes.skipped.push(`the list view ${cap.text || c.id} is a table whose columns and rows the code supplies`); lines.push(`${pad}<table class="list-view"${a}></table>`); break;
+        case "treeview": notes.skipped.push(`the tree view ${cap.text || c.id} has nodes the code supplies`); lines.push(`${pad}<ul role="tree"${a}></ul>`); break;
+        case "tabs": notes.skipped.push(`the tab control ${cap.text || c.id} has pages the code supplies`); lines.push(`${pad}<div role="tablist"${a}></div>`); break;
+        case "progress": lines.push(`${pad}<progress${a}></progress>`); break;
+        case "link": { const event = camel(cap.text) || `link${c.id}`; outputs.add(event); lines.push(`${pad}<button type="button" class="link" ng-click="on${pascal(event)}()"${a}>${esc(cap.text)}</button>`); break; }
+        case "scrollbar": notes.skipped.push(`a scroll bar (${c.id}) scrolls what the port lays out; nothing carried`); break;
+        default: notes.unknown.push(`${c.className} (${c.id})`); lines.push(`${pad}<div class="${kebab(c.className) || "control"}"${a}></div>`); break;
+      }
+      c.rendered = true;
+    }
+    return lines;
+  };
+
+  const body = render(null, 1);
+  const title = caption(dialog.title).text;
+  const result = fields.length ? `{ ${fields.map((f) => `${f}: ${f}`).join(", ")} }` : "";
+  const open = hasSubmit ? `<form class="dialog" ng-submit="onOk(${result})">` : `<div class="dialog">`;
+  const template = [open, ...(title ? [`  <h2>${esc(title)}</h2>`] : []), ...body, hasSubmit ? "</form>" : "</div>"].join("\n");
+
+  if (notes.lists.length) note(`the list(s) ${notes.lists.join(", ")} are filled by the code at runtime; the port takes each as \`<name>Options\`, which it must be handed.`);
+  if (notes.hidden.length) note(`${notes.hidden.length} control(s) start hidden (${notes.hidden.join(", ")}); which state shows each is code the port drives through \`shown\`.`);
+  if (notes.disabled.length) note(`${notes.disabled.length} control(s) start disabled (${notes.disabled.join(", ")}); the port keeps the initial state and the code that enabled them is not read.`);
+  if (notes.images) note(`${notes.images} icon or bitmap control(s) are placeholders; the image resources are not carried into the port.`);
+  if (notes.unknown.length) note(`control class(es) with no HTML equivalent kept as divs: ${notes.unknown.join(", ")}.`);
+  for (const s of notes.skipped) note(s);
+  return { template, outputs: [...outputs].sort(), fields, usesTwoWay: hasModel, usesNgFor: hasRepeat, usesNgIf: notes.hidden.length > 0, title };
+}
+
+/** A menu lowered to a navigation component: popups as nested lists, commands as buttons, mnemonics as access keys. */
+export function lowerMenu(menu) {
+  const outputs = new Set();
+  const items = (list, depth) => list.flatMap((it) => {
+    const pad = "  ".repeat(depth);
+    if (it.separator) return [`${pad}<li role="separator"></li>`];
+    const cap = caption(it.text);
+    const key = cap.accesskey ? ` accesskey="${cap.accesskey}"` : "";
+    const dis = it.disabled ? " disabled" : "";
+    if (it.children) return [`${pad}<li>`, `${pad}  <button type="button"${key}${dis} aria-haspopup="menu">${esc(cap.text)}</button>`, `${pad}  <ul role="menu">`, ...items(it.children, depth + 2), `${pad}  </ul>`, `${pad}</li>`];
+    const event = camel(cap.text) || `command${it.id}`;
+    outputs.add(event);
+    const checked = it.checked ? ' aria-checked="true"' : "";
+    return [`${pad}<li role="none"><button type="button" role="menuitem" ng-click="on${pascal(event)}()"${key}${dis}${checked}>${esc(cap.text)}</button></li>`];
+  });
+  const template = [`<nav class="menu-bar" aria-label="menu">`, `  <ul role="menubar">`, ...items(menu.items, 2), `  </ul>`, `</nav>`].join("\n");
+  return { template, outputs: [...outputs].sort() };
+}
+
+const dlu = (c) => `${c.x}, ${c.y}, ${c.cx} × ${c.cy}`;
+/** Text inside a markdown table cell: the backslash first, then the pipe, and a line break as a space. */
+const cell = (text) => String(text).replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+
+function dialogsReport(files) {
+  const out = ["# Dialogs", "", "Every dialog template the executable(s) carried, with each control's class, id, caption and rectangle in dialog units (x, y, width × height). The port lays the controls out in reading order; this is the layout the original drew.", ""];
+  for (const f of files) {
+    out.push(`## ${f.rel}`, "");
+    const v = f.read.version;
+    const named = ["ProductName", "FileDescription", "ProductVersion", "FileVersion", "CompanyName"].filter((k) => v[k]);
+    if (named.length) { out.push("| version field | value |", "| --- | --- |", ...named.map((k) => `| ${k} | ${cell(v[k])} |`), ""); }
+    if (f.read.clr) out.push("A .NET assembly: its forms are code, not resources, so only the native resources below were read.", "");
+    if (!f.read.dialogs.length) out.push("No dialog templates.", "");
+    for (const d of f.read.dialogs) {
+      out.push(`### ${caption(d.title).text || `dialog ${d.id}`} (id ${d.id}${d.ex ? ", DIALOGEX" : ""})`, "",
+        `${d.cx} × ${d.cy} dialog units${d.font ? `, font ${d.font.face} ${d.font.size}pt` : ""}, ${d.controls.length} control(s).`, "",
+        "| id | class | kind | caption | rectangle |", "| --- | --- | --- | --- | --- |",
+        ...d.controls.map((c) => `| ${c.id} | ${cell(c.className)} | ${kindOf(c)} | ${cell(caption(c.caption).text)} | ${dlu(c)} |`), "");
+    }
+  }
+  return out.join("\n") + "\n";
+}
+
+function menusReport(files) {
+  const out = ["# Menus", "", "Every menu template, as the tree it declares, with the command id each item sends. A command id is what the code switched on; the port raises a handler named from the caption instead.", ""];
+  const walk = (items, depth) => items.flatMap((it) => it.separator ? [`${"  ".repeat(depth)}- ———`] : [`${"  ".repeat(depth)}- ${caption(it.text).text}${it.id ? ` (${it.id})` : ""}${it.disabled ? " disabled" : ""}${it.checked ? " checked" : ""}`, ...(it.children ? walk(it.children, depth + 1) : [])]);
+  for (const f of files) {
+    out.push(`## ${f.rel}`, "");
+    if (!f.read.menus.length) out.push("No menus.", "");
+    for (const m of f.read.menus) out.push(`### menu ${m.id}${m.ex ? " (MENUEX)" : ""}`, "", ...walk(m.items, 0), "");
+  }
+  return out.join("\n") + "\n";
+}
+
+function stringsReport(files) {
+  const out = ["# String table", "", "The messages the code shows at runtime, by id. They are not in any dialog, so the port has no place for them yet; each is a string the ported code will need where the original called it.", ""];
+  for (const f of files) {
+    out.push(`## ${f.rel}`, "");
+    if (!f.read.strings.length) { out.push("No string table.", ""); continue; }
+    out.push("| id | text |", "| --- | --- |", ...f.read.strings.map((s) => `| ${s.id} | ${cell(s.text)}${s.truncated ? " (cut off in the file)" : ""} |`), "");
+  }
+  return out.join("\n") + "\n";
+}
+
+export default {
+  name: "input-exe",
+  version: "0.1.0",
+  class: "input",
+  setup({ on, log }) {
+    const seen = [];
+    on("extract", async (ctx) => {
+      const files = ctx.sources.files.filter((f) => /\.(exe|dll)$/i.test(f.rel));
+      if (!files.length) return log.debug("no executables");
+      const selectors = new Set(ctx.screens.map((s) => s.selector));
+      const unique = (base) => { let s = base; let n = 2; while (selectors.has(s)) s = `${base}-${n++}`; selectors.add(s); return s; };
+      let dialogs = 0;
+      let menus = 0;
+      for (const file of files) {
+        const bytes = await readFile(file.path).catch(() => null);
+        const read = bytes ? readExecutable(bytes) : { error: "unreadable" };
+        const rel = file.rel.replace(/^\.\//, "");
+        if (read.error) { ctx.unverified(`${rel}: ${read.error}; nothing was read from it.`); continue; }
+        for (const p of [...new Set(read.problems)]) ctx.unverified(`${rel}: ${p}.`);
+        if (read.clr) ctx.unverified(`${rel} is a .NET assembly. Its forms are code (InitializeComponent), not resources, so this reader read only the native resources it holds: ${read.dialogs.length} dialog(s), ${read.menus.length} menu(s).`);
+        else if (!read.hasResources) ctx.unverified(`${rel} carries no resource section, so it declares no dialog or menu this reader could port.`);
+        else if (!read.dialogs.length && !read.menus.length) ctx.unverified(`${rel} carries resources but no dialog or menu template (types present: ${read.types.join(", ")}); its windows are created in code, which is not read.`);
+        const product = read.version.ProductName ?? null;
+        for (const d of read.dialogs) {
+          const lowered = lowerDialog(d, (n) => ctx.unverified(`${rel}, dialog ${d.id}: ${n}`));
+          const selector = unique(`dialog-${kebab(lowered.title) || d.id}`);
+          ctx.screens.push({
+            selector, className: pascal(selector), file: rel,
+            // A field is the dialog's own state, not something it is handed.
+            inputs: readInputs(lowered.template, { skip: lowered.fields }), outputs: lowered.outputs, template: lowered.template,
+            templateOrigin: `dialog ${d.id} in ${rel}, read from its resource template`,
+            usesNgIf: lowered.usesNgIf, usesNgFor: lowered.usesNgFor, usesTwoWay: lowered.usesTwoWay, rxjs: [],
+            readBy: "exe", title: lowered.title || `${product ?? rel} dialog ${d.id}`,
+          });
+          dialogs += 1;
+        }
+        for (const m of read.menus) {
+          const lowered = lowerMenu(m);
+          const selector = unique(`menu-${m.id}`);
+          ctx.screens.push({
+            selector, className: pascal(selector), file: rel,
+            inputs: [], outputs: lowered.outputs, template: lowered.template,
+            templateOrigin: `menu ${m.id} in ${rel}, read from its resource template`,
+            usesNgIf: false, usesNgFor: false, usesTwoWay: false, rxjs: [], readBy: "exe", title: `${product ?? rel} menu ${m.id}`,
+          });
+          menus += 1;
+        }
+        for (const s of read.strings.filter((s) => s.truncated)) ctx.unverified(`${rel}: string ${s.id} is cut off in the file; STRINGS.md carries what there is, marked.`);
+    if (read.strings.length) ctx.unverified(`${rel}: ${read.strings.length} string table entr(ies) are messages the code shows at runtime; STRINGS.md lists them and the port has no place for them until the code that showed each is ported.`);
+        seen.push({ rel, read });
+      }
+      if (seen.length) log.info(`${seen.length} executable(s): ${dialogs} dialog(s) and ${menus} menu(s) read as screens`);
+    });
+
+    on("emit", async (ctx) => {
+      if (!seen.length) return;
+      await ctx.write("DIALOGS.md", dialogsReport(seen));
+      await ctx.write("MENUS.md", menusReport(seen));
+      await ctx.write("STRINGS.md", stringsReport(seen));
+      log.info("DIALOGS.md, MENUS.md and STRINGS.md written");
+    });
+  },
+};

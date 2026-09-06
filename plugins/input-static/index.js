@@ -27,7 +27,7 @@ import {
  * the graph the output-site plugin builds the shell from.
  */
 
-const OWNED = /\bng-[\w-]+=|\bv-(?:if|for|model|show|bind|on|html)\b|\bko-[\w-]+=|\bdata-bind=|\{\{|<%|\{%/;
+const OWNED = /^\s*@\((?=[\s\S]*?\)\s*(?:\(|\n|<|@))|@(?:if|for|defining|main)\s*\(|@import\s+[\w.]+|@[\w.]+\s+match\s*\{|@\*[\s\S]*?\*@|\bng-[\w-]+=|\b(?:th|data-th)[:-][\w-]+=|\blayout:decorate=|<c:\w+|<jsp:\w+|<fmt:\w+|<form:\w+|<%@|\bv-(?:if|for|model|show|bind|on|html)\b|\bko-[\w-]+=|\bdata-bind=|\{\{|<%|\{%/;
 const PAGE_EXT = /\.(html?|shtml|php|asp|jsp)$/i;
 const SERVER_EXT = /\.(php|asp|jsp|shtml)$/i;
 
@@ -388,7 +388,9 @@ export default {
   class: "input",
   setup({ on, log }) {
     on("extract", async (ctx) => {
-      const files = ctx.sources.files.filter((f) => PAGE_EXT.test(f.rel));
+      // A .blade.php file is a Blade view with its own reader; reading it here
+      // too would make two screens of one page.
+      const files = ctx.sources.files.filter((f) => PAGE_EXT.test(f.rel) && !/\.blade\.php$/i.test(f.rel));
       if (!files.length) return log.debug("no pages");
 
       const local = new Set(ctx.sources.files.map((f) => f.rel.replace(/^\.\//, "")));

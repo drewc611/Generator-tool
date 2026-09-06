@@ -1,0 +1,5 @@
+@(active: String)
+<nav>
+  <a class="@if(active == "shop") {current}" href="@routes.Products.index()">Shop</a>
+  <a class="@if(active == "cart") {current}" href="@routes.Cart.show()">Cart</a>
+</nav>

@@ -47,7 +47,8 @@ ctx.sources.screenshots   [{ path, name, bytes, state }]
 ctx.sources.specs         [] for OpenAPI or Postman input plugins
 
 ctx.tokens          design tokens, available from plan onward
-ctx.screens         [{ selector, file, inputs, outputs, usesTwoWay, rxjs }]
+ctx.screens         [{ selector, className, file, inputs, outputs, template, templateOrigin,
+                       usesNgIf, usesNgFor, usesTwoWay, rxjs, readBy }]
 ctx.api.calls       [{ method, path, file, name, headers, body }]
 ctx.api.interceptors [{ file }]
 ctx.plan.components []
@@ -90,3 +91,27 @@ account on every test run.
 - Emit skeletons with every state present. An empty state that renders nothing is
   the most common thing a port forgets.
 - Write no secrets, no customer data, and no URLs into components.
+
+## Your own plugins, beside the tool
+
+Discovery reads two directories the same way: the tool's builtin `plugins/`
+and a `plugins/` directory in the working directory the run starts from. A
+project can carry its own plugins under version control with no registration
+file, no configuration and no fork of the tool: a directory with an
+`index.js` that exports the contract above loads on the next run, exactly
+like a builtin. The core never learns the difference, which is the point.
+
+Two rules keep that honest. A project plugin cannot replace a builtin: a
+duplicate name is refused rather than silently winning. And every rule in
+this document binds a project plugin the same way, policy object included;
+where the plugins came from was never a policy boundary.
+
+Plugins are ES modules, so the project's own package.json must say
+`"type": "module"` (or the plugin files must end in `.mjs`): on Node 18 a
+bare `.js` file outside a module scope reads as CommonJS and discovery
+skips it, with the warning saying which file and why.
+
+`portamp new-plugin <class>-<subject>` scaffolds the whole kit in the
+working directory: the plugin with the contract in its header, a test, docs
+in the plugin's own README, and a fixture directory for the test to run
+against.

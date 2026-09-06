@@ -1,4 +1,5 @@
-import { toSvelte } from "./print.js";
+import { isElementName } from "../dsp-ir/ir.js";
+import { toSvelte, modelTarget } from "./print.js";
 import { pascal, unique } from "../dsp-ir/emit.js";
 
 
@@ -23,7 +24,7 @@ export default {
       let emitted = 0;
       for (const screen of ctx.screens) {
         const name = pascal(screen.selector) || "Screen";
-        const result = screen.template ? toSvelte(screen.template) : null;
+        const result = screen.template ? toSvelte(screen.template, { components: ctx.screens.map((s) => s.selector) }) : null;
         const collection = result?.collections[0] ?? "data";
         const props = unique([
           ...screen.inputs,
@@ -39,6 +40,7 @@ export default {
         if (result?.markup) {
           for (const other of ctx.screens) {
             if (other === screen) continue;
+            if (isElementName(other.selector)) continue;
             const tag = new RegExp(`(</?)${other.selector}(?=[\\s>/])`, "g");
             if (tag.test(result.markup)) {
               const otherName = pascal(other.selector) || "Screen";
@@ -57,10 +59,10 @@ export default {
 };
 
 const COMPONENT = ({ name, props, result, collection, screen, referenced = [] }) => {
-  const state = (result?.models ?? []).map((m) => {
-    const leaf = m.split(".").pop().replace(/[^\w$]/g, "");
-    return `  let ${leaf} = "";`;
-  }).join("\n");
+  const state = [...new Set((result?.models ?? []).map((m) => {
+    const { bind, init } = modelTarget(m);
+    return `  let ${bind.replace(/\[[\s\S]*$/, "")} = ${init};`;
+  }))].join("\n");
 
   const empty = collection === "data"
     ? "!data || (Array.isArray(data) && data.length === 0)"
@@ -68,6 +70,7 @@ const COMPONENT = ({ name, props, result, collection, screen, referenced = [] })
 
   return `<script>
 ${referenced.map((r) => `  import ${r} from "../${r}/${r}.svelte";`).join("\n")}${referenced.length ? "\n" : ""}  // Ported from ${screen.file} by portamp.
+  // Template translated from ${screen.templateOrigin ?? "the decorator"}.
   //
   // Every state below is present on purpose. Delete one only when you have
   // checked the legacy screen genuinely cannot reach it.

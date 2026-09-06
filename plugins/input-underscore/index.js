@@ -5,7 +5,7 @@ import { pascal } from "../dsp-ir/emit.js";
 /**
  * The reader input-backbone deferred to: underscore templates, found where
  * Backbone apps keep them, in <script type="text/template"> blocks and in
- * .tpl and .ejs files. Each becomes a screen in the AngularJS attribute
+ * .tpl files. Each becomes a screen in the AngularJS attribute
  * dialect, which is what the lowering emits and dsp-ir already reads.
  */
 
@@ -48,15 +48,16 @@ export default {
   class: "input",
   setup({ on, log }) {
     on("extract", async (ctx) => {
-      const candidates = ctx.sources.files.filter((f) => /\.(html?|tpl|ejs)$/i.test(f.rel));
+      // .ejs is input-ejs's: EJS reads the same delimiters with the escaping the other way round.
+      const candidates = ctx.sources.files.filter((f) => /\.(html?|tpl)$/i.test(f.rel));
       let count = 0;
       const notes = [];
       for (const file of candidates) {
         const text = await readFile(file.path, "utf8").catch(() => "");
         if (!text || !/<%/.test(text)) continue;
 
-        if (/\.(tpl|ejs)$/i.test(file.rel)) {
-          const id = file.rel.split("/").pop().replace(/\.(tpl|ejs)$/i, "");
+        if (/\.tpl$/i.test(file.rel)) {
+          const id = file.rel.split("/").pop().replace(/\.tpl$/i, "");
           ctx.screens.push(screenOf(id, text, file.rel, notes));
           count += 1;
           continue;

@@ -35,11 +35,21 @@ function routeOf(objectBody, file) {
   const redirect = FIELD("redirectTo").exec(own) ?? FIELD("redirect").exec(own);
   const lazy = /\b(loadChildren|loadComponent)\b/.test(own) || /\bcomponent\s*:\s*\(\)\s*=>\s*import\(/.test(own);
 
+  // Guards are route metadata the shell must honor, read by name and never
+  // reimplemented: canActivate and friends in Angular, beforeEnter in Vue.
+  // What each guard checks stays its own code's business.
+  const guards = [];
+  for (const g of own.matchAll(/\b(canActivate|canActivateChild|canDeactivate|canMatch|beforeEnter)\s*:\s*(?:\[([^\]]*)\]|([\w$.]+))/g)) {
+    const names = (g[2] ?? g[3] ?? "").split(",").map((s) => s.trim()).filter((s) => /^[\w$.]+$/.test(s));
+    guards.push({ kind: g[1], names });
+  }
+
   return {
     path: path[1] ?? path[2] ?? "",
     component: component ? (component[1] ?? component[2]) : null,
     redirectTo: redirect ? (redirect[1] ?? redirect[2]) : null,
     lazy,
+    guards,
     file,
     children,
   };

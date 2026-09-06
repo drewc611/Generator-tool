@@ -1,4 +1,4 @@
-import { buildIr } from "../dsp-ir/ir.js";
+import { boundHtml, buildIr } from "../dsp-ir/ir.js";
 import { jsString, guardHandler } from "../dsp-ir/emit.js";
 
 /**
@@ -8,7 +8,7 @@ import { jsString, guardHandler } from "../dsp-ir/emit.js";
  */
 
 const PROP = {
-  class: "className", for: "htmlFor", tabindex: "tabIndex", readonly: "readOnly",
+  class: "className", for: "htmlFor", tabindex: "tabIndex", readonly: "readOnly", accesskey: "accessKey",
   maxlength: "maxLength", minlength: "minLength", colspan: "colSpan", rowspan: "rowSpan",
   autocomplete: "autoComplete", autofocus: "autoFocus", srcset: "srcSet",
   novalidate: "noValidate", enctype: "encType", usemap: "useMap", cellpadding: "cellPadding",
@@ -143,6 +143,7 @@ function attributes(node, ctx) {
 
 function print(node, depth, ctx) {
   if (!node) return "";
+  if (node.line && ctx.where) ctx.where.line = node.line;
   const indent = pad(depth);
 
   switch (node.kind) {
@@ -232,6 +233,9 @@ function print(node, depth, ctx) {
 
       const props = attributes(node, ctx);
       const open = `<${tag}${props.length ? " " + props.join(" ") : ""}`;
+      // Bound html is the element's own prop; a nested div would be an element the author never wrote.
+      const html = boundHtml(node);
+      if (html) return `${indent}${open} dangerouslySetInnerHTML={{ __html: ${html.expression} }} />`;
       const children = node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean);
       if (!children.length) return `${indent}${open} />`;
       return [`${indent}${open}>`, ...children, `${indent}</${tag}>`].join("\n");
@@ -251,9 +255,20 @@ function withKey(inner, key) {
 }
 
 export function translate(html, { indent = 3, dialect, components = null } = {}) {
-  const ir = buildIr(html, { dialect });
+  const ir = buildIr(html, { dialect, components: components ? [...components.keys()] : [] });
   const notes = [...ir.notes];
-  const ctx = { components, used: new Set(), note: (t) => { if (!notes.includes(t)) notes.push(t); } };
+  // The grammar stamped the nodes; the printer keeps a cursor so its own
+  // notes say the line too, the same spelling the reader's notes use.
+  const where = { line: null };
+  const ctx = {
+    components,
+    used: new Set(),
+    where,
+    note: (t) => {
+      const said = where.line ? `line ${where.line}: ${t}` : t;
+      if (!notes.includes(said)) notes.push(said);
+    },
+  };
   const jsx = print(ir.root, indent, ctx) || `${pad(indent)}<></>`;
   return { jsx, notes, models: ir.models, reads: ir.reads, collections: ir.collections, ir, components: [...ctx.used] };
 }

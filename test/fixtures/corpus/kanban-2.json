@@ -1,0 +1,14 @@
+{
+  "label": "kanban",
+  "html": "<div *ngFor=\"let lane of lanes\"><h3>{{lane.title}}</h3><div *ngFor=\"let task of lane.tasks\">{{task.name}}</div></div><p>Todo, Doing, Done lanes</p>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/tasks"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/tasks/${id}/lane"
+    }
+  ]
+}

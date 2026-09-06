@@ -111,3 +111,77 @@ const api = {
   sparklinePoints, STAGE_KEYS, keyAction, offlineNotice, isTextFile, reportsIn,
 };
 if (typeof window !== "undefined") window.portampLib = api;
+
+/**
+ * Two runs side by side: what moved, which way, and which notes closed. The
+ * verdict is only ever spoken for unverified, because that is the one number
+ * where a direction is a judgment; everything else just changed.
+ */
+export function compareRuns(current, previous) {
+  if (!current || !previous) return null;
+  const count = (v) => (Array.isArray(v) ? v.length : Number(v) || 0);
+  const metrics = ["screens", "endpoints", "unverified", "files"].map((name) => {
+    const was = count(previous[name]);
+    const is = count(current[name]);
+    return {
+      name, was, is,
+      delta: is - was,
+      verdict: name !== "unverified" ? (is === was ? "level" : "changed") : is > was ? "worse" : is < was ? "better" : "level",
+    };
+  });
+  const wasNotes = Array.isArray(previous.unverified) ? previous.unverified : [];
+  const isNotes = Array.isArray(current.unverified) ? current.unverified : [];
+  return {
+    metrics,
+    notesClosed: wasNotes.filter((n) => !isNotes.includes(n)),
+    notesOpened: isNotes.filter((n) => !wasNotes.includes(n)),
+  };
+}
+
+/* ------------------------------------------------------------ the intake */
+
+/** The flags the console offers a rerun; anything else in a request is dropped, never passed to the run. */
+export const RERUN_FLAGS = ["transformer", "train", "train-reverse", "train-sort", "train-math", "vue", "svelte", "lit", "html", "site", "export", "components", "photo"];
+
+/**
+ * What a rerun sets on the run's config: the source and screenshots it reads, and every offered flag, a pressed
+ * key on top of what the command line said and the command line's own value back for every key not pressed.
+ */
+export function rerunPatch(original, intakeDir, { source, flags, dir = null }) {
+  const patch = {
+    src: source === "intake" ? (dir ? `${intakeDir}/${dir}` : intakeDir) : original.src,
+    shots: source === "intake" ? intakeDir : original.shots,
+  };
+  for (const flag of RERUN_FLAGS) patch[flag] = Object.hasOwn(flags, flag) ? flags[flag] : original.flags[flag];
+  return patch;
+}
+
+/** A rerun request reduced to what the console may ask: the source to read and the offered flags as booleans. */
+export function rerunOptions(body) {
+  const source = body?.source === "intake" ? "intake" : "src";
+  const flags = {};
+  for (const flag of RERUN_FLAGS) if (body?.flags && Object.hasOwn(body.flags, flag)) flags[flag] = Boolean(body.flags[flag]);
+  // A folder inside the intake, a copied site's own, may be the source; it is held to the intake's path rule.
+  const dir = source === "intake" && body?.dir ? intakePath(body.dir) : null;
+  return { source, flags, dir };
+}
+
+/** A site address the intake may be asked to copy: http or https, nothing else, or null. */
+export function siteUrl(raw) {
+  try {
+    const u = new URL(String(raw ?? "").trim());
+    return /^https?:$/.test(u.protocol) ? u.href : null;
+  } catch { return null; }
+}
+
+/**
+ * A path a dropped file may land at inside the intake: relative, forward slashed, no empty, dot or dot dot segment,
+ * no control character, and short. Anything else is null and the upload is refused.
+ */
+export function intakePath(raw) {
+  const clean = String(raw ?? "").replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+/g, "/");
+  if (!clean || clean.length > 512 || /[\u0000-\u001f\u007f]/.test(clean)) return null;
+  const parts = clean.split("/");
+  if (parts.some((p) => p === "" || p === "." || p === "..")) return null;
+  return parts.join("/");
+}

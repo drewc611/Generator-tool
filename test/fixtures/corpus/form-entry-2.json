@@ -1,0 +1,10 @@
+{
+  "label": "form-entry",
+  "html": "<form (submit)=\"submit()\"><input [(ngModel)]=\"fullName\"><input [(ngModel)]=\"phone\"><textarea [(ngModel)]=\"message\"></textarea><button type=\"submit\">Send</button></form>",
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/contact"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+@model Shop.Models.Product
+@{
+    ViewBag.Title = Model.Name;
+}
+@* the product page *@
+<h1>@Model.Name</h1>
+@if (Model.Stock == 0)
+{
+    <p class="out">Sold out</p>
+}
+else if (Model.Stock < 5)
+{
+    <p class="low">Only @Model.Stock left</p>
+}
+else
+{
+    <p>In stock</p>
+}
+<ul>
+@foreach (var tag in Model.Tags)
+{
+    <li>@tag.ToUpper()</li>
+}
+</ul>
+@if (!Model.Tags.Any()) { <p class="none">No tags</p> }
+<p>@(Model.Price * 2) for two</p>
+@switch (Model.Type)
+{
+    case "shoe":
+        <p>Footwear</p>
+        break;
+    default:
+        <p>Other</p>
+        break;
+}
+<div>@Html.Raw(Model.DescriptionHtml)</div>
+<dl><dt>@Html.DisplayNameFor(m => m.Sku)</dt><dd>@Html.DisplayFor(m => m.Sku)</dd></dl>
+@Html.ActionLink("Edit", "Edit", new { id = Model.Id })
+<p>Email us at info@@shop.example</p>
+@section Scripts {
+    <script src="/js/product.js"></script>
+}

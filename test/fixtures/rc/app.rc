@@ -1,0 +1,200 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#include ""res\\app.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_APP                 ICON                    "res\\app.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_LOGO                BITMAP                  "res\\logo.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_LOGIN DIALOGEX 0, 0, 220, 140
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Log in"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "&User name:",IDC_STATIC,7,10,50,8
+    EDITTEXT        IDC_USER,60,8,120,12,ES_AUTOHSCROLL
+    LTEXT           "Password:",IDC_STATIC,7,26,50,8
+    EDITTEXT        IDC_PASSWORD,60,24,120,12,ES_PASSWORD | ES_AUTOHSCROLL
+    AUTOCHECKBOX    "&Remember me",IDC_REMEMBER,60,40,100,10
+    GROUPBOX        "Role",IDC_ROLE,7,54,200,30
+    AUTORADIOBUTTON "&Clerk",IDC_CLERK,14,66,60,10,WS_GROUP
+    AUTORADIOBUTTON "&Manager",IDC_MANAGER,90,66,60,10
+    LTEXT           "Region",IDC_STATIC,7,90,50,8
+    COMBOBOX        IDC_REGION,60,88,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Locked out",IDC_LOCKED,7,104,100,8,NOT WS_VISIBLE
+    EDITTEXT        IDC_NOTES,7,112,200,4,ES_MULTILINE | ES_READONLY | NOT WS_BORDER
+    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | WS_BORDER |
+                    WS_TABSTOP,7,116,200,2
+    DEFPUSHBUTTON   "OK",IDOK,100,120,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,160,120,50,14
+    PUSHBUTTON      "&Help",IDHELP,7,120,50,14,WS_DISABLED
+END
+
+IDD_ABOUT DIALOG 0, 0, 160, 60
+STYLE WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About ""Ledger"""
+FONT 8, "MS Sans Serif"
+BEGIN
+    ICON            IDI_APP,IDC_STATIC,7,7,20,20
+    LTEXT           "Ledger 4.2",IDC_STATIC,32,7,100,8
+    CONTROL         "Check for &updates",IDC_UPDATES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,32,20,100,10
+    PUSHBUTTON      "&Import",IDC_IMPORT,7,40,50,14,MYAPP_FLAT
+    PUSHBUTTON      "Close",IDCANCEL,100,40,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAIN MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       ID_APP_EXIT
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About Ledger...",            ID_APP_ABOUT, GRAYED
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCEL ACCELERATORS
+BEGIN
+    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
+    VK_F1,          ID_HELP,                VIRTKEY, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 4,2,0,0
+ PRODUCTVERSION 4,2,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Ledger Co."
+            VALUE "FileDescription", "Ledger desktop"
+            VALUE "FileVersion", "4.2.0.0"
+            VALUE "ProductName", "Ledger"
+            VALUE "ProductVersion", "4.2.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_SAVED               "Saved."
+    IDS_NOT_SAVED           "Could not save."
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#include "res\app.rc2"  // non-Microsoft Visual C++ edited resources
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED

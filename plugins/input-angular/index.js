@@ -7,10 +7,18 @@ import { readWithRegex } from "./regex.js";
 // framework sources, the old web's server pages and includes, and the assets
 // a page renders, which the site engine copies through as the bytes they are.
 const KEEP = new Set([
-  ".ts", ".js", ".html", ".scss", ".css", ".vue",
+  ".ts", ".js", ".jsx", ".tsx", ".html", ".scss", ".css", ".vue", ".riot", ".tag", ".svelte", ".hbs", ".handlebars", ".marko", ".liquid", ".twig", ".xsl", ".xslt", ".cshtml", ".ftl", ".ftlh", ".vm", ".vtl", ".pug", ".jade", ".tpl", ".jspf", ".jspx", ".cfm", ".cfml", ".haml", ".slim", ".ejs", ".njk", ".nunjucks", ".peb", ".pebble", ".volt",
   ".htm", ".shtml", ".php", ".asp", ".jsp", ".inc", ".txt", ".xml", ".pdf",
   ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp",
   ".woff", ".woff2", ".ttf", ".otf", ".eot",
+  // A native executable is a legacy front end too: its dialogs and menus are resources a reader lifts.
+  ".exe", ".dll",
+  // Desktop form definitions: WinForms designer code, XAML, VB6 and Delphi form files.
+  ".cs", ".vb", ".xaml", ".frm", ".dfm", ".fmx", ".lfm",
+  // Windows resource scripts and .NET resource files: the source of a dialog and the captions a designer localized.
+  ".rc", ".rc2", ".resx",
+  // An Electron app keeps its front end in one archive beside the executable.
+  ".asar",
 ]);
 const SKIP = new Set(["node_modules", "dist", ".git", "coverage"]);
 const RXJS = /\b(switchMap|combineLatest|BehaviorSubject|mergeMap|debounceTime|takeUntil|shareReplay|distinctUntilChanged|catchError|finalize)\b/g;
@@ -28,7 +36,7 @@ async function walk(dir, root, out = []) {
     // plugin that reads it can split on one separator.
     // .htaccess has no extension to keep; the server's own redirect
     // declarations are exactly the evidence the site engine reads.
-    else if (KEEP.has(extname(e)) || e === ".htaccess") out.push({ path: p, rel: relative(root, p).split(sep).join("/") });
+    else if (KEEP.has(extname(e)) || e === ".htaccess" || /^\.env(\.[\w.-]+)?$/.test(e)) out.push({ path: p, rel: relative(root, p).split(sep).join("/") });
   }
   return out;
 }

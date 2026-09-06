@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout}">
+<head><title th:text="${product.name}">Product</title></head>
+<body>
+<main layout:fragment="content" th:object="${product}">
+  <!--/* The prototype text below is replaced at render time */-->
+  <h1 th:text="*{name}">Sample product</h1>
+  <img th:src="@{/images/{id}.png(id=*{id})}" src="../static/sample.png" th:alt-title="*{name}" alt="sample">
+  <p class="price" th:text="|Price: *{price} ${currency}|">Price: 9.99 EUR</p>
+  <th:block th:switch="*{type}">
+    <span class="badge" th:case="'shoe'">Footwear</span>
+    <span class="badge" th:case="'hat'">Headwear</span>
+    <span class="badge" th:case="*" th:text="*{type}">Other</span>
+  </th:block>
+  <p class="low" th:if="*{stock > 0 and stock < 5}">Only [[*{stock}]] left</p>
+  <p class="out" th:unless="*{stock > 0}" th:text="#{product.soldout}">Sold out</p>
+  <ul class="tags">
+    <li th:each="tag, st : *{tags}" th:class="${st.odd} ? 'odd' : 'even'" th:classappend="${tag.hot} ? 'hot'">
+      <span th:text="${st.count}">1</span>. <span th:text="${tag.name}">tag</span>
+    </li>
+    <li class="none" th:if="${#lists.isEmpty(product.tags)}">No tags</li>
+  </ul>
+  <div th:with="total=*{price} * ${quantity}">
+    <p th:text="'Total: ' + ${total}">Total: 19.98</p>
+  </div>
+  <div class="description" th:utext="*{descriptionHtml}"><b>Sample</b> description</div>
+  <a class="buy" th:href="@{/cart/add(id=*{id},qty=${quantity})}" href="#" th:disabled="*{stock == 0}" th:onclick="'track(' + *{id} + ')'">Buy</a>
+  <form th:action="@{/reviews}" method="post" th:object="${review}">
+    <label for="rating">Rating</label>
+    <input type="number" th:field="*{rating}" value="5">
+    <textarea th:field="*{body}" placeholder="Say something"></textarea>
+    <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">Body error</p>
+    <button type="submit" th:text="#{review.submit}">Submit</button>
+  </form>
+  <p th:remove="all">Delete me</p>
+  <div th:remove="tag"><p>Free shipping on every order.</p></div>
+  <!--/*/ <p class="proto-only">Prototype only comment content</p> /*/-->
+  <p th:text="${#authentication.name}">user</p>
+  <p th:text="${#dates.format(product.added, 'dd MMM yyyy')}">01 Jan 2020</p>
+</main>
+<aside>Outside the fragment</aside>
+</body>
+</html>

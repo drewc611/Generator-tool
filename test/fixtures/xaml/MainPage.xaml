@@ -1,0 +1,36 @@
+<Page
+    x:Class="Ledger.App.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Ledger.App"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+  <Grid RowSpacing="8">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <TextBlock Grid.Row="0" x:Uid="PageTitle" Style="{StaticResource TitleTextBlockStyle}"/>
+    <TextBox Grid.Row="1" Header="Search" PlaceholderText="Find an account" Text="{x:Bind ViewModel.Query, Mode=TwoWay}" TextChanged="Query_TextChanged"/>
+    <ProgressRing Grid.Row="1" IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"/>
+    <ListView Grid.Row="2" ItemsSource="{x:Bind ViewModel.Accounts}" SelectionChanged="Accounts_SelectionChanged">
+      <ListView.ItemTemplate>
+        <DataTemplate x:DataType="local:Account">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <TextBlock Text="{x:Bind Name}"/>
+            <TextBlock Text="{x:Bind Balance}" Foreground="Gray"/>
+          </StackPanel>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+    <StackPanel Grid.Row="3" Orientation="Horizontal">
+      <HyperlinkButton Content="Open ledger" Click="Open_Click"/>
+      <ToggleSwitch Header="Show closed" IsOn="{x:Bind ViewModel.ShowClosed, Mode=TwoWay}"/>
+    </StackPanel>
+    <Pivot Grid.Row="3">
+      <PivotItem Header="Summary"><TextBlock Text="Totals"/></PivotItem>
+      <PivotItem Header="Detail"><TextBlock Text="Lines"/></PivotItem>
+    </Pivot>
+  </Grid>
+</Page>

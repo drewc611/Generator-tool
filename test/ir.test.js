@@ -161,3 +161,8 @@ test("nothing explored means nothing asserted, rather than an empty pass", () =>
   assert.equal(empty.cases.length, 0);
   assert.match(renderSpec(empty), /test\.skip/);
 });
+
+test("reads: a ternary's then branch is a read, an object key is not, and a $ name is the scope's machinery", () => {
+  const ir = buildIr(`<i ng-if="ok ? a : b" ng-class="{active: isOn, done: $ctrl.done}">{{ $index }} {{ $root.title }}</i>`);
+  assert.deepEqual(ir.reads, ["a", "b", "isOn", "ok"]);
+});

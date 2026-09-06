@@ -1,0 +1,21 @@
+## the product page
+#set($discounted = $product.price < $product.list)
+#macro(badge $text)<span class="badge">$text</span>#end
+<h1>$product.name</h1>
+#if($product.stock == 0)
+  <p class="out">Sold out</p>
+#elseif($product.stock lt 5)
+  <p class="low">Only $product.stock left</p>
+#else
+  <p>In stock</p>
+#end
+<ul>
+#foreach($tag in $product.tags)
+  <li>$foreach.count. $tag.toUpperCase()</li>
+#else
+  <li class="none">No tags</li>
+#end
+</ul>
+<p>$product.tags.size() tags, $!product.note</p>
+#badge($product.type)
+<p>Price #1 in town, email us at info\$shop.example</p>

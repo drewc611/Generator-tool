@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { buildIr } from "../dsp-ir/ir.js";
 
 /**
@@ -50,7 +51,7 @@ const nameFor = (call) => {
   const parts = call.path.split(/[/?]/).filter((p) => p && !p.startsWith("$") && !p.startsWith(":"));
   const tail = parts.slice(-2).map((p) => p.replace(/[^a-z0-9]/gi, "")).filter(Boolean);
   const verb = { GET: "get", POST: "create", PUT: "update", PATCH: "update", DELETE: "remove" }[call.method] || "call";
-  return verb + tail.map((t) => t[0].toUpperCase() + t.slice(1)).join("") || "call";
+  return verb + tail.map((t) => t[0].toUpperCase() + t.slice(1)).join("");
 };
 
 export default {
@@ -96,6 +97,49 @@ export default {
         }
       }
       if (ctx.apiFields.length) log.info(`${ctx.apiFields.length} endpoint(s) joined to the fields their screens read`);
+
+      // The calls that are not requests. A WebSocket subscription and a
+      // GraphQL operation are API surface the same way a GET is: read from
+      // source, described, and never invented. The GraphQL schema stays
+      // unclaimed, because a schema nobody verified is the failure this
+      // tool exists to avoid.
+      const channels = [];
+      const graphql = [];
+      let graphqlEndpoint = null;
+      for (const f of ctx.sources.files.filter((f) => /\.(js|ts|mjs|graphql|gql)$/i.test(f.rel) && !/\.min\.|\.spec\.|\.test\./.test(f.rel))) {
+        const text = await readFile(f.path, "utf8").catch(() => "");
+        if (!text) continue;
+        for (const m of text.matchAll(/new\s+WebSocket\s*\(\s*(["'`])([^"'`]*)\1/g)) {
+          channels.push({ kind: "websocket", url: m[2], file: f.rel });
+        }
+        for (const m of text.matchAll(/\bwebSocket\s*(?:<[^>]*>)?\s*\(\s*(["'`])([^"'`]*)\1/g)) {
+          channels.push({ kind: "websocket (rxjs)", url: m[2], file: f.rel });
+        }
+        if (/from\s+["']socket\.io-client["']/.test(text)) {
+          channels.push({ kind: "socket.io", url: null, file: f.rel });
+        }
+        const bodies = /\.(graphql|gql)$/i.test(f.rel)
+          ? [text]
+          : [...text.matchAll(/\bgql\s*`([\s\S]*?)`/g)].map((m) => m[1]);
+        for (const body of bodies) {
+          for (const op of body.matchAll(/\b(query|mutation|subscription)\s+([\w$]+)?/g)) {
+            graphql.push({ operation: op[1], name: op[2] ?? null, file: f.rel });
+          }
+        }
+        const uri = /\buri\s*:\s*["']([^"']*graphql[^"']*)["']/i.exec(text) ?? /["'](\/[\w/-]*graphql[\w/-]*)["']/.exec(text);
+        if (uri && !graphqlEndpoint) graphqlEndpoint = { path: uri[1], file: f.rel };
+      }
+      if (channels.length || graphql.length) {
+        ctx.api.channels = channels;
+        ctx.api.graphql = { operations: graphql, endpoint: graphqlEndpoint };
+        for (const c of channels) {
+          ctx.unverified(`${c.file} opens a ${c.kind} channel${c.url ? ` to \`${c.url}\`` : ""}. What travels on it was not observed; the port must carry the subscription, and API_CHANNELS.md describes what the source proves.`);
+        }
+        if (graphql.length && !graphqlEndpoint) {
+          ctx.unverified(`${graphql.length} GraphQL operation(s) were read and no endpoint naming graphql was found in source. The operations are in src/api/operations.js; wire the endpoint by hand.`);
+        }
+        log.info(`${channels.length} channel(s), ${graphql.length} GraphQL operation(s) read from source`);
+      }
     });
 
     on("emit", async (ctx) => {
@@ -107,9 +151,47 @@ export default {
       if (ctx.apiFields?.length) {
         await ctx.write("API_FIELDS.md", FIELDS(ctx.apiFields));
       }
+      if (ctx.api.graphql?.operations.length) {
+        const ops = ctx.api.graphql.operations
+          .map((o) => `  ${JSON.stringify(o.name ?? `${o.operation}Anonymous`)}: { operation: ${JSON.stringify(o.operation)}, from: ${JSON.stringify(o.file)} },`)
+          .join("\n");
+        await ctx.write("src/api/operations.js", `/**\n * The GraphQL operations the source declares, named and typed by kind.\n * The endpoint ${ctx.api.graphql.endpoint ? `the source names is ${JSON.stringify(ctx.api.graphql.endpoint.path)} (${ctx.api.graphql.endpoint.file})` : "was not found in source; wire it by hand"}.\n * No schema is claimed here: a schema nobody verified is worse than none.\n */\nexport const OPERATIONS = {\n${ops}\n};\n`);
+      }
+      if (ctx.api.channels?.length || ctx.api.graphql?.operations.length) {
+        await ctx.write("API_CHANNELS.md", CHANNELS(ctx.api.channels ?? [], ctx.api.graphql));
+      }
     });
   },
 };
+
+const CHANNELS = (channels, graphql) => [
+  "# The API surface that is not a request",
+  "",
+  "Read from source, described, never invented. What travels on a channel was",
+  "not observed, so nothing here claims a message shape.",
+  "",
+  ...(channels.length ? [
+    "## Channels",
+    "",
+    ...channels.map((c) => `- ${c.kind}${c.url ? ` to \`${c.url}\`` : ""}, opened in \`${c.file}\``),
+    "",
+  ] : []),
+  ...(graphql?.operations.length ? [
+    "## GraphQL operations",
+    "",
+    graphql.endpoint
+      ? `The source names the endpoint \`${graphql.endpoint.path}\` (\`${graphql.endpoint.file}\`).`
+      : "No endpoint naming graphql was found in source; the operations wait for one.",
+    "",
+    "| operation | kind | from |",
+    "| --- | --- | --- |",
+    ...graphql.operations.map((o) => `| \`${o.name ?? "(anonymous)"}\` | ${o.operation} | \`${o.file}\` |`),
+    "",
+    "The schema stays unclaimed: only the operations the client actually wrote",
+    "are listed, spelled the way the source spelled them.",
+    "",
+  ] : []),
+].join("\n");
 
 const FIELDS = (rows) => `# The fields the screens actually read
 

@@ -1,5 +1,7 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join, extname, basename } from "node:path";
+import { decodeJpeg } from "./jpeg.js";
+import { decodePng, palette } from "./png.js";
 
 const IMG = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 const STATES = ["empty", "error", "loading", "disabled", "denied", "long", "mobile"];
@@ -15,6 +17,17 @@ export default {
   version: "0.1.0",
   class: "input",
   setup({ on, log, policy }) {
+    on("emit", async (ctx) => {
+      const shots = ctx.sources.screenshots.filter((s) => s.palette);
+      if (!shots.length) return;
+      const lines = ["# Screenshot palettes", "", "The colours each PNG screenshot is made of, counted from its pixels and binned at five bits per channel; each row is the exact colour seen most in its bin and the share of opaque pixels the bin holds. A share is a measurement of the picture, not a role: which colour is the brand's is a person's call, so only the page background, the colour most of a screenshot is, is taken into the tokens, and it says which screenshot it came from.", ""];
+      for (const s of shots) {
+        lines.push(`## ${basename(s.path)}`, "", `${s.width} × ${s.height} pixels.`, "", "| colour | share |", "| --- | --- |", ...s.palette.map((p) => `| ${p.hex} | ${(p.share * 100).toFixed(1)}% |`), "");
+      }
+      await ctx.write("PALETTE.md", lines.join("\n"));
+      log.info(`PALETTE.md written for ${shots.length} screenshot(s)`);
+    });
+
     on("scan", async (ctx) => {
       let entries = [];
       try { entries = await readdir(ctx.config.shots); } catch {
@@ -22,18 +35,34 @@ export default {
         ctx.unverified("No screenshots provided. Every visual decision is inferred from source only.");
         return;
       }
+      let measured = 0;
+      const undecoded = [];
       for (const e of entries) {
         if (!IMG.has(extname(e))) continue;
         const p = join(ctx.config.shots, e);
-        const s = await stat(p);
+        // Read once: the bytes are the size, and a PNG is decoded from the same bytes that were counted.
+        const bytes = await readFile(p).catch(() => null);
+        if (!bytes) continue;
         const name = basename(e, extname(e));
-        ctx.sources.screenshots.push({
+        const shot = {
           path: p,
           name,
-          bytes: s.size,
+          bytes: bytes.length,
           state: STATES.find((st) => name.toLowerCase().includes(st)) || "default",
-        });
+        };
+        // A PNG's or a JPEG's pixels are counted, so its colours are evidence rather than a guess; a WebP is
+        // catalogued only, because decoding one needs a dependency this reader does not take.
+        const ext = extname(e).toLowerCase();
+        if (ext !== ".webp") {
+          const image = ext === ".png" ? decodePng(bytes) : decodeJpeg(bytes);
+          if (image.error) undecoded.push(`${e} (${image.error})`);
+          else { shot.width = image.width; shot.height = image.height; shot.palette = palette(image); measured += 1; }
+        }
+        ctx.sources.screenshots.push(shot);
       }
+      if (measured) log.info(`${measured} screenshot(s) measured: size and the colours their pixels are made of`);
+      // One note for the run, not one per file: the files are named in it.
+      if (undecoded.length) ctx.unverified(`${undecoded.length} screenshot(s) could not be decoded and are catalogued, not measured: ${undecoded.join("; ")}.`);
       const observed = await readFile(join(ctx.config.shots, "observed.json"), "utf8").catch(() => null);
       if (observed) {
         try {
@@ -70,6 +99,23 @@ export default {
           );
         } catch (err) {
           log.warn(`exploration.json is not readable json, ignoring it: ${err.message}`);
+        }
+      }
+
+      // Several sessions of the same app measure more than one: every
+      // exploration*.json in the directory joins ctx.sources.explorations,
+      // and downstream merges report agreement instead of averaging.
+      const sessionFiles = entries.filter((e) => /^exploration.*\.json$/i.test(e)).sort();
+      if (sessionFiles.length > 1 || (sessionFiles.length === 1 && !ctx.sources.exploration)) {
+        const sessions = [];
+        for (const name of sessionFiles) {
+          const raw = await readFile(join(ctx.config.shots, name), "utf8").catch(() => null);
+          if (!raw) continue;
+          try { sessions.push(JSON.parse(raw)); } catch { log.warn(`${name} is not readable json, ignoring it`); }
+        }
+        if (sessions.length > 1) {
+          ctx.sources.explorations = sessions;
+          log.info(`${sessions.length} recorded session(s); measurements merge with disagreement kept`);
         }
       }
 
