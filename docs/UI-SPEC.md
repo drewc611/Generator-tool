@@ -52,7 +52,7 @@ by a bottom tab bar with a floating action button beside it.
 │  (card)       │  (card)                  │  segments, card)   │
 │  ── pipeline ─│   header: name · path    │  Signals Files      │
 │  stages, 1-5  │   [ recorded ][ built ]  │  Reports Study      │
-│  ── screens ──│   a gradient scrubber    │                    │
+│  ── screens ──│   a media scrubber       │                    │
 │  orders    ●  │   divides them; the      │  endpoints &        │
 │  billing   ○  │   built pane is the      │   unverified,       │
 │  ── plugins ──│   live element when one  │   selected by a     │
@@ -90,7 +90,7 @@ so in the pane rather than showing a blank, and each layer keeps to its own
 side of the seam so an empty state in one never prints over real content in
 the other.
 
-**Inspector**, right, switched by a real macOS style segmented control
+**Inspector**, right, switched by a real pill shaped segmented control
 instead of a row of tab buttons. Signals holds the endpoints (with a verb
 dropdown) and the unverified list with its filter. Files lists everything the
 run wrote with the plugin and stage that wrote it; a text file opens in the
@@ -125,18 +125,19 @@ stylesheet are part of the spec, not extras.
 
 A design studio, not a code editor: every panel is a rounded, floating card
 on a neutral workspace with a soft shadow instead of a flush, edge to edge
-dock, and one gradient — a violet into a pink — carries every accent, every
-selection state and the primary button, the way a creative tool's own brand
-color does rather than a system blue. Section headers, the wordmark and the
-screen title use a rounded system face (`ui-rounded`, real SF Pro Rounded on
-a Mac, a plain sans elsewhere) for warmth; data — code, paths, timings —
-stays in the monospace stack, so the page reads as dense and precise where
-precision matters and friendly everywhere else. Verb and status columns are
-colored pills, not plain colored text. The day console — a pale lavender
-workspace, white cards — is the default, following the system's own light or
-dark preference until a person picks explicitly; the night console leans
-darker and denser, closer to a creative suite's own chrome, with the same
-gradient doing the same work.
+dock, and one restrained accent — a single blue, never a gradient — marks a
+selection state and the primary button and nothing else, the way an accent
+spent on everything ends up marking nothing. Section headers, the wordmark
+and the screen title use a rounded system face (`ui-rounded`, real SF Pro
+Rounded on a Mac, a plain sans elsewhere) for warmth; data — code, paths,
+timings — stays in the monospace stack, so the page reads as dense and
+precise where precision matters and friendly everywhere else. Verb and
+status columns are colored pills, not plain colored text, each in its own
+semantic color rather than the brand accent. The day console — a pale
+lavender workspace, white cards — is the default, following the system's own
+light or dark preference until a person picks explicitly; the night console
+leans darker and denser, closer to a creative suite's own chrome, with the
+same accent doing the same work.
 
 ## Data
 

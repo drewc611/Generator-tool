@@ -796,9 +796,9 @@ Code, like Canva mixed with Photoshop" named what the second pass still got
 wrong. The third pass drops every blur: each of the sidebar, the main pane
 and the inspector is its own rounded, floating card with a soft shadow on a
 pale workspace, the way a design tool's canvas sits on its table, rather
-than a flush edge to edge dock; one gradient, a violet into a pink, carries
-every accent, every selection state and the primary button in place of a
-single system blue; section headers and the wordmark take a rounded system
+than a flush edge to edge dock; one restrained accent marks a selection
+state and the primary button and nothing else, in place of a single system
+blue; section headers and the wordmark take a rounded system
 face (`ui-rounded`, real SF Pro Rounded on a Mac) while code and paths stay
 in the monospace stack; and verb and status columns are colored pills, not
 plain colored text. Below the desk's own breakpoint the same three panels
@@ -824,7 +824,12 @@ desktop rule and so never won, showing all three panels at once instead of
 one; and the mobile sidebar tried to give each of its lists its own
 independent scroll the way the desktop dock does, squeezing the shortest
 one to nothing instead of letting the whole screen scroll as one page. All
-six are fixed rather than carried forward. The line budget, raised from
+six are fixed rather than carried forward. The third pass first shipped
+with a violet into pink gradient standing in for the accent everywhere,
+called out as hideous once seen live; the gradient is dropped for one
+restrained blue that marks only a selection and the primary button, since
+an accent spent on every dot, badge and header marks nothing. The line
+budget, raised from
 2000 to 2050 for the second pass and to 2150 for the third, holds with room
 to spare; docs/UI-SPEC.md carries the same number, and the README's console
 images are real screenshots of the console the run actually serves rather

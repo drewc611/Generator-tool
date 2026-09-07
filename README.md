@@ -3,7 +3,7 @@
 Port a legacy front end without losing the look or the API contract.
 Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
-![The portamp console: rounded, floating panels on a pale workspace, one violet-to-pink gradient, showing a pipeline run, the numbered stage index and the plugin rack](media/portamp-console.png)
+![The portamp console: rounded, floating panels on a pale workspace, one restrained accent, showing a pipeline run, the numbered stage index and the plugin rack](media/portamp-console.png)
 
 <sub>portamp is a command line tool, not a desktop app. The console's own joke
 is where the plugin classes come from — Winamp's five, kept honest as a
@@ -939,17 +939,17 @@ A plugin that wants to do something consequential asks the policy object first.
 
 `portamp ui` serves the last run on `127.0.0.1:4321` and opens a browser.
 
-![The portamp console: a numbered stage index, the recorded screenshot wiped against the emitted source by a gradient media scrubber, and the endpoints and unverified panels behind a pill shaped segmented control, each panel a rounded card on a pale workspace](media/portamp-ui.png)
+![The portamp console: a numbered stage index, the recorded screenshot wiped against the emitted source by a media scrubber, and the endpoints and unverified panels behind a pill shaped segmented control, each panel a rounded card on a pale workspace](media/portamp-ui.png)
 
 Three rounded panels floating on a pale workspace under one toolbar, a design
-studio rather than a code editor: one gradient, a violet into a pink, carries
-every accent, every selection and the primary button; a dense creative
-suite's properties dock sits inside each rounded card rather than a flush,
-edge to edge one. Below the desk's own width it is a real mobile app: the same
-three panels, one full screen at a time, switched by a bottom tab bar with a
-floating "run again" button beside it — and since the console's manifest
-already declares `"display": "standalone"`, opening it from a phone's home
-screen has no browser chrome around it at all.
+studio rather than a code editor: one restrained accent — a single blue,
+never a gradient — marks a selection and the primary button and nothing
+else; a dense creative suite's properties dock sits inside each rounded card
+rather than a flush, edge to edge one. Below the desk's own width it is a
+real mobile app: the same three panels, one full screen at a time, switched
+by a bottom tab bar with a floating "run again" button beside it — and since
+the console's manifest already declares `"display": "standalone"`, opening
+it from a phone's home screen has no browser chrome around it at all.
 
 - **Sidebar**, left. The five stages as a numbered list, each one a live count
   and a filter on the rack below it; the screens, filterable; the plugin rack,
@@ -958,8 +958,8 @@ screen has no browser chrome around it at all.
   building: you can see which plugin produced which part of the output, which
   is what a plugin architecture needs to stay debuggable.
 - **Main pane**, centre. The recorded screenshot and the emitted component with
-  a gradient scrubber between them, styled like a media player's transport
-  rather than a plain divider. Drag it, or focus it and use the arrow keys: it
+  a scrubber between them, styled like a media player's transport rather
+  than a plain divider. Drag it, or focus it and use the arrow keys: it
   is a real range input underneath, so the keyboard and a screen reader work
   without anything extra. When there is no screenshot the pane says so and the
   scrubber disappears, because a wipe between a message and some source is not
