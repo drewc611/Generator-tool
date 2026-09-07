@@ -49,9 +49,14 @@ test("the whole ui is under the budget the spec set", async () => {
   // 2000. A full visual rebuild of app.html — a frosted unified toolbar, a
   // sidebar of grouped rows in place of the flat rack, a macOS style
   // segmented control in place of the tab button row, and a scrubber styled
-  // wipe control — carried its own weight and bought the raise to 2050. The
-  // budget still exists so growth stays a decision, not a drift.
-  assert.ok(js + html + lib < 2050, `${js + html + lib} lines, the spec allows under 2050`);
+  // wipe control — carried its own weight and bought the raise to 2050. A
+  // second rebuild, floating rounded panels on a workspace table in place of
+  // the frosted edge to edge chassis, plus a real mobile app screen: a bottom
+  // tab bar that swaps the sidebar, the stage and the inspector for full
+  // screens, and a floating action button beside it wired to the same
+  // rerun(), bought the raise to 2150. The budget still exists so growth
+  // stays a decision, not a drift.
+  assert.ok(js + html + lib < 2150, `${js + html + lib} lines, the spec allows under 2150`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once

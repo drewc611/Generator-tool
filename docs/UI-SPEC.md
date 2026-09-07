@@ -29,37 +29,47 @@ Opens a browser. Serves only on localhost. Dies on ctrl c.
   history sidecar are written by the plugin at verify, not by the server.
 - **Localhost only.** Bind `127.0.0.1`, never `0.0.0.0`. It serves screenshots
   of a customer system.
-- **Under a stated line budget**, currently 2050 across `index.js`, `app.html`
+- **Under a stated line budget**, currently 2150 across `index.js`, `app.html`
   and `lib.js`. The number lives in `test/ui.test.js` with the history of every
   raise and what bought it, so growth stays a decision, not a drift.
 
 ## Layout
 
-A three column desk under one unified, frosted toolbar. The one place content
-is tabbed is the inspector, whose four faces (signals, files, reports, study)
-are views of the same run; signals is the default face because endpoints and
-unverified are the pair people need to see first.
+Three rounded panels floating on a pale workspace, the way a design tool's
+canvas sits on its table, under one unified toolbar. The one place content is
+tabbed is the inspector, whose four faces (signals, files, reports, study) are
+views of the same run; signals is the default face because endpoints and
+unverified are the pair people need to see first. Below the desk's own
+breakpoint the same three panels become three full mobile screens, switched
+by a bottom tab bar with a floating action button beside it.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │ MAST  wordmark · readout · stats (files/plugins/ms/            │
 │       unverified/ported) · trend sparkline · theme · keys      │
 ├───────────────┬──────────────────────────┬────────────────────┤
-│  SIDEBAR      │  MAIN                    │  INSPECTOR (segs)  │
+│  SIDEBAR      │  MAIN                    │  INSPECTOR (pill   │
+│  (card)       │  (card)                  │  segments, card)   │
 │  ── pipeline ─│   header: name · path    │  Signals Files      │
 │  stages, 1-5  │   [ recorded ][ built ]  │  Reports Study      │
-│  ── screens ──│   a scrubber divides     │                    │
-│  orders    ●  │   them; the built pane   │  endpoints &        │
-│  billing   ○  │   is the live element    │   unverified,       │
-│  ── plugins ──│   when one was emitted,  │   selected by a     │
-│  by class or  │   source with            │   macOS style       │
-│  by cost      │   highlighting otherwise │   segmented control │
-│  ── tray ──   │                           │                    │
-│  drop zone,   │                           │                    │
-│  a searchable │                           │                    │
-│  flags panel, │                           │                    │
-│  run           │                           │                    │
+│  ── screens ──│   a gradient scrubber    │                    │
+│  orders    ●  │   divides them; the      │  endpoints &        │
+│  billing   ○  │   built pane is the      │   unverified,       │
+│  ── plugins ──│   live element when one  │   selected by a     │
+│  by class or  │   was emitted, source    │   pill shaped       │
+│  by cost      │   with highlighting      │   segmented control │
+│  ── tray ──   │   otherwise              │                    │
+│  drop zone,   │                          │                    │
+│  a searchable │                          │                    │
+│  flags panel, │                          │                    │
+│  run          │                          │                    │
 └───────────────┴──────────────────────────┴────────────────────┘
+        ↓ narrow viewport: the same three panels, one full screen at a time
+┌───────────────────────────────────────────────────────────────┐
+│  whichever panel is active, full height, page height fixed     │
+├───────────────────────────────────────────────────────────────┤
+│  Screens   Compare   Signals   Intake     ⟲ (floating, run)    │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 **Plugin rack**, in the sidebar, below the screens. Every loaded plugin
@@ -94,6 +104,15 @@ picture; "configure rerun" opens a real popover — searchable, grouped by
 category — over the offered flags, closed by default so the column stays
 readable, and only a checked one travels with the next run.
 
+**As a mobile app.** The same three panels are the same three DOM elements
+below the desk's own breakpoint, shown one at a time and switched by a bottom
+tab bar (Screens, Compare, Signals, Intake) the way a phone app switches
+screens, never a second, cut down copy of the desktop markup. A floating
+action button beside the tab bar is a second, thumb reachable door to the one
+`rerun()` the sidebar's own button already calls. The manifest already
+declares `"display": "standalone"`, so opening the console from a phone's
+home screen is a real installable app with no browser chrome, not a metaphor.
+
 ## Interaction
 
 Keyboard first: `j`/`k` walk the screens, `1`–`5` and `0` the stages, `[`/`]`
@@ -104,15 +123,20 @@ stylesheet are part of the spec, not extras.
 
 ## Style
 
-A native console, not a themed one: frosted, blurred materials for the
-toolbar and sidebar, the system font stack rendering as real San Francisco or
-Segoe or Roboto depending on the machine it runs on, and Apple's own system
-semantic colors — one blue for the primary action, green/orange/red doing
-only the state work they mean and never decoration. A macOS style segmented
-control switches the inspector's faces; a media scrubber, not a plain range
-input, divides the two layers in the main pane. The night console is the
-default because the content is screenshots; a day console — the same
-materials, inverted to a light ground — exists behind one key.
+A design studio, not a code editor: every panel is a rounded, floating card
+on a neutral workspace with a soft shadow instead of a flush, edge to edge
+dock, and one gradient — a violet into a pink — carries every accent, every
+selection state and the primary button, the way a creative tool's own brand
+color does rather than a system blue. Section headers, the wordmark and the
+screen title use a rounded system face (`ui-rounded`, real SF Pro Rounded on
+a Mac, a plain sans elsewhere) for warmth; data — code, paths, timings —
+stays in the monospace stack, so the page reads as dense and precise where
+precision matters and friendly everywhere else. Verb and status columns are
+colored pills, not plain colored text. The day console — a pale lavender
+workspace, white cards — is the default, following the system's own light or
+dark preference until a person picks explicitly; the night console leans
+darker and denser, closer to a creative suite's own chrome, with the same
+gradient doing the same work.
 
 ## Data
 
