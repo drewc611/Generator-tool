@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <ReportParameters>
+    <ReportParameter Name="CompanyName">
+      <DataType>String</DataType>
+    </ReportParameter>
+  </ReportParameters>
+  <DataSets>
+    <DataSet Name="CustomerDataSet">
+      <Fields>
+        <Field Name="customerName"><DataField>customerName</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="invoiceDate"><DataField>invoiceDate</DataField><rd:TypeName>System.DateTime</rd:TypeName></Field>
+        <Field Name="amount"><DataField>amount</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <Body>
+    <ReportItems>
+      <Textbox Name="titleTextbox">
+        <Value>Invoice</Value>
+      </Textbox>
+      <Textbox Name="companyTextbox">
+        <Value>=Parameters!CompanyName.Value</Value>
+      </Textbox>
+      <Tablix Name="detailsTablix">
+        <DataSetName>CustomerDataSet</DataSetName>
+        <TablixBody>
+          <TablixRows>
+            <TablixRow>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="tb1"><Value>Customer</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="tb2"><Value>Amount</Value></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="tb3"><Value>=Fields!customerName.Value</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="tb4"><Value>=Fields!amount.Value</Value></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+          </TablixRows>
+        </TablixBody>
+      </Tablix>
+      <Textbox Name="totalTextbox">
+        <Value>=Sum(Fields!amount.Value)</Value>
+      </Textbox>
+      <Image Name="logoImage"><Source>Embedded</Source><Value>logoBytes</Value></Image>
+      <Line Name="rule1"/>
+      <Rectangle Name="box1"><ReportItems/></Rectangle>
+      <Subreport Name="lineItemsSubreport"><ReportName>LineItems</ReportName></Subreport>
+    </ReportItems>
+  </Body>
+  <PageHeader>
+    <ReportItems>
+      <Textbox Name="pageHeaderTb"><Value>Invoice Report</Value></Textbox>
+    </ReportItems>
+  </PageHeader>
+  <PageFooter>
+    <ReportItems>
+      <Textbox Name="pageFooterTb"><Value>Confidential</Value></Textbox>
+    </ReportItems>
+  </PageFooter>
+</Report>

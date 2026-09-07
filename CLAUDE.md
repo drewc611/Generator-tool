@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, a hundred and ninety three in five classes, and the core has never learned
+Plugins that ship, two hundred and twenty one in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -84,7 +84,7 @@ input    input-alpine  input-angular  input-angularjs  input-vue  input-knockout
          input-backbone  input-jquery  input-jsf  input-aspnet  input-static
          input-underscore  input-handlebars  input-jinja
          input-openapi  input-pdf  input-explore  input-record  input-shots
-         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo
+         input-blackbox  input-polymer  input-riot  input-react  input-svelte  input-lit  input-stencil  input-webcomponents  input-ember  input-mithril  input-marko  input-liquid  input-twig  input-xslt  input-blade  input-razor  input-freemarker  input-velocity  input-pug  input-thymeleaf  input-smarty  input-jsp  input-cfml  input-haml  input-slim  input-twirl  input-django  input-ejs  input-pebble  input-volt  input-exe  input-extjs  input-fetch  input-winforms  input-xaml  input-vb6  input-delphi  input-asar  input-rc  input-photo  input-gwt  input-flex  input-qt  input-swing  input-glade  input-fbp  input-jasperreports  input-uno  input-birt  input-storyboard  input-tapestry  input-ssrs  input-powerbuilder  input-fxml  input-netbeansform  input-cics  input-informix  input-cobolscreen  input-ispf  input-xbase  input-fluid  input-tk  input-autoit  input-openedge  input-pbwin  input-awt  input-uikit
 dsp      dsp-ir  dsp-tokens  dsp-apimap  dsp-behavior  dsp-improve
          dsp-a11y  dsp-cognitive  dsp-components  dsp-props  dsp-i18n  dsp-deadcode  dsp-dates
          dsp-flags  dsp-focus  dsp-forms  dsp-permissions  dsp-perf  dsp-entities  dsp-motion  dsp-print  dsp-cookies
@@ -101,7 +101,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-codemod  output-aws  output-azure  output-gcp  output-vercel  output-netlify  output-cloudflare  output-caddy  output-eleventy  output-playwright
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph  vis-transformer  vis-a11y  vis-security  vis-perf  vis-lifecycle  vis-readers
 general  general-policy  general-authorization  general-license  general-size
-         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish
+         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study
 ```
 
 An option the CLI does not recognise is passed through to the plugins
@@ -497,6 +497,284 @@ moment after a drop is the moment it says plainly whether the file became a
 screen or not, and where READERS.md says why. test/readers-census.test.js and
 test/ui.test.js hold it.
 
+10.7 reaches four more of the desk and the RIA era at once. input-gwt reads
+Google Web Toolkit's UiBinder, a .ui.xml widget tree paired with its .java
+class: panels recurse into their children, a ui:field names a widget's own
+field, a list box's inline <g:item> children become real options, and a
+button wires ng-click to its resolved @UiHandler, kept only as existing and
+how long it runs. input-flex reads Adobe Flex's MXML, an Application or
+WindowedApplication tree with its script held in the same file as CDATA the
+way a Vue single file component holds its script beside its template: a
+Panel's title becomes a heading, a click is matched against the functions
+the script block declares, and a {expression} data binding is named rather
+than printed as if it were the words a person saw. input-qt reads Qt
+Designer's .ui XML forms, a widget tree laid out in the document order its
+own layouts recorded, with the connections section's signal and slot wiring
+read the way every other reader already names a handler: a promoted widget,
+an opaque property (a size policy, a palette) and a button with no
+clicked() connection are each named rather than approximated. input-swing
+reads Java Swing the way a NetBeans style GUI builder actually writes it, no
+separate declarative file, only a generated initComponents method found by
+its own GEN markers: a caption taken only where setText carries a literal, a
+label paired to its field through setLabelFor, and a click matched from the
+generated anonymous listener straight through to its real handler, kept as
+existing and how many lines it ran. All four lower onto the same AngularJS
+attribute dialect every other reader targets, so a widget from any one of
+them reaches React, Vue and Svelte exactly as an Angular component does.
+test/gwt.test.js, test/flex.test.js, test/qt.test.js and test/swing.test.js
+hold them.
+
+10.8 reaches the native desktop's other two toolkits and the printed page
+behind them both. input-glade reads GTK Builder's .glade files, GTK2 and
+GTK3's own declarative UI format: a GtkFrame's label becomes a heading, a
+GtkLabel's mnemonic_widget pairs it to its field the way a Qt buddy does, a
+GtkButton wires its own signal child straight to an output, and a
+GtkRadioButton's group property names another radio's id directly, so
+grouping is resolved transitively rather than by a shared button group's
+name. Because Qt Designer's own .ui files can share this format's shape
+under the same extension in the wild, this reader answers only to .glade,
+leaving .ui entirely to input-qt. input-fbp reads wxFormBuilder's .fbp
+project files for wxWidgets: a sizeritem or a spacer unwrapped to the one
+widget it holds or skipped outright, a wxStaticBoxSizer's own label kept as
+a heading, and wxWidgets' own radio grouping rule followed exactly, a
+wxRB_GROUP style starting a new group that every radio after it joins
+across sizers until the next one starts another. input-jasperreports reads
+JasperReports' .jrxml band layouts as the document they are: a read only
+screen with no input, button or event to wire, title through summary each
+a section in page order, and a bare $F, $P or $V reference the one
+expression shape this reader evaluates, lowered onto the dialect's own
+interpolation; anything a textField expression does beyond that single
+reference is named rather than partly reproduced. All three name a widget
+class, a property or an expression with no honest equivalent rather than
+approximating it. test/glade.test.js, test/fbp.test.js and
+test/jasperreports.test.js hold them.
+
+10.9 reaches the office suite's own dialog editor and the enterprise's other
+report designer. input-uno reads LibreOffice and OpenOffice Basic's .xdl
+UNO dialog files, flat and absolutely positioned with no layout manager to
+reproduce: a control's every property is an attribute rather than a nested
+element, unlike Qt's or GTK Builder's own shapes, and a checkbox's dlg:value
+can name either a caption or a checked state default with nothing in the
+file to tell them apart, so a bare zero or one with no dlg:label beside it
+is named rather than guessed. Radio buttons group by an explicit
+dlg:radiogroup when a file writes one and, failing that, by a run of
+consecutive siblings this reader names as its own structural convenience
+rather than a rule the format states. input-birt reads Eclipse BIRT's
+.rptdesign reports, which ran banking, insurance and government back office
+reporting alongside JasperReports from the mid two thousands onward: a
+table's own header, detail and footer bands are kept as a real thead, tbody
+and tfoot rather than a flow this reader would have to invent, because BIRT
+drew a grid and the port keeps the grid. A bare resultSetColumn reference is
+the one value read for real, lowered onto the dialect's own interpolation; a
+computed expression is named rather than evaluated, even where a file
+carries both a resultSetColumn and an expression, since the expression is
+what BIRT would actually compute, and a list, BIRT's own repeating
+container, is named present with its dataset and never inlined. test/uno.test.js
+and test/birt.test.js hold both.
+
+10.10 reaches the desk Interface Builder built and the enterprise intranet
+framework the other readers skipped. input-storyboard reads Apple's
+.storyboard and .xib files: a scene is a real screen boundary the way a Qt
+Designer form or a UNO dialog is, so a multi scene storyboard becomes one
+screen per scene, each named from its own view controller's customClass or,
+absent one, the scene's own id; a .xib is the same vocabulary with no scene
+wrapper at all, read through the identical code path. A switch reads its
+nearest label as its caption when one sits beside it, a segmented control's
+inline segments become real options, a button's touchUpInside action wires
+an output the way every other reader already names a handler, and a segue
+is named as the navigation it is and never wired, since routing between
+scenes is out of scope for a single screen reader. input-tapestry reads
+Apache Tapestry's .tml templates, which stay valid HTML with t: namespaced
+attributes and elements marking exactly the spots a designer's plain markup
+turns dynamic, so only what actually carries Tapestry meaning is
+translated and everything else passes through unchanged: t:type="textfield"
+and "passwordfield" become a real input with ng-model, t:if and t:loop wrap
+their contents in the same ng-if and ng-repeat containers input-jinja and
+input-twig already use, and a bare ${property} becomes {{ property }}. A
+select's unresolved t:model and a submit button's convention bound handler
+stay named gaps rather than invented wiring, the same restraint input-qt
+and input-glade already keep over what a form's own code, not its markup,
+decides. test/storyboard.test.js and test/tapestry.test.js hold both.
+
+10.11 reaches the format banking, insurance and government back offices
+have run since SQL Server 2000, and closes with the one legacy interface
+that was never markup at all. input-ssrs reads Microsoft's own .rdl report
+definitions: PageHeader, Body and PageFooter each become a section in page
+order, and a Tablix, RDL's table and matrix construct, has its deeply
+nested row and cell layout flattened onto a real HTML table, since RDL
+draws no header, detail or footer distinction inside one the way BIRT's
+table does. A bare `=Fields!name.Value` or `=Parameters!name.Value`
+reference is the one expression shape read for real; anything else a
+VB.NET expression does is named rather than partly reproduced, the same
+restraint input-jasperreports and input-birt already keep. input-powerbuilder
+reads Sybase/Appeon PowerBuilder's exported .srw window sources, a plain
+text export with no XML or JSON shape of its own: a `forward` section
+declares every control's name and class before the file's real content,
+and finding each control's real, later property block rather than that
+forward-declared shell is the one structural decision the reader makes.
+Radios group by a run of consecutive siblings the same honest heuristic
+input-uno already documents for its own radios, a groupbox's children are
+never reparented beneath it since PowerBuilder places every control flat
+within the window, and a DataWindow, a separate `.srd`/`.pbl` artifact,
+is named rather than guessed at. test/ssrs.test.js and
+test/powerbuilder.test.js hold both.
+
+10.12 reaches JavaFX and closes the loop on NetBeans' own designer.
+input-fxml reads a `.fxml` file's container and control tree the way
+input-qt and input-glade already read a desktop form: a button's own
+`onAction="#method"` attribute becomes an output named after the
+controller method it calls, radios group by an explicit `toggleGroup`
+reference however far apart the two controls sit and fall back to
+consecutive siblings only when neither carries one, and an attached
+property, positioning a parent container assigns a child, is dropped as
+the layout it is with no per-control note, since there would be one per
+positioned control and it would be noise rather than a gap.
+input-netbeansform reads the `.form` XML sidecar the Matisse designer
+saves beside the same class input-swing already reverse engineers from
+generated code, so what input-swing has to infer this reader is simply
+told: a label's `labelFor` and a radio's `buttonGroup` are
+`<ComponentRef>` references resolved against `<NonVisualComponents>`, the
+file's own ground truth, and an `<Events><EventHandler>` names a button's
+wiring directly, its handler stripped of the `ActionPerformed` suffix and
+never run through the case folding that would flatten a name like
+`loginButton` into one word. test/fxml.test.js and
+test/netbeansform.test.js hold both.
+
+10.13 reaches the two places a screen was never markup at all. input-cics
+reads IBM CICS BMS `.bms` map definitions, a mainframe 3270 screen's macro
+assembler source: a `DFHMDI` opens one map, a real screen boundary the way
+a storyboard scene is, and a `DFHMDF` field is positioned absolutely by
+`POS=(row,col)` with no container to nest it in, so fields are ordered by
+position rather than declaration; `ATTRB=(PROT)` with an `INITIAL` is a
+caption, `ATTRB=(UNPROT)` a real input. BMS states no button, no submit and
+no event at all, since a 3270 screen is driven by whichever program the
+operator's AID key handed control to, so this reader is honest that it
+produces zero outputs. input-informix reads Informix 4GL/ESQL `.per` screen
+forms, where position is not an attribute but the literal row and column a
+`[tag]` placeholder sits at inside the `SCREEN` section's own ASCII art; the
+`ATTRIBUTES` section's `tag = table.column, MODIFIER;` statements resolve
+what each placeholder binds to, `NOENTRY` renders read only rather than as
+an input, and `REQUIRED` is named for the port to enforce rather than
+written as an attribute this reader has not verified. Like BMS, a `.per`
+file names no button and no event, so this reader too produces zero
+outputs; a placeholder with no matching attributes statement and an
+attributes statement whose tag never appears on screen are each named as
+the mismatch they are. test/cics.test.js and test/informix.test.js hold
+both.
+
+10.14 reaches the interface declared inside the language itself, and the
+mainframe dialog the operator drove by hand. input-cobolscreen reads a
+standard COBOL program's SCREEN SECTION directly in the DATA DIVISION, no
+separate designer file at all: each 01 level entry is its own screen, a
+VALUE literal is a caption, and a PIC clause with USING or TO is a real
+input, its hyphenated COBOL data name camelCased, while PIC with FROM is
+read only. input-ispf reads IBM ISPF Dialog Manager .panel definitions,
+where a field's own variable name is read directly off the )BODY text
+beside its attribute character rather than from any separate declaration,
+the attribute's meaning, TYPE(TEXT), TYPE(INPUT) or TYPE(OUTPUT), resolved
+from a )ATTR section or ISPF's own three built-in defaults when one is
+missing; )INIT and )PROC are named present and never read for meaning.
+Like every mainframe format this tool has read, neither states a button or
+an event at all, so both readers are honest that they produce zero
+outputs; a PIC clause naming none of USING/FROM/TO, a relative LINE
+PLUS/COLUMN PLUS position, and an attribute character with no )ATTR entry
+and no built-in default are each named rather than guessed.
+test/cobolscreen.test.js and test/ispf.test.js hold both.
+
+10.15 reaches a screen built one executable statement at a time, and the
+fourth native GUI toolkit this tool reads. input-xbase reads dBase,
+Clipper and FoxPro `.prg` source for its `@ row, col SAY/GET` statements,
+interspersed anywhere in the file with no wrapping section at all; a
+`READ` statement is the one real boundary the language gives, closing
+every statement since the previous one into a screen, so several `READ`s
+make several screens. `PICTURE` is never translated, and `VALID`, `WHEN`,
+`RANGE` and `DEFAULT` are each named present rather than evaluated.
+input-fluid reads FLTK's FLUID `.fl` designer files, brace nested the way
+Qt Designer's `.ui`, GTK Builder's `.glade` and wxFormBuilder's `.fbp`
+already are, so a root `Fl_Window` becomes a screen the same way a form in
+any of the other three does; a control's own label is read straight off
+its node, a callback resolves to an output only from a clean
+`functionName(...)` call, and `Fl_Round_Button` groups by its shared
+immediate parent container, the one real structural signal FLTK's own
+runtime grouping behaviour gives, rather than a consecutive siblings
+guess. test/xbase.test.js and test/fluid.test.js hold both.
+
+10.16 reaches two more screens built one executable statement at a time.
+input-tk reads Tcl/Tk scripts for their widget-creation commands wherever
+they fall in the file, no separate designer file at all; a radio button's
+own `-variable` is Tk's real grouping mechanism, every radio sharing one
+variable belongs to one group however far apart in the file, a stronger
+signal than any consecutive-siblings fallback this tool's other readers
+fall back to when a format gives none. input-autoit reads AutoIt `.au3`
+scripts, where a field's name comes from the variable a `GUICtrlCreate`
+call's return value was assigned to, since the language gives it no other
+name; a button is wired entirely through its event loop, so this reader
+matches a button's own variable against a `Case`/`If` block in the file's
+`GUIGetMsg` loop and reads the one clean function call inside it, naming
+anything more complex present rather than approximated. Both readers join
+their own language's line continuation before parsing and group an
+unreferenced radio by a run of consecutive calls, this reader's own
+structural convenience rather than a rule either format states.
+test/tk.test.js and test/autoit.test.js hold both.
+
+10.17 reaches the 4GL that still runs the back office, and the dialog
+built by numbered controls rather than named ones. input-openedge reads
+Progress OpenEdge ABL `.p` source, where a `DEFINE VARIABLE`/`DEFINE
+BUTTON` declares a field or button anywhere in the file but a `FORM ...
+WITH FRAME` block is the one real screen boundary the language gives,
+naming which declared fields and buttons belong to a screen and in what
+order; a button wires from its own `ON CHOOSE OF` block only when it
+holds exactly one clean bare `RUN name.` statement. input-pbwin reads
+PowerBASIC for Windows `.bas` source, where a DDT control's identity is a
+plain integer id rather than a variable a value was assigned to, so this
+reader names each field after its own id; a button wires from its own
+trailing `CALL procname` clause on the same statement, the cleanest
+wiring reference any statement-built reader in this tool gets. Both name
+a name their own `FORM`/`DIALOG` block references with nothing declared
+for it, rather than inventing a field. test/openedge.test.js and
+test/pbwin.test.js hold both.
+
+10.18 reaches the desktop and the mobile screen from before either had a
+builder. input-awt reads hand written Java AWT/Swing `.java` files built
+through plain `new ClassName(...)` construction and `add(...)` calls, no
+designer and no generated `initComponents`; it shares the same `.java`
+extension input-swing and input-gwt already scan, importing input-swing's
+own generated-code marker check directly rather than a second copy of it,
+so the two readers can never disagree about which file belongs to which.
+input-uikit reads the code-only sibling of what input-storyboard already
+reads declaratively: raw Objective-C UIKit view construction in `.m`
+files, `[[UILabel alloc] initWithFrame:...]` and `addSubview:`, common
+before Storyboards existed and still written today by choice. Both name
+a field after the variable its construction was assigned to, since
+neither language's own construction call binds a name any other way;
+input-uikit's button wires from `@selector(methodName)`, a real, clean,
+unambiguous method reference, while input-awt's resolves only a clean,
+single, zero-argument method call passed to `addActionListener`, an
+anonymous inner class or a multi-statement lambda named present rather
+than read for what it does. test/awt.test.js and test/uikit.test.js hold
+both.
+
+10.19 gives the console a solver of its own and the transformer a second
+hard task under more than one head. general-study answers "read documents"
+and "do the math" the way every other plugin in this tool answers a
+capability: offline and by name. `solve.js` is a hand written recursive
+descent parser that evaluates pure arithmetic and, for an equation with
+exactly one variable, tracks a `{coeff, constant}` pair through the
+expression so it can solve for that variable; a nonlinear term, a second
+variable, no variable at all or more than one `=` each refuse by name
+through `SolveError` rather than approximate an answer, and implicit
+multiplication (`2x`, `3(x + 1)`) is read as the `*` it stands for.
+`pdftext.js` calls `input-pdf`'s own reader for the text of a dropped PDF;
+no PDF parsing was written twice. Both are wired live into two new console
+routes, and STUDY.md demonstrates the solver on one fixed equation with its
+real steps. vis-transformer's sort task, the one this tool already reports
+as genuinely hard for a single block, gets the multi head port
+`trainReverseMultiHead` proved for reversal: `trainSortMultiHead` reuses
+the same gradient checked machinery, its own numerical check run again
+rather than assumed to carry over, and SORT_MULTIHEAD.md reports whether
+more heads help a harder task generalize exactly as measured. test/study.test.js
+and the new cases in test/transformer.test.js hold both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -562,8 +840,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and fifty two features in
-one hundred and fifty five phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and eighty two features in
+one hundred and eighty five phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

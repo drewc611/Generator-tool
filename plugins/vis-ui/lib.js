@@ -150,7 +150,8 @@ export const FLAG_GROUPS = [
   { label: "api & docs", flags: ["openapi", "msw", "postman", "curl", "adr", "migration", "types"] },
   { label: "tests", flags: ["cypress", "playwright", "storybook", "fixtures"] },
   { label: "design", flags: ["tailwind", "design-tokens"] },
-  { label: "transformer", flags: ["transformer", "train", "train-reverse", "train-sort", "train-math"] },
+  { label: "transformer", flags: ["transformer", "train", "train-reverse", "train-sort", "train-math", "train-reverse-mh", "train-sort-mh"] },
+  { label: "study", flags: ["study"] },
 ];
 
 /** Every flag the console offers, flattened from the groups it shows them in. */

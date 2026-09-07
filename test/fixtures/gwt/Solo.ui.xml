@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder" xmlns:g="urn:import:com.google.gwt.user.client.ui">
+  <g:FlowPanel>
+    <g:Label>No paired class</g:Label>
+    <g:Button ui:field="soloButton">Go</g:Button>
+  </g:FlowPanel>
+</ui:UiBinder>

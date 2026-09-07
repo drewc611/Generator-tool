@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder" xmlns:g="urn:import:com.google.gwt.user.client.ui">
+  <g:HTMLPanel>
+    <g:Label>Username</g:Label>
+    <g:TextBox ui:field="usernameBox"/>
+    <g:Label>Password</g:Label>
+    <g:PasswordTextBox ui:field="passwordBox"/>
+    <g:CheckBox ui:field="rememberBox">Remember me</g:CheckBox>
+    <g:ListBox ui:field="roleList">
+      <g:item value="admin">Administrator</g:item>
+      <g:item value="user">User</g:item>
+    </g:ListBox>
+    <g:Button ui:field="loginButton">Login</g:Button>
+  </g:HTMLPanel>
+</ui:UiBinder>

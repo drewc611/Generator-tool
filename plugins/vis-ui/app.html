@@ -372,6 +372,7 @@
     <button class="key tab" id="tab-signals" role="tab" aria-selected="true" data-tab="signals">endpoints · unverified</button>
     <button class="key tab" id="tab-files" role="tab" aria-selected="false" data-tab="files">files</button>
     <button class="key tab" id="tab-reports" role="tab" aria-selected="false" data-tab="reports">reports</button>
+    <button class="key tab" id="tab-study" role="tab" aria-selected="false" data-tab="study">study</button>
   </div>
   <div class="pane" id="pane-signals" role="tabpanel" aria-labelledby="tab-signals">
     <div class="split">
@@ -392,6 +393,26 @@
   <div class="pane" id="pane-reports" role="tabpanel" aria-labelledby="tab-reports" hidden>
     <div class="cap"><span>the run's reports, rendered</span><b id="reports-total"></b></div>
     <div class="sunk" style="flex:1;min-height:0"><div class="scroll"><ul id="reports-list" class="reports"></ul></div></div>
+  </div>
+  <div class="pane" id="pane-study" role="tabpanel" aria-labelledby="tab-study" hidden>
+    <div class="split">
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div class="cap"><span>arithmetic, or one equation in one variable</span></div>
+        <div class="sunk" style="padding:8px;flex:1;min-height:0;overflow:auto">
+          <div class="transport">
+            <input id="study-input" type="text" placeholder="2x + 3 = 11" aria-label="an expression or a one variable equation" style="flex:1;min-width:0;font:inherit;font-size:11px;padding:4px 6px;background:#0d1a14;color:var(--p-hi);border:1px solid var(--edge-lo)">
+            <button class="key run" id="study-solve" title="Solve the expression or equation, showing the real steps">solve</button>
+          </div>
+          <div id="study-result" style="margin-top:8px;white-space:pre-wrap"></div>
+          <p class="hint" style="margin-top:8px">Arithmetic, and one equation in one variable. A second variable, a squared term, or an equation with no variable at all is refused by name, never guessed.</p>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div class="cap"><span>a PDF's plain text, read from the intake</span><button class="key" id="study-refresh-pdfs" title="List the PDFs currently in the intake">list PDFs</button></div>
+        <div class="sunk" style="flex:1;min-height:0"><div class="scroll" id="study-pdf-list"></div></div>
+        <div class="sunk" style="flex:1;min-height:0;margin-top:6px"><pre class="scroll" id="study-pdf-text" style="margin:0;padding:8px;white-space:pre-wrap"></pre></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -844,6 +865,9 @@ const FLAG_TITLE = {
   "design-tokens": "Write tokens.css from what the source measured", transformer: "Draw the transformer's attention (ATTENTION.md)",
   train: "Train it on its fixed task (TRAINING.md)", "train-reverse": "Train and grade reversal on held out data (REVERSE.md)",
   "train-sort": "Train and grade sorting on held out data (SORT.md)", "train-math": "Train and grade arithmetic on held out data (MATH.md)",
+  "train-reverse-mh": "Train the multi-head, multi-layer reversal model and grade it (REVERSE_MULTIHEAD.md)",
+  "train-sort-mh": "Train the multi-head sorting model and grade it (SORT_MULTIHEAD.md)",
+  study: "Demonstrate the arithmetic and equation solver (STUDY.md)",
 };
 function renderFlags() {
   const box = $("flags");
@@ -940,6 +964,42 @@ const drop = $("drop");
 drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
 drop.addEventListener("dragleave", () => drop.classList.remove("over"));
 drop.addEventListener("drop", async (e) => { e.preventDefault(); drop.classList.remove("over"); intake(await filesOf(e.dataTransfer)); });
+
+/* ------------------------------------------------------------------ study */
+// Arithmetic and one-variable linear equations, solved live with no pipeline
+// run at all; a PDF already in the intake, read for its plain text the same
+// way input-pdf reads one to port a document page. Nothing here reaches the
+// network or a model — the server's own /study/* routes call the same pure
+// solver and the same zero dependency PDF reader, directly.
+async function studySolve() {
+  const text = $("study-input").value;
+  const out = $("study-result");
+  if (!text.trim()) { out.textContent = ""; return; }
+  const r = await fetch("/study/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) }).then((r) => r.json()).catch((err) => ({ ok: false, error: err.message }));
+  out.innerHTML = r.ok
+    ? esc(r.steps.join("\n")) + (r.variable ? "\n\n" + esc(r.variable + " = " + (r.value ?? "(every value — an identity)")) : "")
+    : '<span style="color:var(--amber)">' + esc(r.error ?? "could not be solved") + "</span>";
+}
+$("study-solve").addEventListener("click", studySolve);
+$("study-input").addEventListener("keydown", (e) => { if (e.key === "Enter") studySolve(); });
+
+async function studyListPdfs() {
+  const box = $("study-pdf-list");
+  const { files } = await fetch("/intake.json").then((r) => r.json());
+  const pdfs = files.filter((f) => /\.pdf$/i.test(f.path));
+  box.innerHTML = pdfs.length
+    ? pdfs.map((f) => `<div class="key" data-path="${esc(f.path)}" style="cursor:pointer;padding:3px 6px" tabindex="0">${esc(f.path)}</div>`).join("")
+    : '<span class="hint">no PDF in the intake yet — drop one on the intake above</span>';
+}
+$("study-refresh-pdfs").addEventListener("click", studyListPdfs);
+$("study-pdf-list").addEventListener("click", async (e) => {
+  const row = e.target.closest("[data-path]");
+  if (!row) return;
+  const pre = $("study-pdf-text");
+  pre.textContent = "reading…";
+  const r = await fetch("/study/pdf-text?path=" + encodeURIComponent(row.dataset.path)).then((r) => r.json()).catch((err) => ({ ok: false, error: err.message }));
+  pre.textContent = r.ok ? r.text || "(no text found on any page)" : "refused: " + (r.error ?? "unknown");
+});
 
 function renderAll() {
   renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens();

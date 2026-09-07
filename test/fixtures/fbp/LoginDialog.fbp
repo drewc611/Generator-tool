@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wxFormBuilder_Project>
+  <FileVersion major="1" minor="17"/>
+  <object class="Project">
+    <object class="Dialog" name="LoginDialog">
+      <property name="title">Sign in</property>
+      <property name="bg">255,255,255</property>
+      <object class="wxBoxSizer">
+        <property name="orient">wxVERTICAL</property>
+        <object class="sizeritem">
+          <object class="wxStaticText" name="usernameLabel">
+            <property name="label">Username</property>
+          </object>
+        </object>
+        <object class="sizeritem">
+          <object class="wxTextCtrl" name="usernameCtrl"/>
+        </object>
+        <object class="sizeritem">
+          <object class="wxTextCtrl" name="passwordCtrl">
+            <property name="style">wxTE_PASSWORD</property>
+          </object>
+        </object>
+        <object class="sizeritem">
+          <object class="wxCheckBox" name="rememberCheck">
+            <property name="label">Remember me</property>
+          </object>
+        </object>
+        <object class="sizeritem">
+          <object class="wxChoice" name="roleChoice">
+            <property name="choices">&quot;Administrator&quot; &quot;User&quot;</property>
+          </object>
+        </object>
+        <object class="sizeritem">
+          <object class="wxButton" name="loginButton">
+            <property name="label">Login</property>
+            <event name="OnButtonClick">OnLoginButtonClick</event>
+          </object>
+        </object>
+      </object>
+    </object>
+  </object>
+</wxFormBuilder_Project>

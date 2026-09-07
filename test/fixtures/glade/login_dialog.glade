@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="3.0"/>
+  <object class="GtkDialog" id="login_dialog">
+    <property name="title">Sign in</property>
+    <property name="geometry">
+      <object class="GdkGeometry">
+        <property name="min_width">320</property>
+      </object>
+    </property>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="login_box">
+        <child>
+          <object class="GtkLabel" id="username_label">
+            <property name="label" translatable="yes">Username</property>
+            <property name="mnemonic_widget">username_entry</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkEntry" id="username_entry"/>
+        </child>
+        <child>
+          <object class="GtkLabel" id="password_label">
+            <property name="label" translatable="yes">Password</property>
+            <property name="mnemonic_widget">password_entry</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkEntry" id="password_entry">
+            <property name="visibility">False</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkCheckButton" id="remember_check">
+            <property name="label" translatable="yes">Remember me</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkComboBoxText" id="role_combo">
+            <items>
+              <item translatable="yes">Administrator</item>
+              <item translatable="yes">User</item>
+            </items>
+          </object>
+        </child>
+        <child>
+          <object class="GtkButton" id="login_button">
+            <property name="label" translatable="yes">Login</property>
+            <signal name="clicked" handler="on_login_button_clicked" swapped="no"/>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
