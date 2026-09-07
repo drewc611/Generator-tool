@@ -828,13 +828,19 @@ six are fixed rather than carried forward. The third pass first shipped
 with a violet into pink gradient standing in for the accent everywhere,
 called out as hideous once seen live; the gradient is dropped for one
 restrained blue that marks only a selection and the primary button, since
-an accent spent on every dot, badge and header marks nothing. The line
-budget, raised from
-2000 to 2050 for the second pass and to 2150 for the third, holds with room
-to spare; docs/UI-SPEC.md carries the same number, and the README's console
-images are real screenshots of the console the run actually serves rather
-than a hand-drawn mockup of it. test/ui.test.js's existing thirty four
-cases hold the contract; none needed rewriting.
+an accent spent on every dot, badge and header marks nothing. Asked
+again for more blackness and more blue, night moves from a neutral dark
+gray to a near black with a blue cast (the workspace, panels and hairlines
+all carry a blue tint rather than sitting neutral) and becomes the
+default regardless of the system's own light or dark preference, because
+the console's own content is screenshots and code, not a document; day
+exists one key away, retinted from its earlier lavender-gray to match, a
+pale blue-gray table rather than a violet one. The line budget, raised
+from 2000 to 2050 for the second pass and to 2150 for the third, holds
+with room to spare; docs/UI-SPEC.md carries the same number, and the
+README's console images are real screenshots of the console the run
+actually serves rather than a hand-drawn mockup of it. test/ui.test.js's
+existing thirty four cases hold the contract; none needed rewriting.
 
 ## What is honestly incomplete
 
