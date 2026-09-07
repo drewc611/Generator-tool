@@ -35,60 +35,64 @@ Opens a browser. Serves only on localhost. Dies on ctrl c.
 
 ## Layout
 
-A three column desk plus the mast. The one place content is tabbed is the
-margin, whose four faces (endpoints & unverified, files, reports, study) are
-views of the same run; endpoints and unverified share the default face
-because it is the pair people need to see first.
+A three column desk under one unified, frosted toolbar. The one place content
+is tabbed is the inspector, whose four faces (signals, files, reports, study)
+are views of the same run; signals is the default face because endpoints and
+unverified are the pair people need to see first.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │ MAST  wordmark · readout · stats (files/plugins/ms/            │
-│       unverified/ported) · trend sparkline · swatches · keys   │
+│       unverified/ported) · trend sparkline · theme · keys      │
 ├───────────────┬──────────────────────────┬────────────────────┤
-│  INDEX        │  FOLIO                   │  MARGIN (tabs)     │
-│  stages, 1-5  │   [ recorded ] [ built ]  │  endpoints &       │
-│  ── screens ──│   a wipe divides them;    │   unverified       │
-│  orders    ●  │   the built pane is the   │  files             │
-│  billing   ○  │   live element when one   │  reports           │
-│  ── rack ──   │   was emitted, source     │  study             │
-│  by class or  │   with highlighting       │                    │
-│  by cost      │   otherwise, copy a key   │                    │
-│  ── intake ── │   away                    │                    │
+│  SIDEBAR      │  MAIN                    │  INSPECTOR (segs)  │
+│  ── pipeline ─│   header: name · path    │  Signals Files      │
+│  stages, 1-5  │   [ recorded ][ built ]  │  Reports Study      │
+│  ── screens ──│   a scrubber divides     │                    │
+│  orders    ●  │   them; the built pane   │  endpoints &        │
+│  billing   ○  │   is the live element    │   unverified,       │
+│  ── plugins ──│   when one was emitted,  │   selected by a     │
+│  by class or  │   source with            │   macOS style       │
+│  by cost      │   highlighting otherwise │   segmented control │
+│  ── tray ──   │                           │                    │
 │  drop zone,   │                           │                    │
-│  a dropdown   │                           │                    │
-│  of rerun     │                           │                    │
-│  flags, run   │                           │                    │
+│  a searchable │                           │                    │
+│  flags panel, │                           │                    │
+│  run           │                           │                    │
 └───────────────┴──────────────────────────┴────────────────────┘
 ```
 
-**Plugin rack**, left, below the screens. Every loaded plugin grouped by
-class — or ordered by cost, one key away — with what it contributed and how
-long it took. This is the Winamp plugin list and the main reason the UI is
-worth building.
+**Plugin rack**, in the sidebar, below the screens. Every loaded plugin
+grouped by class — or ordered by cost, one key away — with what it
+contributed and how long it took. This is the Winamp plugin list and the main
+reason the UI is worth building.
 
-**Screen list**, above the rack, filterable. A filled row means a screenshot
-matched, an "observed" or "no shot" label says why not. Clicking one loads it
-into the folio; the selection lives in the URL hash and survives a reload.
+**Screen list**, above the rack, filterable, rendered as rounded rows that
+pick up the accent when selected. A filled row means a screenshot matched, an
+"observed" or "no shot" label says why not. Clicking one loads it into the
+main pane; the selection lives in the URL hash and survives a reload.
 
-**Folio**, centre, with a draggable wipe. When the run emitted a custom
-element the pane shows it live in every state — empty, rows (invented and
-labeled as invented), loading, error. No screenshot, no element, an empty
-placeholder file: each case says so in the pane rather than showing a blank,
-and each layer keeps to its own side of the seam so an empty state in one
-never prints over real content in the other.
+**Main pane**, centre, with a media scrubber between the two layers instead
+of a plain wipe. When the run emitted a custom element the pane shows it live
+in every state — empty, rows (invented and labeled as invented), loading,
+error. No screenshot, no element, an empty placeholder file: each case says
+so in the pane rather than showing a blank, and each layer keeps to its own
+side of the seam so an empty state in one never prints over real content in
+the other.
 
-**Margin**, right, tabbed. Endpoints & unverified holds the endpoints (with a
-verb dropdown) and the unverified list with its filter. Files lists
-everything the run wrote with the plugin and stage that wrote it; a text
-file opens in the folio. Reports lists the run's markdown, rendered by the
-server. Study solves arithmetic and one variable equations live and reads a
-PDF already in the intake for its plain text, both through general-study's
-own pure functions.
+**Inspector**, right, switched by a real macOS style segmented control
+instead of a row of tab buttons. Signals holds the endpoints (with a verb
+dropdown) and the unverified list with its filter. Files lists everything the
+run wrote with the plugin and stage that wrote it; a text file opens in the
+main pane. Reports lists the run's markdown, rendered by the server. Study
+solves arithmetic and one variable equations live and reads a PDF already in
+the intake for its plain text, both through general-study's own pure
+functions.
 
-**Intake**, bottom of the index. A drop zone takes a folder, a file, or a
-picture; "configure rerun" is a real dropdown — searchable, grouped by
+**Tray**, bottom of the sidebar. A drop zone takes a folder, a file, or a
+picture; "configure rerun" opens a real popover — searchable, grouped by
 category — over the offered flags, closed by default so the column stays
-readable, and only a pressed one travels with the next run.
+readable, and only a checked one travels with the next run.
 
 ## Interaction
 
@@ -100,14 +104,15 @@ stylesheet are part of the spec, not extras.
 
 ## Style
 
-A ledger, not a chassis: ruled paper, a serif hand for headings, a monospace
-hand for every fact, one ink — an oxblood accent — for the one action that
-matters (running the pipeline again) and for what the run could not verify.
-The recovered palette still gets a swatch strip rather than the chrome:
-painting the mast with the ported app's own accent is how the wordmark ends
-up unreadable, and a UI you cannot read tells you nothing about the tokens
-either. The night ledger is the default because the content is screenshots;
-a day ledger — cream paper, the same oxblood ink — exists behind one key.
+A native console, not a themed one: frosted, blurred materials for the
+toolbar and sidebar, the system font stack rendering as real San Francisco or
+Segoe or Roboto depending on the machine it runs on, and Apple's own system
+semantic colors — one blue for the primary action, green/orange/red doing
+only the state work they mean and never decoration. A macOS style segmented
+control switches the inspector's faces; a media scrubber, not a plain range
+input, divides the two layers in the main pane. The night console is the
+default because the content is screenshots; a day console — the same
+materials, inverted to a light ground — exists behind one key.
 
 ## Data
 

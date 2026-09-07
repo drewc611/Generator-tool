@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#17130f" />
+<meta name="theme-color" content="#1c1c1e" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" href="/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/icons/icon-180.png" />
@@ -12,304 +12,279 @@
 <title>portamp</title>
 <style>
   /*
-   * The ledger. A run is a register of what a machine found and did, so the
-   * console reads like one: ruled paper, a serif hand for headings, a
-   * monospace hand for every fact, one ink for the one action that matters
-   * (running the pipeline again) and for what the run could not verify. No
-   * gradient, no card, no rounded corners standing in for a decision.
+   * A media-player console: a frosted sidebar of sources, a unified toolbar,
+   * a scrubber between two recordings instead of two songs. The system font
+   * stack is the point, not a substitute for one: it renders as San Francisco
+   * on a Mac, Segoe on Windows, Roboto on Linux, so the console looks native
+   * everywhere instead of importing a look-alike. Nothing here is traced from
+   * a real application; the materials (frosted panels, one accent, a soft
+   * shadow doing real elevation) are a language, not a copy.
    */
   :root {
-    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", "URW Palladio", Georgia, serif;
-    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-    --bg: #17130f; --raised: #1e1811; --sunk: #120e0a;
-    --ink: #ece4d3; --dim: #b7a98e; --faint: #7c6f57;
-    --rule: #3a3126; --rule-soft: #2a2419;
-    --accent: #c1483a; --accent-ink: #fbeceb; --accent-soft: #402019;
-    --good: #6a9a6d; --info: #7fa6bb;
-    --shadow: rgba(0,0,0,.55);
-    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
+    --bg: #1c1c1e; --bg2: #232326; --bg3: #2c2c2e;
+    --sidebar: rgba(30,30,32,.78); --toolbar: rgba(28,28,30,.82);
+    --ink: #f5f5f7; --dim: #98989d; --faint: #6e6e73;
+    --line: rgba(255,255,255,.09); --line-solid: #38383a;
+    --accent: #0a84ff; --accent-ink: #ffffff;
+    --good: #30d158; --warn: #ff9f0a; --bad: #ff453a;
+    --shadow: 0 16px 40px rgba(0,0,0,.35); --shadow-sm: 0 2px 10px rgba(0,0,0,.2);
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   }
   :root[data-theme="day"] {
-    --bg: #f3ede0; --raised: #ece3cd; --sunk: #fbf7ee;
-    --ink: #241f1a; --dim: #5b5041; --faint: #948569;
-    --rule: #d8cbaa; --rule-soft: #e5dabd;
-    --accent: #8a2a20; --accent-ink: #fbeceb; --accent-soft: #f0d9d2;
-    --good: #3c6b40; --info: #3f6478;
-    --shadow: rgba(90,74,46,.18);
+    --bg: #f5f5f7; --bg2: #ffffff; --bg3: #ececee;
+    --sidebar: rgba(246,246,248,.78); --toolbar: rgba(249,249,251,.82);
+    --ink: #1d1d1f; --dim: #6e6e73; --faint: #8e8e93;
+    --line: rgba(0,0,0,.08); --line-solid: #d6d6d9;
+    --accent: #0071e3; --accent-ink: #ffffff;
+    --good: #248a3d; --warn: #b25000; --bad: #d70015;
+    --shadow: 0 16px 40px rgba(0,0,0,.14); --shadow-sm: 0 2px 10px rgba(0,0,0,.08);
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
     background: var(--bg); color: var(--ink);
-    font: 13px/1.5 var(--mono); letter-spacing: .1px;
-    height: 100vh; overflow: hidden;
-    display: grid; grid-template-rows: auto 1fr;
+    font: 13px/1.45 var(--sans); -webkit-font-smoothing: antialiased;
+    height: 100vh; overflow: hidden; display: grid; grid-template-rows: 52px 1fr;
   }
-  h1, h2, h3 { font-family: var(--serif); font-weight: 600; margin: 0; letter-spacing: -.01em; }
   button, input, select { font: inherit; color: inherit; }
-  ::selection { background: var(--accent); color: var(--accent-ink); }
+  ::selection { background: var(--accent); color: #fff; }
+  @media (prefers-reduced-motion: no-preference) {
+    .side-row, .seg, .btn, .flag-row, input[type=range]::-webkit-slider-thumb { transition: background-color .15s ease, color .15s ease, transform .1s ease; }
+  }
 
   /* ---------------------------------------------------------------- mast */
   .mast {
-    display: flex; align-items: center; gap: var(--sp-5);
-    padding: var(--sp-3) var(--sp-5);
-    border-bottom: 1px solid var(--rule);
-    background: var(--raised);
+    display: flex; align-items: center; gap: var(--sp-4); padding: 0 var(--sp-4);
+    background: var(--toolbar); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line); position: relative; z-index: 5;
   }
-  .brand { font-size: 22px; color: var(--accent); }
-  .brand small { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 2.5px;
-    text-transform: uppercase; color: var(--faint); font-weight: 400; }
-  .now-line { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .now-line #now { font-size: 15px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sub { font-size: 11px; color: var(--faint); }
-  .sub.warn { color: var(--accent); }
+  .brand { display: flex; align-items: center; gap: var(--sp-2); font-weight: 600; font-size: 14.5px; letter-spacing: -.01em; }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+  .now-line { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding-left: var(--sp-2); border-left: 1px solid var(--line); }
+  .now-line #now { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30vw; }
+  .sub { font-size: 10.5px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw; }
+  .sub.warn { color: var(--warn); }
   .stats { display: flex; gap: var(--sp-5); margin-left: auto; }
-  .stats dl { display: flex; flex-direction: column-reverse; gap: 1px; margin: 0; text-align: right; }
-  .stats dt { font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); }
-  .stats dd { margin: 0; font-size: 17px; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .trend { position: relative; padding: 2px; border-radius: 2px; }
-  .trend:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .stats dl { display: flex; flex-direction: column-reverse; gap: 0; margin: 0; text-align: right; }
+  .stats dt { font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+  .stats dd { margin: 0; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .trend { position: relative; padding: 4px; border-radius: 6px; }
+  .trend:hover, .trend:focus-visible { background: var(--line); }
   #spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.6; }
   #compare {
     position: absolute; top: calc(100% + 8px); right: 0; z-index: 40; display: none;
-    width: 236px; text-align: left; padding: var(--sp-3) var(--sp-4); font-size: 11.5px; line-height: 1.6;
-    color: var(--dim); background: var(--raised); border: 1px solid var(--rule);
-    box-shadow: 0 12px 28px var(--shadow);
+    width: 240px; text-align: left; padding: var(--sp-3) var(--sp-4); font-size: 11.5px; line-height: 1.6;
+    color: var(--dim); background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow);
   }
   .spark-box:hover #compare[data-ready], .spark-box:focus-within #compare[data-ready] { display: block; }
-  #compare h3 { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); margin-bottom: var(--sp-2); font-family: var(--mono); font-weight: 600; }
+  #compare h3 { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin: 0 0 var(--sp-2); font-weight: 600; }
   #compare ul { margin: 0; padding-left: 16px; } #compare li { color: var(--ink); } #compare p { margin: var(--sp-2) 0 0; }
   .swatch-row { display: flex; gap: 3px; }
-  .swatch-row i { width: 13px; height: 13px; border: 1px solid var(--rule); display: block; }
-  .chip {
-    border: 1px solid var(--rule); background: var(--sunk); color: var(--dim);
-    padding: 6px 12px; cursor: pointer; user-select: none; font-size: 11.5px;
+  .swatch-row i { width: 12px; height: 12px; border-radius: 4px; display: block; box-shadow: 0 0 0 1px var(--line) inset; }
+  .icon-btn {
+    width: 30px; height: 30px; border-radius: 8px; border: 0; background: transparent; color: var(--dim);
+    display: grid; place-content: center; cursor: pointer; font-size: 13px; font-weight: 600;
   }
-  .chip:hover { color: var(--ink); border-color: var(--dim); }
-  .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
-  .chip:active { transform: scale(.97); }
-  .chip:focus-visible, button:focus-visible, [tabindex]:focus-visible, input:focus-visible, select:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 1px;
-  }
+  .icon-btn:hover { background: var(--line); color: var(--ink); }
+  .icon-btn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  *:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
   /* -------------------------------------------------------------- layout */
-  .desk {
-    display: grid; grid-template-columns: 268px 1fr 340px;
-    min-height: 0; overflow: hidden;
-  }
+  .desk { display: grid; grid-template-columns: 236px 1fr 320px; min-height: 0; overflow: hidden; }
   @media (max-width: 980px) {
-    body { height: auto; overflow: visible; }
+    body { height: auto; overflow: visible; grid-template-rows: auto 1fr; }
+    .mast { flex-wrap: wrap; row-gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); }
+    .now-line { order: 3; flex: 1 1 100%; border-left: 0; padding-left: 0; }
+    .now-line #now, .sub { max-width: none; }
     .desk { grid-template-columns: 1fr; grid-auto-rows: auto; overflow: visible; height: auto; }
-    .index, .folio, .margin { min-height: 0; max-height: none; }
-    /* The page scrolls on a phone rather than clipping to the viewport, but a
-       panel still keeps its own scrollbar and a sane height: without a bound
-       here, a run of two hundred plugins prints every row full length before
-       the endpoints and unverified panels are reachable at all. */
-    .block-scroll { max-height: 44vh; }
+    .sidebar, .main, .inspector { min-height: 0; max-height: none; }
+    .side-scroll { max-height: 44vh; }
     .stage { min-height: 46vh; }
   }
-  .index, .margin { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-  .index { border-right: 1px solid var(--rule); }
-  .margin { border-left: 1px solid var(--rule); }
-  section, nav, aside { min-height: 0; }
-  .block { display: flex; flex-direction: column; min-height: 0; }
-  .block + .block { border-top: 1px solid var(--rule); }
-  .block-head {
-    display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4);
-    font-size: 9.5px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--faint); flex: none;
-  }
-  /* A flex item's default min-width is its content's own, so a search input
-     would rather overflow the column than shrink; this is the one override
-     that lets the row actually fit the space it was given. */
-  .block-head input, .block-head select { min-width: 0; }
-  .block-head b { margin-left: auto; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
-  .block-scroll { overflow: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+  .sidebar { background: var(--sidebar); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .main { display: flex; flex-direction: column; min-height: 0; }
+  .inspector { background: var(--bg); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .side-group { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: var(--sp-3) var(--sp-2) 0; }
+  .side-group + .side-group { border-top: 1px solid var(--line); margin-top: var(--sp-2); padding-top: var(--sp-4); }
+  .side-hd { display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-2) var(--sp-2); font-size: 10px; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--faint); flex: none; }
+  .side-hd b { margin-left: auto; font-weight: 400; font-variant-numeric: tabular-nums; }
+  .side-field { margin: 0 var(--sp-2) var(--sp-2); }
   .field {
-    background: var(--sunk); border: 1px solid var(--rule); color: var(--ink);
-    padding: 4px 8px; font: inherit; font-size: 12px; width: 100%;
+    background: var(--bg3); border: 1px solid transparent; border-radius: 8px; color: var(--ink);
+    padding: 6px 10px; font: inherit; font-size: 12.5px; width: 100%;
   }
+  .field:focus-visible { border-color: var(--accent); outline: none; }
   .field::placeholder { color: var(--faint); }
-
-  /* ------------------------------------------------------------- index */
-  .stage-list { list-style: none; margin: 0; padding: var(--sp-2) 0; flex: none; }
-  .stage-row {
-    display: flex; align-items: center; gap: var(--sp-3); width: 100%; text-align: left;
-    background: none; border: 0; color: var(--dim); padding: 5px var(--sp-4); cursor: pointer;
+  .side-scroll { overflow: auto; min-height: 0; scrollbar-width: thin; padding-bottom: var(--sp-2); }
+  .side-row {
+    display: flex; align-items: center; gap: var(--sp-2); width: calc(100% - 16px); margin: 1px 8px; text-align: left;
+    background: none; border: 0; border-radius: 8px; color: var(--dim); padding: 6px 8px; cursor: pointer; font: inherit; font-size: 12.5px;
   }
-  .stage-row .n { font-family: var(--mono); font-size: 11px; color: var(--faint); width: 16px; }
-  .stage-row .nm { flex: 1; font-size: 12.5px; }
-  .stage-row .ct { font-variant-numeric: tabular-nums; color: var(--faint); font-size: 11px; }
-  .stage-row:hover { color: var(--ink); background: var(--rule-soft); }
-  .stage-row[aria-pressed="true"] { color: var(--ink); background: var(--accent-soft); border-left: 2px solid var(--accent); padding-left: calc(var(--sp-4) - 2px); }
-
-  .screens-list, .rack-list { flex: 1; min-height: 0; }
-  .row-item {
-    display: flex; gap: var(--sp-2); width: 100%; text-align: left; align-items: baseline;
-    padding: 4px var(--sp-4); background: none; border: 0; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer;
-  }
-  .row-item:hover { background: var(--rule-soft); }
-  .row-item[aria-current="true"] { background: var(--accent); color: var(--accent-ink); }
-  .row-item .num { color: var(--faint); width: 16px; text-align: right; flex: none; font-size: 10.5px; }
-  .row-item[aria-current="true"] .num { color: var(--accent-ink); opacity: .8; }
-  .row-item .st { margin-left: auto; font-size: 10px; color: var(--faint); }
-  .row-item[aria-current="true"] .st { color: var(--accent-ink); opacity: .8; }
-  .grp-label { font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); padding: 7px var(--sp-4) 2px; }
-  .grp-label.c-input { color: var(--info); } .grp-label.c-dsp { color: var(--info); }
-  .grp-label.c-output { color: var(--accent); } .grp-label.c-vis { color: var(--dim); } .grp-label.c-general { color: var(--good); }
-  .said { color: var(--faint); font-size: 10.5px; padding: 0 var(--sp-4) 5px 20px; overflow-wrap: anywhere;
+  .side-row:hover { background: var(--line); color: var(--ink); }
+  .side-row[aria-pressed="true"], .side-row[aria-current="true"] { background: var(--accent); color: #fff; }
+  .side-row .n { font-family: var(--mono); font-size: 10.5px; color: var(--faint); width: 15px; flex: none; }
+  .side-row[aria-pressed="true"] .n, .side-row[aria-current="true"] .n { color: rgba(255,255,255,.75); }
+  .side-row .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side-row .ct, .side-row .st { font-variant-numeric: tabular-nums; font-size: 10.5px; color: var(--faint); flex: none; }
+  .side-row[aria-pressed="true"] .ct, .side-row[aria-current="true"] .st { color: rgba(255,255,255,.85); }
+  .said { color: var(--faint); font-size: 10px; padding: 0 8px 4px 31px; margin: -3px 8px 2px; overflow-wrap: anywhere;
           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .rack-list .row-item { align-items: center; }
-  .empty-note { padding: var(--sp-3) var(--sp-4); color: var(--faint); font-size: 12px; }
+  .empty-note { padding: var(--sp-2) var(--sp-3); color: var(--faint); font-size: 12px; }
 
-  /* -------------------------------------------------------- intake tray */
-  .tray { padding: var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); flex: none; }
+  /* -------------------------------------------------------- intake card */
+  .tray { padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); flex: none; border-top: 1px solid var(--line); margin-top: auto; }
   .drop {
-    display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
-    border: 1px dashed var(--rule); color: var(--faint); padding: var(--sp-4); cursor: pointer; font-size: 11px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; border-radius: 10px;
+    border: 1.5px dashed var(--line-solid); color: var(--faint); padding: var(--sp-3); cursor: pointer; font-size: 10.5px;
   }
-  .drop .lead { color: var(--dim); font-size: 12px; }
-  .drop.over, .drop:hover { border-color: var(--accent); color: var(--accent); }
+  .drop .lead { color: var(--dim); font-size: 11.5px; }
+  .drop.over, .drop:hover { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
   .drop.over .lead, .drop:hover .lead { color: var(--accent); }
   .drop input { display: none; }
   .tray-row { display: flex; gap: var(--sp-2); }
   .btn {
-    border: 1px solid var(--rule); background: var(--sunk); color: var(--dim);
-    padding: 6px 10px; font: inherit; font-size: 11.5px; cursor: pointer; flex: 1;
+    border: 0; background: var(--bg3); color: var(--ink); border-radius: 8px;
+    padding: 7px 10px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; flex: 1;
   }
-  .btn:hover { color: var(--ink); border-color: var(--dim); }
+  .btn:hover { background: var(--line-solid); }
   .btn:active { transform: scale(.97); }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-  .btn.primary:hover { background: #d55445; border-color: #d55445; }
-  .btn.primary.busy { background: var(--faint); border-color: var(--faint); cursor: progress; }
-  .btn.small { flex: 0 0 auto; padding: 4px 8px; font-size: 10.5px; }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, #fff); }
+  .btn.primary.busy { background: var(--faint); cursor: progress; }
+  .btn.small { flex: 0 0 auto; padding: 5px 9px; font-size: 11px; }
   #intake-status { font-size: 10.5px; color: var(--faint); min-height: 14px; }
 
-  /* the flags dropdown: a real disclosure, closed by default */
+  /* the flags dropdown: a real popover, closed by default */
   .drop-menu { position: relative; }
   .drop-menu summary {
     display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; list-style: none;
-    border: 1px solid var(--rule); background: var(--sunk); color: var(--dim); padding: 7px 10px; font-size: 11.5px;
+    border-radius: 8px; background: var(--bg3); color: var(--dim); padding: 7px 10px; font-size: 12px;
   }
   .drop-menu summary::-webkit-details-marker { display: none; }
-  .drop-menu summary::after { content: "▾"; margin-left: auto; color: var(--faint); }
-  .drop-menu[open] summary::after { content: "▴"; }
-  .drop-menu summary:hover { color: var(--ink); border-color: var(--dim); }
-  .drop-menu .count { background: var(--accent); color: var(--accent-ink); border-radius: 8px; padding: 0 6px;
-    font-size: 10px; font-variant-numeric: tabular-nums; }
+  .drop-menu summary::after { content: "chevron.down"; font: 500 10px var(--mono); margin-left: auto; color: var(--faint); }
+  .drop-menu[open] summary::after { content: "chevron.up"; }
+  .drop-menu summary:hover { color: var(--ink); }
+  .drop-menu .count { background: var(--accent); color: #fff; border-radius: 8px; padding: 0 6px; font-size: 10px; font-variant-numeric: tabular-nums; }
   .drop-menu .count:empty { display: none; }
   .drop-panel {
-    position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; z-index: 30;
-    background: var(--raised); border: 1px solid var(--rule); box-shadow: 0 -14px 30px var(--shadow);
-    max-height: min(58vh, 420px); display: flex; flex-direction: column;
+    position: absolute; bottom: calc(100% + 6px); left: 0; right: 0; z-index: 30; border-radius: 12px;
+    background: var(--bg2); border: 1px solid var(--line); box-shadow: var(--shadow);
+    max-height: min(58vh, 420px); display: flex; flex-direction: column; overflow: hidden;
   }
-  .drop-panel .field { border: 0; border-bottom: 1px solid var(--rule); flex: none; }
-  .flags { overflow: auto; padding: var(--sp-2) 0; }
-  .flags-grp .lbl { display: block; font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); padding: 7px var(--sp-4) 3px; }
+  .drop-panel .field { margin: var(--sp-2); width: calc(100% - 16px); }
+  .flags { overflow: auto; padding: 0 var(--sp-2) var(--sp-2); }
+  .flags-grp .lbl { display: block; font-size: 9.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); padding: 8px 8px 3px; }
   .flag-row {
-    display: flex; align-items: center; gap: var(--sp-3); width: 100%; text-align: left;
-    background: none; border: 0; color: var(--dim); padding: 4px var(--sp-4); cursor: pointer; font: inherit; font-size: 12px;
+    display: flex; align-items: center; gap: var(--sp-2); width: 100%; text-align: left; border-radius: 6px;
+    background: none; border: 0; color: var(--dim); padding: 5px 8px; cursor: pointer; font: inherit; font-size: 12px;
   }
-  .flag-row:hover { background: var(--rule-soft); color: var(--ink); }
-  .flag-row .box { flex: none; width: 12px; height: 12px; border: 1px solid var(--faint); position: relative; }
+  .flag-row:hover { background: var(--line); color: var(--ink); }
+  .flag-row .box { flex: none; width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--faint); position: relative; }
   .flag-row[aria-pressed="true"] .box { background: var(--accent); border-color: var(--accent); }
-  .flag-row[aria-pressed="true"] .box::after { content: ""; position: absolute; left: 3px; top: 0px; width: 4px; height: 8px;
-    border: solid var(--accent-ink); border-width: 0 2px 2px 0; transform: rotate(40deg); }
+  .flag-row[aria-pressed="true"] .box::after { content: ""; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px;
+    border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(40deg); }
   .flag-row[aria-pressed="true"] { color: var(--ink); }
-  .flag-row .id { font-size: 11px; }
+  .flag-row .id { font-family: var(--mono); font-size: 11px; }
   .flag-row[hidden] { display: none; }
 
-  /* ------------------------------------------------------------- folio */
-  .folio { display: flex; flex-direction: column; min-height: 0; }
+  /* ------------------------------------------------------------- toolbar + folio */
   .folio-head {
-    display: flex; align-items: baseline; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5);
-    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: baseline; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5); flex: none;
+    border-bottom: 1px solid var(--line);
   }
-  .folio-head h2 { font-size: 19px; }
-  #cmp-file { margin-left: auto; font-size: 10.5px; color: var(--faint); }
-  .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--sunk); }
-  /* Opaque on purpose: the built layer paints after the shot layer in DOM
-     order, so when the wipe is off (nothing to compare, one layer is a
-     placeholder) the top layer fully covers the one beneath rather than
-     the two showing text through each other. */
-  .layer { position: absolute; inset: 0; overflow: auto; background: var(--sunk); }
+  .folio-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+  #cmp-file { margin-left: auto; font-size: 10.5px; color: var(--faint); font-family: var(--mono); }
+  .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--bg2); }
+  .layer { position: absolute; inset: 0; overflow: auto; background: var(--bg2); }
   .layer img { display: block; width: 100%; height: auto; }
-  .layer pre { margin: 0; padding: var(--sp-4) var(--sp-4) 40px; font-size: 12px; line-height: 1.65; tab-size: 2; color: var(--ink); }
+  .layer pre { margin: 0; padding: var(--sp-4) var(--sp-4) 40px; font-size: 12px; line-height: 1.65; tab-size: 2; color: var(--ink); font-family: var(--mono); }
   .layer .why {
     position: sticky; top: 0; z-index: 1; padding: var(--sp-2) var(--sp-4); font-size: 11px; color: var(--faint);
-    background: var(--raised); border-bottom: 1px solid var(--rule); display: flex; align-items: center; gap: var(--sp-3);
+    background: var(--bg3); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: var(--sp-3);
   }
   .empty { position: absolute; inset: 0; display: grid; place-content: center; gap: var(--sp-2); text-align: center; padding: var(--sp-6); color: var(--dim); }
-  .empty strong { color: var(--ink); font-family: var(--serif); font-size: 16px; font-weight: 600; }
+  .empty strong { color: var(--ink); font-size: 15px; font-weight: 600; }
   .empty span { max-width: 46ch; font-size: 12px; color: var(--faint); }
-  .seam { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
+  .seam { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 70%, transparent); }
   .tag {
-    position: absolute; bottom: var(--sp-3); font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase;
-    color: var(--dim); background: var(--raised); padding: 2px 7px; border: 1px solid var(--rule); pointer-events: none;
+    position: absolute; bottom: var(--sp-3); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--dim); background: var(--bg2); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line); pointer-events: none;
   }
-  .wipe-row { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-5); border-top: 1px solid var(--rule); flex: none; }
-  .wipe-row label { font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); }
-  input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 16px; background: none; }
-  input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--rule); }
-  input[type=range]::-moz-range-track { height: 2px; background: var(--rule); }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: 16px; margin-top: -7px; background: var(--accent); }
-  input[type=range]::-moz-range-thumb { width: 4px; height: 16px; border-radius: 0; background: var(--accent); border: 0; }
 
-  /* ------------------------------------------------------------- margin */
-  .tabs { display: flex; border-bottom: 1px solid var(--rule); flex: none; }
-  .tab {
-    flex: 1; border: 0; background: none; color: var(--faint); padding: var(--sp-3) 4px; font: inherit; font-size: 10.5px;
-    letter-spacing: .6px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  /* the wipe, as a media scrubber: a thin track and a small round thumb */
+  .wipe-row { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--line); flex: none; }
+  .wipe-row label { font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--faint); flex: none; }
+  input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 20px; background: none; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line-solid); }
+  input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line-solid); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 15px; height: 15px; margin-top: -5.5px; border-radius: 50%;
+    background: #fff; box-shadow: var(--shadow-sm), 0 0 0 1px rgba(0,0,0,.06);
   }
-  .tab:hover { color: var(--ink); }
-  .tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  input[type=range]::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: #fff; border: 0; box-shadow: var(--shadow-sm); }
+
+  /* --------------------------------------------------------- inspector */
+  .seg-bar { display: flex; padding: var(--sp-3); gap: 2px; background: var(--bg3); border-radius: 10px; margin: var(--sp-3); flex: none; }
+  .seg { flex: 1; border: 0; background: none; color: var(--dim); border-radius: 7px; padding: 6px 4px; font: inherit; font-size: 11px; font-weight: 500; cursor: pointer; }
+  .seg:hover { color: var(--ink); }
+  .seg[aria-selected="true"] { background: var(--bg2); color: var(--ink); box-shadow: var(--shadow-sm); }
   .pane { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .pane[hidden] { display: none; }
   .split-v { display: flex; flex-direction: column; min-height: 0; flex: 1; }
   .split-v > .block { flex: 1; }
+  .block { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .block + .block { border-top: 1px solid var(--line); }
+  .block-head { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4);
+    font-size: 9.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); flex: none; }
+  .block-head b { margin-left: auto; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .block-head input, .block-head select { min-width: 0; }
+  .block-scroll { overflow: auto; min-height: 0; scrollbar-width: thin; padding: 0 var(--sp-2); }
   select.field { -webkit-appearance: none; appearance: none; }
   table { width: 100%; border-collapse: collapse; }
-  td { padding: 3px 8px; font-size: 11.5px; vertical-align: top; }
-  tr:nth-child(odd) td { background: var(--rule-soft); }
-  .verb { color: var(--info); width: 46px; font-size: 10.5px; }
-  .verb.POST, .verb.PUT, .verb.PATCH { color: var(--accent); }
-  .verb.DELETE { color: var(--accent); font-weight: 600; }
-  .path { color: var(--ink); }
+  td { padding: 6px 8px; font-size: 11.5px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  .verb { font-family: var(--mono); font-weight: 600; color: var(--good); width: 46px; font-size: 10.5px; }
+  .verb.POST, .verb.PUT, .verb.PATCH { color: var(--warn); }
+  .verb.DELETE { color: var(--bad); }
+  .path { color: var(--ink); font-family: var(--mono); }
   .src { text-align: right; color: var(--faint); font-size: 10px; }
-  .src.observed { color: var(--info); }
-  .unver { padding: var(--sp-2) var(--sp-4); margin: 0; list-style: none; }
-  .unver li { margin: 0 0 var(--sp-2); color: var(--dim); font-size: 11.5px; padding-left: 12px; position: relative; }
-  .unver li::before { content: "—"; position: absolute; left: 0; color: var(--accent); }
-  .unver .none { color: var(--faint); padding-left: 0; }
-  .unver .none::before { content: ""; }
-  .hint { color: var(--faint); padding: var(--sp-3) var(--sp-4); font-size: 11.5px; }
-  .k { color: var(--info); } .s { color: var(--good); } .c { color: var(--faint); font-style: italic; }
-  .n { color: var(--accent); } .t { color: var(--info); }
-  .reports { margin: 0; padding: var(--sp-2) var(--sp-4); list-style: none; }
-  .reports li { padding: 3px 0; }
-  .reports a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); }
-  .reports a:hover { color: var(--accent); border-color: var(--accent); }
-  .path-btn { background: none; border: 0; padding: 0; font: inherit; font-size: 11.5px; color: var(--ink); cursor: pointer; text-align: left; border-bottom: 1px solid var(--rule); }
-  .path-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .src.observed { color: var(--accent); }
+  .unver { padding: var(--sp-2) var(--sp-2); margin: 0; list-style: none; }
+  .unver li { margin: 0 0 var(--sp-1); color: var(--dim); font-size: 12px; padding: 6px 8px; border-radius: 8px; background: var(--bg3); }
+  .unver .none { color: var(--faint); background: none; padding: var(--sp-2) 0; }
+  .hint { color: var(--faint); padding: var(--sp-3) var(--sp-3); font-size: 11.5px; }
+  .k { color: #bf5af2; } .s { color: var(--good); } .c { color: var(--faint); font-style: italic; }
+  .n { color: var(--warn); } .t { color: var(--accent); }
+  .reports { margin: 0; padding: var(--sp-2); list-style: none; }
+  .reports li { padding: 2px 0; }
+  .reports a { display: block; color: var(--ink); text-decoration: none; padding: 6px 8px; border-radius: 8px; }
+  .reports a:hover { background: var(--bg3); color: var(--accent); }
+  .path-btn { background: none; border: 0; padding: 0; font: inherit; font-family: var(--mono); color: var(--ink); cursor: pointer; text-align: left; }
+  .path-btn:hover { color: var(--accent); text-decoration: underline; }
 
   dialog#help {
-    background: var(--raised); color: var(--ink); border: 1px solid var(--rule);
-    padding: var(--sp-4) var(--sp-5); font: inherit; min-width: 280px; box-shadow: 0 20px 50px var(--shadow);
+    background: var(--bg2); color: var(--ink); border: 1px solid var(--line); border-radius: 14px;
+    padding: var(--sp-4) var(--sp-5); font: inherit; min-width: 280px; box-shadow: var(--shadow);
   }
-  dialog#help::backdrop { background: rgba(0,0,0,.5); }
-  dialog#help h3 { font-size: 16px; margin-bottom: var(--sp-3); }
-  dialog#help td { padding: 4px 10px; font-size: 12px; }
-  dialog#help code { color: var(--accent); font-weight: 600; }
+  dialog#help::backdrop { background: rgba(0,0,0,.4); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  dialog#help h3 { font-size: 16px; margin: 0 0 var(--sp-3); }
+  dialog#help td { padding: 4px 10px; font-size: 12px; border: 0; }
+  dialog#help code { color: var(--accent); font-family: var(--mono); font-weight: 600; }
 
-  .skip { position: absolute; left: -9999px; top: 4px; z-index: 50; padding: 6px 14px;
-          background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .skip { position: absolute; left: -9999px; top: 4px; z-index: 50; padding: 6px 14px; border-radius: 8px;
+          background: var(--accent); color: #fff; font-weight: 600; }
   .skip:focus { left: 8px; }
-  .noscript { padding: var(--sp-4); background: var(--raised); color: var(--ink); border: 1px solid var(--rule); margin: var(--sp-3); }
+  .noscript { padding: var(--sp-4); background: var(--bg2); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; margin: var(--sp-3); }
 
   @media print {
     body { height: auto; overflow: visible; display: block; background: #fff; color: #111; }
     .desk { display: block; height: auto; overflow: visible; }
-    .index, .margin { display: none; }
-    .mast, .folio { display: none; }
+    .sidebar, .inspector { display: none; }
+    .mast, .main { display: none; }
     .skip, dialog { display: none; }
   }
 </style>
@@ -323,7 +298,7 @@
 </noscript>
 
 <header class="mast">
-  <h1 class="brand">portamp<small>run register</small></h1>
+  <div class="brand"><span class="dot"></span>portamp</div>
   <div class="now-line">
     <span id="now" role="status" aria-live="polite">no run loaded</span>
     <span id="now-sub" class="sub"></span>
@@ -341,58 +316,66 @@
     <aside id="compare" aria-label="comparison with the previous run"></aside>
   </div>
   <div class="swatch-row" id="swatches"></div>
-  <button class="chip" id="theme" title="Switch between the day and night ledger" aria-pressed="false">day</button>
-  <button class="chip" id="help-key" title="Keyboard shortcuts" aria-haspopup="dialog">?</button>
+  <button class="icon-btn" id="theme" title="Switch between the light and dark console" aria-pressed="false">day</button>
+  <button class="icon-btn" id="help-key" title="Keyboard shortcuts" aria-haspopup="dialog">?</button>
 </header>
 
 <div class="desk">
-  <nav class="index" aria-label="pipeline stages, screens and the plugin rack">
-    <ol class="stage-list" id="stages" aria-label="pipeline stages"></ol>
-
-    <div class="block screens-list">
-      <div class="block-head"><span>screens</span><input id="sc-q" class="field" style="width:auto;flex:1;margin:0 0 0 8px" type="search" placeholder="filter" aria-label="filter screens by name"><b id="screen-total"></b></div>
-      <div class="block-scroll" id="screens"></div>
+  <nav class="sidebar" aria-label="pipeline stages, screens and the plugin rack">
+    <div class="side-group" style="flex:none">
+      <div class="side-hd">Pipeline</div>
+      <ol class="side-scroll" id="stages" aria-label="pipeline stages" style="list-style:none;margin:0;padding:0"></ol>
     </div>
 
-    <div class="block rack-list">
-      <div class="block-head"><span>plugin rack</span><input id="rk-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="filter" aria-label="filter plugins by name or class"><button class="btn small" id="rk-sort" aria-pressed="false" title="Order the rack by cost instead of class" style="flex:none">by cost</button><b id="rack-total"></b></div>
-      <div class="block-scroll" id="rack"></div>
+    <div class="side-group block" style="min-height:0">
+      <div class="side-hd">Screens<b id="screen-total"></b></div>
+      <div class="side-field"><input id="sc-q" class="field" type="search" placeholder="Filter" aria-label="filter screens by name"></div>
+      <div class="side-scroll" id="screens"></div>
+    </div>
+
+    <div class="side-group block" style="min-height:0">
+      <div class="side-hd">Plugins<b id="rack-total"></b></div>
+      <div class="side-field" style="display:flex;gap:6px">
+        <input id="rk-q" class="field" type="search" placeholder="Filter" aria-label="filter plugins by name or class" style="flex:1">
+        <button class="btn small" id="rk-sort" aria-pressed="false" title="Order the rack by cost instead of class">cost</button>
+      </div>
+      <div class="side-scroll" id="rack"></div>
     </div>
 
     <div class="tray" id="intake">
       <label class="drop" id="drop" tabindex="0">
-        <span class="lead">drop an .exe, a photo, a screenshot, or a folder of old pages</span>
-        <span>or click to choose files</span>
+        <span class="lead">Drop an app to port</span>
+        <span>.exe, a photo, a screenshot, or a folder — or click</span>
         <input type="file" id="pick" multiple aria-label="pick files for the intake">
         <input type="file" id="pick-dir" webkitdirectory aria-label="pick a folder for the intake">
         <input type="file" id="camera" accept="image/*" capture="environment" aria-label="take a picture of a screen or a page to port">
       </label>
       <details class="drop-menu">
-        <summary>configure rerun <span class="count" id="flags-count"></span></summary>
+        <summary>Configure rerun <span class="count" id="flags-count"></span></summary>
         <div class="drop-panel">
-          <input id="flags-filter" class="field" type="search" placeholder="filter options" aria-label="filter rerun options">
+          <input id="flags-filter" class="field" type="search" placeholder="Filter options" aria-label="filter rerun options">
           <div class="flags" id="flags" aria-label="flags for the next run"></div>
         </div>
       </details>
       <div class="tray-row">
         <input id="site-url" class="field" type="url" placeholder="https://old.example.com" aria-label="site address to copy into the intake" title="Copy the site's pages into the intake (needs --allow-live and an attestation)">
-        <button class="btn small" id="fetch-site" title="Copy the site's pages into the intake, through the same gates as portamp fetch">copy site</button>
+        <button class="btn small" id="fetch-site" title="Copy the site's pages into the intake, through the same gates as portamp fetch">copy</button>
       </div>
       <div class="tray-row">
-        <button class="btn primary run" id="run" title="Run the pipeline again">run again</button>
-        <button class="btn primary" id="port-intake" title="Run the pipeline over what was dropped">port intake</button>
+        <button class="btn primary run" id="run" title="Run the pipeline again">Run again</button>
+        <button class="btn primary" id="port-intake" title="Run the pipeline over what was dropped">Port intake</button>
       </div>
       <div class="tray-row">
-        <button class="btn small" id="camera-key" title="Take a picture of a screen, a sketch or a paper form; it is read as a screen by shape and the words are left for you to fill">photograph</button>
-        <button class="btn small" id="pick-dir-key" title="Pick a whole folder">folder</button>
-        <button class="btn small" id="clear-intake" title="Empty the intake">clear</button>
+        <button class="btn small" id="camera-key" title="Take a picture of a screen, a sketch or a paper form; it is read as a screen by shape and the words are left for you to fill">Photo</button>
+        <button class="btn small" id="pick-dir-key" title="Pick a whole folder">Folder</button>
+        <button class="btn small" id="clear-intake" title="Empty the intake">Clear</button>
       </div>
       <div class="sub" id="intake-status" role="status" aria-live="polite"></div>
     </div>
   </nav>
 
-  <section class="folio" aria-label="screen inspection">
-    <div class="folio-head"><h2 id="cmp-name">side by side</h2><b id="cmp-file"></b></div>
+  <section class="main" aria-label="screen inspection">
+    <div class="folio-head"><h2 id="cmp-name">Side by side</h2><b id="cmp-file"></b></div>
     <div class="stage" id="stage">
       <div class="layer" id="layer-shot"></div>
       <div class="layer" id="layer-built"></div>
@@ -401,75 +384,76 @@
       <div class="seam" id="seam"></div>
     </div>
     <div class="wipe-row" id="slider-wrap">
-      <label for="wipe">wipe</label>
+      <label for="wipe">RECORDED</label>
       <input id="wipe" type="range" min="0" max="100" value="50"
              aria-label="Wipe between the recorded screenshot and the built component" />
+      <label for="wipe">BUILT</label>
     </div>
   </section>
 
-  <aside class="margin" aria-label="run panels">
-    <div class="tabs" role="tablist">
-      <button class="tab" id="tab-signals" role="tab" aria-selected="true" data-tab="signals">endpoints &amp; unverified</button>
-      <button class="tab" id="tab-files" role="tab" aria-selected="false" data-tab="files">files</button>
-      <button class="tab" id="tab-reports" role="tab" aria-selected="false" data-tab="reports">reports</button>
-      <button class="tab" id="tab-study" role="tab" aria-selected="false" data-tab="study">study</button>
+  <aside class="inspector" aria-label="run panels">
+    <div class="seg-bar" role="tablist">
+      <button class="seg" id="tab-signals" role="tab" aria-selected="true" data-tab="signals">Signals</button>
+      <button class="seg" id="tab-files" role="tab" aria-selected="false" data-tab="files">Files</button>
+      <button class="seg" id="tab-reports" role="tab" aria-selected="false" data-tab="reports">Reports</button>
+      <button class="seg" id="tab-study" role="tab" aria-selected="false" data-tab="study">Study</button>
     </div>
     <div class="pane split-v" id="pane-signals" role="tabpanel" aria-labelledby="tab-signals">
       <div class="block">
-        <div class="block-head"><span>endpoints</span>
-          <input id="ep-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="filter" aria-label="filter endpoints by path">
-          <select id="ep-verbs" class="field" style="width:74px;flex:none;font-size:10.5px;padding:4px 4px" aria-label="filter endpoints by method"><option value="">all</option></select>
+        <div class="block-head"><span>Endpoints</span>
+          <input id="ep-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="Filter" aria-label="filter endpoints by path">
+          <select id="ep-verbs" class="field" style="width:66px;flex:none;font-size:10.5px;padding:5px 4px" aria-label="filter endpoints by method"><option value="">all</option></select>
           <b id="ep-total"></b>
         </div>
         <div class="block-scroll"><table id="endpoints"></table></div>
       </div>
       <div class="block">
-        <div class="block-head"><span>unverified</span><input id="un-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="/ to filter" aria-label="filter unverified items"><b id="un-total"></b></div>
+        <div class="block-head"><span>Unverified</span><input id="un-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="/ to filter" aria-label="filter unverified items"><b id="un-total"></b></div>
         <div class="block-scroll"><ul class="unver" id="unver"></ul></div>
       </div>
     </div>
     <div class="pane split-v" id="pane-files" role="tabpanel" aria-labelledby="tab-files" hidden>
       <div class="block" style="flex:1">
-        <div class="block-head"><span>written files, and who wrote them</span><input id="fi-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="filter" aria-label="filter written files"><b id="files-total"></b></div>
+        <div class="block-head"><span>Written files</span><input id="fi-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="Filter" aria-label="filter written files"><b id="files-total"></b></div>
         <div class="block-scroll"><table id="files-list"></table></div>
       </div>
     </div>
     <div class="pane split-v" id="pane-reports" role="tabpanel" aria-labelledby="tab-reports" hidden>
       <div class="block" style="flex:1">
-        <div class="block-head"><span>the run's reports, rendered</span><b id="reports-total"></b></div>
+        <div class="block-head"><span>Reports</span><b id="reports-total"></b></div>
         <div class="block-scroll"><ul class="reports" id="reports-list"></ul></div>
       </div>
     </div>
     <div class="pane split-v" id="pane-study" role="tabpanel" aria-labelledby="tab-study" hidden>
       <div class="block" style="flex:1">
-        <div class="block-head"><span>arithmetic, or one equation in one variable</span></div>
-        <div class="block-scroll" style="padding:var(--sp-3) var(--sp-4)">
+        <div class="block-head"><span>Arithmetic &amp; one equation</span></div>
+        <div class="block-scroll" style="padding:var(--sp-3)">
           <div class="tray-row">
             <input id="study-input" class="field" type="text" placeholder="2x + 3 = 11" aria-label="an expression or a one variable equation">
-            <button class="btn primary small" id="study-solve" title="Solve the expression or equation, showing the real steps">solve</button>
+            <button class="btn primary small" id="study-solve" title="Solve the expression or equation, showing the real steps">Solve</button>
           </div>
-          <pre id="study-result" style="margin:var(--sp-3) 0 0;white-space:pre-wrap;font-size:12px"></pre>
+          <pre id="study-result" style="margin:var(--sp-3) 0 0;white-space:pre-wrap;font-size:12px;font-family:var(--mono)"></pre>
           <p class="hint" style="padding:var(--sp-3) 0 0">Arithmetic, and one equation in one variable. A second variable, a squared term, or an equation with no variable at all is refused by name, never guessed.</p>
         </div>
       </div>
       <div class="block" style="flex:1">
-        <div class="block-head"><span>a PDF's plain text, from the intake</span><button class="btn small" id="study-refresh-pdfs" title="List the PDFs currently in the intake">list PDFs</button></div>
+        <div class="block-head"><span>PDF plain text</span><button class="btn small" id="study-refresh-pdfs" title="List the PDFs currently in the intake">List</button></div>
         <div class="block-scroll" id="study-pdf-list" style="flex:0 0 auto;max-height:35%"></div>
-        <pre class="block-scroll" id="study-pdf-text" style="margin:0;padding:var(--sp-3) var(--sp-4);white-space:pre-wrap;font-size:12px"></pre>
+        <pre class="block-scroll" id="study-pdf-text" style="margin:0;padding:var(--sp-3);white-space:pre-wrap;font-size:12px;font-family:var(--mono)"></pre>
       </div>
     </div>
   </aside>
 </div>
 
 <dialog id="help" aria-label="keyboard shortcuts">
-  <h3>keyboard</h3>
+  <h3>Keyboard</h3>
   <table>
     <tr><td><code>j</code> / <code>k</code></td><td>next and previous screen</td></tr>
     <tr><td><code>1</code>–<code>5</code>, <code>0</code></td><td>select a stage, and all of them</td></tr>
     <tr><td><code>[</code> / <code>]</code></td><td>nudge the wipe</td></tr>
     <tr><td><code>/</code></td><td>filter the unverified items</td></tr>
     <tr><td><code>r</code></td><td>run the pipeline again</td></tr>
-    <tr><td><code>t</code></td><td>day and night ledger</td></tr>
+    <tr><td><code>t</code></td><td>light and dark console</td></tr>
     <tr><td><code>?</code> / <code>Esc</code></td><td>this card, open and closed</td></tr>
   </table>
 </dialog>
@@ -513,7 +497,7 @@ function highlight(source) {
 }
 
 /**
- * The recovered palette gets a swatch, not the chassis. Painting the chrome
+ * The recovered palette gets a swatch, not the chrome. Painting the mast
  * with the ported app's accent is how the wordmark ends up unreadable, and a
  * UI you cannot read tells you nothing about the tokens either.
  */
@@ -551,11 +535,11 @@ let rackSort = "class";
 function renderStages() {
   const rows = STAGES.map((stage, i) => {
     const n = new Set(run.plugins.filter((p) => p.stages.includes(stage)).map((p) => p.name)).size;
-    return '<li><button class="stage-row" data-stage="' + stage + '" aria-pressed="' + String(stage === stageFilter) + '">' +
+    return '<li><button class="side-row" data-stage="' + stage + '" aria-pressed="' + String(stage === stageFilter) + '">' +
       '<span class="n">' + (i + 1) + "</span><span class=\"nm\">" + stage + '</span><span class="ct">' + n + "</span></button></li>";
   });
-  rows.push('<li><button class="stage-row" id="stage-all" aria-pressed="' + String(stageFilter === null) + '">' +
-    '<span class="n">0</span><span class="nm">all stages</span><span class="ct">' + run.plugins.length + "</span></button></li>");
+  rows.push('<li><button class="side-row" id="stage-all" aria-pressed="' + String(stageFilter === null) + '">' +
+    '<span class="n">·</span><span class="nm">All stages</span><span class="ct">' + run.plugins.length + "</span></button></li>");
   $("stages").innerHTML = rows.join("");
   for (const b of $("stages").querySelectorAll("[data-stage]")) b.addEventListener("click", () => selectStage(b.dataset.stage));
   $("stage-all").addEventListener("click", () => selectStage(null));
@@ -594,13 +578,13 @@ function renderRack() {
   $("rack").innerHTML = CLASSES.map((cls) => {
     const group = visible.filter((p) => p.class === cls);
     if (!group.length) return "";
-    return '<div class="grp-label c-' + cls + '">' + cls + "</div>" + group.map((p) => { n += 1; return rackRow(p, n); }).join("");
+    return '<div class="side-hd" style="padding:8px 8px 2px">' + cls + "</div>" + group.map((p) => { n += 1; return rackRow(p, n); }).join("");
   }).join("") || '<p class="empty-note">nothing matches</p>';
 }
 
 function rackRow(p, n) {
-  return '<div><div class="row-item"><span class="num">' + n + ".</span>" +
-    '<span>' + esc(p.name) + '</span><span class="st">' + p.ms + "ms</span></div>" +
+  return '<div><div class="side-row" style="cursor:default" role="listitem"><span class="n">' + n + "</span>" +
+    '<span class="nm">' + esc(p.name) + '</span><span class="ct">' + p.ms + "ms</span></div>" +
     '<div class="said">' + esc(p.contributed) + "</div></div>";
 }
 
@@ -613,8 +597,8 @@ function renderScreens() {
     return;
   }
   $("screens").innerHTML = visible.map((s) =>
-    '<button class="row-item" data-i="' + s.i + '" aria-current="' + String(s.i === currentIndex) + '">' +
-      '<span class="num">' + (s.i + 1) + ".</span><span>" + esc(s.name) + "</span>" +
+    '<button class="side-row" data-i="' + s.i + '" aria-current="' + String(s.i === currentIndex) + '">' +
+      '<span class="n">' + (s.i + 1) + "</span><span class=\"nm\">" + esc(s.name) + "</span>" +
       '<span class="st">' + (s.origin === "observed" ? "observed" : s.matched ? esc(s.state || "shot") : "no shot") + "</span>" +
     "</button>"
   ).join("") || '<p class="empty-note">nothing matches</p>';
@@ -628,7 +612,7 @@ let epVerb = null;
 function renderEndpoints() {
   const verbs = [...new Set(run.endpoints.map((e) => e.method))];
   const select = $("ep-verbs");
-  select.innerHTML = '<option value="">all verbs</option>' + verbs.map((v) => '<option value="' + esc(v) + '">' + esc(v) + "</option>").join("");
+  select.innerHTML = '<option value="">all</option>' + verbs.map((v) => '<option value="' + esc(v) + '">' + esc(v) + "</option>").join("");
   select.value = epVerb ?? "";
   const shown = filterEndpoints(run.endpoints, $("ep-q").value, epVerb);
   $("ep-total").textContent = shown.length === run.endpoints.length
@@ -832,9 +816,8 @@ window.addEventListener("hashchange", () => run && readHash());
 
 /* ------------------------------------------------------------ the chrome */
 
-// The day ledger: same register, cream paper instead of the night's dark
-// leather cover. The choice is this browser's own and storage can be
-// unavailable; the toggle works either way.
+// Light and dark, the way the platform itself offers both. The choice is
+// this browser's own and storage can be unavailable; the toggle works either way.
 function applyTheme(day) {
   document.documentElement.setAttribute("data-theme", day ? "day" : "");
   if (!day) document.documentElement.removeAttribute("data-theme");
@@ -843,7 +826,7 @@ function applyTheme(day) {
   try { localStorage.setItem("portamp-theme", day ? "day" : "night"); } catch { /* per browser convenience only */ }
 }
 $("theme").addEventListener("click", () => applyTheme(!document.documentElement.hasAttribute("data-theme")));
-try { if (localStorage.getItem("portamp-theme") === "day") applyTheme(true); } catch { /* default ledger */ }
+try { if (localStorage.getItem("portamp-theme") === "day") applyTheme(true); } catch { /* default console */ }
 
 $("help-key").addEventListener("click", () => $("help").open ? $("help").close() : $("help").showModal());
 
@@ -854,10 +837,10 @@ window.addEventListener("online", setConnectivity);
 window.addEventListener("offline", setConnectivity);
 setConnectivity();
 
-// The margin's four faces: endpoints & unverified, files, reports, study.
-for (const tab of document.querySelectorAll(".tab")) {
+// The inspector's four faces: signals, files, reports, study.
+for (const tab of document.querySelectorAll(".seg")) {
   tab.addEventListener("click", () => {
-    for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", String(t === tab));
+    for (const t of document.querySelectorAll(".seg")) t.setAttribute("aria-selected", String(t === tab));
     for (const pane of document.querySelectorAll(".pane")) pane.hidden = pane.id !== "pane-" + tab.dataset.tab;
   });
 }
@@ -931,7 +914,7 @@ async function rerun(options = {}) {
   if (button.classList.contains("busy")) return;
   button.classList.add("busy");
   const label = button.textContent;
-  button.textContent = "running…";
+  button.textContent = "Running…";
   $("now").textContent = options.source === "intake" ? "running the pipeline over the intake" : "running the pipeline";
   try {
     const body = JSON.stringify({ source: options.source ?? "src", dir: options.dir ?? null, flags: { ...flagsOn(), ...(options.flags ?? {}) } });
@@ -1027,7 +1010,7 @@ async function studySolve() {
   const r = await fetch("/study/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) }).then((r) => r.json()).catch((err) => ({ ok: false, error: err.message }));
   out.innerHTML = r.ok
     ? esc(r.steps.join("\n")) + (r.variable ? "\n\n" + esc(r.variable + " = " + (r.value ?? "(every value — an identity)")) : "")
-    : '<span style="color:var(--accent)">' + esc(r.error ?? "could not be solved") + "</span>";
+    : '<span style="color:var(--bad)">' + esc(r.error ?? "could not be solved") + "</span>";
 }
 $("study-solve").addEventListener("click", studySolve);
 $("study-input").addEventListener("keydown", (e) => { if (e.key === "Enter") studySolve(); });
@@ -1037,7 +1020,7 @@ async function studyListPdfs() {
   const { files } = await fetch("/intake.json").then((r) => r.json());
   const pdfs = files.filter((f) => /\.pdf$/i.test(f.path));
   box.innerHTML = pdfs.length
-    ? pdfs.map((f) => `<button type="button" class="row-item" data-path="${esc(f.path)}">${esc(f.path)}</button>`).join("")
+    ? pdfs.map((f) => `<button type="button" class="side-row" data-path="${esc(f.path)}">${esc(f.path)}</button>`).join("")
     : '<span class="hint">no PDF in the intake yet — drop one on the intake above</span>';
 }
 $("study-refresh-pdfs").addEventListener("click", studyListPdfs);

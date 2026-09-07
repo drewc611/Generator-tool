@@ -788,24 +788,34 @@ Both were proven by building the real Linux target by hand and running the
 packaged binary headless, confirming over a real HTTP request that the
 console it served was the genuine run. test/desktop.test.js holds the
 contract structurally so the two files cannot separate again unnoticed.
-app.html is then rebuilt whole: a ledger register (ruled paper, a serif hand
-for headings, a monospace hand for every fact, one oxblood ink) in place of
-the LCD chassis skin, a searchable dropdown for the forty nine rerun flags in
-place of a wall of buttons, a real `<select>` for the endpoint verb facet.
-lib.js and index.js are untouched; every id, class and literal fragment
-test/ui.test.js already held the page to survives structurally in the new
-markup, so the rebuild is provably the same tool in a different register
-rather than a page that merely looks different. Two real defects surfaced
-building it: a flex item's default min-width let a search input overflow its
-column instead of shrinking, and an unclipped empty-state message printed
-over the code view behind it whenever a screenshot turned out to be an
-unreadable placeholder, because neither layer had an opaque background to
-stop the one painted after it from showing through; both are fixed rather
-than carried forward. The line budget raised from 2000 to 2050 is
-docs/UI-SPEC.md's own number too, and the README's console images are real
-screenshots of the register rather than a hand-drawn mockup of the skin it
-replaced. test/ui.test.js's existing thirty four cases hold the contract;
-none needed rewriting.
+app.html is then rebuilt whole, twice: a ledger register first, replaced
+again by a native-feeling console once the ledger read as too plain a skin
+of its own — a frosted, blurred sidebar and unified toolbar, the system font
+stack rendering as the real San Francisco or Segoe or Roboto for whichever
+machine opens it, a macOS style segmented control choosing the inspector's
+face in place of a row of tab buttons, and a media-player scrubber in place
+of a plain wipe between the recorded screenshot and the emitted source. A
+searchable popover still replaces the wall of forty nine rerun flag buttons,
+and the endpoint verb facet is still a real `<select>`. lib.js and index.js
+are untouched; every id, class and literal fragment test/ui.test.js already
+held the page to survives structurally in the new markup, so the rebuild is
+provably the same tool in a different skin rather than a page that merely
+looks different. Real defects surfaced building both passes: a flex item's
+default min-width let a search input overflow its column instead of
+shrinking; an unclipped empty-state message printed over the code view
+behind it whenever a screenshot turned out to be an unreadable placeholder,
+because neither layer had an opaque background to stop the one painted
+after it from showing through; the mast's readout line had no truncation
+and wrapped onto the sidebar below it at narrow widths; and the sidebar's
+own middle sections, with no `overflow: hidden` of their own, spilled their
+header and filter row into a neighbouring section instead of clipping when
+a short viewport left them no room to shrink into. All four are fixed
+rather than carried forward. The line budget, raised from 2000 to 2050,
+holds through both passes with room to spare; docs/UI-SPEC.md carries the
+same number, and the README's console images are real screenshots of the
+console the run actually serves rather than a hand-drawn mockup of it.
+test/ui.test.js's existing thirty four cases hold the contract; none needed
+rewriting.
 
 ## What is honestly incomplete
 

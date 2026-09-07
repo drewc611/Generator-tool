@@ -3,11 +3,11 @@
 Port a legacy front end without losing the look or the API contract.
 Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
-![The portamp console: a ledger register showing a pipeline run, the numbered stage index and the plugin rack](media/portamp-console.png)
+![The portamp console: a frosted, native-feeling toolbar and sidebar showing a pipeline run, the numbered stage index and the plugin rack](media/portamp-console.png)
 
-<sub>portamp is a command line tool, not a desktop app. The register is a joke
-about where the plugin classes come from — Winamp's five, kept honest as a
-ledger rather than a skin. Everything on the panel is real: 718
+<sub>portamp is a command line tool, not a desktop app. The console's own joke
+is where the plugin classes come from — Winamp's five, kept honest as a
+sidebar rather than a skin. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 221 plugins, and the literal output of
 `npm run demo`.</sub>
 
@@ -939,28 +939,31 @@ A plugin that wants to do something consequential asks the policy object first.
 
 `portamp ui` serves the last run on `127.0.0.1:4321` and opens a browser.
 
-![The portamp console: a ledger register, ruled paper and a serif hand for headings, showing a numbered stage index, the recorded screenshot wiped against the emitted source, and the endpoints and unverified panels](media/portamp-ui.png)
+![The portamp console: a frosted sidebar and unified toolbar, showing a numbered stage index, the recorded screenshot wiped against the emitted source by a media style scrubber, and the endpoints and unverified panels behind a macOS style segmented control](media/portamp-ui.png)
 
-A three column desk plus a mast, read like the register it is. No card, no
-gradient, one ink for the one action that matters.
+A three column desk under one frosted mast, native in the way a well built
+Mac app is native. No skin traced from a real application, one accent for the
+one action that matters.
 
-- **Index**, left. The five stages as a numbered list, each one a live count
+- **Sidebar**, left. The five stages as a numbered list, each one a live count
   and a filter on the rack below it; the screens, filterable; the plugin rack,
   every loaded plugin grouped by class or ordered by cost one key away, with
   what it contributed and what it cost. This is the reason the UI is worth
   building: you can see which plugin produced which part of the output, which
   is what a plugin architecture needs to stay debuggable.
-- **Folio**, centre. The recorded screenshot and the emitted component with
-  a wipe between them. Drag it, or focus it and use the arrow keys: it is a real
+- **Main pane**, centre. The recorded screenshot and the emitted component with
+  a scrubber between them, styled like a media player's transport rather than a
+  plain divider. Drag it, or focus it and use the arrow keys: it is a real
   range input underneath, so the keyboard and a screen reader work without
-  anything extra. When there is no screenshot the pane says so and the wipe
+  anything extra. When there is no screenshot the pane says so and the scrubber
   disappears, because a wipe between a message and some source is not a
   comparison, and each side of the seam keeps to its own half so an empty
   message never prints over real content underneath it.
-- **Margin**, right, tabbed: endpoints (each marked `source` or `observed`,
-  filterable by a verb dropdown) and the unverified list share the default
-  face because they are the pair people need first; files and the run's
-  rendered reports sit one click away, never hidden further than that.
+- **Inspector**, right, switched by a real macOS style segmented control:
+  endpoints (each marked `source` or `observed`, filterable by a verb
+  dropdown) and the unverified list share the default face because they are
+  the pair people need first; files and the run's rendered reports sit one
+  segment away, never hidden further than that.
 
 It is a `vis` plugin, which is the Winamp slot exactly: the core does the work,
 the visualization plugin shows it. Nothing about it is required to port

@@ -46,12 +46,11 @@ test("the whole ui is under the budget the spec set", async () => {
   // solving arithmetic and one variable equations live and reading a PDF
   // already in the intake for its plain text, both through general-study's
   // own pure functions with no pipeline run in between, bought the raise to
-  // 2000. A full visual rebuild of app.html — a ledger register in place of
-  // the LCD chassis skin, a searchable dropdown for the flags in place of the
-  // wall of forty six buttons, a real select for the endpoint verb facet, a
-  // three column desk replacing the fixed grid — carried its own weight and
-  // bought the raise to 2050. The budget still exists so growth stays a
-  // decision, not a drift.
+  // 2000. A full visual rebuild of app.html — a frosted unified toolbar, a
+  // sidebar of grouped rows in place of the flat rack, a macOS style
+  // segmented control in place of the tab button row, and a scrubber styled
+  // wipe control — carried its own weight and bought the raise to 2050. The
+  // budget still exists so growth stays a decision, not a drift.
   assert.ok(js + html + lib < 2050, `${js + html + lib} lines, the spec allows under 2050`);
 });
 
