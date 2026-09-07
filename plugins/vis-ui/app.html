@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#101013" />
+<meta name="theme-color" content="#17130f" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" href="/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/icons/icon-180.png" />
@@ -11,270 +11,306 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 <title>portamp</title>
 <style>
-  /* Original artwork in the late 90s skinned player genre. Nothing here is
-     traced from, or copied out of, any real player skin. */
+  /*
+   * The ledger. A run is a register of what a machine found and did, so the
+   * console reads like one: ruled paper, a serif hand for headings, a
+   * monospace hand for every fact, one ink for the one action that matters
+   * (running the pipeline again) and for what the run could not verify. No
+   * gradient, no card, no rounded corners standing in for a decision.
+   */
   :root {
-    /* Black chassis with a dark blue tint; the phosphor greens and amber stay
-       as the readout so the panel reads black and navy with a lit display. */
-    --chassis-hi: #1b2740; --chassis-lo: #070b16; --face: #0d1526;
-    --edge-hi: #2c3f60; --edge-lo: #02030a;
-    --lcd: #030a18; --lcd-edge: #123057;
-    --p-hi: #7df3b0; --p-mid: #3fbf7f; --p-dim: #237a52;
-    --amber: #f0a830; --amber-dim: #9c6c1d;
-    --sel: #16305c; --ink: #d5dbe8; --muted: #7f8aa3; --faint: #4f5a72;
-    --input: #6ee7a8; --dsp: #7dd3fc; --output: #f0a830; --vis: #c4b5fd; --general: #fb7185;
-    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", "URW Palladio", Georgia, serif;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    --bg: #17130f; --raised: #1e1811; --sunk: #120e0a;
+    --ink: #ece4d3; --dim: #b7a98e; --faint: #7c6f57;
+    --rule: #3a3126; --rule-soft: #2a2419;
+    --accent: #c1483a; --accent-ink: #fbeceb; --accent-soft: #402019;
+    --good: #6a9a6d; --info: #7fa6bb;
+    --shadow: rgba(0,0,0,.55);
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
+  }
+  :root[data-theme="day"] {
+    --bg: #f3ede0; --raised: #ece3cd; --sunk: #fbf7ee;
+    --ink: #241f1a; --dim: #5b5041; --faint: #948569;
+    --rule: #d8cbaa; --rule-soft: #e5dabd;
+    --accent: #8a2a20; --accent-ink: #fbeceb; --accent-soft: #f0d9d2;
+    --good: #3c6b40; --info: #3f6478;
+    --shadow: rgba(90,74,46,.18);
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
-    height: 100vh; overflow: hidden; padding: 5px; gap: 5px;
-    background: #04060e; color: var(--ink);
-    font: 11px/1.45 var(--mono); letter-spacing: .2px;
-    display: grid; grid-template-columns: 276px 1fr;
-    grid-template-rows: 42px 356px minmax(0, 1fr) minmax(0, 168px);
-    grid-template-areas: "head head" "deck compare" "rack compare" "rack notes";
+    background: var(--bg); color: var(--ink);
+    font: 13px/1.5 var(--mono); letter-spacing: .1px;
+    height: 100vh; overflow: hidden;
+    display: grid; grid-template-rows: auto 1fr;
   }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; margin: 0; letter-spacing: -.01em; }
+  button, input, select { font: inherit; color: inherit; }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
 
-  /* A phone gets the same console, stacked. The desktop grid clips to the
-     viewport because it is a deck; a phone scrolls because it is a page. */
-  @media (max-width: 760px) {
-    body {
-      height: auto; min-height: 100vh; overflow: auto;
-      grid-template-columns: 1fr;
-      grid-template-rows: 42px auto auto auto auto;
-      grid-template-areas: "head" "deck" "compare" "rack" "notes";
-    }
-    /* min-width breaks the grid blowout: a wide deck scrolls inside its own
-       unit instead of widening the page. */
-    .unit { min-height: 200px; min-width: 0; overflow-x: auto; }
+  /* ---------------------------------------------------------------- mast */
+  .mast {
+    display: flex; align-items: center; gap: var(--sp-5);
+    padding: var(--sp-3) var(--sp-5);
+    border-bottom: 1px solid var(--rule);
+    background: var(--raised);
   }
-
-  /* the chassis: light on top and left, dark on bottom and right */
-  .unit {
-    background: linear-gradient(180deg, var(--chassis-hi), var(--chassis-lo));
-    border-top: 1px solid var(--edge-hi); border-left: 1px solid var(--edge-hi);
-    border-right: 1px solid var(--edge-lo); border-bottom: 1px solid var(--edge-lo);
-    display: flex; flex-direction: column; min-height: 0; padding: 4px;
+  .brand { font-size: 22px; color: var(--accent); }
+  .brand small { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--faint); font-weight: 400; }
+  .now-line { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .now-line #now { font-size: 15px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sub { font-size: 11px; color: var(--faint); }
+  .sub.warn { color: var(--accent); }
+  .stats { display: flex; gap: var(--sp-5); margin-left: auto; }
+  .stats dl { display: flex; flex-direction: column-reverse; gap: 1px; margin: 0; text-align: right; }
+  .stats dt { font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); }
+  .stats dd { margin: 0; font-size: 17px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .trend { position: relative; padding: 2px; border-radius: 2px; }
+  .trend:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+  #compare {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 40; display: none;
+    width: 236px; text-align: left; padding: var(--sp-3) var(--sp-4); font-size: 11.5px; line-height: 1.6;
+    color: var(--dim); background: var(--raised); border: 1px solid var(--rule);
+    box-shadow: 0 12px 28px var(--shadow);
   }
-  .sunk {
-    background: var(--lcd);
-    border-top: 1px solid var(--edge-lo); border-left: 1px solid var(--edge-lo);
-    border-right: 1px solid #4a4a54; border-bottom: 1px solid #4a4a54;
-    min-height: 0; display: flex; flex-direction: column;
-  }
-  .cap {
-    font-size: 8.5px; letter-spacing: 1.7px; text-transform: uppercase; color: var(--faint);
-    padding: 0 2px 3px; display: flex; justify-content: space-between; align-items: center; flex: none;
-  }
-  .cap b { color: var(--amber); font-weight: 700; }
-  .scroll { overflow: auto; min-height: 0; flex: 1; scrollbar-width: thin; scrollbar-color: #4a4a54 var(--lcd); }
-
-  /* head: titlebar, display, analyser */
-  .head { grid-area: head; flex-direction: row; align-items: stretch; gap: 5px; padding: 3px; }
-  .grille { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 0 6px; }
-  .grille i { display: block; height: 1px; background: var(--edge-hi); opacity: .3; }
-  .wordmark {
-    color: var(--amber); font-weight: 700; letter-spacing: 4px; font-size: 14px;
-    padding: 0 10px; display: flex; align-items: center; text-shadow: 0 1px 0 #0008;
-  }
-  .readout { width: 300px; padding: 3px 8px; justify-content: center; }
-  .readout .now { color: var(--p-hi); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .readout .sub { color: var(--p-dim); font-size: 9.5px; }
-  .gauges { display: flex; gap: 5px; align-items: stretch; }
-  .gauge { width: 62px; padding: 3px 6px; align-items: center; justify-content: center; text-align: center; }
-  .gauge b { color: var(--amber); font-size: 15px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-  .gauge span { color: var(--faint); font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
-  .swatches { display: flex; gap: 2px; margin-bottom: 3px; }
-  .swatches i { width: 11px; height: 11px; border: 1px solid var(--edge-lo); display: block; }
-  .lamps { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 0 4px; }
-  .lamp { width: 7px; height: 7px; border-radius: 50%; background: #16161a; border: 1px solid var(--edge-lo); }
-  .lamp.on { background: var(--p-mid); box-shadow: 0 0 4px var(--p-mid); }
-  .lamp.warn { background: var(--amber); box-shadow: 0 0 4px var(--amber); }
-
-  /* deck: stage analyser and transport */
-  .deck { grid-area: deck; }
-  .chart { flex: 0 0 48px; overflow: hidden; }
-  .analyser { display: flex; gap: 3px; padding: 5px 6px; flex: 1; align-items: flex-end; min-height: 0; }
-  .col { flex: 1; display: flex; flex-direction: column-reverse; gap: 2px; height: 100%; min-height: 0; justify-content: flex-start; overflow: hidden; }
-  .col i { display: block; flex: 0 0 5px; height: 5px; background: #14251c; border-radius: 1px; }
-  .col i.lit { background: var(--p-mid); }
-  .col i.peak { background: var(--amber); }
-  .col em { flex: 0 0 auto; font-style: normal; color: var(--p-dim); font-size: 8px; letter-spacing: .8px; text-align: center; margin-top: 3px; }
-  .transport { display: flex; gap: 3px; padding: 4px 0 0; flex: none; }
-  .key {
-    flex: 1; text-align: center; padding: 4px 0; font-size: 8.5px; letter-spacing: 1.2px; text-transform: uppercase;
-    color: var(--muted); background: linear-gradient(180deg, #46464f, #2a2a30);
-    border-top: 1px solid var(--edge-hi); border-left: 1px solid var(--edge-hi);
-    border-right: 1px solid var(--edge-lo); border-bottom: 1px solid var(--edge-lo);
-  }
-  .key.done { color: var(--p-hi); }
-  .key { cursor: pointer; user-select: none; }
-  .key:hover { color: var(--amber); }
-  .key[aria-pressed="true"] {
-    color: var(--amber); background: linear-gradient(180deg, #2a2118, #171009);
-    border-top-color: var(--edge-lo); border-left-color: var(--edge-lo);
-    border-right-color: var(--edge-hi); border-bottom-color: var(--edge-hi);
-  }
-  .key:focus-visible { outline: 1px dotted var(--amber); outline-offset: 1px; }
-  .run { flex: 0 0 62px; color: var(--p-hi); }
-  .run.busy { color: var(--amber); }
-  /* the intake: what a person drops on the console is what the next run reads */
-  .intake { display: flex; flex-direction: column; gap: 3px; padding: 4px 0 0; flex: none; }
-  .drop { display: block; border: 1px dashed var(--p-dim); color: var(--muted); font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase; padding: 6px; text-align: center; cursor: pointer; }
-  .drop.over, .drop:hover { border-color: var(--amber); color: var(--amber); }
-  .drop input { display: none; }
-  .flags-box { max-height: 110px; flex: none; }
-  .flags { display: flex; flex-direction: column; gap: 3px; padding: 3px; }
-  .flags-grp { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
-  .flags-grp .lbl { color: var(--faint); font-size: 8px; letter-spacing: 1.2px; text-transform: uppercase; flex: 0 0 100%; padding-top: 2px; }
-  .flags .key { flex: 1 0 30%; padding: 1px 4px; font-size: 9.5px; }
-
-  /* rack and screens: the playlist */
-  .rack { grid-area: rack; }
-  .row { display: flex; gap: 6px; padding: 2px 6px; align-items: baseline; }
-  .row:nth-child(odd) { background: #071008; }
-  .grp { color: var(--p-dim); font-size: 8.5px; letter-spacing: 1.6px; text-transform: uppercase; padding: 5px 6px 1px; }
-  .num { color: var(--p-dim); width: 16px; text-align: right; flex: none; font-size: 10px; }
-  .nm { color: var(--p-hi); }
-  .ms { margin-left: auto; color: var(--p-dim); font-variant-numeric: tabular-nums; font-size: 10px; }
-  .said { color: var(--p-mid); opacity: .72; font-size: 9.5px; padding: 0 6px 3px 28px; overflow-wrap: anywhere;
-          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .c-input .nm { color: var(--input); } .c-dsp .nm { color: var(--dsp); }
-  .c-output .nm { color: var(--output); } .c-vis .nm { color: var(--vis); } .c-general .nm { color: var(--general); }
-
-  .screens { flex: none; margin-top: 4px; height: 38%; }
-  .item {
-    display: flex; gap: 6px; width: 100%; text-align: left; align-items: baseline;
-    padding: 3px 6px; background: none; border: 0; color: var(--p-hi); font: inherit; cursor: pointer;
-  }
-  .item:nth-child(odd) { background: #071008; }
-  .item[aria-current="true"] { background: var(--sel); color: #fff; }
-  .item:focus-visible { outline: 1px dotted var(--amber); outline-offset: -1px; }
-  .item .st { margin-left: auto; color: var(--p-dim); font-size: 9.5px; }
-  .item[aria-current="true"] .st { color: #b8cdea; }
-
-  /* comparison */
-  .compare { grid-area: compare; }
-  .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
-  .layer { position: absolute; inset: 0; overflow: auto; }
-  .layer img { display: block; width: 100%; height: auto; }
-  .layer pre { margin: 0; padding: 8px 10px 30px; font-size: 10.5px; line-height: 1.6; tab-size: 2; color: var(--p-hi); }
-  .layer .why { position: sticky; top: 0; z-index: 1; padding: 4px 10px; font-size: 9.5px; color: var(--p-dim);
-                background: #07160e; border-bottom: 1px solid var(--lcd-edge); }
-  .empty { position: absolute; inset: 0; display: grid; place-content: center; gap: 5px; text-align: center; padding: 20px; color: var(--p-mid); }
-  .empty strong { color: var(--p-hi); font-weight: 700; }
-  .empty span { max-width: 44ch; font-size: 10px; color: var(--p-dim); }
-  .seam { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--amber); pointer-events: none; box-shadow: 0 0 5px #f0a83088; }
-  .flag { position: absolute; bottom: 6px; font-size: 8px; letter-spacing: 1.4px; text-transform: uppercase;
-          color: var(--p-dim); background: #04120bd0; padding: 1px 5px; border: 1px solid var(--lcd-edge); pointer-events: none; }
-
-  /* the wipe, as a slider with a groove and a chunky thumb */
-  .slider { display: flex; align-items: center; gap: 7px; padding: 4px 2px 0; flex: none; }
-  .slider label { color: var(--faint); font-size: 8px; letter-spacing: 1.2px; text-transform: uppercase; }
-  input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 12px; background: none; }
-  input[type=range]::-webkit-slider-runnable-track {
-    height: 6px; background: #14141a;
-    border-top: 1px solid var(--edge-lo); border-left: 1px solid var(--edge-lo);
-    border-right: 1px solid #4a4a54; border-bottom: 1px solid #4a4a54;
-  }
-  input[type=range]::-moz-range-track {
-    height: 6px; background: #14141a; border: 1px solid var(--edge-lo);
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 11px; height: 18px; margin-top: -7px;
-    background: linear-gradient(180deg, #55555f, #2c2c33);
-    border-top: 1px solid var(--edge-hi); border-left: 1px solid var(--edge-hi);
-    border-right: 1px solid var(--edge-lo); border-bottom: 1px solid var(--edge-lo);
-  }
-  input[type=range]::-moz-range-thumb {
-    width: 11px; height: 18px; border-radius: 0;
-    background: linear-gradient(180deg, #55555f, #2c2c33); border: 1px solid var(--edge-hi);
-  }
-  input[type=range]:focus-visible { outline: 1px dotted var(--amber); outline-offset: 2px; }
-
-  /* endpoints and unverified */
-  .cap input[type=search] { flex: 1; min-width: 0; margin: 0 8px; background: var(--sunk, #14161b); color: inherit;
-    border: 1px solid rgba(255,255,255,.12); border-radius: 3px; font: inherit; font-size: 10px; padding: 2px 6px; }
-  .notes { grid-area: notes; }
-  table { width: 100%; border-collapse: collapse; }
-  td { padding: 2px 6px; }
-  tr:nth-child(odd) td { background: #071008; }
-  .verb { color: var(--p-mid); width: 46px; font-size: 10px; }
-  .verb.POST, .verb.PUT, .verb.PATCH { color: var(--amber); }
-  .verb.DELETE { color: #fb7185; }
-  .path { color: var(--p-hi); }
-  .src { text-align: right; color: var(--p-dim); font-size: 9px; }
-  .src.observed { color: var(--dsp); }
-  .unver li { margin: 0 0 2px; color: var(--amber); }
-  .unver ul { margin: 0; padding: 4px 8px 6px 20px; }
-  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; flex: 1; min-height: 0; }
-  .hint { color: var(--p-dim); padding: 8px; }
-  .k { color: #c4b5fd; } .s { color: var(--p-mid); } .c { color: var(--p-dim); font-style: italic; }
-  .n { color: var(--amber); } .t { color: var(--dsp); }
-
-  /* the day chassis: the same hardware in pale plastic. The LCD stays a
-     backlit panel, just a paler one, so every readout keeps its contrast. */
-  :root[data-theme="day"] {
-    --chassis-hi: #d9d9d2; --chassis-lo: #b4b4ab; --face: #c8c8c0;
-    --edge-hi: #f2f2ec; --edge-lo: #7c7c74;
-    --lcd: #eef4e6; --lcd-edge: #b7c6a8;
-    --p-hi: #1d5c38; --p-mid: #2f7a4f; --p-dim: #6c8a77;
-    --amber: #8a5a00; --amber-dim: #a97f2a;
-    --sel: #c3d4ee; --ink: #26262b; --muted: #4c4c52; --faint: #6d6d74;
-    --input: #1f7a4a; --dsp: #135f8a; --output: #8a5a00; --vis: #5b4a9e; --general: #a13a4c;
-  }
-  :root[data-theme="day"] body { background: #e6e6df; }
-  :root[data-theme="day"] .item[aria-current="true"] { color: #101013; }
-  :root[data-theme="day"] .row:nth-child(odd), :root[data-theme="day"] .item:nth-child(odd),
-  :root[data-theme="day"] tr:nth-child(odd) td { background: #e2ead8; }
-  :root[data-theme="day"] .wordmark { text-shadow: 0 1px 0 #fff8; }
-
-  /* keyboard first means reachable first */
-  .skip { position: absolute; left: -9999px; top: 4px; z-index: 10; padding: 4px 10px;
-          background: var(--amber); color: #101013; font-weight: 700; }
-  .skip:focus { left: 8px; }
-  .noscript { padding: 14px; background: var(--lcd); color: var(--p-hi); border: 1px solid var(--lcd-edge); margin: 6px; }
-
-  .theme-key { flex: 0 0 auto; align-self: center; padding: 4px 8px; }
-  .sort-key { flex: 0 0 auto; padding: 2px 6px; font-size: 8px; margin-right: 6px; }
-  .offline { color: var(--amber); }
-  .spark-box { width: 70px; position: relative; }
-  #spark polyline { fill: none; stroke: var(--amber); stroke-width: 1.5; }
-  /* The run comparison drops below the head as a tooltip so its list never overruns the header bar. */
-  #compare { position: absolute; top: calc(100% + 5px); right: 0; z-index: 40; display: none; width: 214px; text-align: left; padding: 6px 9px; font-size: 9.5px; line-height: 1.5; color: var(--p-dim); background: var(--face); border: 1px solid var(--edge-hi); border-radius: 3px; box-shadow: 0 6px 18px #000a; white-space: normal; }
   .spark-box:hover #compare[data-ready], .spark-box:focus-within #compare[data-ready] { display: block; }
-  #compare h3 { margin: 0 0 4px; font-size: 8.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--faint); } #compare ul { margin: 0; padding-left: 14px; } #compare li { color: var(--p-hi); } #compare p { margin: 3px 0 0; }
+  #compare h3 { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); margin-bottom: var(--sp-2); font-family: var(--mono); font-weight: 600; }
+  #compare ul { margin: 0; padding-left: 16px; } #compare li { color: var(--ink); } #compare p { margin: var(--sp-2) 0 0; }
+  .swatch-row { display: flex; gap: 3px; }
+  .swatch-row i { width: 13px; height: 13px; border: 1px solid var(--rule); display: block; }
+  .chip {
+    border: 1px solid var(--rule); background: var(--sunk); color: var(--dim);
+    padding: 6px 12px; cursor: pointer; user-select: none; font-size: 11.5px;
+  }
+  .chip:hover { color: var(--ink); border-color: var(--dim); }
+  .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+  .chip:active { transform: scale(.97); }
+  .chip:focus-visible, button:focus-visible, [tabindex]:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
 
-  /* the notes deck is tabbed: signals, files, reports */
-  .tabs { gap: 3px; justify-content: flex-start; }
-  .tab { flex: 0 0 auto; padding: 3px 9px; }
+  /* -------------------------------------------------------------- layout */
+  .desk {
+    display: grid; grid-template-columns: 268px 1fr 340px;
+    min-height: 0; overflow: hidden;
+  }
+  @media (max-width: 980px) {
+    body { height: auto; overflow: visible; }
+    .desk { grid-template-columns: 1fr; grid-auto-rows: auto; overflow: visible; height: auto; }
+    .index, .folio, .margin { min-height: 0; max-height: none; }
+    /* The page scrolls on a phone rather than clipping to the viewport, but a
+       panel still keeps its own scrollbar and a sane height: without a bound
+       here, a run of two hundred plugins prints every row full length before
+       the endpoints and unverified panels are reachable at all. */
+    .block-scroll { max-height: 44vh; }
+    .stage { min-height: 46vh; }
+  }
+  .index, .margin { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .index { border-right: 1px solid var(--rule); }
+  .margin { border-left: 1px solid var(--rule); }
+  section, nav, aside { min-height: 0; }
+  .block { display: flex; flex-direction: column; min-height: 0; }
+  .block + .block { border-top: 1px solid var(--rule); }
+  .block-head {
+    display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4);
+    font-size: 9.5px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--faint); flex: none;
+  }
+  /* A flex item's default min-width is its content's own, so a search input
+     would rather overflow the column than shrink; this is the one override
+     that lets the row actually fit the space it was given. */
+  .block-head input, .block-head select { min-width: 0; }
+  .block-head b { margin-left: auto; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .block-scroll { overflow: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+  .field {
+    background: var(--sunk); border: 1px solid var(--rule); color: var(--ink);
+    padding: 4px 8px; font: inherit; font-size: 12px; width: 100%;
+  }
+  .field::placeholder { color: var(--faint); }
+
+  /* ------------------------------------------------------------- index */
+  .stage-list { list-style: none; margin: 0; padding: var(--sp-2) 0; flex: none; }
+  .stage-row {
+    display: flex; align-items: center; gap: var(--sp-3); width: 100%; text-align: left;
+    background: none; border: 0; color: var(--dim); padding: 5px var(--sp-4); cursor: pointer;
+  }
+  .stage-row .n { font-family: var(--mono); font-size: 11px; color: var(--faint); width: 16px; }
+  .stage-row .nm { flex: 1; font-size: 12.5px; }
+  .stage-row .ct { font-variant-numeric: tabular-nums; color: var(--faint); font-size: 11px; }
+  .stage-row:hover { color: var(--ink); background: var(--rule-soft); }
+  .stage-row[aria-pressed="true"] { color: var(--ink); background: var(--accent-soft); border-left: 2px solid var(--accent); padding-left: calc(var(--sp-4) - 2px); }
+
+  .screens-list, .rack-list { flex: 1; min-height: 0; }
+  .row-item {
+    display: flex; gap: var(--sp-2); width: 100%; text-align: left; align-items: baseline;
+    padding: 4px var(--sp-4); background: none; border: 0; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer;
+  }
+  .row-item:hover { background: var(--rule-soft); }
+  .row-item[aria-current="true"] { background: var(--accent); color: var(--accent-ink); }
+  .row-item .num { color: var(--faint); width: 16px; text-align: right; flex: none; font-size: 10.5px; }
+  .row-item[aria-current="true"] .num { color: var(--accent-ink); opacity: .8; }
+  .row-item .st { margin-left: auto; font-size: 10px; color: var(--faint); }
+  .row-item[aria-current="true"] .st { color: var(--accent-ink); opacity: .8; }
+  .grp-label { font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); padding: 7px var(--sp-4) 2px; }
+  .grp-label.c-input { color: var(--info); } .grp-label.c-dsp { color: var(--info); }
+  .grp-label.c-output { color: var(--accent); } .grp-label.c-vis { color: var(--dim); } .grp-label.c-general { color: var(--good); }
+  .said { color: var(--faint); font-size: 10.5px; padding: 0 var(--sp-4) 5px 20px; overflow-wrap: anywhere;
+          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rack-list .row-item { align-items: center; }
+  .empty-note { padding: var(--sp-3) var(--sp-4); color: var(--faint); font-size: 12px; }
+
+  /* -------------------------------------------------------- intake tray */
+  .tray { padding: var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); flex: none; }
+  .drop {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+    border: 1px dashed var(--rule); color: var(--faint); padding: var(--sp-4); cursor: pointer; font-size: 11px;
+  }
+  .drop .lead { color: var(--dim); font-size: 12px; }
+  .drop.over, .drop:hover { border-color: var(--accent); color: var(--accent); }
+  .drop.over .lead, .drop:hover .lead { color: var(--accent); }
+  .drop input { display: none; }
+  .tray-row { display: flex; gap: var(--sp-2); }
+  .btn {
+    border: 1px solid var(--rule); background: var(--sunk); color: var(--dim);
+    padding: 6px 10px; font: inherit; font-size: 11.5px; cursor: pointer; flex: 1;
+  }
+  .btn:hover { color: var(--ink); border-color: var(--dim); }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .btn.primary:hover { background: #d55445; border-color: #d55445; }
+  .btn.primary.busy { background: var(--faint); border-color: var(--faint); cursor: progress; }
+  .btn.small { flex: 0 0 auto; padding: 4px 8px; font-size: 10.5px; }
+  #intake-status { font-size: 10.5px; color: var(--faint); min-height: 14px; }
+
+  /* the flags dropdown: a real disclosure, closed by default */
+  .drop-menu { position: relative; }
+  .drop-menu summary {
+    display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; list-style: none;
+    border: 1px solid var(--rule); background: var(--sunk); color: var(--dim); padding: 7px 10px; font-size: 11.5px;
+  }
+  .drop-menu summary::-webkit-details-marker { display: none; }
+  .drop-menu summary::after { content: "▾"; margin-left: auto; color: var(--faint); }
+  .drop-menu[open] summary::after { content: "▴"; }
+  .drop-menu summary:hover { color: var(--ink); border-color: var(--dim); }
+  .drop-menu .count { background: var(--accent); color: var(--accent-ink); border-radius: 8px; padding: 0 6px;
+    font-size: 10px; font-variant-numeric: tabular-nums; }
+  .drop-menu .count:empty { display: none; }
+  .drop-panel {
+    position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; z-index: 30;
+    background: var(--raised); border: 1px solid var(--rule); box-shadow: 0 -14px 30px var(--shadow);
+    max-height: min(58vh, 420px); display: flex; flex-direction: column;
+  }
+  .drop-panel .field { border: 0; border-bottom: 1px solid var(--rule); flex: none; }
+  .flags { overflow: auto; padding: var(--sp-2) 0; }
+  .flags-grp .lbl { display: block; font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); padding: 7px var(--sp-4) 3px; }
+  .flag-row {
+    display: flex; align-items: center; gap: var(--sp-3); width: 100%; text-align: left;
+    background: none; border: 0; color: var(--dim); padding: 4px var(--sp-4); cursor: pointer; font: inherit; font-size: 12px;
+  }
+  .flag-row:hover { background: var(--rule-soft); color: var(--ink); }
+  .flag-row .box { flex: none; width: 12px; height: 12px; border: 1px solid var(--faint); position: relative; }
+  .flag-row[aria-pressed="true"] .box { background: var(--accent); border-color: var(--accent); }
+  .flag-row[aria-pressed="true"] .box::after { content: ""; position: absolute; left: 3px; top: 0px; width: 4px; height: 8px;
+    border: solid var(--accent-ink); border-width: 0 2px 2px 0; transform: rotate(40deg); }
+  .flag-row[aria-pressed="true"] { color: var(--ink); }
+  .flag-row .id { font-size: 11px; }
+  .flag-row[hidden] { display: none; }
+
+  /* ------------------------------------------------------------- folio */
+  .folio { display: flex; flex-direction: column; min-height: 0; }
+  .folio-head {
+    display: flex; align-items: baseline; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5);
+    border-bottom: 1px solid var(--rule);
+  }
+  .folio-head h2 { font-size: 19px; }
+  #cmp-file { margin-left: auto; font-size: 10.5px; color: var(--faint); }
+  .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--sunk); }
+  /* Opaque on purpose: the built layer paints after the shot layer in DOM
+     order, so when the wipe is off (nothing to compare, one layer is a
+     placeholder) the top layer fully covers the one beneath rather than
+     the two showing text through each other. */
+  .layer { position: absolute; inset: 0; overflow: auto; background: var(--sunk); }
+  .layer img { display: block; width: 100%; height: auto; }
+  .layer pre { margin: 0; padding: var(--sp-4) var(--sp-4) 40px; font-size: 12px; line-height: 1.65; tab-size: 2; color: var(--ink); }
+  .layer .why {
+    position: sticky; top: 0; z-index: 1; padding: var(--sp-2) var(--sp-4); font-size: 11px; color: var(--faint);
+    background: var(--raised); border-bottom: 1px solid var(--rule); display: flex; align-items: center; gap: var(--sp-3);
+  }
+  .empty { position: absolute; inset: 0; display: grid; place-content: center; gap: var(--sp-2); text-align: center; padding: var(--sp-6); color: var(--dim); }
+  .empty strong { color: var(--ink); font-family: var(--serif); font-size: 16px; font-weight: 600; }
+  .empty span { max-width: 46ch; font-size: 12px; color: var(--faint); }
+  .seam { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
+  .tag {
+    position: absolute; bottom: var(--sp-3); font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--dim); background: var(--raised); padding: 2px 7px; border: 1px solid var(--rule); pointer-events: none;
+  }
+  .wipe-row { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-5); border-top: 1px solid var(--rule); flex: none; }
+  .wipe-row label { font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--faint); }
+  input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 16px; background: none; }
+  input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--rule); }
+  input[type=range]::-moz-range-track { height: 2px; background: var(--rule); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: 16px; margin-top: -7px; background: var(--accent); }
+  input[type=range]::-moz-range-thumb { width: 4px; height: 16px; border-radius: 0; background: var(--accent); border: 0; }
+
+  /* ------------------------------------------------------------- margin */
+  .tabs { display: flex; border-bottom: 1px solid var(--rule); flex: none; }
+  .tab {
+    flex: 1; border: 0; background: none; color: var(--faint); padding: var(--sp-3) 4px; font: inherit; font-size: 10.5px;
+    letter-spacing: .6px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
   .pane { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .pane[hidden] { display: none; }
-  .verbs { display: inline-flex; gap: 2px; margin-right: 6px; }
-  .verbs .key { flex: 0 0 auto; padding: 1px 5px; font-size: 8px; }
-  .reports { margin: 0; padding: 6px 8px; list-style: none; }
-  .reports li { padding: 2px 0; }
-  .reports a { color: var(--p-hi); text-decoration: none; }
-  .reports a:hover { color: var(--amber); }
-  .path-btn { background: none; border: 0; padding: 0; font: inherit; color: var(--p-hi); cursor: pointer; text-align: left; }
-  .path-btn:hover { color: var(--amber); }
+  .split-v { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  .split-v > .block { flex: 1; }
+  select.field { -webkit-appearance: none; appearance: none; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 3px 8px; font-size: 11.5px; vertical-align: top; }
+  tr:nth-child(odd) td { background: var(--rule-soft); }
+  .verb { color: var(--info); width: 46px; font-size: 10.5px; }
+  .verb.POST, .verb.PUT, .verb.PATCH { color: var(--accent); }
+  .verb.DELETE { color: var(--accent); font-weight: 600; }
+  .path { color: var(--ink); }
+  .src { text-align: right; color: var(--faint); font-size: 10px; }
+  .src.observed { color: var(--info); }
+  .unver { padding: var(--sp-2) var(--sp-4); margin: 0; list-style: none; }
+  .unver li { margin: 0 0 var(--sp-2); color: var(--dim); font-size: 11.5px; padding-left: 12px; position: relative; }
+  .unver li::before { content: "—"; position: absolute; left: 0; color: var(--accent); }
+  .unver .none { color: var(--faint); padding-left: 0; }
+  .unver .none::before { content: ""; }
+  .hint { color: var(--faint); padding: var(--sp-3) var(--sp-4); font-size: 11.5px; }
+  .k { color: var(--info); } .s { color: var(--good); } .c { color: var(--faint); font-style: italic; }
+  .n { color: var(--accent); } .t { color: var(--info); }
+  .reports { margin: 0; padding: var(--sp-2) var(--sp-4); list-style: none; }
+  .reports li { padding: 3px 0; }
+  .reports a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); }
+  .reports a:hover { color: var(--accent); border-color: var(--accent); }
+  .path-btn { background: none; border: 0; padding: 0; font: inherit; font-size: 11.5px; color: var(--ink); cursor: pointer; text-align: left; border-bottom: 1px solid var(--rule); }
+  .path-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-  dialog#help { background: linear-gradient(180deg, var(--chassis-hi), var(--chassis-lo));
-    color: var(--ink); border: 1px solid var(--edge-hi); border-bottom-color: var(--edge-lo);
-    border-right-color: var(--edge-lo); padding: 10px 14px; font: inherit; min-width: 260px; }
-  dialog#help::backdrop { background: #000a; }
-  dialog#help td { padding: 3px 8px; }
-  dialog#help code { color: var(--amber); }
+  dialog#help {
+    background: var(--raised); color: var(--ink); border: 1px solid var(--rule);
+    padding: var(--sp-4) var(--sp-5); font: inherit; min-width: 280px; box-shadow: 0 20px 50px var(--shadow);
+  }
+  dialog#help::backdrop { background: rgba(0,0,0,.5); }
+  dialog#help h3 { font-size: 16px; margin-bottom: var(--sp-3); }
+  dialog#help td { padding: 4px 10px; font-size: 12px; }
+  dialog#help code { color: var(--accent); font-weight: 600; }
 
-  /* printed, the console flattens into the report it always was */
+  .skip { position: absolute; left: -9999px; top: 4px; z-index: 50; padding: 6px 14px;
+          background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .skip:focus { left: 8px; }
+  .noscript { padding: var(--sp-4); background: var(--raised); color: var(--ink); border: 1px solid var(--rule); margin: var(--sp-3); }
+
   @media print {
     body { height: auto; overflow: visible; display: block; background: #fff; color: #111; }
-    .unit { border: 1px solid #bbb; background: #fff; margin-bottom: 8px; break-inside: avoid; }
-    .sunk { background: #fff; border-color: #ccc; }
-    .compare, .deck, .skip, .theme-key, .lamps, .transport, .slider, dialog { display: none; }
-    .cap, .grp, .num, .ms, .said, .hint { color: #555; }
-    .nm, .path, .item, .unver li, .reports a { color: #111; }
+    .desk { display: block; height: auto; overflow: visible; }
+    .index, .margin { display: none; }
+    .mast, .folio { display: none; }
+    .skip, dialog { display: none; }
   }
 </style>
 </head>
@@ -286,145 +322,154 @@
   the same facts are in the written reports: PORT_NOTES.md and its neighbours in the out directory.</div>
 </noscript>
 
-<section class="unit head">
-  <div class="wordmark">portamp</div>
-  <div class="grille"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-  <div class="sunk readout">
-    <div class="now" id="now" role="status" aria-live="polite">no run loaded</div>
-    <div class="sub" id="now-sub"></div>
-    <div class="sub offline" id="offline" role="status"></div>
+<header class="mast">
+  <h1 class="brand">portamp<small>run register</small></h1>
+  <div class="now-line">
+    <span id="now" role="status" aria-live="polite">no run loaded</span>
+    <span id="now-sub" class="sub"></span>
+    <span id="offline" class="sub warn" role="status"></span>
   </div>
-  <div class="sunk gauge spark-box" tabindex="0" title="unverified per run, oldest first; hover for the change since the previous run">
+  <div class="stats">
+    <dl><dt>files</dt><dd id="g-files">0</dd></dl>
+    <dl><dt>plugins</dt><dd id="g-plugins">0</dd></dl>
+    <dl><dt>ms</dt><dd id="g-ms">0</dd></dl>
+    <dl><dt>unverified</dt><dd id="g-unver">0</dd></dl>
+    <dl><dt>ported</dt><dd id="g-cover">—</dd></dl>
+  </div>
+  <div class="trend spark-box" tabindex="0" title="unverified per run, oldest first; hover or focus for the change since the previous run">
     <svg id="spark" width="54" height="16" viewBox="0 0 54 16" aria-label="unverified count per run, oldest first"><polyline id="spark-line" points="" /></svg>
     <aside id="compare" aria-label="comparison with the previous run"></aside>
-    <span>trend</span>
   </div>
-  <div class="gauges">
-    <div class="sunk gauge"><b id="g-files">0</b><span>files</span></div>
-    <div class="sunk gauge"><b id="g-plugins">0</b><span>plugins</span></div>
-    <div class="sunk gauge"><b id="g-ms">0</b><span>ms</span></div>
-    <div class="sunk gauge"><b id="g-unver">0</b><span>unver</span></div>
-    <div class="sunk gauge"><b id="g-cover">—</b><span>ported</span></div>
-  </div>
-  <div class="sunk gauge" style="width:auto;padding:3px 6px">
-    <div class="swatches" id="swatches"></div>
-    <span>tokens</span>
-  </div>
-  <button class="key theme-key" id="theme" title="Switch between the night and day chassis" aria-pressed="false">day</button>
-  <button class="key theme-key" id="help-key" title="Keyboard shortcuts" aria-haspopup="dialog">?</button>
-  <div class="lamps"><i class="lamp on" title="run loaded"></i><i class="lamp" id="lamp-unver" title="unverified items"></i></div>
-</section>
+  <div class="swatch-row" id="swatches"></div>
+  <button class="chip" id="theme" title="Switch between the day and night ledger" aria-pressed="false">day</button>
+  <button class="chip" id="help-key" title="Keyboard shortcuts" aria-haspopup="dialog">?</button>
+</header>
 
-<section class="unit deck">
-  <div class="cap"><span>plugins per stage</span><b id="deck-total"></b></div>
-  <div class="sunk chart"><div class="analyser" id="analyser"></div></div>
-  <div class="transport" id="transport"></div>
-  <div class="transport">
-    <button class="key run" id="run" title="Run the pipeline again">▶ run</button>
-    <button class="key" id="all" aria-pressed="true">all stages</button>
-  </div>
-  <div class="intake" id="intake">
-    <label class="drop" id="drop" tabindex="0">drop an .exe, a photo, a screenshot or a folder of old pages here, or click to pick files
-      <input type="file" id="pick" multiple aria-label="pick files for the intake">
-      <input type="file" id="pick-dir" webkitdirectory aria-label="pick a folder for the intake">
-      <input type="file" id="camera" accept="image/*" capture="environment" aria-label="take a picture of a screen or a page to port">
-    </label>
-    <div class="sunk flags-box"><div class="scroll flags" id="flags" aria-label="flags for the next run"></div></div>
-    <div class="transport">
-      <input id="site-url" type="url" placeholder="https://old.example.com — copy a site (needs --allow-live and an attestation)" aria-label="site address to copy into the intake" style="flex:1;min-width:0;font:inherit;font-size:9px;padding:3px 5px;background:#0d1a14;color:var(--p-hi);border:1px solid var(--edge-lo)">
-      <button class="key" id="fetch-site" title="Copy the site's pages into the intake, through the same gates as portamp fetch">copy site</button>
+<div class="desk">
+  <nav class="index" aria-label="pipeline stages, screens and the plugin rack">
+    <ol class="stage-list" id="stages" aria-label="pipeline stages"></ol>
+
+    <div class="block screens-list">
+      <div class="block-head"><span>screens</span><input id="sc-q" class="field" style="width:auto;flex:1;margin:0 0 0 8px" type="search" placeholder="filter" aria-label="filter screens by name"><b id="screen-total"></b></div>
+      <div class="block-scroll" id="screens"></div>
     </div>
-    <div class="transport">
-      <button class="key run" id="port-intake" title="Run the pipeline over what was dropped">▶ port intake</button>
-      <button class="key" id="camera-key" title="Take a picture of a screen, a sketch or a paper form; it is read as a screen by shape and the words are left for you to fill">📷 photograph</button>
-      <button class="key" id="pick-dir-key" title="Pick a whole folder">folder</button>
-      <button class="key" id="clear-intake" title="Empty the intake">clear</button>
+
+    <div class="block rack-list">
+      <div class="block-head"><span>plugin rack</span><input id="rk-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="filter" aria-label="filter plugins by name or class"><button class="btn small" id="rk-sort" aria-pressed="false" title="Order the rack by cost instead of class" style="flex:none">by cost</button><b id="rack-total"></b></div>
+      <div class="block-scroll" id="rack"></div>
     </div>
-    <div class="sub" id="intake-status" role="status" aria-live="polite"></div>
-  </div>
-</section>
 
-<section class="unit rack">
-  <div class="cap"><span>plugin rack</span><input id="rk-q" type="search" placeholder="filter" aria-label="filter plugins by name or class"><button class="key sort-key" id="rk-sort" aria-pressed="false" title="Order the rack by cost instead of class">by cost</button><b id="rack-total"></b></div>
-  <div class="sunk"><div class="scroll" id="rack"></div></div>
-  <div class="cap" style="padding-top:6px"><span>screens</span><input id="sc-q" type="search" placeholder="filter" aria-label="filter screens by name"><b id="screen-total"></b></div>
-  <div class="sunk screens"><div class="scroll" id="screens"></div></div>
-</section>
-
-<section class="unit compare">
-  <div class="cap"><span id="cmp-name">side by side</span><b id="cmp-file"></b></div>
-  <div class="sunk stage" id="stage">
-    <div class="layer" id="layer-shot"></div>
-    <div class="layer" id="layer-built"></div>
-    <span class="flag" style="left:6px" id="flag-left">recorded</span>
-    <span class="flag" style="right:6px" id="flag-right">built</span>
-    <div class="seam" id="seam"></div>
-  </div>
-  <div class="slider" id="slider-wrap">
-    <label for="wipe">wipe</label>
-    <input id="wipe" type="range" min="0" max="100" value="50"
-           aria-label="Wipe between the recorded screenshot and the built component" />
-  </div>
-</section>
-
-<section class="unit notes">
-  <div class="cap tabs" role="tablist" aria-label="run panels">
-    <button class="key tab" id="tab-signals" role="tab" aria-selected="true" data-tab="signals">endpoints · unverified</button>
-    <button class="key tab" id="tab-files" role="tab" aria-selected="false" data-tab="files">files</button>
-    <button class="key tab" id="tab-reports" role="tab" aria-selected="false" data-tab="reports">reports</button>
-    <button class="key tab" id="tab-study" role="tab" aria-selected="false" data-tab="study">study</button>
-  </div>
-  <div class="pane" id="pane-signals" role="tabpanel" aria-labelledby="tab-signals">
-    <div class="split">
-      <div style="display:flex;flex-direction:column;min-height:0">
-        <div class="cap"><span>endpoints</span><input id="ep-q" type="search" placeholder="filter" aria-label="filter endpoints by path"><span id="ep-verbs" class="verbs"></span><b id="ep-total"></b></div>
-        <div class="sunk"><div class="scroll"><table id="endpoints"></table></div></div>
+    <div class="tray" id="intake">
+      <label class="drop" id="drop" tabindex="0">
+        <span class="lead">drop an .exe, a photo, a screenshot, or a folder of old pages</span>
+        <span>or click to choose files</span>
+        <input type="file" id="pick" multiple aria-label="pick files for the intake">
+        <input type="file" id="pick-dir" webkitdirectory aria-label="pick a folder for the intake">
+        <input type="file" id="camera" accept="image/*" capture="environment" aria-label="take a picture of a screen or a page to port">
+      </label>
+      <details class="drop-menu">
+        <summary>configure rerun <span class="count" id="flags-count"></span></summary>
+        <div class="drop-panel">
+          <input id="flags-filter" class="field" type="search" placeholder="filter options" aria-label="filter rerun options">
+          <div class="flags" id="flags" aria-label="flags for the next run"></div>
+        </div>
+      </details>
+      <div class="tray-row">
+        <input id="site-url" class="field" type="url" placeholder="https://old.example.com" aria-label="site address to copy into the intake" title="Copy the site's pages into the intake (needs --allow-live and an attestation)">
+        <button class="btn small" id="fetch-site" title="Copy the site's pages into the intake, through the same gates as portamp fetch">copy site</button>
       </div>
-      <div style="display:flex;flex-direction:column;min-height:0">
-        <div class="cap"><span>unverified</span><input id="un-q" type="search" placeholder="/ to filter" aria-label="filter unverified items"><b id="un-total"></b></div>
-        <div class="sunk unver"><div class="scroll"><ul id="unver"></ul></div></div>
+      <div class="tray-row">
+        <button class="btn primary run" id="run" title="Run the pipeline again">run again</button>
+        <button class="btn primary" id="port-intake" title="Run the pipeline over what was dropped">port intake</button>
+      </div>
+      <div class="tray-row">
+        <button class="btn small" id="camera-key" title="Take a picture of a screen, a sketch or a paper form; it is read as a screen by shape and the words are left for you to fill">photograph</button>
+        <button class="btn small" id="pick-dir-key" title="Pick a whole folder">folder</button>
+        <button class="btn small" id="clear-intake" title="Empty the intake">clear</button>
+      </div>
+      <div class="sub" id="intake-status" role="status" aria-live="polite"></div>
+    </div>
+  </nav>
+
+  <section class="folio" aria-label="screen inspection">
+    <div class="folio-head"><h2 id="cmp-name">side by side</h2><b id="cmp-file"></b></div>
+    <div class="stage" id="stage">
+      <div class="layer" id="layer-shot"></div>
+      <div class="layer" id="layer-built"></div>
+      <span class="tag" style="left:8px" id="flag-left">recorded</span>
+      <span class="tag" style="right:8px" id="flag-right">built</span>
+      <div class="seam" id="seam"></div>
+    </div>
+    <div class="wipe-row" id="slider-wrap">
+      <label for="wipe">wipe</label>
+      <input id="wipe" type="range" min="0" max="100" value="50"
+             aria-label="Wipe between the recorded screenshot and the built component" />
+    </div>
+  </section>
+
+  <aside class="margin" aria-label="run panels">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-signals" role="tab" aria-selected="true" data-tab="signals">endpoints &amp; unverified</button>
+      <button class="tab" id="tab-files" role="tab" aria-selected="false" data-tab="files">files</button>
+      <button class="tab" id="tab-reports" role="tab" aria-selected="false" data-tab="reports">reports</button>
+      <button class="tab" id="tab-study" role="tab" aria-selected="false" data-tab="study">study</button>
+    </div>
+    <div class="pane split-v" id="pane-signals" role="tabpanel" aria-labelledby="tab-signals">
+      <div class="block">
+        <div class="block-head"><span>endpoints</span>
+          <input id="ep-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="filter" aria-label="filter endpoints by path">
+          <select id="ep-verbs" class="field" style="width:74px;flex:none;font-size:10.5px;padding:4px 4px" aria-label="filter endpoints by method"><option value="">all</option></select>
+          <b id="ep-total"></b>
+        </div>
+        <div class="block-scroll"><table id="endpoints"></table></div>
+      </div>
+      <div class="block">
+        <div class="block-head"><span>unverified</span><input id="un-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="/ to filter" aria-label="filter unverified items"><b id="un-total"></b></div>
+        <div class="block-scroll"><ul class="unver" id="unver"></ul></div>
       </div>
     </div>
-  </div>
-  <div class="pane" id="pane-files" role="tabpanel" aria-labelledby="tab-files" hidden>
-    <div class="cap"><span>written files, and who wrote them — a text file opens in the pane</span><input id="fi-q" type="search" placeholder="filter" aria-label="filter written files"><b id="files-total"></b></div>
-    <div class="sunk" style="flex:1;min-height:0"><div class="scroll"><table id="files-list"></table></div></div>
-  </div>
-  <div class="pane" id="pane-reports" role="tabpanel" aria-labelledby="tab-reports" hidden>
-    <div class="cap"><span>the run's reports, rendered</span><b id="reports-total"></b></div>
-    <div class="sunk" style="flex:1;min-height:0"><div class="scroll"><ul id="reports-list" class="reports"></ul></div></div>
-  </div>
-  <div class="pane" id="pane-study" role="tabpanel" aria-labelledby="tab-study" hidden>
-    <div class="split">
-      <div style="display:flex;flex-direction:column;min-height:0">
-        <div class="cap"><span>arithmetic, or one equation in one variable</span></div>
-        <div class="sunk" style="padding:8px;flex:1;min-height:0;overflow:auto">
-          <div class="transport">
-            <input id="study-input" type="text" placeholder="2x + 3 = 11" aria-label="an expression or a one variable equation" style="flex:1;min-width:0;font:inherit;font-size:11px;padding:4px 6px;background:#0d1a14;color:var(--p-hi);border:1px solid var(--edge-lo)">
-            <button class="key run" id="study-solve" title="Solve the expression or equation, showing the real steps">solve</button>
+    <div class="pane split-v" id="pane-files" role="tabpanel" aria-labelledby="tab-files" hidden>
+      <div class="block" style="flex:1">
+        <div class="block-head"><span>written files, and who wrote them</span><input id="fi-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="filter" aria-label="filter written files"><b id="files-total"></b></div>
+        <div class="block-scroll"><table id="files-list"></table></div>
+      </div>
+    </div>
+    <div class="pane split-v" id="pane-reports" role="tabpanel" aria-labelledby="tab-reports" hidden>
+      <div class="block" style="flex:1">
+        <div class="block-head"><span>the run's reports, rendered</span><b id="reports-total"></b></div>
+        <div class="block-scroll"><ul class="reports" id="reports-list"></ul></div>
+      </div>
+    </div>
+    <div class="pane split-v" id="pane-study" role="tabpanel" aria-labelledby="tab-study" hidden>
+      <div class="block" style="flex:1">
+        <div class="block-head"><span>arithmetic, or one equation in one variable</span></div>
+        <div class="block-scroll" style="padding:var(--sp-3) var(--sp-4)">
+          <div class="tray-row">
+            <input id="study-input" class="field" type="text" placeholder="2x + 3 = 11" aria-label="an expression or a one variable equation">
+            <button class="btn primary small" id="study-solve" title="Solve the expression or equation, showing the real steps">solve</button>
           </div>
-          <div id="study-result" style="margin-top:8px;white-space:pre-wrap"></div>
-          <p class="hint" style="margin-top:8px">Arithmetic, and one equation in one variable. A second variable, a squared term, or an equation with no variable at all is refused by name, never guessed.</p>
+          <pre id="study-result" style="margin:var(--sp-3) 0 0;white-space:pre-wrap;font-size:12px"></pre>
+          <p class="hint" style="padding:var(--sp-3) 0 0">Arithmetic, and one equation in one variable. A second variable, a squared term, or an equation with no variable at all is refused by name, never guessed.</p>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;min-height:0">
-        <div class="cap"><span>a PDF's plain text, read from the intake</span><button class="key" id="study-refresh-pdfs" title="List the PDFs currently in the intake">list PDFs</button></div>
-        <div class="sunk" style="flex:1;min-height:0"><div class="scroll" id="study-pdf-list"></div></div>
-        <div class="sunk" style="flex:1;min-height:0;margin-top:6px"><pre class="scroll" id="study-pdf-text" style="margin:0;padding:8px;white-space:pre-wrap"></pre></div>
+      <div class="block" style="flex:1">
+        <div class="block-head"><span>a PDF's plain text, from the intake</span><button class="btn small" id="study-refresh-pdfs" title="List the PDFs currently in the intake">list PDFs</button></div>
+        <div class="block-scroll" id="study-pdf-list" style="flex:0 0 auto;max-height:35%"></div>
+        <pre class="block-scroll" id="study-pdf-text" style="margin:0;padding:var(--sp-3) var(--sp-4);white-space:pre-wrap;font-size:12px"></pre>
       </div>
     </div>
-  </div>
-</section>
+  </aside>
+</div>
 
 <dialog id="help" aria-label="keyboard shortcuts">
-  <div class="cap"><span>keyboard</span></div>
+  <h3>keyboard</h3>
   <table>
     <tr><td><code>j</code> / <code>k</code></td><td>next and previous screen</td></tr>
     <tr><td><code>1</code>–<code>5</code>, <code>0</code></td><td>select a stage, and all of them</td></tr>
     <tr><td><code>[</code> / <code>]</code></td><td>nudge the wipe</td></tr>
     <tr><td><code>/</code></td><td>filter the unverified items</td></tr>
     <tr><td><code>r</code></td><td>run the pipeline again</td></tr>
-    <tr><td><code>t</code></td><td>day and night chassis</td></tr>
+    <tr><td><code>t</code></td><td>day and night ledger</td></tr>
     <tr><td><code>?</code> / <code>Esc</code></td><td>this card, open and closed</td></tr>
   </table>
 </dialog>
@@ -477,7 +522,7 @@ function renderTokens() {
   const roles = ["accent", "ink", "surface", "bg", "danger"].filter((r) => colours[r]);
   $("swatches").innerHTML = roles.map((role) =>
     '<i title="' + role + " " + esc(colours[role]) + '" style="background:' + esc(colours[role]) + '"></i>'
-  ).join("") || '<em class="hint" style="padding:0;font-size:8px">no tokens</em>';
+  ).join("");
 }
 
 function renderHead() {
@@ -496,46 +541,31 @@ function renderHead() {
   $("now-sub").textContent = diverged.length
     ? diverged.length + " equivalence verdict(s) diverged — see PORT_NOTES.md"
     : new Date(run.ranAt).toLocaleString();
-  if (run.unverified.length || diverged.length) $("lamp-unver").classList.add("warn");
-}
-
-/** The bars are the plugin count for each stage. Nothing here is decorative. */
-function renderDeck() {
-  const perStage = STAGES.map((stage) => ({
-    stage,
-    n: new Set(run.plugins.filter((p) => p.stages.includes(stage)).map((p) => p.name)).size,
-  }));
-  const tallest = Math.max(1, ...perStage.map((s) => s.n));
-  // A fixed number of cells regardless of how many plugins a stage carries, so a run of five loads
-  // the same as a run of five hundred: each cell is a third of the tallest stage's count, rounded.
-  const CELLS = 3;
-  $("deck-total").textContent = run.plugins.length;
-  $("analyser").innerHTML = perStage.map((s) => {
-    const litCount = Math.round((s.n / tallest) * CELLS);
-    const cells = Array.from({ length: CELLS }, (_, k) => {
-      const lit = k < litCount;
-      return '<i class="' + (lit ? (k === CELLS - 1 ? "peak" : "lit") : "") + '"></i>';
-    }).join("");
-    return '<div class="col" title="' + s.n + ' plugin(s)">' + cells + "<em>" + s.stage + "</em></div>";
-  }).join("");
-  $("transport").innerHTML = STAGES.map((s) =>
-    '<button class="key done" data-stage="' + s + '" aria-pressed="false">' + s + "</button>"
-  ).join("");
-  for (const key of $("transport").children) {
-    key.addEventListener("click", () => selectStage(key.dataset.stage));
-  }
 }
 
 let stageFilter = null;
 let rackSort = "class";
 
-/** A transport key selects a stage. The rack shows what ran in it. */
+/** The stage index: a numbered list of the five stages, live counted, each
+ * one a filter on the rack below it. Nothing here is decorative. */
+function renderStages() {
+  const rows = STAGES.map((stage, i) => {
+    const n = new Set(run.plugins.filter((p) => p.stages.includes(stage)).map((p) => p.name)).size;
+    return '<li><button class="stage-row" data-stage="' + stage + '" aria-pressed="' + String(stage === stageFilter) + '">' +
+      '<span class="n">' + (i + 1) + "</span><span class=\"nm\">" + stage + '</span><span class="ct">' + n + "</span></button></li>";
+  });
+  rows.push('<li><button class="stage-row" id="stage-all" aria-pressed="' + String(stageFilter === null) + '">' +
+    '<span class="n">0</span><span class="nm">all stages</span><span class="ct">' + run.plugins.length + "</span></button></li>");
+  $("stages").innerHTML = rows.join("");
+  for (const b of $("stages").querySelectorAll("[data-stage]")) b.addEventListener("click", () => selectStage(b.dataset.stage));
+  $("stage-all").addEventListener("click", () => selectStage(null));
+}
+
+/** A stage row selects a stage. The rack shows what ran in it. */
 function selectStage(stage) {
   stageFilter = stageFilter === stage ? null : stage;
-  for (const key of $("transport").children) {
-    key.setAttribute("aria-pressed", String(key.dataset.stage === stageFilter));
-  }
-  $("all").setAttribute("aria-pressed", String(stageFilter === null));
+  for (const b of $("stages").querySelectorAll("[data-stage]")) b.setAttribute("aria-pressed", String(b.dataset.stage === stageFilter));
+  $("stage-all").setAttribute("aria-pressed", String(stageFilter === null));
   const shown = run.plugins.filter((p) => !stageFilter || p.stages.includes(stageFilter));
   $("now").textContent = stageFilter
     ? stageFilter + " — " + shown.length + " plugin(s)"
@@ -557,21 +587,20 @@ function renderRack() {
     $("rack").innerHTML = sortPlugins(visible, "cost").map((p) => {
       n += 1;
       return rackRow(p, n);
-    }).join("") || '<p class="hint">nothing matches</p>';
+    }).join("") || '<p class="empty-note">nothing matches</p>';
     return;
   }
   let n = 0;
   $("rack").innerHTML = CLASSES.map((cls) => {
     const group = visible.filter((p) => p.class === cls);
     if (!group.length) return "";
-    return '<div class="grp">' + cls + "</div>" + group.map((p) => { n += 1; return rackRow(p, n); }).join("");
-  }).join("") || '<p class="hint">nothing matches</p>';
+    return '<div class="grp-label c-' + cls + '">' + cls + "</div>" + group.map((p) => { n += 1; return rackRow(p, n); }).join("");
+  }).join("") || '<p class="empty-note">nothing matches</p>';
 }
 
 function rackRow(p, n) {
-  return '<div class="c-' + p.class + '">' +
-    '<div class="row"><span class="num">' + n + ".</span>" +
-    '<span class="nm">' + esc(p.name) + '</span><span class="ms">' + p.ms + "ms</span></div>" +
+  return '<div><div class="row-item"><span class="num">' + n + ".</span>" +
+    '<span>' + esc(p.name) + '</span><span class="st">' + p.ms + "ms</span></div>" +
     '<div class="said">' + esc(p.contributed) + "</div></div>";
 }
 
@@ -580,15 +609,15 @@ function renderScreens() {
   $("screen-total").textContent = $("sc-q").value.trim()
     ? visible.length + "/" + run.screens.length : run.screens.length;
   if (!run.screens.length) {
-    $("screens").innerHTML = '<p class="hint">no components emitted</p>';
+    $("screens").innerHTML = '<p class="empty-note">no components emitted</p>';
     return;
   }
   $("screens").innerHTML = visible.map((s) =>
-    '<button class="item" data-i="' + s.i + '" aria-current="' + String(s.i === currentIndex) + '">' +
+    '<button class="row-item" data-i="' + s.i + '" aria-current="' + String(s.i === currentIndex) + '">' +
       '<span class="num">' + (s.i + 1) + ".</span><span>" + esc(s.name) + "</span>" +
       '<span class="st">' + (s.origin === "observed" ? "observed" : s.matched ? esc(s.state || "shot") : "no shot") + "</span>" +
     "</button>"
-  ).join("") || '<p class="hint">nothing matches</p>';
+  ).join("") || '<p class="empty-note">nothing matches</p>';
   for (const b of $("screens").children) {
     if (b.dataset.i !== undefined) b.addEventListener("click", () => select(Number(b.dataset.i)));
   }
@@ -598,12 +627,9 @@ let epVerb = null;
 
 function renderEndpoints() {
   const verbs = [...new Set(run.endpoints.map((e) => e.method))];
-  $("ep-verbs").innerHTML = verbs.map((v) =>
-    '<button class="key" data-verb="' + esc(v) + '" aria-pressed="' + String(v === epVerb) + '">' + esc(v) + "</button>"
-  ).join("");
-  for (const chip of $("ep-verbs").children) {
-    chip.addEventListener("click", () => { epVerb = epVerb === chip.dataset.verb ? null : chip.dataset.verb; renderEndpoints(); });
-  }
+  const select = $("ep-verbs");
+  select.innerHTML = '<option value="">all verbs</option>' + verbs.map((v) => '<option value="' + esc(v) + '">' + esc(v) + "</option>").join("");
+  select.value = epVerb ?? "";
   const shown = filterEndpoints(run.endpoints, $("ep-q").value, epVerb);
   $("ep-total").textContent = shown.length === run.endpoints.length
     ? run.endpoints.length : shown.length + "/" + run.endpoints.length;
@@ -625,8 +651,8 @@ function renderUnverified() {
   $("unver").innerHTML = run.unverified.length
     ? (shown.length
         ? shown.map((u) => "<li>" + esc(u) + "</li>").join("")
-        : '<li style="color:var(--p-dim)">nothing matches the filter.</li>')
-    : '<li style="color:var(--p-dim)">nothing. every value came from the source or from the app itself.</li>';
+        : '<li class="none">nothing matches the filter.</li>')
+    : '<li class="none">nothing. every value came from the source or from the app itself.</li>';
 }
 
 // Provenance came with the run: every file is attributed to the plugin whose
@@ -727,7 +753,7 @@ async function showSource(why, path) {
   const source = await fetch("/source?path=" + encodeURIComponent(path)).then((r) => r.text());
   const highlighted = /\.(jsx?|tsx?|vue|svelte|json|css|html?)$/i.test(path) ? highlight(source) : esc(source);
   $("layer-built").innerHTML = '<p class="why">' + esc(why) +
-    ' <button class="key" id="copy-src" title="Copy the file to the clipboard">copy</button></p>' +
+    ' <button class="btn small" id="copy-src" title="Copy the file to the clipboard">copy</button></p>' +
     "<pre>" + highlighted + "</pre>";
   $("cmp-file").textContent = path;
   $("copy-src").addEventListener("click", async () => {
@@ -745,10 +771,10 @@ async function showPreview(screen, element, state) {
   const bar =
     '<div class="why" id="pv-bar">live element · state: ' +
     ["empty", "rows", "loading", "error"].map((s) =>
-      '<button class="key" data-state="' + s + '" aria-pressed="' + String(s === state) + '">' + s + "</button>").join(" ") +
-    ' <button class="key" id="pv-src">view source</button></div>';
+      '<button class="btn small" data-state="' + s + '" aria-pressed="' + String(s === state) + '">' + s + "</button>").join(" ") +
+    ' <button class="btn small" id="pv-src">view source</button></div>';
   $("layer-built").innerHTML = bar +
-    '<iframe title="live preview of ' + esc(screen.name) + '" style="border:0;width:100%;height:calc(100% - 30px);background:#fff"' +
+    '<iframe title="live preview of ' + esc(screen.name) + '" style="border:0;width:100%;height:calc(100% - 34px);background:#fff"' +
     ' src="/preview?path=' + encodeURIComponent(element) + "&state=" + encodeURIComponent(state) + '"></iframe>';
   for (const button of $("pv-bar").querySelectorAll("button[data-state]")) {
     button.addEventListener("click", () => showPreview(screen, element, button.dataset.state));
@@ -756,7 +782,7 @@ async function showPreview(screen, element, state) {
   $("pv-src").addEventListener("click", async () => {
     await showSource("emitted source.", screen.component ?? element);
     const back = document.createElement("button");
-    back.className = "key";
+    back.className = "btn small";
     back.textContent = "back to preview";
     back.addEventListener("click", () => showPreview(screen, element, state));
     $("layer-built").querySelector(".why").append(" ", back);
@@ -768,12 +794,17 @@ function setWipe(enabled) {
   $("slider-wrap").style.visibility = enabled ? "" : "hidden";
   for (const id of ["seam", "flag-left", "flag-right"]) $(id).style.display = enabled ? "" : "none";
   $("layer-built").style.clipPath = enabled ? null : "none";
+  $("layer-shot").style.clipPath = enabled ? null : "none";
   if (enabled) applyWipe();
 }
 
+// Each layer keeps only its own side of the seam, the shot on the left and
+// the built pane on the right; an unclipped empty-state message would centre
+// itself across the whole stage and print over whichever layer sits behind it.
 function applyWipe() {
   const value = Number($("wipe").value);
   $("layer-built").style.clipPath = "inset(0 0 0 " + value + "%)";
+  $("layer-shot").style.clipPath = "inset(0 " + (100 - value) + "% 0 0)";
   $("seam").style.left = value + "%";
   $("wipe").setAttribute("aria-valuetext", value + "% recorded");
 }
@@ -801,8 +832,9 @@ window.addEventListener("hashchange", () => run && readHash());
 
 /* ------------------------------------------------------------ the chrome */
 
-// The day chassis: same hardware, pale plastic. The choice is this
-// browser's own and storage can be unavailable; the toggle works either way.
+// The day ledger: same register, cream paper instead of the night's dark
+// leather cover. The choice is this browser's own and storage can be
+// unavailable; the toggle works either way.
 function applyTheme(day) {
   document.documentElement.setAttribute("data-theme", day ? "day" : "");
   if (!day) document.documentElement.removeAttribute("data-theme");
@@ -811,7 +843,7 @@ function applyTheme(day) {
   try { localStorage.setItem("portamp-theme", day ? "day" : "night"); } catch { /* per browser convenience only */ }
 }
 $("theme").addEventListener("click", () => applyTheme(!document.documentElement.hasAttribute("data-theme")));
-try { if (localStorage.getItem("portamp-theme") === "day") applyTheme(true); } catch { /* default chassis */ }
+try { if (localStorage.getItem("portamp-theme") === "day") applyTheme(true); } catch { /* default ledger */ }
 
 $("help-key").addEventListener("click", () => $("help").open ? $("help").close() : $("help").showModal());
 
@@ -822,7 +854,7 @@ window.addEventListener("online", setConnectivity);
 window.addEventListener("offline", setConnectivity);
 setConnectivity();
 
-// The notes deck's three faces: signals, files, reports.
+// The margin's four faces: endpoints & unverified, files, reports, study.
 for (const tab of document.querySelectorAll(".tab")) {
   tab.addEventListener("click", () => {
     for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", String(t === tab));
@@ -833,6 +865,7 @@ for (const tab of document.querySelectorAll(".tab")) {
 for (const [id, render] of [["un-q", renderUnverified], ["sc-q", renderScreens], ["rk-q", renderRack], ["ep-q", renderEndpoints], ["fi-q", renderFiles]]) {
   $(id) && $(id).addEventListener("input", () => run && render());
 }
+$("ep-verbs").addEventListener("change", () => { epVerb = $("ep-verbs").value || null; renderEndpoints(); });
 $("rk-sort").addEventListener("click", () => {
   rackSort = rackSort === "cost" ? "class" : "cost";
   $("rk-sort").setAttribute("aria-pressed", String(rackSort === "cost"));
@@ -840,7 +873,6 @@ $("rk-sort").addEventListener("click", () => {
 });
 
 $("wipe").addEventListener("input", applyWipe);
-$("all").addEventListener("click", () => selectStage(null));
 
 // Running the tool again is the one thing this window is allowed to cause, over the tree it was started with or
 // over the intake, with the flags pressed below.
@@ -872,23 +904,40 @@ const FLAG_TITLE = {
 function renderFlags() {
   const box = $("flags");
   box.innerHTML = FLAG_GROUPS.map((g) => `<div class="flags-grp"><span class="lbl">${g.label}</span>${g.flags.map((f) =>
-    `<button class="key" data-flag="${f}" aria-pressed="false" title="${FLAG_TITLE[f] ?? f}">${f}</button>`).join("")}</div>`).join("");
+    `<button type="button" class="flag-row" data-flag="${f}" aria-pressed="false" title="${FLAG_TITLE[f] ?? f}"><span class="box" aria-hidden="true"></span><span class="id">${f}</span></button>`).join("")}</div>`).join("");
 }
 renderFlags();
-const flagsOn = () => Object.fromEntries([...document.querySelectorAll("#flags .key")].filter((k) => k.getAttribute("aria-pressed") === "true").map((k) => [k.dataset.flag, true]));
-$("flags").addEventListener("click", (e) => { const k = e.target.closest(".key"); if (k) k.setAttribute("aria-pressed", String(k.getAttribute("aria-pressed") !== "true")); });
+const flagsOn = () => Object.fromEntries([...document.querySelectorAll("#flags [data-flag]")].filter((k) => k.getAttribute("aria-pressed") === "true").map((k) => [k.dataset.flag, true]));
+function updateFlagsCount() {
+  $("flags-count").textContent = Object.keys(flagsOn()).length || "";
+}
+$("flags").addEventListener("click", (e) => {
+  const k = e.target.closest("[data-flag]");
+  if (!k) return;
+  k.setAttribute("aria-pressed", String(k.getAttribute("aria-pressed") !== "true"));
+  updateFlagsCount();
+});
+$("flags-filter").addEventListener("input", () => {
+  const q = $("flags-filter").value.trim().toLowerCase();
+  for (const row of $("flags").querySelectorAll("[data-flag]")) row.hidden = q ? !row.dataset.flag.includes(q) : false;
+  for (const grp of $("flags").querySelectorAll(".flags-grp")) {
+    const rows = [...grp.querySelectorAll("[data-flag]")];
+    grp.style.display = rows.length && rows.every((r) => r.hidden) ? "none" : "";
+  }
+});
+
 async function rerun(options = {}) {
   const button = $("run");
   if (button.classList.contains("busy")) return;
   button.classList.add("busy");
-  button.textContent = "· running";
+  const label = button.textContent;
+  button.textContent = "running…";
   $("now").textContent = options.source === "intake" ? "running the pipeline over the intake" : "running the pipeline";
   try {
     const body = JSON.stringify({ source: options.source ?? "src", dir: options.dir ?? null, flags: { ...flagsOn(), ...(options.flags ?? {}) } });
     const result = await fetch("/rerun", { method: "POST", headers: { "Content-Type": "application/json" }, body }).then((r) => r.json());
     if (!result.ok) {
       $("now").textContent = "stopped: " + (result.error ?? "unknown").split("\n")[0];
-      $("lamp-unver").classList.add("warn");
       return;
     }
     await refresh();
@@ -905,7 +954,7 @@ async function rerun(options = {}) {
     $("now").textContent = "could not run: " + err.message;
   } finally {
     button.classList.remove("busy");
-    button.textContent = "▶ run";
+    button.textContent = label;
   }
 }
 $("run").addEventListener("click", () => rerun());
@@ -978,7 +1027,7 @@ async function studySolve() {
   const r = await fetch("/study/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) }).then((r) => r.json()).catch((err) => ({ ok: false, error: err.message }));
   out.innerHTML = r.ok
     ? esc(r.steps.join("\n")) + (r.variable ? "\n\n" + esc(r.variable + " = " + (r.value ?? "(every value — an identity)")) : "")
-    : '<span style="color:var(--amber)">' + esc(r.error ?? "could not be solved") + "</span>";
+    : '<span style="color:var(--accent)">' + esc(r.error ?? "could not be solved") + "</span>";
 }
 $("study-solve").addEventListener("click", studySolve);
 $("study-input").addEventListener("keydown", (e) => { if (e.key === "Enter") studySolve(); });
@@ -988,7 +1037,7 @@ async function studyListPdfs() {
   const { files } = await fetch("/intake.json").then((r) => r.json());
   const pdfs = files.filter((f) => /\.pdf$/i.test(f.path));
   box.innerHTML = pdfs.length
-    ? pdfs.map((f) => `<div class="key" data-path="${esc(f.path)}" style="cursor:pointer;padding:3px 6px" tabindex="0">${esc(f.path)}</div>`).join("")
+    ? pdfs.map((f) => `<button type="button" class="row-item" data-path="${esc(f.path)}">${esc(f.path)}</button>`).join("")
     : '<span class="hint">no PDF in the intake yet — drop one on the intake above</span>';
 }
 $("study-refresh-pdfs").addEventListener("click", studyListPdfs);
@@ -1002,7 +1051,7 @@ $("study-pdf-list").addEventListener("click", async (e) => {
 });
 
 function renderAll() {
-  renderTokens(); renderHead(); renderDeck(); renderRack(); renderScreens();
+  renderTokens(); renderHead(); renderStages(); renderRack(); renderScreens();
   renderEndpoints(); renderUnverified(); renderFiles(); renderReports(); renderTrend(); renderComparison();
 }
 

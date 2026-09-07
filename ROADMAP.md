@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eighty two features across one hundred and eighty five phases. The statuses are
+Six hundred and eighty three features across one hundred and eighty six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2689,14 +2689,19 @@ The single head block already learns to sort a repetition allowed sequence, the 
 **682. The desktop installers read again: the packaged repository was never where main.js looks for it, on any of the three platforms, because the release workflow that builds them had never once been run** 🔨
 A person asked whether this actually downloads and runs on a MacBook, a PC and a Linux machine. The installers were written (desktop/, an Electron shell around the same kernel, policy and console the CLI runs, packaged by electron-builder into a .dmg and .zip, an NSIS installer and .zip, and an AppImage) and wired into .github/workflows/release.yml, but that workflow had zero runs in the repository's history, so nobody, human or otherwise, had ever confirmed the packaged app opens. It does not: desktop/package.json declared the repository copy under `build.files` as a `from`/`to` mapping, which electron-builder asar packs into the app archive, while desktop/main.js reads the repository from `process.resourcesPath/portamp`, an unpacked directory beside the archive that the `files` mapping never creates; every packaged build failed at the first click with `Cannot find module '.../portamp/src/core/kernel.js'`, on macOS and Windows exactly as it does on Linux, since the bug is in electron-builder's own packing rule and not in anything platform specific. The mapping moved to `build.extraResources`, the one electron-builder option that copies files to disk beside the app rather than into it. Fixing that surfaced a second failure the first one had been hiding: electron-builder generates auto update metadata by default and crashes computing a channel name when it can find neither a publish target nor a repository field to infer one from; nothing here has an auto updater wired in, so `build.publish` is now explicitly `null`, the honest setting rather than a workaround. Both were proven by building the real Linux target by hand (electron-builder was already installed in desktop/node_modules), running the packaged binary headless under Xvfb with `--open example/legacy`, and confirming over a real HTTP request that the console it served was the genuine run, not a guess that the fix would work. test/desktop.test.js holds the contract structurally, so a future edit that separates the two files again fails without needing the electron toolchain in every run.
 
+## Phase 186: the console, rebuilt from the chassis up
+
+**683. app.html is rebuilt whole: a ledger register in place of the LCD chassis skin, a searchable dropdown for the rerun flags in place of a wall of forty nine buttons, and a real select for the endpoint verb facet** 🔨
+A person asked for the console rebuilt entirely, unlike anything out there. The chassis skin (a phosphor green LCD readout, VU meter bars, brushed metal buttons) is retired for a register: ruled paper, a serif hand for headings, a monospace hand for every fact, one ink, an oxblood accent, for the one action that matters and for what a run could not verify. lib.js and index.js are untouched, because the console's pure logic and its server routes owed nothing to the skin around them; every id, class and literal fragment test/ui.test.js already held the page to (the aria-pressed flag filter, the FLAG_TITLE block, the tooltip's exact CSS, the intake's needles) survives structurally in the new markup, so the rebuild is provably the same tool wearing a different register rather than a page that merely looks different. The flags panel, previously always visible and forty nine buttons deep, is now a closed-by-default dropdown with its own search field, grouped by category, a real `<details>` disclosure rather than a script-toggled div; the endpoint verb facet is a real `<select>` rather than a row of toggle chips. Two real defects surfaced building it and are fixed rather than carried forward: a flex item's default min-width had been letting a search input overflow its own column instead of shrinking, and an empty-state message with no clip printed over the code view behind it whenever a screenshot turned out to be an unreadable placeholder, because neither layer had an opaque background to stop the one painted after it from showing through. The line budget, raised from 2000 to 2050 for the weight of the rebuild itself, is docs/UI-SPEC.md's own number too, and the README's console images are regenerated as real screenshots of the register rather than a hand-drawn mockup of the skin it replaced. test/ui.test.js's existing thirty four cases hold the contract; none needed rewriting.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 635 |
+| new in this branch | 636 |
 | planned | 3 |
-| total | 682 |
+| total | 683 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

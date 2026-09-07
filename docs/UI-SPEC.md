@@ -29,70 +29,85 @@ Opens a browser. Serves only on localhost. Dies on ctrl c.
   history sidecar are written by the plugin at verify, not by the server.
 - **Localhost only.** Bind `127.0.0.1`, never `0.0.0.0`. It serves screenshots
   of a customer system.
-- **Under a stated line budget**, currently 1550 across `index.js`, `app.html`
+- **Under a stated line budget**, currently 2050 across `index.js`, `app.html`
   and `lib.js`. The number lives in `test/ui.test.js` with the history of every
   raise and what bought it, so growth stays a decision, not a drift.
 
 ## Layout
 
-Four fixed units plus the head. The one place content is tabbed is the notes
-deck, whose three faces (signals, files, reports) are views of the same run;
-the unverified list stays on the default face because it is the list people
-need to see.
+A three column desk plus the mast. The one place content is tabbed is the
+margin, whose four faces (endpoints & unverified, files, reports, study) are
+views of the same run; endpoints and unverified share the default face
+because it is the pair people need to see first.
 
 ```
-┌───────────────────────────────────────────────────────────┐
-│ HEAD  wordmark · readout · gauges (files/plugins/ms/      │
-│       unver/ported) · trend sparkline · swatches · keys   │
-├────────────────┬──────────────────────────────────────────┤
-│  DECK          │  SIDE BY SIDE                            │
-│  stage bars    │   [ recorded screenshot ] [ built ]      │
-│  transport     │   slider wipes between them; the built   │
-├────────────────┤   pane is the live element when one was  │
-│  PLUGIN RACK   │   emitted, source with highlighting      │
-│  by class or   │   otherwise, copy one key away           │
-│  by cost       ├──────────────────────────────────────────┤
-│  ── screens ── │  NOTES DECK (tabs)                       │
-│  orders     ●  │   signals: endpoints · unverified        │
-│  billing    ○  │   files: everything written, and by whom │
-│                │   reports: the run's .md, rendered       │
-└────────────────┴──────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│ MAST  wordmark · readout · stats (files/plugins/ms/            │
+│       unverified/ported) · trend sparkline · swatches · keys   │
+├───────────────┬──────────────────────────┬────────────────────┤
+│  INDEX        │  FOLIO                   │  MARGIN (tabs)     │
+│  stages, 1-5  │   [ recorded ] [ built ]  │  endpoints &       │
+│  ── screens ──│   a wipe divides them;    │   unverified       │
+│  orders    ●  │   the built pane is the   │  files             │
+│  billing   ○  │   live element when one   │  reports           │
+│  ── rack ──   │   was emitted, source     │  study             │
+│  by class or  │   with highlighting       │                    │
+│  by cost      │   otherwise, copy a key   │                    │
+│  ── intake ── │   away                    │                    │
+│  drop zone,   │                           │                    │
+│  a dropdown   │                           │                    │
+│  of rerun     │                           │                    │
+│  flags, run   │                           │                    │
+└───────────────┴──────────────────────────┴────────────────────┘
 ```
 
-**Plugin rack**, left. Every loaded plugin grouped by class — or ordered by
-cost, one key away — with what it contributed and how long it took. This is
-the Winamp plugin list and the main reason the UI is worth building.
+**Plugin rack**, left, below the screens. Every loaded plugin grouped by
+class — or ordered by cost, one key away — with what it contributed and how
+long it took. This is the Winamp plugin list and the main reason the UI is
+worth building.
 
-**Screen list**, below the rack, filterable. Filled dot means a screenshot
-matched, hollow means it did not. Clicking one loads it into the comparison
-pane; the selection lives in the URL hash and survives a reload.
+**Screen list**, above the rack, filterable. A filled row means a screenshot
+matched, an "observed" or "no shot" label says why not. Clicking one loads it
+into the folio; the selection lives in the URL hash and survives a reload.
 
-**Side by side**, main area, with a draggable wipe. When the run emitted a
-custom element the pane shows it live in every state — empty, rows (invented
-and labeled as invented), loading, error. No screenshot, no element, an empty
-placeholder file: each case says so in the pane rather than showing a blank.
+**Folio**, centre, with a draggable wipe. When the run emitted a custom
+element the pane shows it live in every state — empty, rows (invented and
+labeled as invented), loading, error. No screenshot, no element, an empty
+placeholder file: each case says so in the pane rather than showing a blank,
+and each layer keeps to its own side of the seam so an empty state in one
+never prints over real content in the other.
 
-**Notes deck**, lower right, tabbed. Signals holds the endpoints (with verb
-facets) and the unverified list with its filter. Files lists everything the
-run wrote with the plugin and stage that wrote it; a text file opens in the
-pane. Reports lists the run's markdown, rendered by the server.
+**Margin**, right, tabbed. Endpoints & unverified holds the endpoints (with a
+verb dropdown) and the unverified list with its filter. Files lists
+everything the run wrote with the plugin and stage that wrote it; a text
+file opens in the folio. Reports lists the run's markdown, rendered by the
+server. Study solves arithmetic and one variable equations live and reads a
+PDF already in the intake for its plain text, both through general-study's
+own pure functions.
+
+**Intake**, bottom of the index. A drop zone takes a folder, a file, or a
+picture; "configure rerun" is a real dropdown — searchable, grouped by
+category — over the offered flags, closed by default so the column stays
+readable, and only a pressed one travels with the next run.
 
 ## Interaction
 
 Keyboard first: `j`/`k` walk the screens, `1`–`5` and `0` the stages, `[`/`]`
-the wipe, `/` the filter, `r` reruns, `t` flips the chassis, `?` opens the
+the wipe, `/` the filter, `r` reruns, `t` flips the ledger, `?` opens the
 shortcuts card. The whole keymap is one function in `lib.js`, where the suite
 reads it. A skip link, a live readout, a noscript explanation and a print
 stylesheet are part of the spec, not extras.
 
 ## Style
 
-The recovered palette gets a swatch strip, not the chassis: painting the
-chrome with the ported app's accent is how the wordmark ends up unreadable,
-and a UI you cannot read tells you nothing about the tokens either. Dense,
-monospace, one amber accent. The night chassis is the default because the
-content is screenshots; a day chassis exists behind one key, with the LCD
-kept backlit so every readout holds its contrast.
+A ledger, not a chassis: ruled paper, a serif hand for headings, a monospace
+hand for every fact, one ink — an oxblood accent — for the one action that
+matters (running the pipeline again) and for what the run could not verify.
+The recovered palette still gets a swatch strip rather than the chrome:
+painting the mast with the ported app's own accent is how the wordmark ends
+up unreadable, and a UI you cannot read tells you nothing about the tokens
+either. The night ledger is the default because the content is screenshots;
+a day ledger — cream paper, the same oxblood ink — exists behind one key.
 
 ## Data
 

@@ -775,6 +775,38 @@ rather than assumed to carry over, and SORT_MULTIHEAD.md reports whether
 more heads help a harder task generalize exactly as measured. test/study.test.js
 and the new cases in test/transformer.test.js hold both.
 
+10.20 answers whether the desktop installers actually work and rebuilds the
+console whole. They did not: desktop/package.json declared the repository
+copy under `build.files`, which electron-builder asar packs into the app
+archive, while `desktop/main.js` reads it from `process.resourcesPath/portamp`,
+an unpacked directory the `files` mapping never creates, so a packaged build
+failed at the first click on all three platforms alike; the mapping moved to
+`build.extraResources`, and `build.publish` is now explicitly `null` since
+electron-builder crashes computing an update channel with neither a publish
+target nor a repository to infer one from and nothing here auto-updates.
+Both were proven by building the real Linux target by hand and running the
+packaged binary headless, confirming over a real HTTP request that the
+console it served was the genuine run. test/desktop.test.js holds the
+contract structurally so the two files cannot separate again unnoticed.
+app.html is then rebuilt whole: a ledger register (ruled paper, a serif hand
+for headings, a monospace hand for every fact, one oxblood ink) in place of
+the LCD chassis skin, a searchable dropdown for the forty nine rerun flags in
+place of a wall of buttons, a real `<select>` for the endpoint verb facet.
+lib.js and index.js are untouched; every id, class and literal fragment
+test/ui.test.js already held the page to survives structurally in the new
+markup, so the rebuild is provably the same tool in a different register
+rather than a page that merely looks different. Two real defects surfaced
+building it: a flex item's default min-width let a search input overflow its
+column instead of shrinking, and an unclipped empty-state message printed
+over the code view behind it whenever a screenshot turned out to be an
+unreadable placeholder, because neither layer had an opaque background to
+stop the one painted after it from showing through; both are fixed rather
+than carried forward. The line budget raised from 2000 to 2050 is
+docs/UI-SPEC.md's own number too, and the README's console images are real
+screenshots of the register rather than a hand-drawn mockup of the skin it
+replaced. test/ui.test.js's existing thirty four cases hold the contract;
+none needed rewriting.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -840,8 +872,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and eighty two features in
-one hundred and eighty five phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and eighty three features in
+one hundred and eighty six phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
