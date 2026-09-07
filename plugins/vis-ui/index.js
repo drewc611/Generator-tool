@@ -236,9 +236,11 @@ function readBody(req, limit) {
   return new Promise((done, fail) => {
     const chunks = [];
     let size = 0;
+    let rejected = false;
     req.on("data", (c) => {
+      if (rejected) return;
       size += c.length;
-      if (size > limit) { const err = new Error(`the body is over ${limit} bytes`); err.status = 413; req.destroy(); fail(err); return; }
+      if (size > limit) { const err = new Error(`the body is over ${limit} bytes`); err.status = 413; rejected = true; req.resume(); fail(err); return; }
       chunks.push(c);
     });
     req.on("end", () => done(Buffer.concat(chunks)));
@@ -485,8 +487,10 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
       // live with no pipeline run at all, the same pure function STUDY.md's
       // own demonstration calls. Nothing here reaches the network or a model.
       if (url.pathname === "/study/solve" && req.method === "POST") {
+        let body;
+        try { body = await readBody(req, 4096); } catch (err) { return send(err.status ?? 500, TYPES[".json"], JSON.stringify({ error: err.message })); }
         let asked;
-        try { asked = JSON.parse((await readBody(req, 4096)).toString("utf8") || "{}"); } catch (err) { return send(400, TYPES[".json"], JSON.stringify({ error: `not json: ${err.message}` })); }
+        try { asked = JSON.parse(body.toString("utf8") || "{}"); } catch (err) { return send(400, TYPES[".json"], JSON.stringify({ error: `not json: ${err.message}` })); }
         return send(200, TYPES[".json"], JSON.stringify(solve(asked.text ?? "")));
       }
       // A PDF already sitting in the intake, read for its plain text through

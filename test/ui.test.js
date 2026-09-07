@@ -142,6 +142,11 @@ test("the server binds loopback, serves the run, and refuses to leave the direct
   assert.equal((await fetch(`${base}/`)).status, 200);
   assert.equal((await fetch(`${base}/run.json`)).status, 200);
   assert.equal((await fetch(`${base}/nope`)).status, 404);
+  assert.equal(
+    (await fetch(`${base}/study/solve`, { method: "POST", body: JSON.stringify({ text: "x".repeat(4097) }) })).status,
+    413,
+    "an oversized study request preserves readBody's status"
+  );
 
   const escaped = await fetch(`${base}/source?path=${encodeURIComponent("../../../etc/passwd")}`);
   assert.equal(escaped.status, 403, "a path outside the output directory is refused");

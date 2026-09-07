@@ -176,6 +176,7 @@ test("a login form ports to React through the unchanged pipeline", async () => {
 
     const notes = run.ctx.report.unverified.join("\n");
     assert.doesNotMatch(notes, /Alert\.show|Logging in as|Username is required/, "the script body is never quoted in the notes either");
+    assert.match(notes, /Login\.mxml: /, "each gap names the MXML file that produced it");
 
     const flexMd = await readFile(join(run.out, "FLEX.md"), "utf8");
     assert.match(flexMd, /Login\.mxml/);

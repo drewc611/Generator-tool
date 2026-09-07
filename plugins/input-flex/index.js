@@ -36,7 +36,7 @@ export default {
         if (text === null) { ctx.unverified(`${rel}: unreadable; nothing was read from it.`); continue; }
         const notes = [];
         const { screen } = lowerMxml(text, rel, (n) => notes.push(n));
-        for (const n of notes) ctx.unverified(n);
+        for (const n of notes) ctx.unverified(`${rel}: ${n}`);
         files_read.push({ rel, lowered: Boolean(screen), notes });
         if (!screen) continue;
         const { fields, ...rest } = screen;
