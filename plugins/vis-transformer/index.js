@@ -1397,6 +1397,146 @@ function sortVerdict(r, chance) {
   );
 }
 
+const SORT_MULTIHEAD_CONFIG = { ...SORT_CONFIG, heads: 4 };
+
+function sortAccuracyMH(params, seqs, cfg) {
+  let correct = 0;
+  for (const seq of seqs) {
+    const { tokenIds, targets } = sortExample(seq);
+    const c = trainForwardMH(params, tokenIds, cfg);
+    if (c.z.every((row, i) => argmaxIdx(row) === targets[i])) correct++;
+  }
+  return seqs.length ? correct / seqs.length : 0;
+}
+
+/**
+ * The same numerical gradient check multiHeadGradientCheck runs for reversal,
+ * run instead against one sort training sequence, so the multi head machinery
+ * (the head split, the concatenation, the output projection Wo) is proven on
+ * the harder task too and not assumed to carry over untested.
+ */
+export function sortMultiHeadGradientCheck(config = {}) {
+  const cfg = { ...SORT_MULTIHEAD_CONFIG, ...config };
+  const params = trainParamsMH(cfg);
+  const { tokenIds, targets } = sortExample(sortDataset(cfg.seed).train[0]);
+  const { grads } = lossAndGradsMH(params, tokenIds, targets, cfg);
+  const eps = 1e-4;
+  const specs = [
+    ["Wq", 1, 2],
+    ["Wk", 3, 0],
+    ["Wv", 4, 5],
+    ["Wo", 2, 7],
+    ["Wo", 5, 10],
+    ["W1", 0, 7],
+    ["W2", 6, 1],
+    ["Wout", 2, 3],
+    ["b1", 5],
+    ["b2", 4],
+    ["bout", 3],
+    ["E", 2, 9],
+  ];
+  let maxRelError = 0;
+  let checked = 0;
+  for (const spec of specs) {
+    const key = spec[0];
+    const isMatrix = Array.isArray(params[key][0]);
+    const analytic = isMatrix ? grads[key][spec[1]][spec[2]] : grads[key][spec[1]];
+    const read = () => (isMatrix ? params[key][spec[1]][spec[2]] : params[key][spec[1]]);
+    const write = (val) => {
+      if (isMatrix) params[key][spec[1]][spec[2]] = val;
+      else params[key][spec[1]] = val;
+    };
+    const saved = read();
+    write(saved + eps);
+    const lossPlus = lossAndGradsMH(params, tokenIds, targets, cfg).loss;
+    write(saved - eps);
+    const lossMinus = lossAndGradsMH(params, tokenIds, targets, cfg).loss;
+    write(saved);
+    const numeric = (lossPlus - lossMinus) / (2 * eps);
+    const rel = Math.abs(analytic - numeric) / Math.max(1e-8, Math.abs(analytic) + Math.abs(numeric));
+    if (rel > maxRelError) maxRelError = rel;
+    checked++;
+  }
+  return { maxRelError, checked };
+}
+
+/**
+ * Train the sort task with H heads (config.heads, default 4), the multi head
+ * counterpart of trainSort. Returns the same shape trainSort does so the held
+ * out accuracy can be compared head to head against the single head baseline
+ * on the task the block finds genuinely hard. Deterministic for a given config.
+ */
+export function trainSortMultiHead(config = {}) {
+  const cfg = { ...SORT_MULTIHEAD_CONFIG, ...config };
+  const params = trainParamsMH(cfg);
+  const { train: trainSet, heldOut } = sortDataset(cfg.seed);
+  const every = Math.max(1, Math.floor(cfg.steps / 20));
+  const lossHistory = [];
+  let initialLoss = null;
+
+  for (let step = 0; step < cfg.steps; step++) {
+    const acc = zerosLike(params);
+    let loss = 0;
+    for (const seq of trainSet) {
+      const { tokenIds, targets } = sortExample(seq);
+      const r = lossAndGradsMH(params, tokenIds, targets, cfg);
+      loss += r.loss;
+      accumulateGrads(acc, r.grads, 1 / trainSet.length);
+    }
+    loss /= trainSet.length;
+    if (step === 0) initialLoss = loss;
+    if (step % every === 0) lossHistory.push({ step, loss });
+    for (const key of Object.keys(acc)) applyUpdate(params[key], acc[key], cfg.lr);
+  }
+
+  let finalLoss = 0;
+  for (const seq of trainSet) {
+    const { tokenIds, targets } = sortExample(seq);
+    finalLoss += lossAndGradsMH(params, tokenIds, targets, cfg).loss;
+  }
+  finalLoss /= trainSet.length;
+  lossHistory.push({ step: cfg.steps, loss: finalLoss });
+
+  const samplePredictions = heldOut.slice(0, 6).map((seq) => {
+    const c = trainForwardMH(params, seq, cfg);
+    return {
+      input: seq.slice(),
+      predicted: c.z.map((row) => argmaxIdx(row)),
+      target: seq.slice().sort((a, b) => a - b),
+    };
+  });
+
+  return {
+    L: SORT_L,
+    symbols: SORT_V,
+    heads: headsOf(cfg),
+    trainSize: trainSet.length,
+    heldOutSize: heldOut.length,
+    lossHistory,
+    initialLoss,
+    finalLoss,
+    trainAccuracy: sortAccuracyMH(params, trainSet, cfg),
+    heldOutAccuracy: sortAccuracyMH(params, heldOut, cfg),
+    samplePredictions,
+  };
+}
+
+function renderSortMH(r, check) {
+  const base = renderSort(r, check);
+  const header = [
+    `# The transformer, asked to sort with ${r.heads} heads`,
+    "",
+    `This is the ${r.heads} head port of the sort task. The trainable block splits its model ` +
+      `dimension into ${r.heads} heads, attends inside each, concatenates and mixes them with an ` +
+      "output projection, and its extra gradients are proven against the same numerical check " +
+      `(max relative error ${check.maxRelError.toExponential(1)} over ${check.checked} parameters), ` +
+      "so whether more heads help the block generalize a harder algorithm is measured rather than assumed.",
+    "",
+  ].join("\n");
+  // Replace the single head title line with the multi head header.
+  return header + base.split("\n").slice(1).join("\n");
+}
+
 function renderSort(r, check) {
   const curve = r.lossHistory.map((p) => `| ${p.step} | ${p.loss.toFixed(4)} |`).join("\n");
   const chance = 1 / Math.pow(r.symbols, r.L);
@@ -1552,6 +1692,31 @@ export default {
         );
         log.info(
           `transformer sort: train ${(r.trainAccuracy * 100).toFixed(0)}%, held out ${(r.heldOutAccuracy * 100).toFixed(1)}%`
+        );
+      }
+
+      if (ctx.config["train-sort-mh"] || ctx.config.trainSortMultiHead) {
+        const heads = Number(ctx.config.heads) > 1 ? Number(ctx.config.heads) : 4;
+        const check = sortMultiHeadGradientCheck({ heads });
+        const r = trainSortMultiHead({ heads });
+        await ctx.write("SORT_MULTIHEAD.md", renderSortMH(r, check));
+        const generalization =
+          r.heldOutAccuracy >= r.trainAccuracy - 0.02 && r.heldOutAccuracy > 0.9
+            ? "it generalized rather than memorized"
+            : r.heldOutAccuracy > (1 / Math.pow(r.symbols, r.L)) * 1.5
+              ? "the gap below the training accuracy is only partial generalization"
+              : "the block memorized rather than learned to sort";
+        ctx.unverified(
+          `SORT_MULTIHEAD.md trains the transformer to sort a ${r.L} token sequence with ${r.heads} attention ` +
+            `heads: ${(r.trainAccuracy * 100).toFixed(0)}% on the ${r.trainSize} training sequences and ` +
+            `${(r.heldOutAccuracy * 100).toFixed(1)}% on the ${r.heldOutSize} held out ones it never saw. The ` +
+            `multi head gradients are proven correct by a numerical check (max relative error ` +
+            `${check.maxRelError.toExponential(1)}). This held out number is reported exactly as measured: ` +
+            `${generalization}.`
+        );
+        log.info(
+          `transformer sort multi head (${r.heads} heads): gradient check ${check.maxRelError.toExponential(1)}, ` +
+            `train ${(r.trainAccuracy * 100).toFixed(0)}%, held out ${(r.heldOutAccuracy * 100).toFixed(1)}%`
         );
       }
     });

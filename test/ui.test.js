@@ -42,9 +42,12 @@ test("the whole ui is under the budget the spec set", async () => {
   // bought the raise to 1750; the site copy, a URL handed through the fetch
   // command's gates, bought 1800; an archive unpacked on the intake, 1850; the
   // flags panel grown from seven buttons to forty six, grouped and scrollable
-  // rather than wrapping the deck open, bought 1900. The budget still exists
-  // so growth stays a decision, not a drift.
-  assert.ok(js + html + lib < 1900, `${js + html + lib} lines, the spec allows under 1900`);
+  // rather than wrapping the deck open, bought 1900. A fourth tab, Study,
+  // solving arithmetic and one variable equations live and reading a PDF
+  // already in the intake for its plain text, both through general-study's
+  // own pure functions with no pipeline run in between, bought the raise to
+  // 2000. The budget still exists so growth stays a decision, not a drift.
+  assert.ok(js + html + lib < 2000, `${js + html + lib} lines, the spec allows under 2000`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once

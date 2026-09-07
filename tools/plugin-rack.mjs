@@ -234,6 +234,7 @@ const DOES = {
   "general-doctor": "what is installed, and what each gap turns off",
   "general-scaffold": "portamp new-plugin, with the contract already in the header",
   "general-watch": "rerun the pipeline when the source tree changes",
+  "general-study": "arithmetic and one variable linear equations solved with real steps, and a PDF's plain text read through input-pdf's own zero dependency reader; the console's Study tab calls both live, no network and no model",
   "general-policy": "secrets, live calls, billable calls, endpoints in components",
   "general-agents": "a multi agent, retrieval augmented reasoning pass over the port's own reports, via a real external LLM",
   "general-architect": "a cloud architecture proposal from a real external LLM, gated live and billable, marked unverified",

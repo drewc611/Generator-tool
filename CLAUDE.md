@@ -76,7 +76,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and twenty in five classes, and the core has never learned
+Plugins that ship, two hundred and twenty one in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -101,7 +101,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-codemod  output-aws  output-azure  output-gcp  output-vercel  output-netlify  output-cloudflare  output-caddy  output-eleventy  output-playwright
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph  vis-transformer  vis-a11y  vis-security  vis-perf  vis-lifecycle  vis-readers
 general  general-policy  general-authorization  general-license  general-size
-         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish
+         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study
 ```
 
 An option the CLI does not recognise is passed through to the plugins
@@ -754,6 +754,27 @@ anonymous inner class or a multi-statement lambda named present rather
 than read for what it does. test/awt.test.js and test/uikit.test.js hold
 both.
 
+10.19 gives the console a solver of its own and the transformer a second
+hard task under more than one head. general-study answers "read documents"
+and "do the math" the way every other plugin in this tool answers a
+capability: offline and by name. `solve.js` is a hand written recursive
+descent parser that evaluates pure arithmetic and, for an equation with
+exactly one variable, tracks a `{coeff, constant}` pair through the
+expression so it can solve for that variable; a nonlinear term, a second
+variable, no variable at all or more than one `=` each refuse by name
+through `SolveError` rather than approximate an answer, and implicit
+multiplication (`2x`, `3(x + 1)`) is read as the `*` it stands for.
+`pdftext.js` calls `input-pdf`'s own reader for the text of a dropped PDF;
+no PDF parsing was written twice. Both are wired live into two new console
+routes, and STUDY.md demonstrates the solver on one fixed equation with its
+real steps. vis-transformer's sort task, the one this tool already reports
+as genuinely hard for a single block, gets the multi head port
+`trainReverseMultiHead` proved for reversal: `trainSortMultiHead` reuses
+the same gradient checked machinery, its own numerical check run again
+rather than assumed to carry over, and SORT_MULTIHEAD.md reports whether
+more heads help a harder task generalize exactly as measured. test/study.test.js
+and the new cases in test/transformer.test.js hold both.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -819,8 +840,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and seventy nine features in
-one hundred and eighty two phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and eighty one features in
+one hundred and eighty four phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

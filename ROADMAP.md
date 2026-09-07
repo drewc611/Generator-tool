@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and seventy nine features across one hundred and eighty two phases. The statuses are
+Six hundred and eighty one features across one hundred and eighty four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2674,14 +2674,24 @@ Before GUI builders were common, and still today when a developer deliberately a
 **679. input-uikit reads raw Objective-C UIKit view construction in .m files, a button's own @selector(methodName) the cleanest wiring reference any statement-built reader in this tool gets** 🔨
 The same screen input-storyboard already reads from a `.storyboard` or `.xib` file can be built entirely in code instead, `[[UILabel alloc] initWithFrame:...]` and `[UIButton buttonWithType:...]` construction followed by `addSubview:`, common in pre-Storyboard iOS code and still written today by choice; this reader is that code-only sibling, one screen per file, controls rendered in the order their own construction statement appears rather than the order they were added to the view. A field's name comes from the variable its construction was assigned to, the same rule input-awt keeps for Java; `secureTextEntry` marks a password field, a real UIKit property rather than a guessed one. A button wires from its own `addTarget:action:forControlEvents:` call, and `@selector(methodName)` names the real method directly, the same clean, unambiguous reference PowerBASIC's `CALL procname` already gives this tool's statement-built readers, needing no lambda body or event loop to search through. A non-literal caption or title, an unassigned field, a `UITextView`'s content and a button with no target at all are each named rather than guessed. test/uikit.test.js holds it.
 
+## Phase 183: the workbench gets a solver of its own
+
+**680. general-study adds an arithmetic and one-variable equation solver to the console, an offline reader for the PDFs already dropped on it** 🔨
+A person asked for a "one soft solution" that could read documents and do math homework directly in the interface; rather than a network dependent retrieval system, this plugin answers both asks the way every other plugin in this tool does, deterministically and offline. `solve.js` is a hand written recursive descent parser and evaluator, honest about what it can prove: it evaluates pure arithmetic, and for an equation with exactly one variable it tracks a `{coeff, constant}` pair through the expression so `2x + 3 = 11` solves for `x`, but a nonlinear term (`x * x`, `x` multiplied by itself), a second variable, an expression with none at all, or more than one `=` each refuse by name through `SolveError` rather than guessing at an answer. Implicit multiplication (`2x`, `3(x + 1)`) is read as the real `*` it stands for. `pdftext.js` reuses `input-pdf`'s own zero dependency reader to pull a dropped PDF's text out for the console to show; no new PDF parsing was written; there was already one, and this only calls it. The console's Study tab wires both live through two new routes and STUDY.md demonstrates the solver on one fixed equation with its real steps, in the same voice every other trained demonstration in this tool uses. test/study.test.js holds it.
+
+## Phase 184: the sort task with more than one head
+
+**681. vis-transformer's sort task gets the multi head port trainReverseMultiHead already proved, its own gradients checked rather than assumed to carry over** 🔨
+The single head block already learns to sort a repetition allowed sequence, the harder task reversal is not, and a person asked for the transformer built out further; rather than a second guess at a new architecture, this reuses the exact multi head machinery (the per head split, the concatenation, the output projection Wo) that `trainReverseMultiHead` already proved correct, aimed instead at the sort task. `trainSortMultiHead` and `sortMultiHeadGradientCheck` mirror their reversal counterparts exactly, and the numerical gradient check runs again on the harder task rather than trusting the earlier proof to transfer; SORT_MULTIHEAD.md reports the held out accuracy exactly as measured, whether more heads actually help a one block model generalize sorting being a real question this only answers by training and grading rather than by assuming more heads must help. test/transformer.test.js holds it.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 632 |
+| new in this branch | 634 |
 | planned | 3 |
-| total | 679 |
+| total | 681 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
