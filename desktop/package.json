@@ -18,10 +18,13 @@
   "build": {
     "appId": "dev.portamp.console",
     "productName": "portamp",
+    "publish": null,
     "files": [
       "main.js",
       "preload.cjs",
-      "icon.png",
+      "icon.png"
+    ],
+    "extraResources": [
       { "from": "..", "to": "portamp", "filter": ["src/**", "plugins/**", "docs/**", "package.json", "LICENSE"] }
     ],
     "directories": { "output": "dist" },

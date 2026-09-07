@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eighty one features across one hundred and eighty four phases. The statuses are
+Six hundred and eighty two features across one hundred and eighty five phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2684,14 +2684,19 @@ A person asked for a "one soft solution" that could read documents and do math h
 **681. vis-transformer's sort task gets the multi head port trainReverseMultiHead already proved, its own gradients checked rather than assumed to carry over** 🔨
 The single head block already learns to sort a repetition allowed sequence, the harder task reversal is not, and a person asked for the transformer built out further; rather than a second guess at a new architecture, this reuses the exact multi head machinery (the per head split, the concatenation, the output projection Wo) that `trainReverseMultiHead` already proved correct, aimed instead at the sort task. `trainSortMultiHead` and `sortMultiHeadGradientCheck` mirror their reversal counterparts exactly, and the numerical gradient check runs again on the harder task rather than trusting the earlier proof to transfer; SORT_MULTIHEAD.md reports the held out accuracy exactly as measured, whether more heads actually help a one block model generalize sorting being a real question this only answers by training and grading rather than by assuming more heads must help. test/transformer.test.js holds it.
 
+## Phase 185: the desktop installers, read for the first time since they were written
+
+**682. The desktop installers read again: the packaged repository was never where main.js looks for it, on any of the three platforms, because the release workflow that builds them had never once been run** 🔨
+A person asked whether this actually downloads and runs on a MacBook, a PC and a Linux machine. The installers were written (desktop/, an Electron shell around the same kernel, policy and console the CLI runs, packaged by electron-builder into a .dmg and .zip, an NSIS installer and .zip, and an AppImage) and wired into .github/workflows/release.yml, but that workflow had zero runs in the repository's history, so nobody, human or otherwise, had ever confirmed the packaged app opens. It does not: desktop/package.json declared the repository copy under `build.files` as a `from`/`to` mapping, which electron-builder asar packs into the app archive, while desktop/main.js reads the repository from `process.resourcesPath/portamp`, an unpacked directory beside the archive that the `files` mapping never creates; every packaged build failed at the first click with `Cannot find module '.../portamp/src/core/kernel.js'`, on macOS and Windows exactly as it does on Linux, since the bug is in electron-builder's own packing rule and not in anything platform specific. The mapping moved to `build.extraResources`, the one electron-builder option that copies files to disk beside the app rather than into it. Fixing that surfaced a second failure the first one had been hiding: electron-builder generates auto update metadata by default and crashes computing a channel name when it can find neither a publish target nor a repository field to infer one from; nothing here has an auto updater wired in, so `build.publish` is now explicitly `null`, the honest setting rather than a workaround. Both were proven by building the real Linux target by hand (electron-builder was already installed in desktop/node_modules), running the packaged binary headless under Xvfb with `--open example/legacy`, and confirming over a real HTTP request that the console it served was the genuine run, not a guess that the fix would work. test/desktop.test.js holds the contract structurally, so a future edit that separates the two files again fails without needing the electron toolchain in every run.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 634 |
+| new in this branch | 635 |
 | planned | 3 |
-| total | 681 |
+| total | 682 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
