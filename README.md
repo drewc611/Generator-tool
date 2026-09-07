@@ -3,10 +3,11 @@
 Port a legacy front end without losing the look or the API contract.
 Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
-![The portamp console: a skinned panel showing a pipeline run, plugin meters and the five stage buttons](media/portamp-console.svg)
+![The portamp console: rounded, floating panels on a pale workspace, one violet-to-pink gradient, showing a pipeline run, the numbered stage index and the plugin rack](media/portamp-console.png)
 
-<sub>portamp is a command line tool, not a desktop app. The chassis is a joke
-about where the plugin classes come from. Everything on the panel is real: 718
+<sub>portamp is a command line tool, not a desktop app. The console's own joke
+is where the plugin classes come from — Winamp's five, kept honest as a
+sidebar rather than a skin. Everything on the panel is real: 718
 lines of core, no runtime dependencies, 221 plugins, and the literal output of
 `npm run demo`.</sub>
 
@@ -82,7 +83,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and eighty two features, and every
+The core grew from 527 lines to 718 across six hundred and eighty three features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -938,23 +939,37 @@ A plugin that wants to do something consequential asks the policy object first.
 
 `portamp ui` serves the last run on `127.0.0.1:4321` and opens a browser.
 
-![The portamp UI: plugin rack, a wipe between the recorded screenshot and the emitted component, endpoints, and the unverified list](media/portamp-ui.png)
+![The portamp console: a numbered stage index, the recorded screenshot wiped against the emitted source by a gradient media scrubber, and the endpoints and unverified panels behind a pill shaped segmented control, each panel a rounded card on a pale workspace](media/portamp-ui.png)
 
-Four panes, fixed. No routing, no tabs that hide things.
+Three rounded panels floating on a pale workspace under one toolbar, a design
+studio rather than a code editor: one gradient, a violet into a pink, carries
+every accent, every selection and the primary button; a dense creative
+suite's properties dock sits inside each rounded card rather than a flush,
+edge to edge one. Below the desk's own width it is a real mobile app: the same
+three panels, one full screen at a time, switched by a bottom tab bar with a
+floating "run again" button beside it — and since the console's manifest
+already declares `"display": "standalone"`, opening it from a phone's home
+screen has no browser chrome around it at all.
 
-- **Plugin rack**, left. Every loaded plugin grouped by class, what it
-  contributed, and what it cost. This is the reason the UI is worth building:
-  you can see which plugin produced which part of the output, which is what a
-  plugin architecture needs to stay debuggable.
-- **Side by side**, main. The recorded screenshot and the emitted component with
-  a wipe between them. Drag it, or focus it and use the arrow keys: it is a real
-  range input underneath, so the keyboard and a screen reader work without
-  anything extra. When there is no screenshot the pane says so and the wipe
-  disappears, because a wipe between a message and some source is not a
-  comparison.
-- **Endpoints**, lower right, each marked `source` or `observed`.
-- **Unverified**, bottom bar. Always visible, never behind a click. It is the
-  list people need and the one they will avoid if it is collapsed.
+- **Sidebar**, left. The five stages as a numbered list, each one a live count
+  and a filter on the rack below it; the screens, filterable; the plugin rack,
+  every loaded plugin grouped by class or ordered by cost one key away, with
+  what it contributed and what it cost. This is the reason the UI is worth
+  building: you can see which plugin produced which part of the output, which
+  is what a plugin architecture needs to stay debuggable.
+- **Main pane**, centre. The recorded screenshot and the emitted component with
+  a gradient scrubber between them, styled like a media player's transport
+  rather than a plain divider. Drag it, or focus it and use the arrow keys: it
+  is a real range input underneath, so the keyboard and a screen reader work
+  without anything extra. When there is no screenshot the pane says so and the
+  scrubber disappears, because a wipe between a message and some source is not
+  a comparison, and each side of the seam keeps to its own half so an empty
+  message never prints over real content underneath it.
+- **Inspector**, right, switched by a real pill shaped segmented control:
+  endpoints (each marked `source` or `observed`, filterable by a verb
+  dropdown) and the unverified list share the default face because they are
+  the pair people need first; files and the run's rendered reports sit one
+  segment away, never hidden further than that.
 
 It is a `vis` plugin, which is the Winamp slot exactly: the core does the work,
 the visualization plugin shows it. Nothing about it is required to port
@@ -971,18 +986,19 @@ The constraints are the interesting part:
   folder of old pages, lands in the console's own intake beside the run, never
   in the port, and the next run reads exactly that with the flags you pressed;
   the photograph key opens a phone's camera into the same intake. The flags
-  are forty six real ones grouped into nine categories (targets,
+  are forty nine real ones grouped into ten categories (targets,
   meta-frameworks, site, hosts, deploy plans, api & docs, tests, design,
-  transformer), scrollable in a fixed pane rather than a page that scrolls,
-  built at runtime from the one array the server also reads so the console can
-  never offer a flag the server would refuse. The server hands the bytes
-  to the intake the command owns and writes nothing itself; a test asserts the
-  server contains no write call, and another that nothing which weakens a
-  policy gate is a flag the page can set.
+  transformer, study), offered through a single searchable dropdown closed by
+  default rather than a wall of buttons, built at runtime from the one array
+  the server also reads so the console can never offer a flag the server
+  would refuse. The server hands the bytes to the intake the command owns and
+  writes nothing itself; a test asserts the server contains no write call,
+  and another that nothing which weakens a policy gate is a flag the page can
+  set.
 - **Loopback only.** It binds `127.0.0.1`, never `0.0.0.0`, because it serves
   screenshots of a customer system. A test asserts the bound address, and both
   file routes refuse any path that climbs out of their directory.
-- **Under a budget**, including the HTML: 1750 lines now, raised on the record
+- **Under a budget**, including the HTML: 2150 lines now, raised on the record
   each time a feature bought it, and a test fails the build if the console
   grows past it.
 
@@ -1121,8 +1137,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty two features in
-one hundred and eighty five phases, forty four shipped, six hundred and thirty five new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty three features in
+one hundred and eighty six phases, forty four shipped, six hundred and thirty six new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
