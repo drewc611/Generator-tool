@@ -120,7 +120,7 @@
     background: var(--panel2); border: 1px solid transparent; border-radius: var(--r-md); color: var(--ink);
     padding: 7px 11px; font: inherit; font-size: 12.5px; width: 100%;
   }
-  .field:focus-visible { border-color: var(--accent); outline: none; }
+  .field:focus-visible { border-color: var(--accent); }
   .field::placeholder { color: var(--faint); }
   .field-wrap { position: relative; display: flex; flex: 1; min-width: 0; }
   .field-wrap .field { padding-right: 24px; }
@@ -538,12 +538,12 @@
 </div>
 
 <nav class="mtabs" id="mtabs" aria-label="mobile navigation">
-  <button type="button" class="mtab" data-view="screens" aria-current="false"><svg viewBox="0 0 20 20"><rect x="2" y="2" width="7" height="7" rx="2"/><rect x="11" y="2" width="7" height="7" rx="2"/><rect x="2" y="11" width="7" height="7" rx="2"/><rect x="11" y="11" width="7" height="7" rx="2"/></svg>Screens</button>
-  <button type="button" class="mtab" data-view="stage" aria-current="true"><svg viewBox="0 0 20 20"><rect x="2" y="3" width="16" height="14" rx="2"/><line x1="10" y1="3" x2="10" y2="17"/></svg>Compare</button>
-  <button type="button" class="mtab" data-view="signals" aria-current="false"><svg viewBox="0 0 20 20"><path d="M2 14l3-7 3 10 3-13 3 10 3-5"/></svg>Signals</button>
-  <button type="button" class="mtab" data-view="intake" aria-current="false"><svg viewBox="0 0 20 20"><path d="M10 2v10M6 8l4-4 4 4"/><rect x="3" y="14" width="14" height="4" rx="1"/></svg>Intake</button>
+  <button type="button" class="mtab" data-view="screens" aria-current="false"><svg aria-hidden="true" viewBox="0 0 20 20"><rect x="2" y="2" width="7" height="7" rx="2"/><rect x="11" y="2" width="7" height="7" rx="2"/><rect x="2" y="11" width="7" height="7" rx="2"/><rect x="11" y="11" width="7" height="7" rx="2"/></svg>Screens</button>
+  <button type="button" class="mtab" data-view="stage" aria-current="true"><svg aria-hidden="true" viewBox="0 0 20 20"><rect x="2" y="3" width="16" height="14" rx="2"/><line x1="10" y1="3" x2="10" y2="17"/></svg>Compare</button>
+  <button type="button" class="mtab" data-view="signals" aria-current="false"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="M2 14l3-7 3 10 3-13 3 10 3-5"/></svg>Signals</button>
+  <button type="button" class="mtab" data-view="intake" aria-current="false"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="M10 2v10M6 8l4-4 4 4"/><rect x="3" y="14" width="14" height="4" rx="1"/></svg>Intake</button>
 </nav>
-<button type="button" class="fab" id="fab-run" aria-label="Run the pipeline again" title="Run again"><svg viewBox="0 0 20 20"><path d="M4 10a6 6 0 0 1 10.6-3.8M16 10a6 6 0 0 1-10.6 3.8"/><path d="M14 3v4h-4M6 17v-4h4"/></svg></button>
+<button type="button" class="fab" id="fab-run" aria-label="Run the pipeline again" title="Run again"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="M4 10a6 6 0 0 1 10.6-3.8M16 10a6 6 0 0 1-10.6 3.8"/><path d="M14 3v4h-4M6 17v-4h4"/></svg></button>
 
 <dialog id="help" aria-label="keyboard shortcuts">
   <h3>Keyboard</h3>
@@ -640,7 +640,8 @@ function renderTokens() {
   const colours = run.tokens?.color ?? {};
   const roles = ["accent", "ink", "surface", "bg", "danger"].filter((r) => colours[r]);
   $("swatches").innerHTML = roles.map((role) =>
-    '<i title="' + role + " " + esc(colours[role]) + '" style="background:' + esc(colours[role]) + '"></i>'
+    '<i role="img" aria-label="' + role + " " + esc(colours[role]) + '" title="' + role + " " + esc(colours[role]) +
+      '" style="background:' + esc(colours[role]) + '"></i>'
   ).join("");
 }
 
