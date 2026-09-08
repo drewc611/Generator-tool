@@ -1,0 +1,14 @@
+{
+  "label": "kanban",
+  "html": "<div *ngFor=\"let stage of pipeline\"><h3>{{stage.name}}</h3><div *ngFor=\"let deal of stage.deals\">{{deal.name}}</div></div><p>Backlog, Active, Done board</p>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/deals"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/deals/${id}/column"
+    }
+  ]
+}

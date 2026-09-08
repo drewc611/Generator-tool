@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eighty six features across one hundred and eighty nine phases. The statuses are
+Six hundred and eighty seven features across one hundred and ninety phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2709,14 +2709,19 @@ The console's mobile app screen, a bottom tab bar swapping the same three panels
 **686. `--lan` opens the console beyond loopback for the first time, and only as far as a per-run token the server mints and every route requires** 🔨
 The console has bound `127.0.0.1` since the first line of it, because it serves screenshots of a customer system and the network was never a place to trust with that by default. A person asked for a phone on the same wifi to reach it, which is a real want the mobile app screen has been built for since its own phase without ever having a server it could actually reach. `--lan` is the answer, and it stays opt in: only naming it earns `0.0.0.0` in `server.listen`, everything else about the server unchanged. The moment it is asked for, `serve()` mints a random token (`crypto.randomBytes`, base64url, node:crypto already builtin) and every route, `/` itself included, checks it first: from the url's own `?token=` on a first request, or a `portamp_token` cookie the server sets on that first valid request so app.html's own fetch calls need no change to carry it afterward. The compare is `crypto.timingSafeEqual` after a length check, so a wrong guess costs the same time as a right one. The server prints the LAN address with the token already in it, found through `node:os`'s own `networkInterfaces()`, the same address a QR code or a pasted link would use; failing to find one names that rather than guessing an address that might not answer. Nothing about this is called secure without a caveat: HTTP on a LAN is still plaintext, so the server says exactly that in the line it prints, and the invariant this loosens is now conditional, not gone — the default `portamp ui` with no flag binds exactly what it always has. The line budget, raised from 2300 to 2350, holds with room to spare.
 
+## Phase 190: the learned model's floor moves from two siblings to three
+
+**687. dsp-learn's calibration corpus grows to three exemplars per class, and leave one out cross validation now holds a real number rather than a first pass at one** 🔨
+Phase 68 got the corpus from one miniature per archetype to two, the smallest size at which holding one out still leaves its class represented, and named two as a floor still worth raising. This phase raises it: eleven more labelled miniatures, one per archetype, take the corpus from twenty two to thirty three, and each new one classifies as its own label under the rule based reader exactly as phase 68's did, so the model and the rules agree on every exemplar before either sees it as training data. With three per class, holding one out for cross validation leaves a class represented by two siblings rather than one, so the held out number rests on more than a single stand-in; measured against the grown corpus it comes back a clean 33 of 33. The corpus is still eleven human labelled shapes, not real shipped apps, so it remains the honest floor ROADMAP.md's entry 326 already names, not a claim that entry is closed. dsp-learn/model.js's own doc comments, stale since phase 68 landed (still describing a one-exemplar corpus with cross validation "undefined"), are corrected to match what the code has done since. test/learn.test.js holds the grown corpus, its wording, and the guard that the embedded copy stays equal to test/fixtures/corpus; test/corpus.test.js holds every new miniature to the rule based reader's own verdict.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 639 |
+| new in this branch | 640 |
 | planned | 3 |
-| total | 686 |
+| total | 687 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

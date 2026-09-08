@@ -1,0 +1,18 @@
+{
+  "label": "crud-table",
+  "html": "<table><tr *ngFor=\"let t of tasks\"><td>{{t.title}}</td><td><button (click)=\"toggle(t)\">Complete</button><button (click)=\"remove(t)\">Delete</button></td></tr></table>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/tasks"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/tasks/${id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/tasks/${id}"
+    }
+  ]
+}

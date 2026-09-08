@@ -15,7 +15,7 @@ import { ROOT } from "./helpers.js";
  * its honest edges. The feature vector is deterministic and the right length,
  * the standardization is what it claims, every exemplar is its own nearest
  * neighbour, the robustness figure is reproducible and decays with noise, the
- * report states the one exemplar per class limitation, and the embedded corpus
+ * report states the small corpus limitation honestly, and the embedded corpus
  * never drifts from the fixtures it mirrors.
  */
 
@@ -102,7 +102,7 @@ test("the report names the reading and its held out accuracy", () => {
   assert.match(md, /learned/i);
   assert.match(md, new RegExp(reading.label));
   assert.match(md, /leave one out|held out/i, "it reports a real held out accuracy");
-  assert.match(md, /two labelled exemplars per archetype/i, "it states the corpus size honestly");
+  assert.match(md, /three labelled exemplars per archetype/i, "it states the corpus size honestly");
   assert.match(md, /ARCHITECTURE\.md/, "it points at the rule based reading to compare");
   assert.match(md, /proposal|unverified|can be confidently wrong/i);
 });
@@ -181,8 +181,8 @@ test("the embedded corpus matches the calibration fixtures", async () => {
   const fixtures = [];
   for (const file of files) fixtures.push(JSON.parse(await readFile(join(dir, file), "utf8")));
 
-  // Two exemplars share a label now, so a fixture is matched to its embedded twin
-  // by label and markup together, and the two sets must be the same size.
+  // Three exemplars share a label now, so a fixture is matched to its embedded
+  // twin by label and markup together, and the two sets must be the same size.
   const key = (e) => `${e.label} ${e.html}`;
   const byKey = (list) => new Map(list.map((e) => [key(e), e]));
   const embedded = byKey(CORPUS);

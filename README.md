@@ -100,7 +100,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and eighty six features, and every
+The core grew from 527 lines to 718 across six hundred and eighty seven features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -634,17 +634,17 @@ both, rather than picking one and sounding certain.
 
 `dsp-learn` reads the same screen a second way, with a model instead of rules. It
 turns each screen into a vector of the features the rules already trust and trains
-a nearest prototype classifier on twenty two labelled archetype miniatures, two per
-class, so a new screen is placed by its nearest exemplar in a standardization
+a nearest prototype classifier on thirty three labelled archetype miniatures, three
+per class, so a new screen is placed by its nearest exemplar in a standardization
 learned from the corpus rather than by which rules happened to fire. `LEARNED.md`
 ranks every archetype by distance with a softmax confidence, and reports a real
-held out number: two exemplars per class make a leave one out cross validation
+held out number: three exemplars per class make a leave one out cross validation
 defined, so it leaves each out in turn, retrains on the rest, and scores whether
 it gets the unseen one right, naming the ones it missed and keeping the robustness
 curve beside it.
 
 ```
-[dsp-learn] learned reading: crud-table (18%), leave one out 95% over 22 exemplars
+[dsp-learn] learned reading: crud-table (18%), leave one out 100% over 33 exemplars
 ```
 
 The two readings are meant to be read together. When the learned model and the
@@ -1181,8 +1181,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty six features in
-one hundred and eighty nine phases, forty four shipped, six hundred and thirty nine new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty seven features in
+one hundred and ninety phases, forty four shipped, six hundred and forty new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

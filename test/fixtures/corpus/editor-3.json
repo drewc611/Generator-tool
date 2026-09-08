@@ -1,0 +1,17 @@
+{
+  "label": "editor",
+  "html": "<h1>{{page.title}}</h1><div contenteditable=\"true\">{{page.body}}</div><button (click)=\"publish()\">Save draft</button><span *ngIf=\"savedAt\">Saved</span>",
+  "calls": [
+    {
+      "method": "PUT",
+      "path": "/api/pages/:id"
+    }
+  ],
+  "model": {
+    "screens": [
+      {
+        "kind": "document"
+      }
+    ]
+  }
+}
