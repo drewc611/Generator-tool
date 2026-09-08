@@ -80,6 +80,8 @@ export function keyAction(key, { inInput = false } = {}) {
   if (key === "j" || key === "ArrowDown") return { kind: "next-screen" };
   if (key === "k" || key === "ArrowUp") return { kind: "prev-screen" };
   if (key === "/") return { kind: "focus-filter" };
+  if (key === "f") return { kind: "focus-rack-filter" };
+  if (key === "c") return { kind: "copy-diagnostics" };
   if (key === "?") return { kind: "toggle-help" };
   if (key === "r") return { kind: "rerun" };
   if (key === "t") return { kind: "toggle-theme" };
@@ -106,9 +108,66 @@ export function reportsIn(files) {
   return (files ?? []).filter((f) => /\.md$/i.test(f) && !f.includes("/"));
 }
 
+/**
+ * A row's text split around a case blind query, for highlighting a match
+ * rather than only proving one exists. An empty query is the whole text as
+ * one unmatched span, so a caller never has to special case it.
+ */
+export function matchRanges(text, query) {
+  const s = String(text ?? "");
+  const q = String(query ?? "").trim();
+  if (!q) return [{ text: s, hit: false }];
+  const i = s.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return [{ text: s, hit: false }];
+  const spans = [];
+  if (i > 0) spans.push({ text: s.slice(0, i), hit: false });
+  spans.push({ text: s.slice(i, i + q.length), hit: true });
+  if (i + q.length < s.length) spans.push({ text: s.slice(i + q.length), hit: false });
+  return spans;
+}
+
+/** A timestamp in words relative to now, falling back to a plain date once
+ * the gap stops being a useful number of minutes or hours. */
+export function relativeTime(iso, now = Date.now()) {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "";
+  const seconds = Math.round((now - then) / 1000);
+  if (seconds < 5) return "just now";
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return new Date(then).toLocaleString();
+}
+
+/** A count with thousands separators, fixed to one locale so the suite's
+ * expectation never depends on where the test happens to run. */
+export function formatCount(n) {
+  return Number(n ?? 0).toLocaleString("en-US");
+}
+
+/** The plain text a person gets from "copy diagnostics": the numbers already
+ * on screen, in one block a bug report can paste verbatim. */
+export function diagnosticsText(run) {
+  if (!run) return "";
+  const ms = (run.plugins ?? []).reduce((t, p) => t + p.ms, 0);
+  const lines = [
+    `portamp diagnostics`,
+    `ran: ${run.ranAt ?? "unknown"}`,
+    `files: ${(run.files ?? []).length}`,
+    `plugins: ${(run.plugins ?? []).length}`,
+    `ms: ${ms}`,
+    `unverified: ${(run.unverified ?? []).length}`,
+    `ported: ${run.coverage ? run.coverage.ported + "%" : "unmeasured"}`,
+  ];
+  return lines.join("\n");
+}
+
 const api = {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
   sparklinePoints, STAGE_KEYS, keyAction, offlineNotice, isTextFile, reportsIn,
+  matchRanges, relativeTime, formatCount, diagnosticsText,
 };
 if (typeof window !== "undefined") window.portampLib = api;
 

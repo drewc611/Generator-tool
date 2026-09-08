@@ -54,9 +54,18 @@ test("the whole ui is under the budget the spec set", async () => {
   // the frosted edge to edge chassis, plus a real mobile app screen: a bottom
   // tab bar that swaps the sidebar, the stage and the inspector for full
   // screens, and a floating action button beside it wired to the same
-  // rerun(), bought the raise to 2150. The budget still exists so growth
-  // stays a decision, not a drift.
-  assert.ok(js + html + lib < 2150, `${js + html + lib} lines, the spec allows under 2150`);
+  // rerun(), bought the raise to 2150. A round of console enhancements —
+  // highlighting the live match in every filtered list, a clear button and a
+  // debounce on every filter input, a copy button beside an endpoint and a
+  // written file, a diagnostics-to-clipboard shortcut, a relative-time and a
+  // document-title readout that keep counting between runs, descriptive
+  // tooltips on the head's own stats, an escape key and a click outside that
+  // close the flags popover with a clear-all button beside its filter, the
+  // rack and inspector tab remembering their own choice across a reload, and
+  // the source viewer growing a line count, a wrap toggle and a download —
+  // bought the raise to 2250. The budget still exists so growth stays a
+  // decision, not a drift.
+  assert.ok(js + html + lib < 2250, `${js + html + lib} lines, the spec allows under 2250`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once
@@ -182,6 +191,7 @@ import {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
   sparklinePoints, keyAction, STAGE_KEYS, offlineNotice, isTextFile, reportsIn,
   intakePath, rerunOptions, rerunPatch, RERUN_FLAGS,
+  matchRanges, relativeTime, formatCount, diagnosticsText,
 } from "../plugins/vis-ui/lib.js";
 import { createIntake } from "../plugins/vis-ui/index.js";
 
@@ -246,6 +256,8 @@ test("the keymap is one decision: screens, stages, wipe, help, rerun, theme", ()
   assert.deepEqual(keyAction("4", {}), { kind: "stage", stage: "emit" });
   assert.deepEqual(keyAction("0", {}), { kind: "stage", stage: null });
   assert.equal(Object.keys(STAGE_KEYS).length, 5);
+  assert.equal(keyAction("f", {}).kind, "focus-rack-filter");
+  assert.equal(keyAction("c", {}).kind, "copy-diagnostics");
   assert.equal(keyAction("j", { inInput: true }), null, "keys inside an input belong to the input");
   assert.equal(keyAction("x", {}), null);
 });
@@ -266,6 +278,47 @@ test("reports are the run's own root level markdown, nothing deeper", () => {
     reportsIn(["PORT_NOTES.md", "src/i18n/README.md", "A11Y.md", "src/tokens.js"]),
     ["PORT_NOTES.md", "A11Y.md"],
   );
+});
+
+test("a row splits around its match, case blind, so the match can be highlighted", () => {
+  assert.deepEqual(matchRanges("dsp-tokens", "token"), [
+    { text: "dsp-", hit: false }, { text: "token", hit: true }, { text: "s", hit: false },
+  ]);
+  assert.deepEqual(matchRanges("dsp-tokens", "TOKEN"), [
+    { text: "dsp-", hit: false }, { text: "token", hit: true }, { text: "s", hit: false },
+  ]);
+  assert.deepEqual(matchRanges("dsp-tokens", ""), [{ text: "dsp-tokens", hit: false }], "an empty query matches nothing");
+  assert.deepEqual(matchRanges("dsp-tokens", "zzz"), [{ text: "dsp-tokens", hit: false }], "no match is the whole text unhit");
+});
+
+test("a timestamp reads in words until the gap stops being a useful number of them", () => {
+  const now = Date.UTC(2026, 8, 7, 12, 0, 0);
+  assert.equal(relativeTime(new Date(now - 2000).toISOString(), now), "just now");
+  assert.equal(relativeTime(new Date(now - 30_000).toISOString(), now), "30s ago");
+  assert.equal(relativeTime(new Date(now - 5 * 60_000).toISOString(), now), "5m ago");
+  assert.equal(relativeTime(new Date(now - 3 * 3_600_000).toISOString(), now), "3h ago");
+  assert.equal(relativeTime(new Date(now - 25 * 3_600_000).toISOString(), now), new Date(now - 25 * 3_600_000).toLocaleString());
+  assert.equal(relativeTime("not a date", now), "");
+});
+
+test("a big count reads with thousands separators, one fixed locale", () => {
+  assert.equal(formatCount(0), "0");
+  assert.equal(formatCount(1234), "1,234");
+  assert.equal(formatCount(1234567), "1,234,567");
+});
+
+test("copy diagnostics is the numbers already on screen, in one pasteable block", () => {
+  const run = {
+    ranAt: "2026-09-06T00:00:00.000Z", files: ["a.js", "b.js"],
+    plugins: [{ ms: 5 }, { ms: 7 }], unverified: ["one"], coverage: { ported: 42 },
+  };
+  const text = diagnosticsText(run);
+  assert.match(text, /files: 2/);
+  assert.match(text, /plugins: 2/);
+  assert.match(text, /ms: 12/);
+  assert.match(text, /unverified: 1/);
+  assert.match(text, /ported: 42%/);
+  assert.equal(diagnosticsText(null), "");
 });
 
 /* ------------------------------------------------------ the server half */

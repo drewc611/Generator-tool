@@ -83,7 +83,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and eighty three features, and every
+The core grew from 527 lines to 718 across six hundred and eighty four features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -999,13 +999,23 @@ The constraints are the interesting part:
 - **Loopback only.** It binds `127.0.0.1`, never `0.0.0.0`, because it serves
   screenshots of a customer system. A test asserts the bound address, and both
   file routes refuse any path that climbs out of their directory.
-- **Under a budget**, including the HTML: 2150 lines now, raised on the record
+- **Under a budget**, including the HTML: 2250 lines now, raised on the record
   each time a feature bought it, and a test fails the build if the console
   grows past it.
 
 The built component cannot be rendered without a build, so the right pane shows
 the emitted source, syntax highlighted, and says that is what it is rather than
-pretending to be a preview.
+pretending to be a preview; it now also carries its own line count, a wrap
+toggle for a long line and a download button, since the pane you read source
+in is exactly where those three earn their keep. Every filtered list —
+screens, plugins, endpoints, unverified, files — bolds the live match instead
+of only proving one exists, carries a clear button once there is something to
+clear, and stops re-rendering on every keystroke; an endpoint and a written
+file each get a one click copy, and `c` copies the whole run's diagnostics as
+one pasteable block. The rack's sort order and the inspector's chosen tab now
+survive a reload the same way the theme already did, the head's own stats
+carry a tooltip naming what each counts, and the run's age keeps counting
+forward between refreshes rather than freezing at the last one.
 
 ## Configuration
 
@@ -1138,8 +1148,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty three features in
-one hundred and eighty six phases, forty four shipped, six hundred and thirty six new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty four features in
+one hundred and eighty seven phases, forty four shipped, six hundred and thirty seven new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
