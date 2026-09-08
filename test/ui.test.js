@@ -576,3 +576,16 @@ test("the nineteenth review pass: a rerun's flags ride on the command line's and
   where = b;
   assert.equal(await fetch(`${address}/shots/home.png`).then((r) => r.text()), "B", "after an intake rerun the console serves the intake's screenshots");
 });
+
+// A tabbed-to filter field is a real focus target; a border color alone is
+// not the visible focus indicator every other control on the page gets, and
+// a swatch that only carries its color and role in a mouse tooltip is
+// invisible to a screen reader and unreachable by keyboard.
+test("a filter field keeps a real focus ring, and a token swatch names its role and value for assistive tech", async () => {
+  const html = await readFile(join(ROOT, "plugins/vis-ui/app.html"), "utf8");
+  assert.doesNotMatch(html, /\.field:focus-visible\s*\{[^}]*outline:\s*none/, "focusing a filter field must not remove the page's own focus ring");
+  assert.match(html, /role="img" aria-label="'\s*\+\s*role/, "each swatch carries its role and hex value as an accessible name, not only a title attribute");
+  const icons = [...html.matchAll(/<svg\b([^>]*)>/g)].filter((m) => !/id="spark"/.test(m[0]));
+  assert.ok(icons.length >= 5, "the mobile tab bar and the FAB carry an icon each");
+  assert.ok(icons.every((m) => /aria-hidden="true"/.test(m[1])), "a decorative icon paired with a real text or aria-label on its button stays out of assistive tech's way");
+});
