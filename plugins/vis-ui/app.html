@@ -55,6 +55,10 @@
     height: 100vh; overflow: hidden; display: grid; grid-template-rows: 56px 1fr;
   }
   button, input, select { font: inherit; color: inherit; }
+  /* A tap on a touch screen leaves a grey flash the mouse never sees, and
+     without this a fast second tap can be read as the browser's own
+     double-tap-to-zoom rather than a second press of the same control. */
+  button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   ::selection { background: var(--accent); color: #fff; }
   @media (prefers-reduced-motion: no-preference) {
     .side-row, .seg, .btn, .flag-row, .mtab, input[type=range]::-webkit-slider-thumb { transition: background-color .15s ease, color .15s ease, transform .1s ease; }
@@ -338,6 +342,30 @@
     .side-scroll { overflow: visible; max-height: none; }
     .mtabs { display: flex; }
     .fab { display: grid; }
+    /* A control sized for a mouse cursor is a control a thumb keeps
+       missing: a search field under 16px makes iOS zoom the whole page in
+       on focus, and the small copy, clear and icon buttons built for a
+       hover state need real room once the pointer is a fingertip. */
+    .field { font-size: 16px; }
+    .icon-btn { width: 44px; height: 44px; }
+    .btn.small { padding: 9px 13px; }
+    .field-x { padding: 10px; }
+    .copy-mini { padding: 7px 10px; }
+    input[type=range] { height: 32px; }
+    input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; margin-top: -10.5px; }
+    input[type=range]::-moz-range-thumb { width: 26px; height: 26px; }
+    /* A filename is one long word with no space to wrap at, so left alone
+       it forces the same sideways scroll a fat finger cannot aim at; a
+       scrollable panel rubber banding into the browser's own chrome reads
+       as the page breaking, not as room to keep scrolling. */
+    .path { word-break: break-all; }
+    .sidebar, .main, .inspector, .side-scroll, .block-scroll, .layer { overscroll-behavior: contain; }
+    /* viewport-fit=cover lets the mast sit under a notch or a home
+       indicator; these keep its content and the tab bar's icons clear of
+       both in either orientation. */
+    .mast { padding-left: max(var(--sp-3), env(safe-area-inset-left)); padding-right: max(var(--sp-3), env(safe-area-inset-right)); padding-top: env(safe-area-inset-top); }
+    .mtabs { padding-left: max(var(--sp-2), env(safe-area-inset-left)); padding-right: max(var(--sp-2), env(safe-area-inset-right)); }
+    dialog#help { max-width: min(92vw, 420px); width: 100%; }
   }
 
   @media print {
@@ -524,6 +552,8 @@
     <tr><td><code>1</code>–<code>5</code>, <code>0</code></td><td>select a stage, and all of them</td></tr>
     <tr><td><code>[</code> / <code>]</code></td><td>nudge the wipe</td></tr>
     <tr><td><code>/</code></td><td>filter the unverified items</td></tr>
+    <tr><td><code>f</code></td><td>filter the plugin rack</td></tr>
+    <tr><td><code>c</code></td><td>copy the run's diagnostics</td></tr>
     <tr><td><code>r</code></td><td>run the pipeline again</td></tr>
     <tr><td><code>t</code></td><td>light and dark console</td></tr>
     <tr><td><code>?</code> / <code>Esc</code></td><td>this card, open and closed</td></tr>
@@ -1290,12 +1320,18 @@ async function renderTrend() {
 // switched by a bottom tab bar the way a phone app switches screens; the FAB
 // is a second, thumb reachable door to the same rerun(), never a third one.
 const desk = document.querySelector(".desk");
-for (const tab of document.querySelectorAll(".mtab")) {
-  tab.addEventListener("click", () => {
-    desk.dataset.view = tab.dataset.view;
-    for (const t of document.querySelectorAll(".mtab")) t.setAttribute("aria-current", String(t === tab));
-  });
+function selectMobileView(view) {
+  desk.dataset.view = view;
+  for (const t of document.querySelectorAll(".mtab")) t.setAttribute("aria-current", String(t.dataset.view === view));
+  try { localStorage.setItem("portamp-mview", view); } catch { /* per browser convenience only */ }
 }
+for (const tab of document.querySelectorAll(".mtab")) {
+  tab.addEventListener("click", () => selectMobileView(tab.dataset.view));
+}
+try {
+  const savedView = localStorage.getItem("portamp-mview");
+  if (savedView) selectMobileView(savedView);
+} catch { /* default view */ }
 $("fab-run").addEventListener("click", () => $("run").click());
 
 (async function start() {

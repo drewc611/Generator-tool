@@ -83,7 +83,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and eighty four features, and every
+The core grew from 527 lines to 718 across six hundred and eighty five features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -999,7 +999,7 @@ The constraints are the interesting part:
 - **Loopback only.** It binds `127.0.0.1`, never `0.0.0.0`, because it serves
   screenshots of a customer system. A test asserts the bound address, and both
   file routes refuse any path that climbs out of their directory.
-- **Under a budget**, including the HTML: 2250 lines now, raised on the record
+- **Under a budget**, including the HTML: 2300 lines now, raised on the record
   each time a feature bought it, and a test fails the build if the console
   grows past it.
 
@@ -1015,7 +1015,15 @@ file each get a one click copy, and `c` copies the whole run's diagnostics as
 one pasteable block. The rack's sort order and the inspector's chosen tab now
 survive a reload the same way the theme already did, the head's own stats
 carry a tooltip naming what each counts, and the run's age keeps counting
-forward between refreshes rather than freezing at the last one.
+forward between refreshes rather than freezing at the last one. Below the
+desk's own breakpoint the mobile app screen carries the same care: a real
+forty four pixel target on the icon, copy and clear buttons a hover state
+used to be enough for, a sixteen pixel filter field so iOS stops zooming
+the whole page in on focus, an enlarged scrubber thumb, safe area insets
+around a notch and a home indicator, a scrollable panel that stops rather
+than rubber banding into the browser's own chrome, a filename that wraps
+instead of forcing a sideways scroll, and its own active tab remembering
+itself across a reload.
 
 ## Configuration
 
@@ -1148,8 +1156,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty four features in
-one hundred and eighty seven phases, forty four shipped, six hundred and thirty seven new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty five features in
+one hundred and eighty eight phases, forty four shipped, six hundred and thirty eight new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

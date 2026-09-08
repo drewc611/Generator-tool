@@ -867,6 +867,31 @@ existing assertions about that shell intact. The line budget, raised from
 hold matchRanges, relativeTime, formatCount and diagnosticsText, the pure
 functions the rest is built from.
 
+10.22 gives the mobile app screen the same care its desktop shell already had.
+A button sized for a mouse cursor is not sized for a fingertip: `.icon-btn`
+grows from 32px to a real 44px touch target, and `.btn.small`, `.field-x` and
+`.copy-mini`, each built to be found by a hover state, gain enough padding to
+be found by a thumb instead, every change scoped to the narrow breakpoint
+alone so the desktop rack keeps its own density. A search field under 16px
+makes iOS zoom the whole page in the moment it gets focus; every `.field` is
+16px under that breakpoint and nowhere else. `-webkit-tap-highlight-color:
+transparent` on every button and link removes the grey flash a touch screen
+leaves behind that a mouse never sees, and `touch-action: manipulation` stops
+a fast second tap from being read as the browser's own double-tap-to-zoom.
+The recorded-versus-built scrubber's thumb grows to 26px for a finger's own
+precision; a filename wraps instead of forcing the sideways scroll a thumb
+cannot aim at; and every scrollable panel gains `overscroll-behavior:
+contain` so flinging a short list to its end stops there instead of rubber
+banding into the browser's own chrome. `env(safe-area-inset-*)` on the mast
+and the tab bar keeps their content and icons clear of a notch and a home
+indicator in either orientation, and the shortcuts card gains a `max-width`
+so it never has to guess at a phone's narrower width. The mobile view itself
+now survives a reload through `localStorage`, the same convenience the
+theme, the rack's sort order and the inspector's tab already used. The
+shortcuts card also catches up to two keys the previous round wired and
+never documented, `f` and `c`. The line budget, raised from 2250 to 2300,
+holds with room to spare.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -932,8 +957,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and eighty four features in
-one hundred and eighty seven phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and eighty five features in
+one hundred and eighty eight phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

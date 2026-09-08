@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eighty four features across one hundred and eighty seven phases. The statuses are
+Six hundred and eighty five features across one hundred and eighty eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2699,14 +2699,19 @@ A person asked for the console rebuilt entirely, unlike anything out there, twic
 **684. Every filtered list bolds the live match, a filter clears and stops re-rendering on every keystroke, an endpoint and a written file each get a one click copy, and the source viewer learns a line count, a wrap toggle and a download** 🔨
 The third pass rebuilt the shell three times over; this round leaves it alone and spends on what happens inside it. `matchRanges`, a pure function in lib.js, splits a row's text around a case blind query so screens, plugins, endpoints, unverified and files can bold the live match instead of only proving one exists; every filter input gains a clear button that only shows once there is something to clear, and a hundred and fifty millisecond debounce so a long list stops re-rendering on every keystroke. An endpoint's method and path and a written file's path each get a one click copy button, `copy all` does the same for the whole unverified list, and a new `c` shortcut copies the run's own diagnostics, its file, plugin, timing and unverified counts, as one pasteable block through `diagnosticsText`; `f` focuses the rack's own filter the way `/` already focused the unverified one. The source viewer, previously copy only, now shows its own line count, a wrap toggle for a line too long to read comfortably, and a download button that hands the file to the browser as a `Blob`. `relativeTime` and `formatCount`, the two other new pure functions, turn the head's raw numbers into words: the run's age now reads "3m ago" and keeps counting forward on a thirty second timer between refreshes rather than freezing at the last render, the four counts (files, plugins, ms, unverified) carry thousands separators, and the head's five stats each carry a tooltip naming what it counts. The flags popover, previously closed only by its own toggle, now closes on Escape and on a click outside it, and gains a `clear` button beside its own filter that un-presses every flag at once. The rack's sort order and the inspector's chosen tab now survive a reload through `localStorage`, the same browser convenience the theme already used. Nothing here touches the shell three earlier passes built; every one of test/ui.test.js's existing assertions about that shell holds unchanged, and four new cases hold the new pure functions themselves. The line budget, raised from 2150 to 2250, holds with room to spare.
 
+## Phase 188: the mobile app screen gets the same care its desktop shell had
+
+**685. A real forty four pixel target on the icon, copy and clear buttons a hover state used to be enough for, a sixteen pixel filter field so iOS stops zooming the page in on focus, safe area insets around a notch and a home indicator, contained overscroll, a filename that wraps instead of forcing a sideways scroll, and the mobile view remembering itself across a reload** 🔨
+The console's mobile app screen, a bottom tab bar swapping the same three panels the desktop shows side by side, got its shell built two phases back but not the same density of care its buttons and filters got on desktop since. A button sized for a mouse cursor is not sized for a fingertip: `.icon-btn` grows from 32px to a real 44px touch target, and `.btn.small`, `.field-x` and `.copy-mini`, each built to be found by a hover state, gain enough padding to be found by a thumb instead, every change scoped to the narrow breakpoint alone so the desktop rack keeps its own density. A search field under 16px makes iOS zoom the whole page in the moment it gets focus; every `.field` is 16px under that breakpoint and nowhere else. `-webkit-tap-highlight-color: transparent` on every button and link removes the grey flash a touch screen leaves behind that a mouse never sees, and `touch-action: manipulation` stops a fast second tap from being read as the browser's own double-tap-to-zoom. The recorded-versus-built scrubber's thumb grows to 26px so dragging it does not need the precision a mouse pointer has and a finger does not; a filename, one long word with no space to break at, wraps instead of forcing the sideways scroll a thumb cannot aim at; and every scrollable panel gains `overscroll-behavior: contain` so flinging a short list to its end stops there instead of rubber banding into the browser's own chrome. `viewport-fit=cover` already let the mast sit under a notch; `env(safe-area-inset-*)` on the mast and the tab bar now keeps their content and icons clear of it and of a home indicator in either orientation, and the shortcuts card gains a `max-width` so it never has to guess at a phone's narrower width. The mobile view itself now survives a reload through `localStorage`, the same convenience the theme, the rack's sort order and the inspector's tab already used, so returning to the console mid task returns to the same screen. The shortcuts card also gains the two rows it had never listed, `f` and `c`, both wired in the previous phase and neither documented until now. The line budget, raised from 2250 to 2300, holds with room to spare.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 637 |
+| new in this branch | 638 |
 | planned | 3 |
-| total | 684 |
+| total | 685 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
