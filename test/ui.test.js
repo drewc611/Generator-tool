@@ -63,9 +63,17 @@ test("the whole ui is under the budget the spec set", async () => {
   // close the flags popover with a clear-all button beside its filter, the
   // rack and inspector tab remembering their own choice across a reload, and
   // the source viewer growing a line count, a wrap toggle and a download —
-  // bought the raise to 2250. The budget still exists so growth stays a
-  // decision, not a drift.
-  assert.ok(js + html + lib < 2250, `${js + html + lib} lines, the spec allows under 2250`);
+  // bought the raise to 2250. A mobile robustness pass — a real touch target
+  // on the icon, copy and clear buttons, a sixteen pixel filter field so iOS
+  // stops zooming the page in on focus, an enlarged scrubber thumb, safe area
+  // insets around the notch and the home indicator, contained overscroll so a
+  // panel never rubber bands into the browser's own chrome, a filename that
+  // wraps instead of forcing a sideways scroll, the mobile view remembering
+  // its own choice across a reload the way the theme already does, and the
+  // shortcuts card catching up to two keys it had never listed — bought the
+  // raise to 2300. The budget still exists so growth stays a decision, not a
+  // drift.
+  assert.ok(js + html + lib < 2300, `${js + html + lib} lines, the spec allows under 2300`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once

@@ -29,7 +29,7 @@ Opens a browser. Serves only on localhost. Dies on ctrl c.
   history sidecar are written by the plugin at verify, not by the server.
 - **Localhost only.** Bind `127.0.0.1`, never `0.0.0.0`. It serves screenshots
   of a customer system.
-- **Under a stated line budget**, currently 2250 across `index.js`, `app.html`
+- **Under a stated line budget**, currently 2300 across `index.js`, `app.html`
   and `lib.js`. The number lives in `test/ui.test.js` with the history of every
   raise and what bought it, so growth stays a decision, not a drift.
 
