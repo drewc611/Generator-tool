@@ -83,7 +83,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and eighty five features, and every
+The core grew from 527 lines to 718 across six hundred and eighty six features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -574,9 +574,13 @@ for a tool whose pipeline runs where Node runs:
   browser and the rack, the wipe and the unverified list are on your phone.
   The shell caches; the run data deliberately never does, because a report
   that silently shows yesterday's run is worse than one that says it cannot
-  reach the server.
-- The server still binds 127.0.0.1 only, in every wrapper. A window in front
-  of the console does not change what it serves, or to whom.
+  reach the server. `portamp ui --lan true` is what actually gets a phone on
+  the same network to it: it mints a per-run token and prints the address
+  carrying it, and every route refuses a request without that token.
+- The server still binds 127.0.0.1 only, in every wrapper, unless `--lan`
+  asked otherwise. A window in front of the console does not change what it
+  serves, or to whom, and neither does a phone on the same wifi without the
+  token that request needs.
 
 ## It works out what it is looking at
 
@@ -996,10 +1000,14 @@ The constraints are the interesting part:
   writes nothing itself; a test asserts the server contains no write call,
   and another that nothing which weakens a policy gate is a flag the page can
   set.
-- **Loopback only.** It binds `127.0.0.1`, never `0.0.0.0`, because it serves
-  screenshots of a customer system. A test asserts the bound address, and both
-  file routes refuse any path that climbs out of their directory.
-- **Under a budget**, including the HTML: 2300 lines now, raised on the record
+- **Loopback only, unless asked otherwise.** It binds `127.0.0.1`, never
+  `0.0.0.0`, because it serves screenshots of a customer system — except
+  behind `--lan`, which mints a random per-run token and requires it, in a
+  cookie or the url, on every route including `/`; a test asserts the bound
+  address changes only when asked and that every route is refused without
+  the token, and both file routes still refuse any path that climbs out of
+  their directory.
+- **Under a budget**, including the HTML: 2350 lines now, raised on the record
   each time a feature bought it, and a test fails the build if the console
   grows past it.
 
@@ -1156,8 +1164,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty five features in
-one hundred and eighty eight phases, forty four shipped, six hundred and thirty eight new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty six features in
+one hundred and eighty nine phases, forty four shipped, six hundred and thirty nine new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

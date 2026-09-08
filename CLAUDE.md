@@ -21,6 +21,7 @@ npm run demo-portal          # a service portal fixture through the same engine
 npm test                     # node --test, no framework
 node src/cli.js run -v       # timings per plugin
 node src/cli.js ui --watch   # the console, rerunning as the source changes
+node src/cli.js ui --lan true   # also reachable on your network, behind a token every request must carry
 node tools/ci-local.mjs --only smarty   # the CI's own exercise steps, locally, before a push
 node src/cli.js fetch https://old.example.com --out fetched --allow-live   # copy a site to port; needs portamp.authorization.json
 ```
@@ -892,6 +893,21 @@ shortcuts card also catches up to two keys the previous round wired and
 never documented, `f` and `c`. The line budget, raised from 2250 to 2300,
 holds with room to spare.
 
+10.23 opens the console beyond loopback for the first time, and only as far
+as a token lets it. `portamp ui --lan true` is the one door: naming it is
+what earns `0.0.0.0` in `server.listen`, so the default stays exactly what
+it always was. The moment it is asked for, a random per-run token is minted
+(`crypto.randomBytes`, base64url) and every route, `/` included, checks it
+first — from `?token=` on a first request, or a `portamp_token` cookie the
+server sets on that request so app.html's own fetch calls need no change to
+carry it afterward. The compare is `crypto.timingSafeEqual` after a length
+check, so a wrong guess costs the same time as a right one. The server
+prints the LAN address with the token already in it, found through
+`node:os`'s `networkInterfaces()`; finding none is named rather than
+guessed at. Nothing here is called secure without its caveat: HTTP on a LAN
+is still plaintext, and the server says so in the line it prints. The line
+budget, raised from 2300 to 2350, holds with room to spare.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -957,8 +973,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and eighty five features in
-one hundred and eighty eight phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and eighty six features in
+one hundred and eighty nine phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

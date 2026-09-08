@@ -27,9 +27,14 @@ Opens a browser. Serves only on localhost. Dies on ctrl c.
 - **The pipeline is the only writer.** The UI displays a run and may cause one
   (the run key, `--watch`); it never edits a file itself. `run.json` and the
   history sidecar are written by the plugin at verify, not by the server.
-- **Localhost only.** Bind `127.0.0.1`, never `0.0.0.0`. It serves screenshots
-  of a customer system.
-- **Under a stated line budget**, currently 2300 across `index.js`, `app.html`
+- **Localhost only by default.** Bind `127.0.0.1`, never `0.0.0.0`, unless
+  `--lan` is asked for by name. It serves screenshots of a customer system.
+  `--lan` mints a random per-run token and every route, `/` included, refuses
+  a request that does not carry it (a cookie once one request has, or the
+  url before that); the token is compared in constant time so the check
+  itself leaks nothing, and it travels in plaintext HTTP, so the server says
+  so out loud and this stays something to ask for on a trusted network only.
+- **Under a stated line budget**, currently 2350 across `index.js`, `app.html`
   and `lib.js`. The number lives in `test/ui.test.js` with the history of every
   raise and what bought it, so growth stays a decision, not a drift.
 

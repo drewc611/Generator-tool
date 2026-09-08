@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eighty five features across one hundred and eighty eight phases. The statuses are
+Six hundred and eighty six features across one hundred and eighty nine phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2704,14 +2704,19 @@ The third pass rebuilt the shell three times over; this round leaves it alone an
 **685. A real forty four pixel target on the icon, copy and clear buttons a hover state used to be enough for, a sixteen pixel filter field so iOS stops zooming the page in on focus, safe area insets around a notch and a home indicator, contained overscroll, a filename that wraps instead of forcing a sideways scroll, and the mobile view remembering itself across a reload** 🔨
 The console's mobile app screen, a bottom tab bar swapping the same three panels the desktop shows side by side, got its shell built two phases back but not the same density of care its buttons and filters got on desktop since. A button sized for a mouse cursor is not sized for a fingertip: `.icon-btn` grows from 32px to a real 44px touch target, and `.btn.small`, `.field-x` and `.copy-mini`, each built to be found by a hover state, gain enough padding to be found by a thumb instead, every change scoped to the narrow breakpoint alone so the desktop rack keeps its own density. A search field under 16px makes iOS zoom the whole page in the moment it gets focus; every `.field` is 16px under that breakpoint and nowhere else. `-webkit-tap-highlight-color: transparent` on every button and link removes the grey flash a touch screen leaves behind that a mouse never sees, and `touch-action: manipulation` stops a fast second tap from being read as the browser's own double-tap-to-zoom. The recorded-versus-built scrubber's thumb grows to 26px so dragging it does not need the precision a mouse pointer has and a finger does not; a filename, one long word with no space to break at, wraps instead of forcing the sideways scroll a thumb cannot aim at; and every scrollable panel gains `overscroll-behavior: contain` so flinging a short list to its end stops there instead of rubber banding into the browser's own chrome. `viewport-fit=cover` already let the mast sit under a notch; `env(safe-area-inset-*)` on the mast and the tab bar now keeps their content and icons clear of it and of a home indicator in either orientation, and the shortcuts card gains a `max-width` so it never has to guess at a phone's narrower width. The mobile view itself now survives a reload through `localStorage`, the same convenience the theme, the rack's sort order and the inspector's tab already used, so returning to the console mid task returns to the same screen. The shortcuts card also gains the two rows it had never listed, `f` and `c`, both wired in the previous phase and neither documented until now. The line budget, raised from 2250 to 2300, holds with room to spare.
 
+## Phase 189: a phone on the same wifi, behind a token instead of an open door
+
+**686. `--lan` opens the console beyond loopback for the first time, and only as far as a per-run token the server mints and every route requires** 🔨
+The console has bound `127.0.0.1` since the first line of it, because it serves screenshots of a customer system and the network was never a place to trust with that by default. A person asked for a phone on the same wifi to reach it, which is a real want the mobile app screen has been built for since its own phase without ever having a server it could actually reach. `--lan` is the answer, and it stays opt in: only naming it earns `0.0.0.0` in `server.listen`, everything else about the server unchanged. The moment it is asked for, `serve()` mints a random token (`crypto.randomBytes`, base64url, node:crypto already builtin) and every route, `/` itself included, checks it first: from the url's own `?token=` on a first request, or a `portamp_token` cookie the server sets on that first valid request so app.html's own fetch calls need no change to carry it afterward. The compare is `crypto.timingSafeEqual` after a length check, so a wrong guess costs the same time as a right one. The server prints the LAN address with the token already in it, found through `node:os`'s own `networkInterfaces()`, the same address a QR code or a pasted link would use; failing to find one names that rather than guessing an address that might not answer. Nothing about this is called secure without a caveat: HTTP on a LAN is still plaintext, so the server says exactly that in the line it prints, and the invariant this loosens is now conditional, not gone — the default `portamp ui` with no flag binds exactly what it always has. The line budget, raised from 2300 to 2350, holds with room to spare.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 638 |
+| new in this branch | 639 |
 | planned | 3 |
-| total | 685 |
+| total | 686 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
