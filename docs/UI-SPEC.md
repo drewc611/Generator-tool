@@ -133,11 +133,11 @@ Rounded on a Mac, a plain sans elsewhere) for warmth; data — code, paths,
 timings — stays in the monospace stack, so the page reads as dense and
 precise where precision matters and friendly everywhere else. Verb and
 status columns are colored pills, not plain colored text, each in its own
-semantic color rather than the brand accent. The day console — a pale
-lavender workspace, white cards — is the default, following the system's own
-light or dark preference until a person picks explicitly; the night console
-leans darker and denser, closer to a creative suite's own chrome, with the
-same accent doing the same work.
+semantic color rather than the brand accent. Night — a near black workspace
+with a blue cast rather than a neutral gray, one vivid blue accent — is the
+default regardless of the system's own preference, because the content is
+screenshots and code, not a document; day, the same materials on a pale
+blue-gray table, exists one key away.
 
 ## Data
 
