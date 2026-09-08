@@ -71,9 +71,13 @@ test("the whole ui is under the budget the spec set", async () => {
   // wraps instead of forcing a sideways scroll, the mobile view remembering
   // its own choice across a reload the way the theme already does, and the
   // shortcuts card catching up to two keys it had never listed — bought the
-  // raise to 2300. The budget still exists so growth stays a decision, not a
-  // drift.
-  assert.ok(js + html + lib < 2300, `${js + html + lib} lines, the spec allows under 2300`);
+  // raise to 2300. --lan, the one door out of loopback, opens only as far as
+  // a per-run token lets it: every route refuses a request that does not
+  // carry it in a cookie or the url, a constant time compare so the check
+  // itself gives nothing away, and the LAN address the server prints carries
+  // the token a phone would need — bought the raise to 2350. The budget
+  // still exists so growth stays a decision, not a drift.
+  assert.ok(js + html + lib < 2350, `${js + html + lib} lines, the spec allows under 2350`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once
@@ -185,6 +189,32 @@ test("the server binds loopback, serves the run, and refuses to leave the direct
   const source = await fetch(`${base}/source?path=${encodeURIComponent(run.screens[0].component)}`);
   assert.equal(source.status, 200);
   assert.match(await source.text(), /export default function/);
+});
+
+// --lan is the one door out of loopback, and it opens only as far as a
+// token lets it: every route, including "/", refuses a request that does
+// not carry it, whether that request would have been read-only or not.
+test("--lan binds every interface but mints a token every route requires, and a query token becomes a cookie", async (t) => {
+  const { out, cleanup } = await ctxFor();
+  t.after(cleanup);
+  const { server, token, lanUrl } = await serve({ outDir: out, shotsDir: join(ROOT, "example/screenshots"), port: 0, log: {}, lan: true });
+  t.after(() => new Promise((done) => server.close(done)));
+
+  assert.equal(server.address().address, "0.0.0.0", "asking for --lan is what earns 0.0.0.0, never the default");
+  assert.match(token, /^[\w-]{20,}$/, "a real token was minted");
+  assert.match(lanUrl ?? "", /token=/, "the printed LAN address carries the token a phone would need");
+
+  const base = `http://127.0.0.1:${server.address().port}`;
+  assert.equal((await fetch(`${base}/`)).status, 401, "no token at all is refused, even for the page itself");
+  assert.equal((await fetch(`${base}/run.json?token=wrong`)).status, 401, "a wrong token is refused the same as none");
+
+  const withToken = await fetch(`${base}/run.json?token=${token}`);
+  assert.equal(withToken.status, 200);
+  const cookie = withToken.headers.get("set-cookie");
+  assert.match(cookie ?? "", /portamp_token=/, "a valid query token sets the cookie later requests can rely on");
+
+  const cookied = await fetch(`${base}/run.json`, { headers: { cookie } });
+  assert.equal(cookied.status, 200, "the cookie alone is enough on the next request, with no token in the url");
 });
 
 test("the ui never writes into the port", async () => {

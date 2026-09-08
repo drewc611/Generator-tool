@@ -3,6 +3,8 @@ import { readdir, readFile, mkdir, rm, stat, writeFile } from "node:fs/promises"
 import { dirname, extname, join, resolve, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import { randomBytes, timingSafeEqual } from "node:crypto";
+import { networkInterfaces } from "node:os";
 import { pascal } from "../dsp-ir/emit.js";
 import { RERUN_FLAGS, intakePath, rerunOptions, rerunPatch, siteUrl } from "./lib.js";
 import { fetchForRun } from "../input-fetch/index.js";
@@ -306,7 +308,33 @@ export function createIntake(dir) {
   };
 }
 
-export async function serve({ outDir, shotsDir, port = 4321, log = console, rerun = null, intake = null }) {
+/** A phone on the same wifi has no other IP to reach; the first non-internal
+ * IPv4 address is the one worth printing. None found means no real network,
+ * so the caller falls back to naming the loopback address instead. */
+export function lanAddress() {
+  for (const infos of Object.values(networkInterfaces())) {
+    for (const info of infos ?? []) {
+      if (info.family === "IPv4" && !info.internal) return info.address;
+    }
+  }
+  return null;
+}
+
+const COOKIE = "portamp_token";
+const readCookieToken = (req) => /(?:^|;\s*)portamp_token=([^;]+)/.exec(req.headers.cookie ?? "")?.[1] ?? null;
+/** A constant time compare: a LAN token is a secret, and how long the check
+ * takes must not leak how much of a guess got it right. */
+function sameToken(a, b) {
+  const x = Buffer.from(String(a ?? ""));
+  const y = Buffer.from(b);
+  return x.length === y.length && timingSafeEqual(x, y);
+}
+
+export async function serve({ outDir, shotsDir, port = 4321, log = console, rerun = null, intake = null, lan = false }) {
+  // Loopback stays the default with no token at all: this opts a run into
+  // reachability from the rest of the network only when asked, and even then
+  // every request needs the token a phone on the same wifi was handed.
+  const token = lan ? randomBytes(18).toString("base64url") : null;
   const runPath = join(outDir, ".portamp", "run.json");
   // The screenshots directory may move with the run (an intake rerun reads the intake), so it is asked for each time.
   const shotsAt = () => (typeof shotsDir === "function" ? shotsDir() : shotsDir);
@@ -320,6 +348,20 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
     };
 
     try {
+      // Every route needs the token once the server is reachable beyond
+      // this machine; the query string carries it in from a pasted link or
+      // a scanned URL, and a cookie carries it for every request after that
+      // one so app.html's own fetch calls need no change to send it.
+      if (token) {
+        const given = url.searchParams.get("token") ?? readCookieToken(req);
+        if (!sameToken(given, token)) {
+          return send(401, TYPES[".html"], "<p>This console needs the LAN token printed in the terminal that started it.</p>");
+        }
+        if (url.searchParams.get("token")) {
+          res.setHeader("Set-Cookie", `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/`);
+        }
+      }
+
       if (url.pathname === "/") return send(200, TYPES[".html"], shell);
 
       // The console is installable. These are the app's own files, served from
@@ -513,13 +555,24 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
   });
 
   await new Promise((ok, fail) => {
-    // 127.0.0.1, never 0.0.0.0. It serves screenshots of a customer system.
-    server.listen(port, "127.0.0.1", ok).on("error", fail);
+    // 127.0.0.1 unless a token guards every route: it serves screenshots of
+    // a customer system, and 0.0.0.0 is only earned by asking for --lan.
+    server.listen(port, lan ? "0.0.0.0" : "127.0.0.1", ok).on("error", fail);
   });
 
   const address = `http://127.0.0.1:${server.address().port}`;
   log.info?.(`portamp ui on ${address}`);
-  return { server, address };
+  let lanUrl = null;
+  if (lan) {
+    const host = lanAddress();
+    if (host) {
+      lanUrl = `http://${host}:${server.address().port}/?token=${token}`;
+      log.info?.(`reachable on your network at ${lanUrl} — plaintext, so only on a network you trust`);
+    } else {
+      log.info?.("--lan was asked for but no network address was found; only the loopback address above will answer");
+    }
+  }
+  return { server, address, token, lanUrl };
 }
 
 /** Mac, Windows and Linux each have their own opener, and a headless box has none. */
@@ -551,7 +604,7 @@ export default {
 
   commands: {
     ui: {
-      describe: "serve the last run on 127.0.0.1; drop an .exe, a photo, a screenshot or a folder on it to port that, or photograph a screen from a phone; --watch reruns on change",
+      describe: "serve the last run on 127.0.0.1; drop an .exe, a photo, a screenshot or a folder on it to port that, or photograph a screen from a phone; --watch reruns on change; --lan also serves your network, behind a token every request must carry",
       async run({ config, log, args, policy, runPipeline }) {
         const runPath = join(config.out, ".portamp", "run.json");
         const already = await readFile(runPath, "utf8").then(() => true).catch(() => false);
@@ -586,6 +639,7 @@ export default {
           log,
           rerun,
           intake,
+          lan: Boolean(args.lan),
         });
         if (!openBrowser(address)) log.info("could not open a browser, open that address yourself");
 
