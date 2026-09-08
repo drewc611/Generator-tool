@@ -842,6 +842,31 @@ README's console images are real screenshots of the console the run
 actually serves rather than a hand-drawn mockup of it. test/ui.test.js's
 existing thirty four cases hold the contract; none needed rewriting.
 
+10.21 leaves the third pass's shell alone and spends a round on what happens
+inside it. Every filtered list, screens, plugins, endpoints, unverified,
+files, now bolds the live match through a pure `matchRanges` function rather
+than only proving one exists, and every filter input grows a clear button and
+a hundred and fifty millisecond debounce so a long list stops re-rendering on
+every keystroke. An endpoint's method and path and a written file's path each
+get a one click copy, `copy all` does the same for the whole unverified list,
+and `c` copies the run's own diagnostics, its file, plugin, timing and
+unverified counts, as one pasteable block; `f` focuses the rack's own filter
+the way `/` already focused the unverified one. The source viewer gains a
+line count, a wrap toggle for a line too long to read, and a download button,
+since the pane you read source in is exactly where those three earn their
+keep. The head's five stats carry a tooltip naming what each counts, a
+relative-time readout beside the timestamp keeps counting forward on a timer
+between refreshes, and the tab title already carried the unverified count but
+now the pane does too. The flags popover closes on Escape and on a click
+outside it, and grows a `clear` button beside its own filter; the rack's sort
+order and the inspector's chosen tab now survive a reload the same way the
+theme already did. Nothing here changed the shell three passes built; every
+addition is additive, proven by keeping every one of test/ui.test.js's
+existing assertions about that shell intact. The line budget, raised from
+2150 to 2250, holds with room to spare. test/ui.test.js's four new cases
+hold matchRanges, relativeTime, formatCount and diagnosticsText, the pure
+functions the rest is built from.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -907,8 +932,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and eighty three features in
-one hundred and eighty six phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and eighty four features in
+one hundred and eighty seven phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
