@@ -908,6 +908,24 @@ guessed at. Nothing here is called secure without its caveat: HTTP on a LAN
 is still plaintext, and the server says so in the line it prints. The line
 budget, raised from 2300 to 2350, holds with room to spare.
 
+10.24 raises the learned model's floor from two exemplars per class to
+three. dsp-learn's corpus grows from twenty two labelled miniatures to
+thirty three, one more per archetype, each classifying as its own label
+under the rule based reader exactly as the first round did, so the model
+and the rules agree on every exemplar before either trains on it. Leave
+one out cross validation, defined since the corpus first reached two per
+class, now leaves a held out exemplar's class represented by two siblings
+rather than one; measured against the grown corpus it comes back a clean
+thirty three of thirty three. Corpus growth this way is still eleven human
+labelled shapes, not real shipped apps, so it narrows but does not close
+what ROADMAP.md's own next task already names: real labelled apps are what
+would make the confidence numbers mean more from here. model.js's own doc
+comments, stale since the corpus first left one exemplar per class behind
+(they still described a corpus of one and a cross validation the code had
+already stopped calling undefined), are corrected to say what the code has
+done since. test/learn.test.js and test/corpus.test.js hold both the grown
+corpus and its agreement with the rule based reader.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -973,16 +991,17 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and eighty six features in
-one hundred and eighty nine phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and eighty seven features in
+one hundred and ninety phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
    publishes with provenance. What remains is a person's: adding NPM_TOKEN;
    docs/PUBLISHING.md says how.
-2. **Growing the calibration corpus.** Twenty two labelled miniatures now, two
-   per archetype, enough for a leave one out cross validation; real labelled apps
-   would make the confidence numbers mean more.
+2. **Growing the calibration corpus.** Thirty three labelled miniatures now,
+   three per archetype, enough for a leave one out cross validation that leaves
+   two siblings behind rather than one; real labelled apps, not more synthetic
+   miniatures, are what would make the confidence numbers mean more from here.
 3. **A grammar for the template dialects.** The readers are structural
    scanners now, not regexes, but a real grammar with positions would make
    every note able to say the line it came from.

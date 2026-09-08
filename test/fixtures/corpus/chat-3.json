@@ -1,0 +1,14 @@
+{
+  "label": "chat",
+  "html": "<ul><li *ngFor=\"let n of notes\">{{n.body}}</li></ul><form (submit)=\"post()\"><input [(ngModel)]=\"draft\" placeholder=\"Reply to thread\"><button type=\"submit\">Send</button></form>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/notes"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notes"
+    }
+  ]
+}

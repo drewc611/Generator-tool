@@ -1,0 +1,56 @@
+{
+  "label": "selector-soup",
+  "html": "<div id=\"shell\"><div id=\"nav\"></div><div id=\"grid\"></div><div id=\"summary\"></div></div>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/grid"
+    }
+  ],
+  "widgets": [
+    {
+      "selector": "#refresh-grid",
+      "events": [
+        "click"
+      ],
+      "writes": []
+    },
+    {
+      "selector": "#grid",
+      "events": [],
+      "writes": [
+        "html"
+      ]
+    },
+    {
+      "selector": "#summary",
+      "events": [],
+      "writes": [
+        "text"
+      ]
+    },
+    {
+      "selector": "#nav .tab",
+      "events": [
+        "click"
+      ],
+      "writes": []
+    },
+    {
+      "selector": "#grid .cell",
+      "events": [
+        "click"
+      ],
+      "writes": []
+    },
+    {
+      "selector": "#status",
+      "events": [],
+      "writes": [
+        "text"
+      ]
+    }
+  ],
+  "components": 0,
+  "model": null
+}

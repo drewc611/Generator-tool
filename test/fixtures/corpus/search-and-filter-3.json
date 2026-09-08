@@ -1,0 +1,10 @@
+{
+  "label": "search-and-filter",
+  "html": "<input [(ngModel)]=\"keyword\" placeholder=\"Search flights\"><select [(ngModel)]=\"origin\"></select><select [(ngModel)]=\"destination\"></select><ul><li *ngFor=\"let f of flights\">{{f.route}}</li></ul>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/flights?keyword=x&origin=y&destination=z&sort=price"
+    }
+  ]
+}
