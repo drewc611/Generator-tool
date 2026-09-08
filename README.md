@@ -3,6 +3,12 @@
 Port a legacy front end without losing the look or the API contract.
 Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
+[![CI](https://github.com/drewc611/Generator-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/drewc611/Generator-tool/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/drewc611/Generator-tool/actions/workflows/codeql.yml/badge.svg)](https://github.com/drewc611/Generator-tool/actions/workflows/codeql.yml)
+![Runtime dependencies: zero](https://img.shields.io/badge/dependencies-0-brightgreen)
+![Node >= 18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![License: proprietary](https://img.shields.io/badge/license-proprietary-lightgrey)
+
 ![The portamp console: rounded, floating panels on a near black blue-tinted workspace, one vivid blue accent, showing a pipeline run, the numbered stage index and the plugin rack](media/portamp-console.png)
 
 <sub>portamp is a command line tool, not a desktop app. The console's own joke
@@ -44,6 +50,17 @@ npm test                     # 1042 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
+
+A Homebrew tap works today:
+
+```bash
+brew tap drewc611/generator-tool https://github.com/drewc611/Generator-tool
+brew install portamp
+```
+
+`npm publish` and a winget submission are both fully built and waiting on
+the same thing, a pushed release tag; see `docs/PUBLISHING.md` and
+`winget/README.md`.
 
 ```
 scan      2 screenshot(s), states: default, empty
