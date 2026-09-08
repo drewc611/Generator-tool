@@ -119,7 +119,7 @@ const disallowed = (rules, url) => {
  * Fetch one origin's site into `dir`. Returns the manifest: what was fetched,
  * what was skipped and why, redirects followed and the external hosts seen.
  */
-export async function fetchSite({ url, dir, policy, log = { info() {}, debug() {} }, depth = 2, maxPages = 50, maxBytes = 50 * 1024 * 1024, maxFileBytes = 10 * 1024 * 1024, timeoutMs = 15000, userAgent = "portamp (+https://github.com/drewc611/portamp)", fetchImpl = globalThis.fetch }) {
+export async function fetchSite({ url, dir, policy, log = { info() {}, debug() {} }, depth = 2, maxPages = 50, maxBytes = 50 * 1024 * 1024, maxFileBytes = 10 * 1024 * 1024, timeoutMs = 15000, userAgent = "portamp (+https://github.com/drewc611/Generator-tool)", fetchImpl = globalThis.fetch }) {
   if (typeof fetchImpl !== "function") throw new Error("this Node has no fetch; Node 18 or newer is needed to copy a site");
   const start = new URL(url);
   if (!/^https?:$/.test(start.protocol)) throw new Error(`only http and https are fetched, not ${start.protocol}`);

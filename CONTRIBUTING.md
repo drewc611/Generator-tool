@@ -6,7 +6,7 @@ a plugin.** A test asserts that nothing under `src/core/` names one.
 ## Getting going
 
 ```bash
-git clone https://github.com/drewc611/portamp && cd portamp
+git clone https://github.com/drewc611/Generator-tool && cd Generator-tool
 node src/cli.js plugins      # nothing to install
 npm run demo                 # the pipeline against example/legacy
 npm test                     # node --test, no framework

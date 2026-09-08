@@ -37,7 +37,7 @@ writes components instead of audio, and `vis` shows you what you got.
 ## Thirty seconds
 
 ```bash
-git clone https://github.com/drewc611/portamp && cd portamp
+git clone https://github.com/drewc611/Generator-tool && cd Generator-tool
 node src/cli.js plugins      # 221 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
 npm test                     # 1042 tests, node --test, no framework
