@@ -9,7 +9,7 @@ four files and knows nothing about Angular, React, screenshots, or HTTP.
 Everything that knows a framework is a plugin. Keeping that true is the single
 most important constraint in the repo.
 
-Target repo: github.com/drewc611/portamp
+Target repo: github.com/drewc611/Generator-tool
 
 ## Run it
 
