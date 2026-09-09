@@ -32,7 +32,7 @@ function httpUrl(raw) {
 }
 
 /** One request, any redirect followed wherever it leads (unlike fetch/map, there is no one origin to stay confined to), each hop asking the policy first. */
-async function fetchOne({ url, policy, timeoutMs = 15000, userAgent = "portamp (+https://github.com/drewc611/Generator-tool)", fetchImpl = globalThis.fetch, maxBytes = 10 * 1024 * 1024 }) {
+export async function fetchOne({ url, policy, timeoutMs = 15000, userAgent = "portamp (+https://github.com/drewc611/Generator-tool)", fetchImpl = globalThis.fetch, maxBytes = 10 * 1024 * 1024 }) {
   let at = url;
   for (let hop = 0; ; hop += 1) {
     policy.assertLiveAllowed(at);
@@ -146,7 +146,7 @@ function batchReport(results, formats) {
   ].join("\n");
 }
 
-async function writeResults(dir, results, formats) {
+export async function writeResults(dir, results, formats) {
   for (const r of results) {
     if (!r.ok) continue;
     for (const f of formats) {
@@ -161,8 +161,8 @@ async function writeResults(dir, results, formats) {
   await writeFile(join(dir, "portamp.batch.json"), JSON.stringify(results.map(({ meta, html, markdown, json, ...r }) => r), null, 2) + "\n", "utf8");
 }
 
-/** The attestation gate every live call in this plugin stands behind, worded for what it is actually doing. */
-async function requireAttestation(what, urls) {
+/** The attestation gate every live call in this plugin stands behind, worded for what it is actually doing. Shared with general-search, which asks the same two questions of a search engine that this plugin asks of any other url. */
+export async function requireAttestation(what, urls) {
   const { error } = await readAttestation(process.cwd());
   if (error) {
     throw new Error(

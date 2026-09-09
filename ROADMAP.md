@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eighty nine features across one hundred and ninety two phases. The statuses are
+Six hundred and ninety features across one hundred and ninety three phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2724,14 +2724,19 @@ Phase 68 got the corpus from one miniature per archetype to two, the smallest si
 **689. `portamp scrape` and `batch-scrape` read a URL, or many, as Markdown, HTML or JSON, with no browser and no dependency** 🔨
 Map discovers what a site holds; this reads it. `plugins/general-scrape/markdown.js` walks the tree `parseMarkup` already builds for a reader's own dialect, this time by the ordinary rules a browser gives block and inline content: headings, emphasis, links and images resolved against the page, lists and tables kept on adjacent lines rather than read as several one line ones, a `<pre>` block's own spacing kept exactly, comments and a `<script>` or `<style>` block's own content never mistaken for the page. `htmlToText` strips Markdown's own marks from that same output rather than walking the tree a second way, so the two can never disagree about where one block ends and the next begins; `pageMeta` reads the title, description, canonical and language a `<head>` names, by name, never guessed when absent. Unlike `fetch` and `map`, neither command is confined to one origin: a redirect is followed wherever it leads, each hop still asking the policy first, since there is no one site's origin to stay inside. `batch-scrape` reads many URLs concurrently and keeps going past a domain the attestation does not cover, failing only that one URL rather than the whole batch, since a mixed batch spanning several attested domains is the ordinary case, not the exceptional one; live calls being off entirely, or the run being offline, is everyone's failure and stops the batch outright, since every remaining URL would fail the identical way. `--format screenshot` is refused by name: rendering a page as pixels needs a real browser, and this tool's one optional dependency for that is `input-record`'s job, not this one's. Both commands stand behind the same two gates as `fetch` and `map`. `BATCH.md` and `portamp.batch.json` name every URL scraped and every one refused, and each URL's own output file, one per format, reuses `fetch`'s own `localPath` naming so two different URLs sharing a bare name can never collide. Manual testing surfaced three real bugs before a single formal test was written: the doctype leaking into the Markdown as stray text, and both lists and tables reading as several one line blocks instead of one, because a whitespace-stripping regex could reach back across a blank line it should have stopped at. test/scrape.test.js holds the converter and both commands end to end.
 
+## Phase 193: the search a person actually means by that word
+
+**690. `portamp search` reads a query from a search engine's own no-JS results page and, with `--scrape true`, reads every result the way `scrape` reads any url** 🔨
+Map discovers a site's own shape and scrape reads what one url or many already hold; neither answers what search means to a person, finding pages nobody handed it a url for. `plugins/general-search/search.js` reads DuckDuckGo's dependency free HTML endpoint, the one search surface this tool reads for now, walking the same tree `parseMarkup` already builds and matching only the vocabulary that endpoint actually carries: a `result__body` per result, holding one `result__a` title link and one `result__snippet`. DuckDuckGo wraps every external result behind its own redirector; the wrapped `uddg` parameter is decoded to the real destination rather than left as a link nobody could follow by hand. A results page that carries none of that vocabulary is named unrecognised rather than reported as zero results, since a search engine that changed its markup and a genuinely empty results page would otherwise look identical, and only one of those is honest. `searchWeb` stands behind the exact same `--allow-live` and `portamp.authorization.json` gates as `fetch`, `map` and `scrape`, since asking a search engine for results is a live call to a real system exactly like any of those; an engine this reader does not know is refused by name before either gate is even asked. `--scrape true` hands every result's url straight to `general-scrape`'s own `batchScrape`, so a result on a domain the attestation does not cover fails only that one result, matching `batch-scrape`'s own established behaviour rather than inventing a second one. `SEARCH.md` and `portamp.search.json` name every result found, and a scraped result's own rendered files land beside them the same way `batch-scrape`'s own output does. test/search.test.js holds the parser against a fixture built from the real result markup, both commands end to end, and the gates.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 642 |
+| new in this branch | 643 |
 | planned | 3 |
-| total | 689 |
+| total | 690 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

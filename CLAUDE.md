@@ -77,7 +77,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and twenty two in five classes, and the core has never learned
+Plugins that ship, two hundred and twenty three in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -102,7 +102,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-codemod  output-aws  output-azure  output-gcp  output-vercel  output-netlify  output-cloudflare  output-caddy  output-eleventy  output-playwright
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph  vis-transformer  vis-a11y  vis-security  vis-perf  vis-lifecycle  vis-readers
 general  general-policy  general-authorization  general-license  general-size
-         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study  general-scrape
+         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study  general-scrape  general-search
 ```
 
 An option the CLI does not recognise is passed through to the plugins
@@ -972,6 +972,28 @@ as several one line blocks instead of one, because a whitespace-stripping
 regex could reach back across a blank line it should have stopped at.
 test/scrape.test.js holds the converter and both commands end to end.
 
+10.27 answers what a person means by search rather than what map or scrape
+already answer. `portamp search` (plugins/general-search/) reads a query
+from a search engine's own no-JS results page, DuckDuckGo's HTML endpoint
+for now, walking the same tree `parseMarkup` already builds and matching
+only the vocabulary that endpoint actually carries: a `result__body` per
+result holding one `result__a` title link and one `result__snippet`.
+DuckDuckGo wraps every external result behind its own redirector; the
+wrapped `uddg` parameter is decoded to the real destination rather than
+left as a link nobody could follow by hand. A results page carrying none of
+that vocabulary is named unrecognised rather than reported as zero results,
+since a changed markup and a genuinely empty page would otherwise look
+identical. `search` stands behind the same `--allow-live` and
+`portamp.authorization.json` gates as `fetch`, `map` and `scrape`, since
+asking a search engine for results is a live call to a real system exactly
+like any of those; an engine this reader does not know is refused by name
+before either gate is even asked. `--scrape true` hands every result's url
+to `general-scrape`'s own `batchScrape`, so a result on a domain the
+attestation does not cover fails only that one result, the same behaviour
+`batch-scrape` already established rather than a second one invented for
+this command. test/search.test.js holds the parser against a fixture built
+from the real result markup, both commands end to end, and the gates.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -1037,8 +1059,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and eighty nine features in
-one hundred and ninety two phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and ninety features in
+one hundred and ninety three phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
