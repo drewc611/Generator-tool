@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eighty eight features across one hundred and ninety one phases. The statuses are
+Six hundred and eighty nine features across one hundred and ninety two phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2719,14 +2719,19 @@ Phase 68 got the corpus from one miniature per archetype to two, the smallest si
 **688. `portamp map <url>` discovers every URL an attested site names, its sitemap and its pages both, without downloading a single asset** 🔨
 `fetch` already copies one attested origin's pages and assets to a folder; scoping a migration first, how big a site actually is before committing to a full copy, is a different, cheaper question, and this answers it. `mapSite` in input-fetch/fetch.js reads `sitemap.xml` first (and a sitemap index's own children, one level deep, so a nested index does not chase itself forever), then crawls same origin pages to a depth exactly as `fetch` does, except a page is fetched only to read the links inside it and an asset's URL is taken from the page that names it, the asset itself never requested; a sitemap entry is treated the same as the start URL, a known good entry point rather than a mere hint, so a page the sitemap names is still crawled for its own links even though its existence needed no request to learn. The redirect following, robots.txt honouring and origin confinement `fetchSite` already proved are not written twice: `followRedirects`, extracted from `fetchSite`'s own inline `get`, is the one function both call, so a change to how a redirect is judged cannot happen in one and not the other. It stands behind the exact same two gates as `fetch`, `--allow-live` and `portamp.authorization.json`, since discovering a live system's shape is still a live call to a real system. `MAP.md` and `portamp.map.json` name every URL found, whether it came from the sitemap or from crawling, and at what depth; what a full `fetch` would eventually find by reading a stylesheet's own `url()` and `@import` references is a named, honest gap here, since Map never downloads a stylesheet to read it. test/fetch.test.js holds `sitemapUrls` as a pure function and `mapSite` end to end, including the case a redirect lands on a page already read.
 
+## Phase 192: what map only counts, scrape actually reads
+
+**689. `portamp scrape` and `batch-scrape` read a URL, or many, as Markdown, HTML or JSON, with no browser and no dependency** 🔨
+Map discovers what a site holds; this reads it. `plugins/general-scrape/markdown.js` walks the tree `parseMarkup` already builds for a reader's own dialect, this time by the ordinary rules a browser gives block and inline content: headings, emphasis, links and images resolved against the page, lists and tables kept on adjacent lines rather than read as several one line ones, a `<pre>` block's own spacing kept exactly, comments and a `<script>` or `<style>` block's own content never mistaken for the page. `htmlToText` strips Markdown's own marks from that same output rather than walking the tree a second way, so the two can never disagree about where one block ends and the next begins; `pageMeta` reads the title, description, canonical and language a `<head>` names, by name, never guessed when absent. Unlike `fetch` and `map`, neither command is confined to one origin: a redirect is followed wherever it leads, each hop still asking the policy first, since there is no one site's origin to stay inside. `batch-scrape` reads many URLs concurrently and keeps going past a domain the attestation does not cover, failing only that one URL rather than the whole batch, since a mixed batch spanning several attested domains is the ordinary case, not the exceptional one; live calls being off entirely, or the run being offline, is everyone's failure and stops the batch outright, since every remaining URL would fail the identical way. `--format screenshot` is refused by name: rendering a page as pixels needs a real browser, and this tool's one optional dependency for that is `input-record`'s job, not this one's. Both commands stand behind the same two gates as `fetch` and `map`. `BATCH.md` and `portamp.batch.json` name every URL scraped and every one refused, and each URL's own output file, one per format, reuses `fetch`'s own `localPath` naming so two different URLs sharing a bare name can never collide. Manual testing surfaced three real bugs before a single formal test was written: the doctype leaking into the Markdown as stray text, and both lists and tables reading as several one line blocks instead of one, because a whitespace-stripping regex could reach back across a blank line it should have stopped at. test/scrape.test.js holds the converter and both commands end to end.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 641 |
+| new in this branch | 642 |
 | planned | 3 |
-| total | 688 |
+| total | 689 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

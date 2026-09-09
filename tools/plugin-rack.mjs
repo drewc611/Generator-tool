@@ -81,6 +81,7 @@ const DOES = {
   "general-history": "the run over time, counts only, so trends have a table",
   "general-size": "the port weighed by kind, with --max-kb the budget the run enforces",
   "general-publish": "publish-check: the npm pack dry run read for you, a verdict with an exit code; never publishes",
+  "general-scrape": "portamp scrape and batch-scrape: one url or many read as Markdown, HTML or JSON with no browser, a redirect followed wherever it leads; a domain the attestation does not cover fails only that url",
   "vis-graph": "the port's shape drawn: screens, what composes what, which endpoints each calls",
   "vis-a11y": "every accessibility axis on one scorecard, each number another plugin's, none invented",
   "vis-security": "every security concern on one scorecard: markup, supply chain, sandbox, cookies, trackers",

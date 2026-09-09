@@ -14,13 +14,13 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 <sub>portamp is a command line tool, not a desktop app. The console's own joke
 is where the plugin classes come from — Winamp's five, kept honest as a
 sidebar rather than a skin. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 221 plugins, and the literal output of
+lines of core, no runtime dependencies, 222 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ![node --test running the portamp suite: 1382 passing, 1390 tests, 0 failing, 8 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from raw AWT/Swing and UIKit code to the transformer, the console's own solver, and the desktop installers read for the first time](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1382
-tests pass across 170 test files with `node --test` and no framework, and
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1414
+tests pass across 171 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing it does not already
 know about: the one alert it raises on `input-fetch` is the site copy writing
 network data to a folder, which is what copying a site is, and the write
@@ -44,9 +44,9 @@ writes components instead of audio, and `vis` shows you what you got.
 
 ```bash
 git clone https://github.com/drewc611/Generator-tool && cd Generator-tool
-node src/cli.js plugins      # 221 plugin(s)
+node src/cli.js plugins      # 222 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 1042 tests, node --test, no framework
+npm test                     # 1415 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
@@ -89,9 +89,9 @@ honest: there is nowhere in 718 lines to hide a special case for Angular.
 | | |
 | --- | --- |
 | Core | **718 lines** across four files |
-| Every line of the tool | 62,254 lines of JavaScript in src and plugins |
-| Tests | 23,433 lines, 1390 cases across 170 files |
-| Source on disk | src 27 KB, plugins 2.9 MB |
+| Every line of the tool | 63,050 lines of JavaScript in src and plugins |
+| Tests | 23,882 lines, 1415 cases across 171 files |
+| Source on disk | src 27 KB, plugins 3.0 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
@@ -100,7 +100,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and eighty eight features, and every
+The core grew from 527 lines to 718 across six hundred and eighty nine features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -141,9 +141,9 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The 221 it ships with
+## The 222 it ships with
 
-![The plugin rack: 221 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 222 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## Yes, there is a transformer in it
 
@@ -539,11 +539,27 @@ found, where it came from (`sitemap` or `crawl`) and what stood in the way.
 It does not read a stylesheet for the assets *it* references, so an asset
 reachable only through CSS is a real, named gap against a full `fetch`.
 
+Once you know what is there, `portamp scrape <url>` and
+`portamp batch-scrape <url...>` read it: one page, or many, concurrently, as
+Markdown, HTML or JSON, with no browser and no dependency. A hand written
+converter walks the same tree the tool's own template readers already parse,
+by the rules a browser gives block and inline content — headings, emphasis
+and links resolved against the page, lists and tables kept as one block
+rather than several, a `<pre>` block's own spacing kept exactly — and reads
+the `<head>`'s title, description, canonical and language by name. Unlike
+`fetch` and `map`, neither command is confined to one origin: a redirect is
+followed wherever it leads, each hop still asking the policy first, and
+`batch-scrape` keeps going past a domain the attestation does not cover,
+failing only that one URL rather than the whole batch. `--format screenshot`
+is refused by name — rendering a page as pixels needs a real browser, and
+that stays `input-record`'s job. `BATCH.md` and `portamp.batch.json` name
+every URL scraped and every one refused.
+
 ## Install it
 
 ```bash
 npm install -g portamp     # once the v* tag publishes; docs/PUBLISHING.md says how
-portamp plugins            # 221 plugin(s)
+portamp plugins            # 222 plugin(s)
 portamp ui                 # the console, with its intake
 ```
 
@@ -1193,8 +1209,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty eight features in
-one hundred and ninety one phases, forty four shipped, six hundred and forty one new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty nine features in
+one hundred and ninety two phases, forty four shipped, six hundred and forty two new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
