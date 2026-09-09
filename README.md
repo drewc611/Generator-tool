@@ -100,7 +100,7 @@ cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and eighty seven features, and every
+The core grew from 527 lines to 718 across six hundred and eighty eight features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -526,6 +526,18 @@ and `portamp.authorization.json` naming who owns the system, honours
 fetches from another host, and writes every request it skipped and why into
 `FETCH.md`, so a missing page is a known gap rather than a page the site
 lacked. The console's intake takes the same URL through the same function.
+
+Before copying a whole site it can be worth knowing how big it is.
+`portamp map <url>` discovers every URL an attested site names — its own
+`sitemap.xml` (and a sitemap index's own children, one level deep) plus
+whatever the pages themselves link to, to a depth — without downloading a
+single asset: a page is fetched only to read the links inside it, and an
+asset's URL is taken from the page that names it, never requested itself.
+It stands behind the exact same two gates as `fetch`, honours `robots.txt`
+the same way, and writes `MAP.md` and `portamp.map.json` naming every URL
+found, where it came from (`sitemap` or `crawl`) and what stood in the way.
+It does not read a stylesheet for the assets *it* references, so an asset
+reachable only through CSS is a real, named gap against a full `fetch`.
 
 ## Install it
 
@@ -1181,8 +1193,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty seven features in
-one hundred and ninety phases, forty four shipped, six hundred and forty new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty eight features in
+one hundred and ninety one phases, forty four shipped, six hundred and forty one new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

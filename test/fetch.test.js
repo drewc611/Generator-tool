@@ -6,8 +6,8 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { Policy } from "../src/core/policy.js";
-import plugin, { fetchForRun, readAttestation } from "../plugins/input-fetch/index.js";
-import { cssLinks, fetchSite, linksIn, localPath, robotsDisallow } from "../plugins/input-fetch/fetch.js";
+import plugin, { fetchForRun, mapForRun, readAttestation } from "../plugins/input-fetch/index.js";
+import { cssLinks, fetchSite, linksIn, localPath, mapSite, robotsDisallow, sitemapUrls } from "../plugins/input-fetch/fetch.js";
 import { runPipeline } from "./helpers.js";
 
 /**
@@ -38,6 +38,8 @@ const SITE = {
   "/img/bg.png": ["image/png", "BG"],
   "/fonts/f.woff2": ["font/woff2", "WOFF"],
   "/private/report": ["text/html", `<html><body>secret</body></html>`],
+  "/sitemap.xml": ["application/xml", `<?xml version="1.0"?><urlset><url><loc>/</loc></url><url><loc>/about</loc></url><url><loc>/only-in-sitemap</loc></url></urlset>`],
+  "/only-in-sitemap": ["text/html", `<html><head><title>Sitemap only</title></head><body>no page links here</body></html>`],
 };
 
 async function serveSite(t) {
@@ -168,4 +170,100 @@ test("a copied site ports as a site, and the copy's gaps become the run's notes"
   assert.match(notes, /leaned on 1 other host\(s\) \(cdn\.example\.net\)/);
   assert.ok(run.ctx.site?.pages?.length >= 3, `the copied pages are the site: ${run.ctx.site?.pages?.length}`);
   assert.ok(run.ctx.written.some((f) => /src\/app\/router|serve\.js/.test(f)), "the site engine built the shell around the copy");
+});
+
+/* -------------------------------------------------------------- map */
+
+test("a sitemap or a sitemap index's own urls are read, same origin only, an index's children returned separately", () => {
+  const flat = sitemapUrls(
+    `<?xml version="1.0"?><urlset><url><loc>http://x/a</loc></url><url><loc>http://x/b?q=1&amp;r=2</loc></url><url><loc>http://[not-a-host</loc></url><url><loc>https://elsewhere.example/c</loc></url></urlset>`,
+    "http://x/sitemap.xml"
+  );
+  assert.deepEqual(flat.urls, ["http://x/a", "http://x/b?q=1&r=2"]);
+  assert.deepEqual(flat.sitemaps, []);
+  assert.deepEqual(flat.skipped, [
+    { url: "http://[not-a-host", reason: "not a url" },
+    { url: "https://elsewhere.example/c", reason: "another origin" },
+  ]);
+
+  const index = sitemapUrls(
+    `<sitemapindex><sitemap><loc>/parts/a.xml</loc></sitemap><sitemap><loc>/parts/b.xml</loc></sitemap></sitemapindex>`,
+    "http://x/sitemap.xml"
+  );
+  assert.deepEqual(index.urls, []);
+  assert.deepEqual(index.sitemaps, ["http://x/parts/a.xml", "http://x/parts/b.xml"], "a relative <loc> resolves against the sitemap's own url");
+});
+
+test("a map discovers every url a sitemap and the pages themselves name, downloading no asset and no page twice", async (t) => {
+  const { base, hits } = await serveSite(t);
+  const dir = await mkdtemp(join(tmpdir(), "portamp-map-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const policy = new Policy({ allowLive: true, log: quiet });
+  const m = await mapSite({ url: `${base}/`, dir, policy, log: quiet, depth: 2 });
+
+  const byUrl = Object.fromEntries(m.urls.map((u) => [u.url.replace(base, ""), u]));
+  assert.equal(byUrl["/"].via, "sitemap");
+  assert.equal(byUrl["/about"].via, "sitemap");
+  assert.equal(byUrl["/only-in-sitemap"].via, "sitemap", "a page named only in the sitemap, linked from nowhere, is still found");
+  assert.equal(byUrl["/products/"].via, "crawl");
+  assert.equal(byUrl["/deep/one"].via, "crawl");
+  assert.equal(byUrl["/products/widget.html"].depth, 2, "a page two links deep from the pages the sitemap named carries that depth");
+  assert.equal(byUrl["/deep/two"].depth, 2, "a page the sitemap already anchors shortens the crawl path to what it links, so this is within depth 2 here");
+  assert.ok(!("/private/report" in byUrl), "a page disallowed by robots.txt is never in the url list");
+
+  const assets = m.urls.filter((u) => u.kind === "asset").map((u) => u.url.replace(base, "")).sort();
+  assert.deepEqual(assets, ["/css/site.css", "/img/logo.png", "/js/app.js"], "an asset's url is taken from the page that names it, not from a stylesheet nobody read");
+  for (const asset of ["/img/logo.png", "/css/site.css", "/js/app.js", "/css/print.css", "/img/bg.png", "/fonts/f.woff2"]) {
+    assert.ok(!hits.includes(asset), `${asset} was never requested; a map only reads pages for their links`);
+  }
+  assert.ok(!hits.includes("/private/report"), "what robots.txt disallows is never requested");
+
+  assert.deepEqual(m.redirects, [{ from: `${base}/old`, to: `${base}/about` }]);
+  const reasons = Object.fromEntries(m.skipped.map((s) => [s.url.replace(base, ""), s.reason]));
+  assert.equal(reasons["/private/report"], "disallowed by robots.txt");
+  assert.match(reasons["/old"], /^redirected to http:\/\/127\.0\.0\.1:\d+\/about, which is already mapped$/, "a redirect landing on a page already read is not read twice");
+  assert.deepEqual(m.external, ["cdn.example.net"]);
+  assert.deepEqual(m.sitemaps, [`${base}/sitemap.xml`]);
+
+  const md = await readFile(join(dir, "MAP.md"), "utf8");
+  assert.match(md, /^# The map\n/);
+  assert.match(md, /Read 1 sitemap\(s\)/);
+  const manifest = JSON.parse(await readFile(join(dir, "portamp.map.json"), "utf8"));
+  assert.equal(manifest.start, `${base}/`);
+});
+
+test("a map without a sitemap still finds everything by following links, and --sitemap false skips asking for one at all", async (t) => {
+  const { base, hits } = await serveSite(t);
+  const policy = new Policy({ allowLive: true, log: quiet });
+  const m = await mapSite({ url: `${base}/`, policy, log: quiet, depth: 2, sitemap: false });
+  assert.deepEqual(m.sitemaps, []);
+  assert.ok(!hits.includes("/sitemap.xml"), "asked not to, this run never requests the sitemap at all");
+  const byUrl = Object.fromEntries(m.urls.map((u) => [u.url.replace(base, ""), u]));
+  assert.equal(byUrl["/only-in-sitemap"], undefined, "a page named only in the sitemap is not found by following links alone");
+  assert.equal(byUrl["/about"].via, "crawl", "with no sitemap, the same page is still found, now by crawling");
+  assert.equal(byUrl["/about"].depth, 1); assert.equal(byUrl["/deep/one"].depth, 2);
+  assert.equal(byUrl["/deep/two"], undefined, "three links from the start, one past depth 2, so it is skipped rather than listed");
+  const reasons = Object.fromEntries(m.skipped.map((s) => [s.url.replace(base, ""), s.reason]));
+  assert.equal(reasons["/deep/two"], "beyond depth 2");
+});
+
+test("the gates hold for a map exactly as they do for a copy: no live calls, no domain outside the attestation, no attestation no map", async (t) => {
+  const { base, hits } = await serveSite(t);
+  const dir = await mkdtemp(join(tmpdir(), "portamp-map-gates-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await assert.rejects(() => mapSite({ url: `${base}/`, dir, policy: new Policy({ log: quiet }), log: quiet }), /Live calls are off by default/);
+  await assert.rejects(() => mapSite({ url: `${base}/`, dir, policy: new Policy({ allowLive: true, offline: true, log: quiet }), log: quiet }), /This run is offline/);
+  await assert.rejects(() => mapSite({ url: "http://acme.example/", dir, policy: new Policy({ allowLive: true, allowedDomains: ["other.example"], log: quiet }), log: quiet }), /The attestation authorizes other\.example/);
+  await assert.rejects(() => mapSite({ url: "ftp://acme.example/", dir, policy: new Policy({ allowLive: true, log: quiet }), log: quiet }), /only http and https/);
+  assert.equal(hits.length, 0, "a refused map sends no request at all");
+
+  const cwd = await mkdtemp(join(tmpdir(), "portamp-map-cwd-"));
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+  await assert.rejects(() => mapForRun({ url: `${base}/`, dir, cwd, policy: new Policy({ allowLive: true, log: quiet }), log: quiet }), /needs portamp\.authorization\.json beside the run/);
+  assert.equal(hits.length, 0);
+  await writeFile(join(cwd, "portamp.authorization.json"), JSON.stringify({ owner: "Acme", authorizedBy: "J. Doe", basis: "engagement" }));
+  const m = await mapForRun({ url: `${base}/`, dir, cwd, policy: new Policy({ allowLive: true, log: quiet }), log: quiet, depth: 0, sitemap: false });
+  assert.equal(m.attestedBy, "J. Doe");
+  assert.equal(typeof plugin.commands.map.run, "function");
+  assert.match(plugin.commands.map.describe, /--allow-live and portamp\.authorization\.json/);
 });

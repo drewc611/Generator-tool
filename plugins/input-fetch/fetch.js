@@ -116,6 +116,43 @@ const disallowed = (rules, url) => {
 };
 
 /**
+ * One request, redirects followed here rather than by fetch itself, so every
+ * hop asks the policy before a byte moves and a hop off the origin is
+ * recorded rather than requested. Shared by fetchSite, which saves what it
+ * reads, and mapSite, which reads a page only to find the links inside it and
+ * saves nothing at all.
+ */
+async function followRedirects({ url: target, accept, origin, policy, timeoutMs, userAgent, maxFileBytes, fetchImpl }) {
+  let url = target;
+  for (let hop = 0; ; hop += 1) {
+    policy.assertLiveAllowed(url);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let res;
+    try {
+      // No cookies, no credentials, no stored session: the copy is what an anonymous visitor sees.
+      res = await fetchImpl(url, { redirect: "manual", signal: controller.signal, headers: { "user-agent": userAgent, accept } });
+    } finally {
+      clearTimeout(timer);
+    }
+    const location = res.headers.get("location");
+    if ([301, 302, 303, 307, 308].includes(res.status) && location) {
+      let to;
+      try { to = new URL(location, url).href.replace(/#.*$/, ""); } catch { return { res, url, badRedirect: location }; }
+      if (hop >= 5) return { res, url, redirectLoop: true };
+      if (new URL(to).origin !== origin) return { res, url, off: to };
+      url = to;
+      continue;
+    }
+    const type = res.headers.get("content-type") ?? "";
+    const length = Number(res.headers.get("content-length") ?? 0);
+    if (length > maxFileBytes) return { res, url, type, body: null, tooBig: true };
+    const buffer = Buffer.from(await res.arrayBuffer());
+    return { res, url, type, body: buffer.length > maxFileBytes ? null : buffer, tooBig: buffer.length > maxFileBytes };
+  }
+}
+
+/**
  * Fetch one origin's site into `dir`. Returns the manifest: what was fetched,
  * what was skipped and why, redirects followed and the external hosts seen.
  */
@@ -127,37 +164,7 @@ export async function fetchSite({ url, dir, policy, log = { info() {}, debug() {
   const origin = start.origin;
   const manifest = { start: start.href, origin, startedAt: new Date().toISOString(), pages: [], assets: [], skipped: [], redirects: [], external: new Set(), forms: new Set(), bytes: 0, robots: [] };
 
-  // Redirects are followed here, not by fetch, so every hop asks the policy before a byte moves and a hop off the
-  // origin is recorded and never requested.
-  const get = async (target, accept) => {
-    let url = target;
-    for (let hop = 0; ; hop += 1) {
-      policy.assertLiveAllowed(url);
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      let res;
-      try {
-        // No cookies, no credentials, no stored session: the copy is what an anonymous visitor sees.
-        res = await fetchImpl(url, { redirect: "manual", signal: controller.signal, headers: { "user-agent": userAgent, accept } });
-      } finally {
-        clearTimeout(timer);
-      }
-      const location = res.headers.get("location");
-      if ([301, 302, 303, 307, 308].includes(res.status) && location) {
-        let to;
-        try { to = new URL(location, url).href.replace(/#.*$/, ""); } catch { return { res, url, badRedirect: location }; }
-        if (hop >= 5) return { res, url, redirectLoop: true };
-        if (new URL(to).origin !== origin) return { res, url, off: to };
-        url = to;
-        continue;
-      }
-      const type = res.headers.get("content-type") ?? "";
-      const length = Number(res.headers.get("content-length") ?? 0);
-      if (length > maxFileBytes) return { res, url, type, body: null, tooBig: true };
-      const buffer = Buffer.from(await res.arrayBuffer());
-      return { res, url, type, body: buffer.length > maxFileBytes ? null : buffer, tooBig: buffer.length > maxFileBytes };
-    }
-  };
+  const get = (target, accept) => followRedirects({ url: target, accept, origin, policy, timeoutMs, userAgent, maxFileBytes, fetchImpl });
 
   // robots.txt first: a site that asked not to be crawled somewhere is not crawled there.
   try {
@@ -293,6 +300,167 @@ export function fetchReport(m) {
     "## Forms", "",
     ...(m.forms.length ? m.forms.map((f) => `- ${f}`) : ["None."]), "",
     "A form's action was recorded and never submitted.", "",
+    "## robots.txt", "",
+    ...(m.robots.length ? m.robots.map((r) => `- ${r.allow ? "Allow" : "Disallow"}: ${r.pattern}`) : ["No rule applied to every agent."]), "",
+  ];
+  return out.join("\n");
+}
+
+/**
+ * The URLs a sitemap or a sitemap index names, same origin only. A sitemap
+ * index's own <sitemap> entries are returned separately from a urlset's <url>
+ * entries so the caller decides how deep to follow them; anything that is not
+ * a same origin URL is named as skipped rather than silently dropped.
+ */
+export function sitemapUrls(xml, base) {
+  const origin = new URL(base).origin;
+  const urls = [];
+  const sitemaps = [];
+  const skipped = [];
+  const isIndex = /<sitemapindex\b/i.test(xml);
+  const tag = isIndex ? "sitemap" : "url";
+  for (const m of xml.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, "gi"))) {
+    const loc = /<loc>\s*([^<]+?)\s*<\/loc>/i.exec(m[1])?.[1];
+    if (!loc) continue;
+    let u;
+    try { u = new URL(loc.replace(/&amp;/g, "&"), base); } catch { skipped.push({ url: loc, reason: "not a url" }); continue; }
+    if (u.origin !== origin) { skipped.push({ url: u.href, reason: "another origin" }); continue; }
+    (isIndex ? sitemaps : urls).push(u.href);
+  }
+  return { urls, sitemaps, skipped };
+}
+
+/**
+ * Every URL an attested origin's own sitemap(s) and pages name, discovered
+ * rather than downloaded: a page is fetched only to read the links inside it,
+ * and an asset's URL is taken from the page that names it, the asset itself
+ * never requested. Scoping a migration this way costs a fraction of what a
+ * full copy does, which is the point of asking the question separately from
+ * answering it with fetchSite.
+ */
+export async function mapSite({ url, dir = null, policy, log = { info() {}, debug() {} }, depth = 3, maxPages = 500, maxFileBytes = 10 * 1024 * 1024, timeoutMs = 15000, userAgent = "portamp (+https://github.com/drewc611/Generator-tool)", fetchImpl = globalThis.fetch, sitemap = true }) {
+  if (typeof fetchImpl !== "function") throw new Error("this Node has no fetch; Node 18 or newer is needed to map a site");
+  const start = new URL(url);
+  if (!/^https?:$/.test(start.protocol)) throw new Error(`only http and https are mapped, not ${start.protocol}`);
+  policy.assertLiveAllowed(start.href);
+  const origin = start.origin;
+  const manifest = { start: start.href, origin, startedAt: new Date().toISOString(), urls: [], sitemaps: [], skipped: [], redirects: [], external: new Set(), robots: [] };
+  const get = (target, accept) => followRedirects({ url: target, accept, origin, policy, timeoutMs, userAgent, maxFileBytes, fetchImpl });
+
+  const seen = new Set();
+  const record = (href, kind, via, atDepth) => {
+    if (seen.has(href)) return;
+    seen.add(href);
+    manifest.urls.push({ url: href, kind, via, depth: atDepth });
+  };
+
+  // robots.txt first, exactly as fetchSite reads it: a site that asked not to be crawled somewhere is not crawled there.
+  try {
+    const robots = await get(`${origin}/robots.txt`, "text/plain");
+    if (robots.res.ok && robots.body) manifest.robots = robotsRules(robots.body.toString("utf8"));
+  } catch (err) {
+    if (err?.name === "PolicyViolation" || /Refusing to call/.test(err?.message ?? "")) throw err;
+    manifest.skipped.push({ url: `${origin}/robots.txt`, reason: `robots.txt could not be read (${err.message}); no rule applied` });
+  }
+
+  // The crawl queue holds every page still to visit; queued (not seen, which
+  // only guards the output list) is what stops a page being visited twice,
+  // so a page the sitemap already names is still crawled for its own links.
+  const queue = [{ url: start.href, depth: 0 }];
+  const queued = new Set([start.href]);
+  const visited = new Set();
+  const enqueue = (href, atDepth) => { if (!queued.has(href)) { queued.add(href); queue.push({ url: href, depth: atDepth }); } };
+
+  // Most of the old web never had a sitemap; not finding one is not a failure, only a source of urls this run does not have.
+  if (sitemap) {
+    try {
+      const at = `${origin}/sitemap.xml`;
+      const got = await get(at, "application/xml,text/xml");
+      if (got.res.ok && got.body) {
+        const top = sitemapUrls(got.body.toString("utf8"), at);
+        manifest.sitemaps.push(at);
+        for (const s of top.skipped) manifest.skipped.push({ url: s.url, reason: `sitemap: ${s.reason}` });
+        for (const u of top.urls) { record(u, "page", "sitemap", 0); enqueue(u, 0); }
+        // A sitemap index's own children are read one level deep, so a nested index does not chase itself forever.
+        for (const child of top.sitemaps) {
+          try {
+            const inner = await get(child, "application/xml,text/xml");
+            if (inner.res.ok && inner.body) {
+              manifest.sitemaps.push(child);
+              for (const u of sitemapUrls(inner.body.toString("utf8"), child).urls) { record(u, "page", "sitemap", 0); enqueue(u, 0); }
+            }
+          } catch { /* a child sitemap that will not read is simply not a source of urls */ }
+        }
+      }
+    } catch (err) {
+      if (err?.name === "PolicyViolation" || /Refusing to call/.test(err?.message ?? "")) throw err;
+    }
+  }
+
+  let pages = 0;
+  while (queue.length) {
+    const item = queue.shift();
+    if (pages >= maxPages) { manifest.skipped.push({ url: item.url, reason: `over the page limit of ${maxPages}` }); continue; }
+    let got;
+    try { got = await get(item.url, "text/html,application/xhtml+xml"); } catch (err) {
+      if (err?.name === "PolicyViolation" || /Refusing to call/.test(err?.message ?? "")) throw err;
+      manifest.skipped.push({ url: item.url, reason: err.name === "AbortError" ? `no answer within ${timeoutMs} ms` : err.message });
+      continue;
+    }
+    const { res, url: landed, type, body, tooBig, off, redirectLoop, badRedirect } = got;
+    if (off) { manifest.redirects.push({ from: item.url, to: off }); manifest.skipped.push({ url: item.url, reason: `redirected off the origin to ${new URL(off).host}` }); manifest.external.add(new URL(off).host); continue; }
+    if (redirectLoop) { manifest.skipped.push({ url: item.url, reason: "more than five redirects" }); continue; }
+    if (badRedirect) { manifest.skipped.push({ url: item.url, reason: "redirected to an address that is not a URL" }); continue; }
+    if (landed !== item.url) {
+      manifest.redirects.push({ from: item.url, to: landed });
+      // A redirect landing on a page this run already read is not read twice; its links are already in the manifest.
+      if (visited.has(landed)) { manifest.skipped.push({ url: item.url, reason: `redirected to ${landed}, which is already mapped` }); continue; }
+    }
+    record(landed, "page", "crawl", item.depth);
+    if (!res.ok) { manifest.skipped.push({ url: landed, reason: `HTTP ${res.status}` }); continue; }
+    if (tooBig || !body || !PAGE_TYPES.test(type)) continue;
+    visited.add(landed);
+    pages += 1;
+    for (const link of linksIn(body.toString("utf8"), res.url || landed)) {
+      if (link.kind === "form") continue;
+      let u;
+      try { u = new URL(link.url); } catch { continue; }
+      if (u.origin !== origin) { manifest.external.add(u.host); continue; }
+      if (manifest.robots.length && disallowed(manifest.robots, link.url)) { manifest.skipped.push({ url: link.url, reason: "disallowed by robots.txt" }); continue; }
+      if (link.kind === "asset" || ASSET_EXT.test(u.pathname)) { record(link.url, "asset", "linked", item.depth + 1); continue; }
+      if (queued.has(link.url)) continue;
+      if (item.depth + 1 > depth) { manifest.skipped.push({ url: link.url, reason: `beyond depth ${depth}` }); continue; }
+      enqueue(link.url, item.depth + 1);
+    }
+  }
+
+  manifest.finishedAt = new Date().toISOString();
+  manifest.external = [...manifest.external].sort();
+  manifest.urls.sort((a, b) => a.url.localeCompare(b.url));
+  if (dir) {
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, "MAP.md"), mapReport(manifest), "utf8"); // codeql[js/http-to-file-access]
+    await writeFile(join(dir, "portamp.map.json"), JSON.stringify(manifest, null, 2) + "\n", "utf8"); // codeql[js/http-to-file-access]
+  }
+  log.info(`${manifest.urls.length} url(s) discovered on ${origin} (${manifest.urls.filter((u) => u.via === "sitemap").length} from a sitemap), ${manifest.skipped.length} skipped`);
+  return manifest;
+}
+
+/** The map described: every url found, where it came from, and what stood in the way. */
+export function mapReport(m) {
+  const row = (cells) => `| ${cells.map((c) => String(c ?? "").replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\r?\n/g, " ")).join(" | ")} |`;
+  const out = [
+    "# The map", "",
+    `${m.urls.length} url(s) discovered on ${m.origin} between ${m.startedAt} and ${m.finishedAt}. Nothing was downloaded to keep: a page is fetched only to read the links it names, and an asset's url is taken from the page that names it, never requested itself.`, "",
+    m.sitemaps.length ? `Read ${m.sitemaps.length} sitemap(s): ${m.sitemaps.join(", ")}.` : "No sitemap was found; every url below came from following links.", "",
+    "## URLs", "", "| url | kind | found via | depth |", "| --- | --- | --- | --- |",
+    ...m.urls.map((u) => row([u.url, u.kind, u.via, u.depth])), "",
+    "## Skipped", "",
+    ...(m.skipped.length ? ["| url | reason |", "| --- | --- |", ...m.skipped.map((s) => row([s.url, s.reason]))] : ["Nothing was skipped."]), "",
+    "## Redirects followed", "",
+    ...(m.redirects.length ? m.redirects.map((r) => `- ${r.from} → ${r.to}`) : ["None."]), "",
+    "## Other hosts the site leaned on", "",
+    ...(m.external.length ? m.external.map((h) => `- ${h}`) : ["None."]), "",
     "## robots.txt", "",
     ...(m.robots.length ? m.robots.map((r) => `- ${r.allow ? "Allow" : "Disallow"}: ${r.pattern}`) : ["No rule applied to every agent."]), "",
   ];
