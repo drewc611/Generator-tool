@@ -174,11 +174,11 @@ test("a batch writes one file per url per format under the output directory, and
   const base = await serveSite(t);
   const policy = new Policy({ allowLive: true, log: quiet });
   const cwd = await mkdtemp(join(tmpdir(), "portamp-scrape-cwd-"));
-  t.after(() => rm(cwd, { recursive: true, force: true }));
   await writeFile(join(cwd, "portamp.authorization.json"), JSON.stringify({ owner: "Test", authorizedBy: "J. Doe", basis: "test" }));
   const originalCwd = process.cwd();
   process.chdir(cwd);
-  t.after(() => process.chdir(originalCwd));
+  // The chdir must land before the rmdir, or Windows refuses to remove a directory that is still the process's own cwd.
+  t.after(async () => { process.chdir(originalCwd); await rm(cwd, { recursive: true, force: true }); });
 
   const args = { _: ["batch-scrape", `${base}/a`, `${base}/nope`], format: "markdown,json", out: "./out", concurrency: 2 };
   const result = await plugin.commands["batch-scrape"].run({ log: quiet, policy, args });
@@ -197,10 +197,10 @@ test("a batch writes one file per url per format under the output directory, and
 
 test("without an attestation beside the run, neither command scrapes anything", async (t) => {
   const cwd = await mkdtemp(join(tmpdir(), "portamp-scrape-noatt-"));
-  t.after(() => rm(cwd, { recursive: true, force: true }));
   const originalCwd = process.cwd();
   process.chdir(cwd);
-  t.after(() => process.chdir(originalCwd));
+  // The chdir must land before the rmdir, or Windows refuses to remove a directory that is still the process's own cwd.
+  t.after(async () => { process.chdir(originalCwd); await rm(cwd, { recursive: true, force: true }); });
   const policy = new Policy({ allowLive: true, log: quiet });
   await assert.rejects(
     () => plugin.commands.scrape.run({ log: quiet, policy, args: { _: ["scrape", "http://127.0.0.1:1/x"] } }),

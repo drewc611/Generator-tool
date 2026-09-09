@@ -123,7 +123,7 @@ function block(node, base, out, depth = 0) {
     const lines = [];
     rows.forEach((tr, i) => {
       const cells = (tr.children ?? []).filter((c) => c.type === "el" && (c.tag === "td" || c.tag === "th"));
-      const cellText = (c) => (c.children ?? []).map((k) => inline(k, base)).join("").trim().replace(/\|/g, "\\|") || " ";
+      const cellText = (c) => (c.children ?? []).map((k) => inline(k, base)).join("").trim().replace(/\\/g, "\\\\").replace(/\|/g, "\\|") || " ";
       lines.push(`| ${cells.map(cellText).join(" | ")} |`);
       if (i === 0) lines.push(`| ${cells.map(() => "---").join(" | ")} |`);
     });
@@ -152,8 +152,8 @@ function stripNonContent(html) {
   let text = String(html ?? "");
   for (let prev = null; prev !== text;) { prev = text; text = text.replace(/<!--[\s\S]*?-->/g, ""); }
   text = text.replace(/<!doctype[^>]*>/gi, "");
-  text = text.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "");
-  text = text.replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, "");
+  text = text.replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, "");
+  text = text.replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, "");
   return text;
 }
 

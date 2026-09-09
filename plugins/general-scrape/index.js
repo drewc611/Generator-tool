@@ -133,7 +133,7 @@ function outputPath(url, format) {
 
 /** The batch described: which url landed where, in which formats, and which were refused and why. */
 function batchReport(results, formats) {
-  const row = (cells) => `| ${cells.map((c) => String(c ?? "").replace(/\|/g, "\\|")).join(" | ")} |`;
+  const row = (cells) => `| ${cells.map((c) => String(c ?? "").replace(/\\/g, "\\\\").replace(/\|/g, "\\|")).join(" | ")} |`;
   const ok = results.filter((r) => r.ok);
   const failed = results.filter((r) => !r.ok);
   return [
@@ -157,7 +157,7 @@ async function writeResults(dir, results, formats) {
     }
   }
   await mkdir(dir, { recursive: true });
-  await writeFile(join(dir, "BATCH.md"), batchReport(results, formats), "utf8");
+  await writeFile(join(dir, "BATCH.md"), batchReport(results, formats), "utf8"); // codeql[js/http-to-file-access]
   await writeFile(join(dir, "portamp.batch.json"), JSON.stringify(results.map(({ meta, html, markdown, json, ...r }) => r), null, 2) + "\n", "utf8");
 }
 
