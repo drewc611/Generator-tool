@@ -77,7 +77,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and twenty one in five classes, and the core has never learned
+Plugins that ship, two hundred and twenty two in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -102,7 +102,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-codemod  output-aws  output-azure  output-gcp  output-vercel  output-netlify  output-cloudflare  output-caddy  output-eleventy  output-playwright
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph  vis-transformer  vis-a11y  vis-security  vis-perf  vis-lifecycle  vis-readers
 general  general-policy  general-authorization  general-license  general-size
-         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study
+         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study  general-scrape
 ```
 
 An option the CLI does not recognise is passed through to the plugins
@@ -946,6 +946,32 @@ What a full `fetch` would eventually find by reading a stylesheet's own
 never downloads a stylesheet to read it. test/fetch.test.js holds
 `sitemapUrls` as a pure function and `mapSite` end to end.
 
+10.26 reads what map only counts. `portamp scrape` and `batch-scrape`
+(plugins/general-scrape/) read a URL, or many, as Markdown, HTML or JSON,
+with no browser and no dependency. `markdown.js` walks the same tree
+`parseMarkup` already builds for a reader's own dialect, by the ordinary
+rules a browser gives block and inline content: headings, emphasis and
+links resolved against the page, lists and tables kept on adjacent lines
+rather than read as several one line ones, a `<pre>` block's own spacing
+kept exactly. `htmlToText` strips Markdown's own marks from that same
+output rather than walking the tree a second way, so the two can never
+disagree about a block boundary; `pageMeta` reads the title, description,
+canonical and language a `<head>` names, never guessed when absent.
+Unlike `fetch` and `map`, neither command is confined to one origin: a
+redirect is followed wherever it leads, each hop still asking the policy
+first. `batch-scrape` reads many URLs concurrently and keeps going past a
+domain the attestation does not cover, failing only that one URL, since a
+mixed batch spanning several attested domains is the ordinary case; live
+calls being off entirely, or the run being offline, stops the whole batch,
+since every remaining URL would fail identically. `--format screenshot`
+is refused by name, since rendering a page as pixels needs a real browser
+and that is `input-record`'s job, not this one's. Manual testing surfaced
+three real bugs before a single formal test was written: the doctype
+leaking into the Markdown as stray text, and both lists and tables reading
+as several one line blocks instead of one, because a whitespace-stripping
+regex could reach back across a blank line it should have stopped at.
+test/scrape.test.js holds the converter and both commands end to end.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -1011,8 +1037,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and eighty eight features in
-one hundred and ninety one phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and eighty nine features in
+one hundred and ninety two phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
