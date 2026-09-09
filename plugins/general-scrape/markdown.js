@@ -147,13 +147,22 @@ function block(node, base, out, depth = 0) {
   if (t) out.push(t);
 }
 
+/** A tag stripped to a fixed point: removing a matched pair first (so its content goes with it), then any tag of the same name left over once a removal has stitched two fragments into a new one (<scr<script>ipt> becomes <script> after the inner pair is gone). Neither loop can leave the tag's name behind. */
+function stripTag(text, name) {
+  const pair = new RegExp(`<${name}\\b[^>]*>[\\s\\S]*?<\\/${name}\\b[^>]*>`, "gi");
+  for (let prev = null; prev !== text;) { prev = text; text = text.replace(pair, ""); }
+  const lone = new RegExp(`<\\/?${name}\\b[^>]*>`, "gi");
+  for (let prev = null; prev !== text;) { prev = text; text = text.replace(lone, ""); }
+  return text;
+}
+
 /** Comments, the doctype, scripts and styles removed before the tree is built: none of them is markup parseMarkup's tag regex recognises, so left in they surface as stray text instead of being walked as an element. */
 function stripNonContent(html) {
   let text = String(html ?? "");
   for (let prev = null; prev !== text;) { prev = text; text = text.replace(/<!--[\s\S]*?-->/g, ""); }
   text = text.replace(/<!doctype[^>]*>/gi, "");
-  text = text.replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, "");
-  text = text.replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, "");
+  text = stripTag(text, "script");
+  text = stripTag(text, "style");
   return text;
 }
 
