@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { fetchSite } from "./fetch.js";
+import { fetchSite, mapSite } from "./fetch.js";
 
 /**
  * The reader for a site you can reach but do not have: `portamp fetch <url>`
@@ -45,6 +45,25 @@ export async function fetchForRun({ url, dir, cwd = process.cwd(), policy, log, 
   return manifest;
 }
 
+/**
+ * Discover a site's own URLs for a run: the same attestation and policy gates
+ * as copying it, since mapping still reaches a live system, but nothing is
+ * downloaded to keep. Scoping a migration this way is the question to ask
+ * before fetchForRun answers it by copying everything.
+ */
+export async function mapForRun({ url, dir = null, cwd = process.cwd(), policy, log, depth, maxPages, sitemap }) {
+  const { attestation, error } = await readAttestation(cwd);
+  if (error) {
+    throw new Error(
+      `Mapping a site is still a live call to a real system and needs portamp.authorization.json beside the run, naming who owns ${url} and on what basis you may map it (${error}). ` +
+        "Live calls also need --allow-live. Neither is a default."
+    );
+  }
+  const manifest = await mapSite({ url, dir, policy, log, depth, maxPages, sitemap });
+  manifest.attestedBy = attestation.authorizedBy;
+  return manifest;
+}
+
 export default {
   name: "input-fetch",
   version: "0.1.0",
@@ -62,6 +81,22 @@ export default {
           maxPages: args.max === undefined ? 50 : Number(args.max),
         });
         log.info(`copied into ${dir}; FETCH.md lists every page, asset and skip. Port it with: node src/cli.js run --src ${dir} --site true`);
+        return manifest;
+      },
+    },
+    map: {
+      describe: "discover every url an attested site's sitemap and pages name, nothing downloaded: portamp map <url> [--out dir] [--depth n] [--max n] [--sitemap false]; needs --allow-live and portamp.authorization.json",
+      async run({ log, policy, args }) {
+        const url = args._[1];
+        if (!url) throw new Error("portamp map <url>: no url given");
+        const dir = args.out ? resolve(process.cwd(), args.out) : null;
+        const manifest = await mapForRun({
+          url, dir, policy, log,
+          depth: args.depth === undefined ? 3 : Number(args.depth),
+          maxPages: args.max === undefined ? 500 : Number(args.max),
+          sitemap: args.sitemap !== "false",
+        });
+        log.info(`${manifest.urls.length} url(s) found${dir ? `; MAP.md and portamp.map.json written under ${dir}` : " (pass --out to write MAP.md and portamp.map.json)"}.`);
         return manifest;
       },
     },

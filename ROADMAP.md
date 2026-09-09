@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and eighty seven features across one hundred and ninety phases. The statuses are
+Six hundred and eighty eight features across one hundred and ninety one phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2714,14 +2714,19 @@ The console has bound `127.0.0.1` since the first line of it, because it serves 
 **687. dsp-learn's calibration corpus grows to three exemplars per class, and leave one out cross validation now holds a real number rather than a first pass at one** 🔨
 Phase 68 got the corpus from one miniature per archetype to two, the smallest size at which holding one out still leaves its class represented, and named two as a floor still worth raising. This phase raises it: eleven more labelled miniatures, one per archetype, take the corpus from twenty two to thirty three, and each new one classifies as its own label under the rule based reader exactly as phase 68's did, so the model and the rules agree on every exemplar before either sees it as training data. With three per class, holding one out for cross validation leaves a class represented by two siblings rather than one, so the held out number rests on more than a single stand-in; measured against the grown corpus it comes back a clean 33 of 33. The corpus is still eleven human labelled shapes, not real shipped apps, so it remains the honest floor ROADMAP.md's entry 326 already names, not a claim that entry is closed. dsp-learn/model.js's own doc comments, stale since phase 68 landed (still describing a one-exemplar corpus with cross validation "undefined"), are corrected to match what the code has done since. test/learn.test.js holds the grown corpus, its wording, and the guard that the embedded copy stays equal to test/fixtures/corpus; test/corpus.test.js holds every new miniature to the rule based reader's own verdict.
 
+## Phase 191: the question to ask before fetchSite answers it by copying everything
+
+**688. `portamp map <url>` discovers every URL an attested site names, its sitemap and its pages both, without downloading a single asset** 🔨
+`fetch` already copies one attested origin's pages and assets to a folder; scoping a migration first, how big a site actually is before committing to a full copy, is a different, cheaper question, and this answers it. `mapSite` in input-fetch/fetch.js reads `sitemap.xml` first (and a sitemap index's own children, one level deep, so a nested index does not chase itself forever), then crawls same origin pages to a depth exactly as `fetch` does, except a page is fetched only to read the links inside it and an asset's URL is taken from the page that names it, the asset itself never requested; a sitemap entry is treated the same as the start URL, a known good entry point rather than a mere hint, so a page the sitemap names is still crawled for its own links even though its existence needed no request to learn. The redirect following, robots.txt honouring and origin confinement `fetchSite` already proved are not written twice: `followRedirects`, extracted from `fetchSite`'s own inline `get`, is the one function both call, so a change to how a redirect is judged cannot happen in one and not the other. It stands behind the exact same two gates as `fetch`, `--allow-live` and `portamp.authorization.json`, since discovering a live system's shape is still a live call to a real system. `MAP.md` and `portamp.map.json` name every URL found, whether it came from the sitemap or from crawling, and at what depth; what a full `fetch` would eventually find by reading a stylesheet's own `url()` and `@import` references is a named, honest gap here, since Map never downloads a stylesheet to read it. test/fetch.test.js holds `sitemapUrls` as a pure function and `mapSite` end to end, including the case a redirect lands on a page already read.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 640 |
+| new in this branch | 641 |
 | planned | 3 |
-| total | 687 |
+| total | 688 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

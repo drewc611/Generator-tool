@@ -926,6 +926,26 @@ already stopped calling undefined), are corrected to say what the code has
 done since. test/learn.test.js and test/corpus.test.js hold both the grown
 corpus and its agreement with the rule based reader.
 
+10.25 answers a cheaper question than `fetch`'s: not what a site holds, but
+how big it is, before committing to a full copy. `portamp map <url>` reads
+an attested origin's `sitemap.xml` first (and a sitemap index's own
+children, one level deep), then crawls its pages to a depth exactly as
+`fetch` does, except a page is fetched only to read the links inside it
+and an asset's URL is taken from the page that names it, the asset itself
+never requested. A sitemap entry is a known good entry point, not a mere
+hint, so a page the sitemap names is still crawled for its own links even
+though its existence needed no request to learn; the redirect following,
+robots.txt honouring and origin confinement `fetch` already proved are not
+written twice, `followRedirects`, extracted from `fetchSite`'s own inline
+`get`, is the one function both call. It stands behind the exact same two
+gates as `fetch`, since discovering a live system's shape is still a live
+call to a real system, and writes `MAP.md` and `portamp.map.json` naming
+every URL found, whether from the sitemap or the crawl, and at what depth.
+What a full `fetch` would eventually find by reading a stylesheet's own
+`url()` and `@import` references is a named, honest gap here, since a map
+never downloads a stylesheet to read it. test/fetch.test.js holds
+`sitemapUrls` as a pure function and `mapSite` end to end.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -991,8 +1011,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and eighty seven features in
-one hundred and ninety phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and eighty eight features in
+one hundred and ninety one phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
