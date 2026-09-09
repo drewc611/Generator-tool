@@ -217,6 +217,31 @@ test("--lan binds every interface but mints a token every route requires, and a 
   assert.equal(cookied.status, 200, "the cookie alone is enough on the next request, with no token in the url");
 });
 
+// A --lan link carries its token in the query string until the cookie takes
+// over; nosniff and no-referrer are cheap, standard insurance against that
+// token, or a report served as text/plain, ever being misread or leaked.
+test("every response carries nosniff and no-referrer, the 304 branch included", async (t) => {
+  const { out, cleanup } = await ctxFor();
+  t.after(cleanup);
+  const { server } = await serve({ outDir: out, shotsDir: join(ROOT, "example/screenshots"), port: 0, log: {} });
+  t.after(() => new Promise((done) => server.close(done)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+
+  const page = await fetch(`${base}/`);
+  assert.equal(page.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(page.headers.get("referrer-policy"), "no-referrer");
+
+  const run = await fetch(`${base}/run.json`);
+  const etag = run.headers.get("etag");
+  assert.equal(run.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(run.headers.get("referrer-policy"), "no-referrer");
+
+  const notModified = await fetch(`${base}/run.json`, { headers: { "if-none-match": etag } });
+  assert.equal(notModified.status, 304, "the etag branch is the one under test");
+  assert.equal(notModified.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(notModified.headers.get("referrer-policy"), "no-referrer");
+});
+
 test("the ui never writes into the port", async () => {
   const source = await readFile(join(ROOT, "plugins/vis-ui/index.js"), "utf8");
   const server = source.slice(source.indexOf("export async function serve"), source.indexOf("export function openBrowser"));
