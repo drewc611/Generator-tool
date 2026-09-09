@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 5474" width="1040" height="5474" role="img" aria-label="The 223 plugins portamp ships with, listed by class">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 5498" width="1040" height="5498" role="img" aria-label="The 224 plugins portamp ships with, listed by class">
 <defs><linearGradient id="chassis" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a42"/><stop offset="1" stop-color="#1b1b1f"/></linearGradient></defs>
-<rect x="0.5" y="0.5" width="1039" height="5473" rx="7" fill="url(#chassis)" stroke="#0e0e11"/>
-<rect x="2.5" y="2.5" width="1035" height="5469" rx="6" fill="none" stroke="#5a5a66" opacity="0.45"/>
+<rect x="0.5" y="0.5" width="1039" height="5497" rx="7" fill="url(#chassis)" stroke="#0e0e11"/>
+<rect x="2.5" y="2.5" width="1035" height="5493" rx="6" fill="none" stroke="#5a5a66" opacity="0.45"/>
 <rect x="10" y="10" width="1020" height="34" rx="3" fill="#0e0e11" stroke="#0e0e11"/>
 <path d="M11 43 L11 11 L1029 11" fill="none" stroke="#5a5a66" opacity="0.28"/>
 <text x="24" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" font-weight="bold" fill="#f0a830" text-anchor="start" letter-spacing="3">PLUGIN RACK</text>
-<text x="1016" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#8b8b96" text-anchor="end">223 loaded  ./plugins is scanned automatically</text>
-<rect x="16" y="54" width="1008" height="5404" rx="3" fill="#0a0a0d" stroke="#0e0e11"/>
-<path d="M17 5457 L17 55 L1023 55" fill="none" stroke="#5a5a66" opacity="0.28"/>
+<text x="1016" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="normal" fill="#8b8b96" text-anchor="end">224 loaded  ./plugins is scanned automatically</text>
+<rect x="16" y="54" width="1008" height="5428" rx="3" fill="#0a0a0d" stroke="#0e0e11"/>
+<path d="M17 5481 L17 55 L1023 55" fill="none" stroke="#5a5a66" opacity="0.28"/>
 <text x="40" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" font-weight="bold" fill="#6a6a76" text-anchor="start" letter-spacing="1">CLASS</text>
 <text x="150" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" font-weight="bold" fill="#6a6a76" text-anchor="start" letter-spacing="1">NAME</text>
 <text x="330" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" font-weight="bold" fill="#6a6a76" text-anchor="start" letter-spacing="1">DOES</text>
@@ -955,65 +955,69 @@
 <text x="330" y="5084" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the console: rack, wipe, endpoints, and the unverified list</text>
 <rect x="34" y="5101" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-agents</text>
-<text x="330" y="5108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a multi agent, retrieval augmented reasoning pass over the port's own reports, via a real external LLM</text>
+<text x="150" y="5108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-agent</text>
+<text x="330" y="5108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">portamp agent: one plain instruction compiled to a scrape or search recipe, rule based and no free form AI, an interaction verb (click, type, scroll...) or a field this reader does not know refused by name rather than guessed at</text>
 <rect x="26" y="5120" width="988" height="24" fill="#111116"/>
 <rect x="34" y="5125" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-architect</text>
-<text x="330" y="5132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a cloud architecture proposal from a real external LLM, gated live and billable, marked unverified</text>
+<text x="150" y="5132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-agents</text>
+<text x="330" y="5132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a multi agent, retrieval augmented reasoning pass over the port's own reports, via a real external LLM</text>
 <rect x="34" y="5149" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-authorization</text>
-<text x="330" y="5156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">no source path runs without an attestation on disk</text>
+<text x="150" y="5156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-architect</text>
+<text x="330" y="5156" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">a cloud architecture proposal from a real external LLM, gated live and billable, marked unverified</text>
 <rect x="26" y="5168" width="988" height="24" fill="#111116"/>
 <rect x="34" y="5173" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-doctor</text>
-<text x="330" y="5180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">what is installed, and what each gap turns off</text>
+<text x="150" y="5180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-authorization</text>
+<text x="330" y="5180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">no source path runs without an attestation on disk</text>
 <rect x="34" y="5197" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-history</text>
-<text x="330" y="5204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the run over time, counts only, so trends have a table</text>
+<text x="150" y="5204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-doctor</text>
+<text x="330" y="5204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">what is installed, and what each gap turns off</text>
 <rect x="26" y="5216" width="988" height="24" fill="#111116"/>
 <rect x="34" y="5221" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-license</text>
-<text x="330" y="5228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">fonts and icon sets whose licence does not travel</text>
+<text x="150" y="5228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-history</text>
+<text x="330" y="5228" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the run over time, counts only, so trends have a table</text>
 <rect x="34" y="5245" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-policy</text>
-<text x="330" y="5252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">secrets, live calls, billable calls, endpoints in components</text>
+<text x="150" y="5252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-license</text>
+<text x="330" y="5252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">fonts and icon sets whose licence does not travel</text>
 <rect x="26" y="5264" width="988" height="24" fill="#111116"/>
 <rect x="34" y="5269" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-publish</text>
-<text x="330" y="5276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">publish-check: the npm pack dry run read for you, a verdict with an exit code; never publishes</text>
+<text x="150" y="5276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-policy</text>
+<text x="330" y="5276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">secrets, live calls, billable calls, endpoints in components</text>
 <rect x="34" y="5293" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-scaffold</text>
-<text x="330" y="5300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">portamp new-plugin, with the contract already in the header</text>
+<text x="150" y="5300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-publish</text>
+<text x="330" y="5300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">publish-check: the npm pack dry run read for you, a verdict with an exit code; never publishes</text>
 <rect x="26" y="5312" width="988" height="24" fill="#111116"/>
 <rect x="34" y="5317" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-scrape</text>
-<text x="330" y="5324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">portamp scrape and batch-scrape: one url or many read as Markdown, HTML or JSON with no browser, a redirect followed wherever it leads; a domain the attestation does not cover fails only that url</text>
+<text x="150" y="5324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-scaffold</text>
+<text x="330" y="5324" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">portamp new-plugin, with the contract already in the header</text>
 <rect x="34" y="5341" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-search</text>
-<text x="330" y="5348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">portamp search: a query read from a search engine's own no-JS results page, DuckDuckGo's HTML endpoint for now, an unrecognised results shape named rather than read as zero; --scrape true reads every result the way scrape reads any url</text>
+<text x="150" y="5348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-scrape</text>
+<text x="330" y="5348" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">portamp scrape and batch-scrape: one url or many read as Markdown, HTML or JSON with no browser, a redirect followed wherever it leads; a domain the attestation does not cover fails only that url</text>
 <rect x="26" y="5360" width="988" height="24" fill="#111116"/>
 <rect x="34" y="5365" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-size</text>
-<text x="330" y="5372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the port weighed by kind, with --max-kb the budget the run enforces</text>
+<text x="150" y="5372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-search</text>
+<text x="330" y="5372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">portamp search: a query read from a search engine's own no-JS results page, DuckDuckGo's HTML endpoint for now, an unrecognised results shape named rather than read as zero; --scrape true reads every result the way scrape reads any url</text>
 <rect x="34" y="5389" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-study</text>
-<text x="330" y="5396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">arithmetic and one variable linear equations solved with real steps, and a PDF's plain text read through input-pdf's own zero dependency reader; the console's Study tab calls both live, no network and no model</text>
+<text x="150" y="5396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-size</text>
+<text x="330" y="5396" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">the port weighed by kind, with --max-kb the budget the run enforces</text>
 <rect x="26" y="5408" width="988" height="24" fill="#111116"/>
 <rect x="34" y="5413" width="7" height="7" rx="1.5" fill="#fb7185"/>
 <text x="50" y="5420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
-<text x="150" y="5420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-watch</text>
-<text x="330" y="5420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">rerun the pipeline when the source tree changes</text>
+<text x="150" y="5420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-study</text>
+<text x="330" y="5420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">arithmetic and one variable linear equations solved with real steps, and a PDF's plain text read through input-pdf's own zero dependency reader; the console's Study tab calls both live, no network and no model</text>
+<rect x="34" y="5437" width="7" height="7" rx="1.5" fill="#fb7185"/>
+<text x="50" y="5444" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" font-weight="normal" fill="#fb7185" text-anchor="start">general</text>
+<text x="150" y="5444" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="bold" fill="#e6e6ec" text-anchor="start">general-watch</text>
+<text x="330" y="5444" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" font-weight="normal" fill="#8b8b96" text-anchor="start">rerun the pipeline when the source tree changes</text>
 </svg>

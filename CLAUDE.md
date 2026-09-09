@@ -77,7 +77,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and twenty three in five classes, and the core has never learned
+Plugins that ship, two hundred and twenty four in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -102,7 +102,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-codemod  output-aws  output-azure  output-gcp  output-vercel  output-netlify  output-cloudflare  output-caddy  output-eleventy  output-playwright
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph  vis-transformer  vis-a11y  vis-security  vis-perf  vis-lifecycle  vis-readers
 general  general-policy  general-authorization  general-license  general-size
-         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study  general-scrape  general-search
+         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study  general-scrape  general-search  general-agent
 ```
 
 An option the CLI does not recognise is passed through to the plugins
@@ -994,6 +994,31 @@ attestation does not cover fails only that one result, the same behaviour
 this command. test/search.test.js holds the parser against a fixture built
 from the real result markup, both commands end to end, and the gates.
 
+10.28 answers the sentence a person actually types rather than the recipe
+they already know to ask for. `portamp agent` (plugins/general-agent/)
+compiles one plain instruction to a scrape or search recipe, rule based
+throughout and never free form AI: a url in the sentence with a recognised
+verb (scrape, get, extract, find, read...) names fields before or after it,
+either phrasing read; no url but a leading `search` names a query, handed
+to `general-search`, with a trailing `and get the ...` clause narrowing
+which of a result's own title, url or snippet come back. Ten fields are
+read structurally off the fetched page, each a plain fact never an
+inference: title and description from the head, headings, links and images
+walked off the tree, a page's own mailto links and visible addresses as
+emails, a currency prefixed number matched as text and never parsed or
+verified as prices, a table's rows as data, the whole page as text or
+Markdown. A sentence naming an interaction verb this reader cannot perform,
+click, type, scroll, hover, fill, wait, is refused by name pointing at
+`input-record`, whose job a live browser session actually is; a field
+neither list recognises is refused by name too, listing what is understood,
+the same restraint `general-study`'s `SolveError` already keeps for an
+equation this tool cannot solve. `runInstruction` carries the compiled
+recipe out through `general-scrape`'s and `general-search`'s own functions
+directly, so an instruction stands behind the exact same `--allow-live` and
+`portamp.authorization.json` gates as reaching the same scrape or search by
+name would. test/agent.test.js holds every field extractor, the compiler's
+refusals, both actions end to end, and the gates.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -1059,8 +1084,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and ninety features in
-one hundred and ninety three phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and ninety one features in
+one hundred and ninety four phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

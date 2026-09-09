@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and ninety features across one hundred and ninety three phases. The statuses are
+Six hundred and ninety one features across one hundred and ninety four phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2729,14 +2729,19 @@ Map discovers what a site holds; this reads it. `plugins/general-scrape/markdown
 **690. `portamp search` reads a query from a search engine's own no-JS results page and, with `--scrape true`, reads every result the way `scrape` reads any url** 🔨
 Map discovers a site's own shape and scrape reads what one url or many already hold; neither answers what search means to a person, finding pages nobody handed it a url for. `plugins/general-search/search.js` reads DuckDuckGo's dependency free HTML endpoint, the one search surface this tool reads for now, walking the same tree `parseMarkup` already builds and matching only the vocabulary that endpoint actually carries: a `result__body` per result, holding one `result__a` title link and one `result__snippet`. DuckDuckGo wraps every external result behind its own redirector; the wrapped `uddg` parameter is decoded to the real destination rather than left as a link nobody could follow by hand. A results page that carries none of that vocabulary is named unrecognised rather than reported as zero results, since a search engine that changed its markup and a genuinely empty results page would otherwise look identical, and only one of those is honest. `searchWeb` stands behind the exact same `--allow-live` and `portamp.authorization.json` gates as `fetch`, `map` and `scrape`, since asking a search engine for results is a live call to a real system exactly like any of those; an engine this reader does not know is refused by name before either gate is even asked. `--scrape true` hands every result's url straight to `general-scrape`'s own `batchScrape`, so a result on a domain the attestation does not cover fails only that one result, matching `batch-scrape`'s own established behaviour rather than inventing a second one. `SEARCH.md` and `portamp.search.json` name every result found, and a scraped result's own rendered files land beside them the same way `batch-scrape`'s own output does. test/search.test.js holds the parser against a fixture built from the real result markup, both commands end to end, and the gates.
 
+## Phase 194: the sentence a person actually types
+
+**691. `portamp agent` compiles one plain instruction to a scrape or search recipe, rule based throughout, and refuses by name whatever it cannot carry out rather than guessing** 🔨
+Search answers what a person means by search; this answers the sentence they type to get something done, "get the price and title from that page", without becoming free form AI to do it. `plugins/general-agent/instruction.js`'s `interpretInstruction` matches a small, fixed vocabulary: a url in the sentence with a recognised verb (`scrape`, `get`, `extract`, `find`, `read`...) names fields before or after it, either phrasing read; no url at all but a leading `search` names a query, `general-search`'s own job, with a trailing `and get the ...` clause narrowing which of a result's own title, url or snippet come back. Ten fields are read structurally off the fetched page, each a plain fact rather than an inference: title and description from the head, headings, links and images walked off the tree, a page's own mailto links and visible addresses as emails, a currency prefixed number matched as text and never parsed or verified as prices, a table's header and body rows as data, and the whole page as text or Markdown. A sentence naming an interaction verb this reader cannot perform, click, type, scroll, hover, fill, wait, is refused by name pointing at `input-record`, the plugin whose job a live browser session actually is, rather than attempted or silently dropped; a field neither list recognises is refused by name too, listing what is understood, the same restraint `general-study`'s `SolveError` already keeps for an equation this tool cannot solve. `runInstruction` carries the compiled recipe out through `general-scrape`'s `fetchOne` or `general-search`'s `searchWeb` directly, so a scrape or a search reached through an instruction stands behind the exact same `--allow-live` and `portamp.authorization.json` gates as reaching it by name would. `AGENT.md` and `portamp.agent.json` name the instruction, the recipe it compiled to and the result. test/agent.test.js holds every field extractor, the compiler's refusals, both actions end to end, and the gates.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 643 |
+| new in this branch | 644 |
 | planned | 3 |
-| total | 690 |
+| total | 691 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
