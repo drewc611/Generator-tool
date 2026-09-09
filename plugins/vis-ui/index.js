@@ -340,10 +340,17 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
   const shotsAt = () => (typeof shotsDir === "function" ? shotsDir() : shotsDir);
   const shell = await readFile(join(here, "app.html"), "utf8");
 
+  // Every response, including the two written by hand below for /run.json,
+  // carries these: nosniff so a report or a source file served as text/plain
+  // is never reinterpreted as something executable, and no-referrer so a
+  // --lan link's token, sitting in the query string until the cookie takes
+  // over, is never handed to a resource this page loads or links to later.
+  const SECURITY_HEADERS = { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" };
+
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, "http://127.0.0.1");
     const send = (code, type, body) => {
-      res.writeHead(code, { "Content-Type": type, "Cache-Control": "no-store" });
+      res.writeHead(code, { "Content-Type": type, "Cache-Control": "no-store", ...SECURITY_HEADERS });
       res.end(body);
     };
 
@@ -448,10 +455,10 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
         const body = await readFile(runPath, "utf8");
         const tag = `"${/"ranAt"\s*:\s*"([^"]+)"/.exec(body)?.[1] ?? String(body.length)}"`;
         if (req.headers["if-none-match"] === tag) {
-          res.writeHead(304, { ETag: tag, "Cache-Control": "no-cache" });
+          res.writeHead(304, { ETag: tag, "Cache-Control": "no-cache", ...SECURITY_HEADERS });
           return res.end();
         }
-        res.writeHead(200, { "Content-Type": TYPES[".json"], ETag: tag, "Cache-Control": "no-cache" });
+        res.writeHead(200, { "Content-Type": TYPES[".json"], ETag: tag, "Cache-Control": "no-cache", ...SECURITY_HEADERS });
         return res.end(body);
       }
 
