@@ -43,6 +43,7 @@ test("the slack webhook pattern does not match a lookalike host wearing its path
   const lookalikes = [
     `const url = "https://evil-hooks.slack.com/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
     `const url = "https://notreallyhooks.slack.com/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
+    `const url = "https://hooks.slack.community/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
   ];
   for (const source of lookalikes) {
     const hits = policy().scanForSecrets(source, "sample.ts");

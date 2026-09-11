@@ -20,11 +20,12 @@ const SECRET_PATTERNS = [
   // shape a legacy config file hardcodes a database or queue credential in.
   [/\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqps?):\/\/[^\s'"/:@]+:[^\s'"/:@]+@/i, "database connection string with embedded credentials"],
   [/\bxox[baprs]-[A-Za-z0-9-]{10,}/, "slack token"],
-  // A lookbehind rather than \b: hooks.slack.com is the real webhook host only
-  // when nothing that could extend a longer domain (a letter, digit, dot or
-  // hyphen) sits right before it, so evil-hooks.slack.com or sub.hooks.slack.com
-  // cannot pass as the genuine one.
-  [/(?<![\w.-])hooks\.slack\.com\/services\/T[A-Za-z0-9]+\/B[A-Za-z0-9]+\/[A-Za-z0-9]+/, "slack webhook url"],
+  // Anchored on both sides of the host, not just \b: hooks.slack.com is the
+  // real webhook host only when nothing that could extend a longer domain (a
+  // letter, digit, dot or hyphen) sits right before or right after it, so
+  // neither evil-hooks.slack.com nor hooks.slack.community can pass as the
+  // genuine one.
+  [/(?<![\w.-])hooks\.slack\.com(?![\w.-])\/services\/T[A-Za-z0-9]+\/B[A-Za-z0-9]+\/[A-Za-z0-9]+/, "slack webhook url"],
   [/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/, "github token"],
   [/\bgithub_pat_[A-Za-z0-9_]{20,}\b/, "github fine grained token"],
   [/\bglpat-[A-Za-z0-9_-]{20,}\b/, "gitlab token"],
