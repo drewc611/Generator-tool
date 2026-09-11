@@ -37,17 +37,31 @@ test("ordinary source does not fire the gate", () => {
   assert.deepEqual(policy().scanForSecrets(source, "clean.ts"), []);
 });
 
-test("the slack webhook pattern does not match a lookalike host wearing its path", () => {
-  // hooks.slack.com/services/... has to be the real host, not a longer
-  // domain that merely ends the same way, which an unanchored match cannot tell apart.
-  const lookalikes = [
+test("the slack webhook pattern keys on the token shape, not the host", () => {
+  // The pattern names no host at all, on purpose: a regex that checks a
+  // hostname is its own hard-to-anchor problem (a lookalike domain can wear
+  // the same path), and what actually matters for a leaked credential is the
+  // token, not which domain it was requested from. Any host wearing a real
+  // Slack-sized /services/T.../B.../secret path still gets caught.
+  const hosts = [
+    `const url = "https://hooks.slack.com/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
     `const url = "https://evil-hooks.slack.com/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
-    `const url = "https://notreallyhooks.slack.com/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
     `const url = "https://hooks.slack.community/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
   ];
-  for (const source of lookalikes) {
+  for (const source of hosts) {
     const hits = policy().scanForSecrets(source, "sample.ts");
-    assert.ok(!hits.some((h) => h.kind === "slack webhook url"), `should not fire on a lookalike host: ${source}`);
+    assert.ok(hits.some((h) => h.kind === "slack webhook url"), `should fire on the token shape regardless of host: ${source}`);
+  }
+
+  // Something that merely mentions /services/ or a slack URL with no real
+  // token shape behind it is not a credential and should not fire.
+  const clean = [
+    `fetch("/api/services/export");`,
+    `const help = "see https://api.slack.com/messaging/webhooks for docs";`,
+  ];
+  for (const source of clean) {
+    const hits = policy().scanForSecrets(source, "sample.ts");
+    assert.ok(!hits.some((h) => h.kind === "slack webhook url"), `should not fire with no real token shape: ${source}`);
   }
 });
 
