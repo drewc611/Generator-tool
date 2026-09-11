@@ -70,7 +70,14 @@ function tablesIn(html) {
   return tables;
 }
 
-const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+// Every quantifier here is bounded rather than left open ended: an unbounded
+// run of local part or domain characters immediately followed by a required
+// literal (@, the final dot) is the textbook shape that backtracks
+// quadratically over a page with no email in it at all, and a live fetched
+// page is exactly attacker reachable text. The bounds (64 for a local part,
+// 255 for a domain, 24 for a TLD) are the real RFC 5321 / DNS ceilings, so
+// nothing a genuine address needs is cut off.
+const EMAIL_RE = /[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,24}/g;
 
 /** A page's own mailto: links and the plain addresses its visible text carries; no address is invented or normalised. */
 function emailsIn(html) {
@@ -85,8 +92,12 @@ function emailsIn(html) {
   return [...found];
 }
 
-// A currency prefixed number, matched as text and never parsed, converted or verified: $12.34, £5, €9.99, 1,299.00 USD.
-const PRICE_RE = /(?:[$£€¥]\s?\d[\d,]*(?:\.\d{1,2})?|\d[\d,]*(?:\.\d{1,2})?\s?(?:USD|EUR|GBP))/g;
+// A currency prefixed number, matched as text and never parsed, converted or
+// verified: $12.34, £5, €9.99, 1,299.00 USD. The digit run is bounded to 20
+// for the same reason EMAIL_RE's runs are: unbounded and followed by a
+// required literal (the currency code) is quadratic over text with no price
+// in it, and no real price is 20 digits long.
+const PRICE_RE = /(?:[$£€¥]\s?\d[\d,]{0,20}(?:\.\d{1,2})?|\d[\d,]{0,20}(?:\.\d{1,2})?\s?(?:USD|EUR|GBP))/g;
 
 function pricesIn(html) {
   return [...new Set((htmlToText(html).match(PRICE_RE) ?? []).map((s) => s.trim()))];

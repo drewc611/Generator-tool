@@ -76,6 +76,22 @@ test("every field reads its own plain structural fact off the page, nothing infe
   assert.match(FIELDS.markdown(FIXTURE_HTML, base), /^# Widgets$/m);
 });
 
+test("emails and prices read a long page with none in it fast: the local part and the digit run are bounded so a run with no @ or currency code cannot backtrack quadratically", () => {
+  // A live fetched page is attacker reachable text; an unbounded quantifier
+  // immediately followed by a required literal (@, a currency code) is the
+  // textbook shape that turns a page with no match at all into a multi
+  // second hang. 50 KB of exactly the shape that used to trip it, timed.
+  const noEmail = `<p>${"a".repeat(50000)}</p>`;
+  let start = Date.now();
+  assert.deepEqual(FIELDS.emails(noEmail), []);
+  assert.ok(Date.now() - start < 500, "emailsIn should read 50 KB of no-@ text in well under a second");
+
+  const noPrice = `<p>${"1,".repeat(25000)}</p>`;
+  start = Date.now();
+  assert.deepEqual(FIELDS.prices(noPrice), []);
+  assert.ok(Date.now() - start < 500, "pricesIn should read 50 KB of no-currency digits in well under a second");
+});
+
 /* --------------------------------------------------------- instruction.js: interpretInstruction */
 
 test("fields named before or after the url are both read, and no fields at all defaults to the whole page", () => {
