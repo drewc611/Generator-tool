@@ -10,10 +10,14 @@ const SAMPLES = {
   "client secret": `const client_secret = "abcdefghijkl";`,
   "api key": `apiKey: "0123456789abcdef"`,
   "aws access key id": `const id = "AKIAIOSFODNN7EXAMPLE";`,
+  "aws secret access key": `aws_secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"`,
   "private key": `-----BEGIN RSA PRIVATE KEY-----`,
   "hardcoded bearer token": `headers.set("Authorization", "Bearer abcdefghijklmnopqrstuvwxyz012345")`,
+  "hardcoded basic auth header": `headers.set("Authorization", "Basic YWRtaW46aHVudGVyMmh1bnRlcg==")`,
   password: `password = "hunter2hunter"`,
+  "database connection string with embedded credentials": `const db = "postgres://admin:hunter2hunter@db.internal:5432/app";`,
   "slack token": `const hook = "xoxb-0123456789-abcdefgh";`,
+  "slack webhook url": `const url = "https://hooks.slack.com/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
 };
 
 test("every pattern the engine claims to catch has a sample that fires it", () => {

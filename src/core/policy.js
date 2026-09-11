@@ -11,10 +11,16 @@ const SECRET_PATTERNS = [
   [/\b(consumer|client)[_-]?secret\s*[:=]\s*['"][^'"]{8,}['"]/i, "client secret"],
   [/\bapi[_-]?key\s*[:=]\s*['"][^'"]{12,}['"]/i, "api key"],
   [/\bAKIA[0-9A-Z]{16}\b/, "aws access key id"],
-  [/-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, "private key"],
+  [/\baws_secret_access_key\s*[:=]\s*['"][A-Za-z0-9/+=]{40}['"]/i, "aws secret access key"],
+  [/-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY( BLOCK)?-----/, "private key"],
   [/\bBearer\s+[A-Za-z0-9\-._~+/]{24,}=*/, "hardcoded bearer token"],
+  [/\bBasic\s+[A-Za-z0-9+/]{16,}=*/, "hardcoded basic auth header"],
   [/\bpassword\s*[:=]\s*['"][^'"]{6,}['"]/i, "password"],
+  // A connection string with a password baked into the URL itself, the
+  // shape a legacy config file hardcodes a database or queue credential in.
+  [/\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqps?):\/\/[^\s'"/:@]+:[^\s'"/:@]+@/i, "database connection string with embedded credentials"],
   [/\bxox[baprs]-[A-Za-z0-9-]{10,}/, "slack token"],
+  [/\bhooks\.slack\.com\/services\/T[A-Za-z0-9]+\/B[A-Za-z0-9]+\/[A-Za-z0-9]+/, "slack webhook url"],
   [/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/, "github token"],
   [/\bgithub_pat_[A-Za-z0-9_]{20,}\b/, "github fine grained token"],
   [/\bglpat-[A-Za-z0-9_-]{20,}\b/, "gitlab token"],
