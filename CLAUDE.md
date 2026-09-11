@@ -4,7 +4,7 @@ Read this before changing anything. It is the contract, not a description.
 
 ## What this is
 
-A tiny plugin host that ports legacy front ends. The core is 724 lines across
+A tiny plugin host that ports legacy front ends. The core is 728 lines across
 four files and knows nothing about Angular, React, screenshots, or HTTP.
 Everything that knows a framework is a plugin. Keeping that true is the single
 most important constraint in the repo.

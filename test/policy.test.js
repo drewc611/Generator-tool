@@ -37,6 +37,19 @@ test("ordinary source does not fire the gate", () => {
   assert.deepEqual(policy().scanForSecrets(source, "clean.ts"), []);
 });
 
+test("the slack webhook pattern does not match a lookalike host wearing its path", () => {
+  // hooks.slack.com/services/... has to be the real host, not a longer
+  // domain that merely ends the same way, which an unanchored match cannot tell apart.
+  const lookalikes = [
+    `const url = "https://evil-hooks.slack.com/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
+    `const url = "https://notreallyhooks.slack.com/services/T0000000/B0000000/abcdefghijklmnopqrstuvwx";`,
+  ];
+  for (const source of lookalikes) {
+    const hits = policy().scanForSecrets(source, "sample.ts");
+    assert.ok(!hits.some((h) => h.kind === "slack webhook url"), `should not fire on a lookalike host: ${source}`);
+  }
+});
+
 test("a finding records where, never what", () => {
   const p = policy();
   const [hit] = p.scanForSecrets(`\n\nconst id = "AKIAIOSFODNN7EXAMPLE";`, "config.ts");
