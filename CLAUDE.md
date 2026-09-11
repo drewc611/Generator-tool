@@ -77,7 +77,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and twenty four in five classes, and the core has never learned
+Plugins that ship, two hundred and twenty five in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -98,7 +98,7 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-i18n  output-adr  output-migration  output-preact  output-solid
          output-alpine  output-cem  output-postman  output-curl
          output-fixtures  output-readme  output-ci  output-site
-         output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit  output-dockerfile  output-nginx  output-types  output-cypress
+         output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit  output-dockerfile  output-nginx  output-types  output-cypress  output-backend
          output-codemod  output-aws  output-azure  output-gcp  output-vercel  output-netlify  output-cloudflare  output-caddy  output-eleventy  output-playwright
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph  vis-transformer  vis-a11y  vis-security  vis-perf  vis-lifecycle  vis-readers
 general  general-policy  general-authorization  general-license  general-size
@@ -1019,6 +1019,39 @@ directly, so an instruction stands behind the exact same `--allow-live` and
 name would. test/agent.test.js holds every field extractor, the compiler's
 refusals, both actions end to end, and the gates.
 
+10.29 gives the port the other half of full stack: a real server, not a
+fixture that echoes the same canned response forever. output-backend
+(plugins/output-backend/) reads the same `ctx.api.calls` every emitter
+already reads, groups them by resource, and pairs a collection route with
+its own item route regardless of whether the source spelled the id as
+`:id`, `${id}` or `{id}`; only a resource the app writes to, not merely
+reads, is wired to a real store, and a call this reader cannot pair into a
+collection and an item is named in BACKEND.md and left to the fixture or
+501 path serve.js already has, never forced into a shape it does not have.
+Each wired entity is seeded from whichever source actually observed a
+shape, dsp-entities' clustered traffic, a recorded response body, or a
+declared API document, and the seed says which; an entity nothing ever
+observed still wires, seeded with an id alone. server/store.js is one
+small class, written verbatim into every port, one JSON file per entity
+with a write landing through a temp file and a rename so a crash mid write
+leaves the previous file intact. Requires `--site true`: the server this
+writes into is output-site's own serve.js, tried first inside `respond()`
+before the pre-existing fixture or 501 logic, which runs unchanged for
+anything the generated backend does not answer. Building this against a
+real pipeline and real HTTP requests surfaced two defects in dsp-apimap
+older than this plugin, fixed for every reader that feeds it rather than
+patched around here: a collection route and its own item route named
+identically and one silently overwrote the other in src/api/endpoints.js,
+and a call's `${id}`-style path reached that file untemplated, which
+serve.js's `:id`-only matcher could never match. A genuine ambiguity is
+named rather than guessed at: an item route ending in `:id` and a literal
+action route at the same depth (`DELETE /orders/:id` beside `DELETE
+/orders/cancel`) are indistinguishable to any path matcher, so the verb is
+pulled back out and reported rather than routed by luck. test/backend.test.js
+holds the inference, both dsp-apimap fixes, the collision refusal over real
+HTTP, a real create-list-get-update round trip, and persistence across a
+process restart.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -1084,8 +1117,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and ninety one features in
-one hundred and ninety four phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and ninety two features in
+one hundred and ninety five phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
