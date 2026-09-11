@@ -168,6 +168,7 @@ const DOES = {
   "input-react": "React read back onto the dialect, so the tool can read what it writes",
   "output-next": "the site model as a Next app directory, components imported not copied",
   "output-astro": "each screen as an Astro island hydrating the emitted React component",
+  "output-backend": "a real server over an embedded store, wired only to the collection/item pairs the app actually called, seeded from an observed shape",
   "output-aws": "the site as an AWS deploy plan: S3, CloudFront, the 301 map compiled to a function, no secrets taken",
   "output-azure": "the site as an Azure deploy plan: Storage static site, Front Door, the 301 map as rules, no secrets taken",
   "output-gcp": "the site as a Google Cloud deploy plan: Cloud Storage, Cloud CDN, the 301 map as URL map rules, no secrets taken",

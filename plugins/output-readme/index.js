@@ -46,6 +46,7 @@ const DESCRIBES = [
   [/^ATTENTION\.md$/, "the transformer demonstration's attention maps, drawn from the weights it learned"],
   [/^AUTOIT\.md$/, "every AutoIt .au3 script's GUICtrlCreate* calls, one screen per file, with every gap named; a button's wiring read from the Case/If block matching its own variable in the event loop"],
   [/^AWT\.md$/, "every hand written Java AWT/Swing .java file's new ClassName(...) construction, one screen per file, controls in construction order; a field's name taken from the assigned variable, a button's wiring read from a clean addActionListener lambda, and a file already carrying input-swing's own generated-code markers left to it entirely"],
+  [/^BACKEND\.md$/, "the real routes wired to the embedded store, seeded from an observed shape, and what was left to the fixture or 501 path"],
   [/^BEHAVIOR_BY_ROUTE\.md$/, "the jQuery inventory matched to each route's markup by selector"],
   [/^BIRT\.md$/, "every Eclipse BIRT .rptdesign report's parameters, dataset columns and sections, with the computed expressions, lists and images it names rather than evaluates"],
   [/^BEHAVIOR_MODEL\.md$/, "the interaction model observed: what changed when each control was used"],

@@ -269,7 +269,8 @@ export default {
       // bytes, and the API surface honestly: a fixture where one was emitted,
       // and a 501 naming the endpoint map where none was, never invented data.
       const hasEndpoints = ctx.written.includes("src/api/endpoints.js");
-      await ctx.write("serve.js", SERVE(hasEndpoints));
+      const hasBackend = ctx.written.includes("server/backend.js");
+      await ctx.write("serve.js", SERVE(hasEndpoints, hasBackend));
       const apiSample = hasEndpoints ? ctx.api.calls.find((c) => c.path?.startsWith("/")) : null;
       await ctx.write("tests/server.test.js", SERVER_TEST(site.redirects, apiSample));
       await ctx.write("tests/router.test.js", ROUTER_TEST(site.redirects));
@@ -1181,7 +1182,7 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
 </html>
 `;
 
-const SERVE = (hasEndpoints) => `import { createServer } from "node:http";
+const SERVE = (hasEndpoints, hasBackend) => `import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -1191,13 +1192,16 @@ import { fileURLToPath } from "node:url";
 import { matchPath } from "./src/app/match.js";
 import { HEAD } from "./src/app/head.js";
 ${hasEndpoints ? 'import { endpoints } from "./src/api/endpoints.js";' : "const endpoints = {};"}
+${hasBackend ? 'import { handleBackend } from "./server/backend.js";' : "const handleBackend = async () => false;"}
 
 /**
  * The port's server. It serves your bundler's output when dist/ exists and
  * the source tree when it does not, answers every old address with the real
- * 301 the redirect map promised, and answers the API surface honestly: a
- * fixture where the run emitted one, marked as invented, and a 501 naming
- * src/api/endpoints.js where it did not. It never invents a response.
+ * 301 the redirect map promised, and answers the API surface honestly: real
+ * CRUD over an embedded store where output-backend wired one (see
+ * server/backend.js and BACKEND.md), a fixture where the run emitted one
+ * instead, marked as invented, and a 501 naming src/api/endpoints.js where
+ * it did neither. It never invents a response.
  *
  *   node serve.js            # 127.0.0.1:4173
  *   PORT=8080 node serve.js
@@ -1303,6 +1307,7 @@ async function respond(req, res) {
     const isPage = (req.method ?? "GET") === "GET" && HEAD[path.replace(/\\/+$/, "") || "/"] !== undefined;
     const api = !isPage && API.find((e) => e.method === (req.method ?? "GET") && matchPath(e.path, path));
     if (api) {
+      if (await handleBackend(req, res, api.method, path)) return;
       const name = (api.path.split("/").filter((s) => s && !s.startsWith(":")).at(-1) ?? "items").replace(/[^\\w-]/g, "-");
       if (api.method === "GET" && await file(req, res, ROOT, join("fixtures", name + ".json"), { "x-portamp-fixture": "invented, from the run's fixtures" })) return;
       res.writeHead(501, { "content-type": "application/json" });
