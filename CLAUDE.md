@@ -1052,6 +1052,25 @@ holds the inference, both dsp-apimap fixes, the collision refusal over real
 HTTP, a real create-list-get-update round trip, and persistence across a
 process restart.
 
+10.30 makes an alpha or a beta safe to publish before this is ready to be
+everyone's default install. Every publish before this phase ran `npm
+publish --provenance --access public` with no `--tag`, which would have
+published any version, prerelease included, as `latest`, the tag an
+untagged `npm install portamp` resolves to; nothing has published yet, so
+the defect was never exercised, but it is exactly the kind a real alpha
+would have found the hard way. distTagFor (plugins/general-publish/index.js)
+reads a version's own prerelease identifier, the word after its hyphen, and
+names it as the dist-tag to publish under, or names latest when there is
+none; the release workflow calls it once rather than keeping a second copy
+of the rule in shell, and passes whatever it names to `--tag`. Nothing about
+the tag check, the private flag or the NPM_TOKEN check changed.
+docs/PUBLISHING.md gains the alpha and beta flow, and its own long stale
+"what stands in the way today" section, still describing a `"private": true`
+blocker the copyright holder removed back at phase 10.2 without the
+document catching up, is corrected to name the one thing still missing, a
+person adding NPM_TOKEN. test/publish.test.js holds distTagFor against a
+plain version, three prerelease identifiers, and an empty or missing one.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -1117,8 +1136,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and ninety two features in
-one hundred and ninety five phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and ninety three features in
+one hundred and ninety six phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then

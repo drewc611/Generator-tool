@@ -100,7 +100,7 @@ cat src/core/*.js src/cli.js | wc -l    # 729, and the suite fails if this table
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 729 across six hundred and ninety two features, and every
+The core grew from 527 lines to 729 across six hundred and ninety three features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -1209,8 +1209,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and ninety two features in
-one hundred and ninety five phases, forty four shipped, six hundred and forty five new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and ninety three features in
+one hundred and ninety six phases, forty four shipped, six hundred and forty six new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

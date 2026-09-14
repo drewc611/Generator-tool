@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and ninety two features across one hundred and ninety five phases. The statuses are
+Six hundred and ninety three features across one hundred and ninety six phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2739,14 +2739,19 @@ Search answers what a person means by search; this answers the sentence they typ
 **692. `output-backend` infers real CRUD routes from the calls the legacy app actually made and wires them to an embedded, persisted store, so `--site --backend true` produces a server that really keeps a write rather than echoing the same fixture forever** 🔨
 Every prior target answered "what does the front end call" with a mock: a fixture that plays back the same canned response on every request, or a 501 naming the endpoint map where none exists. This phase answers the other half, what the back end would have to do, from the same evidence every other emitter already reads and nothing more. `plugins/output-backend/entities.js`'s `inferBackendEntities` groups `ctx.api.calls` by resource, pairs a collection route with its own item route (`GET /orders` and `GET /orders/:id` share one key regardless of which of `:id`, `${id}` or `{id}` the source spelled it with), and classifies each call's op from its method and whether its own path ends in a param segment, never by comparing one call's path against another's. Only a resource with at least one write verb the app actually calls is wired; a read only resource is left to the fixture path that already serves it, named rather than silently duplicated. Each wired entity is seeded from whichever source actually observed a shape, `ctx.entities`' clustered traffic, a recorded response body, or a declared API document, in that priority order, and named in `BACKEND.md` with exactly which one; an entity nothing ever observed still wires, seeded with an id alone, because a create call carries whatever fields a client actually sends. `server/store.js` is one small class written verbatim per port, one JSON file per entity, a write landing through a temp file and a rename so a crash mid write leaves the previous file intact, with a first read seeding from the inferred shape so a fresh checkout has something to list before anything is ever written. `server/backend.js` wires `ROUTES` to it over `serve.js`'s own `matchPath`, tried first inside `respond()`; a request that is not one of its routes falls through to the pre-existing fixture or 501 path unchanged. Building this honestly, a real pipeline, a real HTTP server, real requests, surfaced two real defects in `dsp-apimap` older than this plugin: a collection route and its own item route named identically and one silently overwrote the other in `src/api/endpoints.js`, and a call's `${id}`-style path reached that file untemplated, which `matchPath`'s `:id`-only rule could never match; both are fixed for every reader that feeds `dsp-apimap`, not patched around here. A genuine ambiguity surfaced the same way: an item route ending in `:id` and a literal action route at the same depth (`DELETE /orders/:id` beside `DELETE /orders/cancel`) are indistinguishable to any path matcher, so a collision pass demotes the ambiguous verb and names it in `BACKEND.md` rather than routing "cancel" as if it were a real id. test/backend.test.js holds the inference, both `dsp-apimap` fixes, the collision refusal over real HTTP, a real create-list-get-update round trip, and persistence across a process restart.
 
+## Phase 196: an alpha or a beta never becomes the version anyone else installs
+
+**693. The release workflow publishes a prerelease version under its own npm dist-tag, so `npm version preminor --preid alpha` and a pushed tag never touches what `npm install portamp` resolves to** 🔨
+Every publish before this phase ran `npm publish --provenance --access public` with no `--tag`, which means every version, alpha or stable alike, would have published as `latest`, the tag an untagged install resolves to. That was never exercised, since nothing has published yet, but it is exactly the kind of defect that would only be found the day a real prerelease shipped by accident to everyone. `distTagFor` (`plugins/general-publish/index.js`) reads the version's own prerelease identifier, the part after its hyphen, and returns it as the dist-tag to publish under, or `latest` when there is none; a release workflow step calls it once, rather than a second copy of the same rule living in shell, and the publish step passes whatever it names straight to `--tag`. `10.31.0-alpha.1` publishes as `alpha`, `10.31.0-beta.2` as `beta`, `10.31.0-rc.1` as `rc`, and a plain `10.31.0` still publishes as `latest`, exactly as every release before this one already did; nothing about the tag, the private flag, or `NPM_TOKEN` checks changed. `docs/PUBLISHING.md` gains the alpha and beta flow, and its own "what stands in the way today" section, which had gone stale describing a `"private": true` blocker the copyright holder already removed back at phase 10.2 without the document catching up, is corrected to name the one thing actually still missing, a person adding `NPM_TOKEN`. test/publish.test.js holds `distTagFor` against a plain version, three prerelease identifiers, and an empty or missing version.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 645 |
+| new in this branch | 646 |
 | planned | 3 |
-| total | 692 |
+| total | 693 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md
