@@ -40,6 +40,15 @@ test("the README's size table is the truth, counted", async () => {
   assert.ok(contract && Number(contract[1]) === lines, `CLAUDE.md says ${contract?.[1]}; the core is ${lines}. Update the contract.`);
 });
 
+test("the README's version badge is package.json's real version", async () => {
+  const pkg = JSON.parse(await readFile(join(ROOT, "package.json"), "utf8"));
+  const readme = await readFile(join(ROOT, "README.md"), "utf8");
+  const badge = /!\[Version: ([^\]]+)\]\(https:\/\/img\.shields\.io\/badge\/version-([^-]+)-blue\)/.exec(readme);
+  assert.ok(badge, "the README carries a version badge");
+  assert.equal(badge[1], pkg.version, `the badge's alt text says ${badge[1]}; package.json says ${pkg.version}`);
+  assert.equal(badge[2], pkg.version, `the badge's own image says ${badge[2]}; package.json says ${pkg.version}`);
+});
+
 test("nothing in the tool is deferred with a marker comment", async () => {
   const files = [...(await walk(join(ROOT, "src"))), ...(await walk(join(ROOT, "plugins")))];
   for (const f of files) {
