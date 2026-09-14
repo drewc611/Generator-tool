@@ -86,9 +86,13 @@ function attributes(node, ctx) {
   for (const event of node.events) {
     out.push(` data-on-${event.name}="${ctx.handler(event.name, guardHandler(event.name, event.handler, event.modifiers))}"`);
   }
-  // A delegated listener fires long after the row that owns it was printed, so
-  // the row has to carry its own index or the handler has no item to act on.
-  if (ctx.scope() && (node.events.length || node.model)) out.push(` data-i="\${${ctx.scope().index}}"`);
+  // A delegated listener fires long after every row it might be nested inside
+  // was printed, so each ancestor loop's own row index is carried, one
+  // attribute per nesting level, or a handler two loops deep could only ever
+  // recover the innermost one.
+  if (ctx.chain().length && (node.events.length || node.model)) {
+    ctx.chain().forEach((s, i) => out.push(` data-i${i}="\${${s.index}}"`));
+  }
 
   if (node.styles.length) out.push(` style="\${esc(${styleExpression(node.styles)})}"`);
   return out.join("");
@@ -135,8 +139,10 @@ function print(node, depth, ctx) {
 
     case "each": {
       // An index is always bound, named or not, because the delegated listener
-      // needs one even when the template never asked for it.
-      const index = node.index ?? "__i";
+      // needs one even when the template never asked for it. Each nesting
+      // depth gets its own auto name, or an inner loop's auto index would
+      // shadow an outer one and the outer row could never be recovered.
+      const index = node.index ?? `__i${ctx.chain().length}`;
       const inner = ctx.within({ item: node.item, list: node.list, index }, () =>
         node.children.map((c) => print(c, depth + 1, ctx)).filter(Boolean).join("\n"));
       if (node.object) {
@@ -165,28 +171,18 @@ export function toHtml(html, { dialect, components = [] } = {}) {
   const scopes = [];
   const ctx = {
     scope: () => scopes.at(-1) ?? null,
+    // The full chain from outermost to innermost, so a handler nested several
+    // loops deep can recover every ancestor row, not only the last one.
+    chain: () => [...scopes],
     within(scope, fn) {
       scopes.push(scope);
       try { return fn(); } finally { scopes.pop(); }
     },
     handler(event, body) {
-      handlers.push({ event, body, scope: scopes.at(-1) ?? null });
+      handlers.push({ event, body, scope: scopes.length ? [...scopes] : null });
       return handlers.length - 1;
     },
   };
   const markup = print(ir.root, 3, ctx) || `${pad(3)}<!-- nothing to render -->`;
-  const notes = [...ir.notes];
-  // Only the innermost row index is carried, so a handler two loops deep would
-  // be handed the wrong item. Saying so beats emitting it quietly.
-  if (handlers.some((h) => h.scope) && scopesNested(ir.root)) {
-    notes.push("A handler sits inside nested loops. Only the innermost row is bound to it; check that one by hand.");
-  }
-  return { markup, handlers, events: [...new Set(handlers.map((h) => h.event))], ...ir, notes };
-}
-
-function scopesNested(node, depth = 0) {
-  if (!node) return false;
-  const next = node.kind === "each" ? depth + 1 : depth;
-  if (next > 1) return true;
-  return (node.children ?? []).some((c) => scopesNested(c, next));
+  return { markup, handlers, events: [...new Set(handlers.map((h) => h.event))], ...ir, notes: [...ir.notes] };
 }

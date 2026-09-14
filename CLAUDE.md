@@ -1071,6 +1071,27 @@ document catching up, is corrected to name the one thing still missing, a
 person adding NPM_TOKEN. test/publish.test.js holds distTagFor against a
 plain version, three prerelease identifiers, and an empty or missing one.
 
+10.31 closes a gap output-html had named rather than fixed since it first
+shipped: a delegated handler nested two loops deep could only ever recover
+the innermost row, because a single `data-i` attribute and a single shared
+row lookup were all the custom element target carried. The reader carries
+the full chain now, outermost to innermost, as one `data-iN` attribute per
+nesting level rather than one shared index, and each auto-generated loop
+index takes its own name per depth so an inner loop's fallback can no
+longer shadow an outer one out of reach. Building the fix against a real
+run surfaced a second, narrower defect in the same code path: the row
+lookup this replaced reached into `this.state` explicitly, but the first
+version of the chained lookup left every level as a bare identifier, which
+only resolves for the outermost row; a nested row is written relative to
+the row above it, so only that outermost level reaches into `this.state`
+and every level under it stays bare, the way the source itself named it.
+This was caught by running the actual emitted custom element in a real
+browser and clicking a specific row two loops deep rather than by
+reasoning about the generated string, the same standard the pixel diff
+already held emission to; a string match alone would have passed the first,
+broken version. test/targets.test.js holds it, structurally and by proving
+the click.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -1114,8 +1135,6 @@ Named plainly so nobody rediscovers it as a surprise.
 - `output-openapi` describes requests and deliberately describes no response.
   The client says what goes out; it never says what comes back, and a schema
   nobody verified is the failure this tool exists to avoid.
-- `output-html` binds only the innermost row to a handler inside nested loops,
-  and names that case in the notes when it meets it.
 - `dsp-deadcode` reports candidates and never verdicts: a class name assembled
   at runtime looks unused and is not, so the report says what was searched.
 - `dsp-archetype` recognises the shape of an app from its structure and its
@@ -1136,8 +1155,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and ninety three features in
-one hundred and ninety six phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and ninety four features in
+one hundred and ninety seven phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
@@ -1147,9 +1166,10 @@ one hundred and ninety six phases, statuses honest. What remains open, and why:
    three per archetype, enough for a leave one out cross validation that leaves
    two siblings behind rather than one; real labelled apps, not more synthetic
    miniatures, are what would make the confidence numbers mean more from here.
-3. **A grammar for the template dialects.** The readers are structural
-   scanners now, not regexes, but a real grammar with positions would make
-   every note able to say the line it came from.
+
+The grammar with positions this list used to name as a third open task shipped
+at phase 3.0; every note already says the line it came from. Nothing else in
+the roadmap is marked planned.
 
 ## Conventions
 

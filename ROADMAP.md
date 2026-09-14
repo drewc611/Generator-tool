@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and ninety three features across one hundred and ninety six phases. The statuses are
+Six hundred and ninety four features across one hundred and ninety seven phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2744,14 +2744,19 @@ Every prior target answered "what does the front end call" with a mock: a fixtur
 **693. The release workflow publishes a prerelease version under its own npm dist-tag, so `npm version preminor --preid alpha` and a pushed tag never touches what `npm install portamp` resolves to** 🔨
 Every publish before this phase ran `npm publish --provenance --access public` with no `--tag`, which means every version, alpha or stable alike, would have published as `latest`, the tag an untagged install resolves to. That was never exercised, since nothing has published yet, but it is exactly the kind of defect that would only be found the day a real prerelease shipped by accident to everyone. `distTagFor` (`plugins/general-publish/index.js`) reads the version's own prerelease identifier, the part after its hyphen, and returns it as the dist-tag to publish under, or `latest` when there is none; a release workflow step calls it once, rather than a second copy of the same rule living in shell, and the publish step passes whatever it names straight to `--tag`. `10.31.0-alpha.1` publishes as `alpha`, `10.31.0-beta.2` as `beta`, `10.31.0-rc.1` as `rc`, and a plain `10.31.0` still publishes as `latest`, exactly as every release before this one already did; nothing about the tag, the private flag, or `NPM_TOKEN` checks changed. `docs/PUBLISHING.md` gains the alpha and beta flow, and its own "what stands in the way today" section, which had gone stale describing a `"private": true` blocker the copyright holder already removed back at phase 10.2 without the document catching up, is corrected to name the one thing actually still missing, a person adding `NPM_TOKEN`. test/publish.test.js holds `distTagFor` against a plain version, three prerelease identifiers, and an empty or missing version.
 
+## Phase 197: the row two loops deep, recovered rather than admitted
+
+**694. output-html carries every ancestor loop's own row to a nested handler, not only the innermost one** 🔨
+Since the custom element target first shipped, a delegated handler sitting two `*ngFor` loops deep could only ever recover the innermost row: a single `data-i` attribute and one shared row lookup were all it carried, and the gap was named in the notes rather than closed. The printer now carries the full chain, outermost to innermost, as one `data-iN` attribute per nesting level, and gives each auto-generated loop index its own name per depth so an inner loop's fallback index can no longer shadow an outer one out of reach; the emitted element walks the chain back out one row at a time, only the outermost level reaching into `this.state` directly and every level under it staying relative to the row the level above it just resolved, the way the source itself named it. Building the fix against a real run caught a second, narrower defect in the same path before it shipped: the first version of the chained lookup left every level as a bare identifier, which only resolves for the outermost row, and running the actual emitted element in a real browser and clicking a specific row two loops deep is what caught it, not reasoning about the generated string. test/targets.test.js holds it structurally and by proving the click in a real browser.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 646 |
+| new in this branch | 647 |
 | planned | 3 |
-| total | 693 |
+| total | 694 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

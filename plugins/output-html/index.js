@@ -121,17 +121,30 @@ const ELEMENT = ({ name, tag, props, result, collection, screen }) => {
   const templateHandlers = result?.handlers ?? [];
 
   // A handler runs outside render(), so the names the template body uses are
-  // not in scope there. Each one reopens them from state, minus the row, which
-  // arrives as an argument and must not be shadowed by it.
-  const scopeFor = (item) => {
-    const names = unique([...props, ...models.map(leafOf)]).filter((n) => n !== item && n !== "event");
+  // not in scope there. Each one reopens them from state, minus every row its
+  // own chain already declares, which must not be shadowed by them.
+  const scopeFor = (rowNames) => {
+    const names = unique([...props, ...models.map(leafOf)]).filter((n) => !rowNames.includes(n) && n !== "event");
     return names.length ? `const { ${names.join(", ")} } = this.state; ` : "";
   };
 
+  // Each ancestor loop's own row was left behind as a data-iN attribute on the
+  // node the listener actually caught; the chain is walked back out here, one
+  // row at a time, in the same outermost-to-innermost order it was declared.
+  // Only the outermost level's list is a bare read off state, the way render()
+  // itself reaches it; every level under that is written relative to the row
+  // the level above it just declared, and reaches it the same way.
+  const chainPrelude = (chain) =>
+    (chain ?? []).map((s, i) => {
+      const list = i === 0 ? `this.state.${s.list.replace(/^this\.(state\.)?/, "")}` : s.list;
+      return `const ${s.item} = (${list} ?? [])[Number(node.dataset.i${i})]; `;
+    }).join("");
+
   const handlers = templateHandlers.map((h) => {
-    const item = h.scope ? h.scope.item : null;
-    const body = h.body.startsWith("this.state.") ? `${h.body}` : `${scopeFor(item)}${h.body}`;
-    return `    // ${h.event}${h.scope ? ` on a row of ${h.scope.list}` : ""}\n    (event, ${item ?? "_item"}) => { ${body}; },`;
+    const rowNames = h.scope ? h.scope.map((s) => s.item) : [];
+    const body = h.body.startsWith("this.state.") ? `${h.body}` : `${scopeFor(rowNames)}${h.body}`;
+    const label = h.scope ? ` on a row of ${h.scope.map((s) => s.list).join(" -> ")}` : "";
+    return `    // ${h.event}${label}\n    (event, node) => { ${chainPrelude(h.scope)}${body}; },`;
   });
 
   // The error state's retry is a handler like any other, so it gets an index
@@ -139,10 +152,6 @@ const ELEMENT = ({ name, tag, props, result, collection, screen }) => {
   const retry = templateHandlers.length;
   handlers.push(`    // retry, from the error state\n    () => { this.dispatchEvent(new CustomEvent("retry", { bubbles: true, composed: true })); },`);
   const events = [...new Set([...(result?.events ?? []), "click"])];
-
-  const rowLookup = (result?.handlers ?? []).some((h) => h.scope)
-    ? `\n    const row = node.dataset.i === undefined ? undefined : (this.state.${(result.handlers.find((h) => h.scope).scope.list).replace(/^this\./, "")} ?? [])[Number(node.dataset.i)];`
-    : "\n    const row = undefined;";
 
   const empty = collection === "data"
     ? "!this.state.data || (Array.isArray(this.state.data) && this.state.data.length === 0)"
@@ -174,8 +183,8 @@ ${handlers.join("\n") || "    // no handlers in this template"}
 
   connectedCallback() {
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
-    delegate(this, this.shadowRoot, [${events.map(jsString).join(", ")}], (index, event, node) => {${rowLookup}
-      this.#handlers[index]?.call(this, event, row);
+    delegate(this, this.shadowRoot, [${events.map(jsString).join(", ")}], (index, event, node) => {
+      this.#handlers[index]?.call(this, event, node);
       this.render();
     });
     this.render();
