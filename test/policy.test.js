@@ -167,6 +167,92 @@ test("with no endpoint map there is nothing to check against", () => {
   assert.equal(policy().assertNoEndpointLiteral(`x`, "A.jsx", ["", "/"]), true, "a path too short to mean anything is skipped");
 });
 
+/* ----------------------------------------------------- isComponentPath, ctx.beforeWrite */
+// isComponentPath is port-shape knowledge (src/features, src/elements,
+// src/app), not core's to know, so it lives in the general-policy plugin,
+// not on Policy; these tests exercise it and the write time hook it installs
+// through the plugin the way a real run does, not a hand rolled substitute.
+
+test("isComponentPath names exactly the tree the endpoint gate checks", async () => {
+  const { isComponentPath } = await import("../plugins/general-policy/index.js");
+  assert.ok(isComponentPath("src/features/AppOrders/AppOrders.jsx"));
+  assert.ok(isComponentPath("src/elements/AppOrders.js"));
+  assert.ok(isComponentPath("src/app/route-guards.js"), "an app shell code file is still gated");
+  assert.ok(!isComponentPath("src/api/endpoints.js"), "endpoints live here by design, not a violation");
+  assert.ok(!isComponentPath("src/tokens.js"), "outside the three component trees entirely");
+  assert.ok(!isComponentPath("PORT_NOTES.md"), "a report, not a component");
+  for (const shell of ["redirects", "nav", "head", "breadcrumbs", "search-index"]) {
+    assert.ok(!isComponentPath(`src/app/${shell}.js`), `${shell}.js holds destinations by construction`);
+  }
+});
+
+// The point of the whole change: ctx.write itself refuses, so the bytes
+// never land, not just a later scan that finds them once they have. This
+// runs the plugin's real extract handler to install the hook, the same as
+// a real run does, rather than faking ctx.beforeWrite by hand.
+test("ctx.write refuses a component naming a raw endpoint before it touches disk", async (t) => {
+  const { mkdtemp, readFile: read, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { createContext } = await import("../src/core/context.js");
+  const generalPolicy = (await import("../plugins/general-policy/index.js")).default;
+
+  const out = await mkdtemp(join(tmpdir(), "portamp-write-gate-"));
+  t.after(() => rm(out, { recursive: true, force: true }));
+
+  const p = policy();
+  const ctx = createContext({ config: { out, dryRun: false }, log: quietLogger(), policy: p });
+  ctx.api.calls.push({ path: "/api/v1/orders" });
+  ctx.sources.files = [];
+
+  const handlers = {};
+  generalPolicy.setup({ on: (stage, fn) => (handlers[stage] = fn), log: quietLogger(), policy: p });
+  await handlers.extract(ctx);
+  assert.equal(typeof ctx.beforeWrite, "function", "the plugin installed the hook");
+
+  await assert.rejects(
+    () => ctx.write("src/features/Orders/Orders.jsx", `<a href="/api/v1/orders">x</a>`),
+    (error) => {
+      assert.equal(error.rule, "no-endpoints-in-components");
+      return true;
+    }
+  );
+  await assert.rejects(read(join(out, "src/features/Orders/Orders.jsx"), "utf8"), /ENOENT/);
+  assert.ok(!ctx.written.includes("src/features/Orders/Orders.jsx"), "a refused write is not recorded either");
+
+  // A clean component, and a non component file naming the same path, both
+  // still write normally: the gate is precise, not a blanket refusal.
+  await ctx.write("src/features/Orders/Orders.jsx", `<p>orders</p>`);
+  assert.equal(await read(join(out, "src/features/Orders/Orders.jsx"), "utf8"), `<p>orders</p>`);
+  await ctx.write("src/api/endpoints.js", `export const endpoints = { orders: "/api/v1/orders" };`);
+  assert.match(await read(join(out, "src/api/endpoints.js"), "utf8"), /\/api\/v1\/orders/);
+});
+
+test("the write time hook reads routes from both ctx.site and ctx.routes, the same as the verify time scan", async (t) => {
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { createContext } = await import("../src/core/context.js");
+  const generalPolicy = (await import("../plugins/general-policy/index.js")).default;
+
+  const out = await mkdtemp(join(tmpdir(), "portamp-write-gate-routes-"));
+  t.after(() => rm(out, { recursive: true, force: true }));
+
+  const p = policy();
+  const ctx = createContext({ config: { out, dryRun: false }, log: quietLogger(), policy: p });
+  ctx.api.calls.push({ path: "/orders" });
+  ctx.site = { pages: [{ route: "/orders" }] };
+  ctx.sources.files = [];
+
+  const handlers = {};
+  generalPolicy.setup({ on: (stage, fn) => (handlers[stage] = fn), log: quietLogger(), policy: p });
+  await handlers.extract(ctx);
+
+  // /orders is both an endpoint and this run's own route; the route wins in
+  // a navigation position, exactly as assertNoEndpointLiteral does.
+  await assert.doesNotReject(() => ctx.write("src/app/Nav.jsx", `<a href="/orders">Orders</a>`));
+});
+
 test("fixtures that look like customer data are flagged, not blocked", () => {
   const warned = [];
   const p = new Policy({ log: { ...quietLogger(), warn: (m) => warned.push(m) } });

@@ -1,6 +1,6 @@
 # The roadmap, all of it
 
-Six hundred and ninety four features across one hundred and ninety seven phases. The statuses are
+Six hundred and ninety five features across one hundred and ninety eight phases. The statuses are
 honest: ✅ shipped and under test, 🔨 new in this branch, ▢ planned. A planned
 feature carries its phases where it is big enough to need them; nothing here
 is a name invented to round out a number, and anything that turns out to be a
@@ -2749,14 +2749,19 @@ Every publish before this phase ran `npm publish --provenance --access public` w
 **694. output-html carries every ancestor loop's own row to a nested handler, not only the innermost one** 🔨
 Since the custom element target first shipped, a delegated handler sitting two `*ngFor` loops deep could only ever recover the innermost row: a single `data-i` attribute and one shared row lookup were all it carried, and the gap was named in the notes rather than closed. The printer now carries the full chain, outermost to innermost, as one `data-iN` attribute per nesting level, and gives each auto-generated loop index its own name per depth so an inner loop's fallback index can no longer shadow an outer one out of reach; the emitted element walks the chain back out one row at a time, only the outermost level reaching into `this.state` directly and every level under it staying relative to the row the level above it just resolved, the way the source itself named it. Building the fix against a real run caught a second, narrower defect in the same path before it shipped: the first version of the chained lookup left every level as a bare identifier, which only resolves for the outermost row, and running the actual emitted element in a real browser and clicking a specific row two loops deep is what caught it, not reasoning about the generated string. test/targets.test.js holds it structurally and by proving the click in a real browser.
 
+## Phase 198: the endpoint gate, moved to the moment it can still refuse
+
+**695. The endpoint gate is asked from ctx.write itself, so a component naming a raw endpoint never reaches disk** 🔨
+Since it first shipped, the gate that keeps a URL out of an emitted component ran at verify, after the whole port was already written: it could fail the run and name the file, but the file was already on disk to look at, unlike the secret gate, which stops a credential from ever being copied out of the source that names it. ctx gains beforeWrite, a hook a plugin may set and ctx.write calls on every write before the bytes land, never learning what it checks, the same way the core already holds policy without knowing the rules; general-policy sets it at extract to refuse a component naming a raw endpoint before its bytes exist. Which written path counts as a component, src/features, src/elements and src/app, minus the site shell's own data modules, stays exactly where it always was, in general-policy, not core: a first version put that classification on Policy itself, and CI's own framework blindness check caught it within the hour, since the file extension list it matched against spelled vue and svelte in a file under src/core/. The write time hook and the verify stage scan kept as the second net for anything that reaches disk some other way now share the one classifier, so they can no longer disagree by accident about which tree either one means. Moving the check earlier turned out not to need checking a component before it exists: every plugin that collects endpoints and routes runs at plan, every plugin that writes a component runs at emit, and a staged pipeline finishes one stage before starting the next, so the map a component is checked against is already whole by the time any component is written. test/pipeline.test.js now asserts the refused component never reaches disk, not only that the run stopped, and test/policy.test.js holds isComponentPath and the installed ctx.beforeWrite hook directly, through the plugin's own extract handler.
+
 ---
 
 | | |
 | --- | --- |
 | shipped | 44 |
-| new in this branch | 647 |
+| new in this branch | 648 |
 | planned | 3 |
-| total | 694 |
+| total | 695 |
 
 The three open are open for stated reasons, not for lack of time: npm
 publish is the one command that belongs to a person, with docs/PUBLISHING.md

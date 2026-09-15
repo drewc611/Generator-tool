@@ -4,7 +4,7 @@ Read this before changing anything. It is the contract, not a description.
 
 ## What this is
 
-A tiny plugin host that ports legacy front ends. The core is 729 lines across
+A tiny plugin host that ports legacy front ends. The core is 740 lines across
 four files and knows nothing about Angular, React, screenshots, or HTTP.
 Everything that knows a framework is a plugin. Keeping that true is the single
 most important constraint in the repo.
@@ -38,8 +38,8 @@ directly and has no idea what any of them do.
 
 ```
 src/core/kernel.js     registry, discovery, pipeline        (~130 lines)
-src/core/policy.js     the rules, enforced, and what clears them  (~220 lines)
-src/core/context.js    shared context and logger            (~90 lines)
+src/core/policy.js     the rules, enforced, and what clears them  (~230 lines)
+src/core/context.js    shared context and logger            (~100 lines)
 src/cli.js             argument parsing and wiring          (~280 lines)
 plugins/*/index.js     everything that knows a framework
 skills/                agent playbooks, also usable standalone
@@ -1092,6 +1092,35 @@ already held emission to; a string match alone would have passed the first,
 broken version. test/targets.test.js holds it, structurally and by proving
 the click.
 
+10.32 moves the endpoint gate to the moment it can still do something. Since
+the gate first shipped it ran at `verify`, after the whole port was already
+written: it could fail the run and name the file, but the offending
+component was already on disk to look at, unlike the secret gate, which
+stops the source from ever being copied in. `ctx` gains `beforeWrite`, a
+hook a plugin may set and `ctx.write` calls on every write before the bytes
+land, never learning what it checks, the same way the core already holds
+`policy` without knowing the rules; general-policy sets it at `extract` to
+refuse a component naming a raw endpoint before its bytes exist, the same
+guarantee the secret gate already gave the source it reads. Which written
+path counts as a component (`src/features`, `src/elements` and `src/app`,
+minus the site shell's own data modules) stays exactly where it always
+was, in general-policy, not core: a first version put that classification
+on `Policy` itself, and CI's own framework blindness check caught it within
+the hour, since the file extension list it matched against spelled `vue`
+and `svelte` in a file under `src/core/`. The write time hook and the verify
+stage scan, kept as the second net for anything that reaches disk some
+other way, now share the one classifier so they can no longer name two
+different trees by accident. Moving the check earlier turned out not to
+need checking a component before it exists, as this list used to say: every
+plugin that collects endpoints and routes runs at `plan`, every plugin that
+writes a component runs at `emit`, and a staged pipeline finishes one stage
+before starting the next, so by the time any component is written the map
+it is checked against is already whole. test/pipeline.test.js now asserts
+the refused component never reaches disk, not only that the run stopped,
+and test/policy.test.js holds `isComponentPath` and the installed
+`ctx.beforeWrite` hook directly, through the plugin's own `extract` handler
+rather than a hand rolled substitute.
+
 ## What is honestly incomplete
 
 Named plainly so nobody rediscovers it as a surprise.
@@ -1123,10 +1152,6 @@ Named plainly so nobody rediscovers it as a surprise.
 - `dsp-improve` reports what it measured: names, labels, contrast, target size,
   and states never observed. It does not judge information architecture, and a
   state it never reached is reported as unseen rather than as missing.
-- The endpoint gate runs at `verify`, so unlike the secret gate it cannot stop
-  the write. It fails the run and names the file; the offending component is
-  still on disk to look at. Moving it earlier would mean checking a component
-  before it exists.
 - `input-jquery` produces an inventory, not components. jQuery declares no
   boundaries and portamp does not invent them, so it reports which selector is
   written to, listened on and called from, and leaves the boundaries to a
@@ -1155,8 +1180,8 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and ninety four features in
-one hundred and ninety seven phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and ninety five features in
+one hundred and ninety eight phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
