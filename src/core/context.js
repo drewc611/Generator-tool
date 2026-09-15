@@ -73,6 +73,11 @@ export function createContext({ config, log, policy }) {
       // gates and the summary all behave as if the files landed, which is
       // the point: the answer to "what would this run do" with nothing done.
       if (!config.dryRun) {
+        // Ask before the bytes land, not after: a component naming a raw
+        // endpoint is refused here, the same moment the secret gate refuses
+        // a credential in the source it reads, rather than caught later by
+        // rereading a file that already exists to look at.
+        policy?.assertComponentWrite?.(relPath, contents, this);
         await mkdir(dirname(full), { recursive: true });
         await writeFile(full, contents, "utf8");
       }

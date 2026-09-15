@@ -167,6 +167,79 @@ test("with no endpoint map there is nothing to check against", () => {
   assert.equal(policy().assertNoEndpointLiteral(`x`, "A.jsx", ["", "/"]), true, "a path too short to mean anything is skipped");
 });
 
+/* -------------------------------------- isComponentPath, assertComponentWrite */
+
+test("isComponentPath names exactly the tree the endpoint gate checks", () => {
+  const p = policy();
+  assert.ok(p.isComponentPath("src/features/AppOrders/AppOrders.jsx"));
+  assert.ok(p.isComponentPath("src/elements/AppOrders.js"));
+  assert.ok(p.isComponentPath("src/app/route-guards.js"), "an app shell code file is still gated");
+  assert.ok(!p.isComponentPath("src/api/endpoints.js"), "endpoints live here by design, not a violation");
+  assert.ok(!p.isComponentPath("src/tokens.js"), "outside the three component trees entirely");
+  assert.ok(!p.isComponentPath("PORT_NOTES.md"), "a report, not a component");
+  for (const shell of ["redirects", "nav", "head", "breadcrumbs", "search-index"]) {
+    assert.ok(!p.isComponentPath(`src/app/${shell}.js`), `${shell}.js holds destinations by construction`);
+  }
+});
+
+// The bug this guards: the write time check silently skipping every write
+// because it forgot to ask isComponentPath at all, or asking it with the
+// wrong argument order.
+test("assertComponentWrite only looks at a component path, and only refuses a real endpoint", () => {
+  const p = policy();
+  const ctx = { api: { calls: [{ path: "/api/v1/orders" }] }, site: null, routes: null };
+  assert.doesNotThrow(() => p.assertComponentWrite("PORT_NOTES.md", `see /api/v1/orders for details`, ctx), "a report is not a component");
+  assert.doesNotThrow(() => p.assertComponentWrite("src/features/AppOrders/AppOrders.jsx", `<p>orders</p>`, ctx), "no endpoint literal present");
+  assert.throws(
+    () => p.assertComponentWrite("src/features/AppOrders/AppOrders.jsx", `<a href="/api/v1/orders">x</a>`, ctx),
+    (error) => {
+      assert.equal(error.rule, "no-endpoints-in-components");
+      assert.equal(error.path, "/api/v1/orders");
+      return true;
+    }
+  );
+});
+
+test("assertComponentWrite reads routes from both ctx.site and ctx.routes, the same as the verify time scan", () => {
+  const p = policy();
+  const ctx = { api: { calls: [{ path: "/orders" }] }, site: { pages: [{ route: "/orders" }] }, routes: { table: [] } };
+  // /orders is both an endpoint and this run's own route; the route table
+  // wins in a navigation position, exactly as assertNoEndpointLiteral does.
+  assert.doesNotThrow(() => p.assertComponentWrite("src/app/Nav.jsx", `<a href="/orders">Orders</a>`, ctx));
+});
+
+// The point of the whole change: ctx.write itself refuses, so the bytes
+// never land, not just a later scan that finds them once they have.
+test("ctx.write refuses a component naming a raw endpoint before it touches disk", async (t) => {
+  const { mkdtemp, readFile: read, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { createContext } = await import("../src/core/context.js");
+
+  const out = await mkdtemp(join(tmpdir(), "portamp-write-gate-"));
+  t.after(() => rm(out, { recursive: true, force: true }));
+
+  const ctx = createContext({ config: { out, dryRun: false }, log: quietLogger(), policy: policy() });
+  ctx.api.calls.push({ path: "/api/v1/orders" });
+
+  await assert.rejects(
+    () => ctx.write("src/features/Orders/Orders.jsx", `<a href="/api/v1/orders">x</a>`),
+    (error) => {
+      assert.equal(error.rule, "no-endpoints-in-components");
+      return true;
+    }
+  );
+  await assert.rejects(read(join(out, "src/features/Orders/Orders.jsx"), "utf8"), /ENOENT/);
+  assert.ok(!ctx.written.includes("src/features/Orders/Orders.jsx"), "a refused write is not recorded either");
+
+  // A clean component, and a non component file naming the same path, both
+  // still write normally: the gate is precise, not a blanket refusal.
+  await ctx.write("src/features/Orders/Orders.jsx", `<p>orders</p>`);
+  assert.equal(await read(join(out, "src/features/Orders/Orders.jsx"), "utf8"), `<p>orders</p>`);
+  await ctx.write("src/api/endpoints.js", `export const endpoints = { orders: "/api/v1/orders" };`);
+  assert.match(await read(join(out, "src/api/endpoints.js"), "utf8"), /\/api\/v1\/orders/);
+});
+
 test("fixtures that look like customer data are flagged, not blocked", () => {
   const warned = [];
   const p = new Policy({ log: { ...quietLogger(), warn: (m) => warned.push(m) } });

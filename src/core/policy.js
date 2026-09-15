@@ -185,6 +185,41 @@ export class Policy {
     }[rule] ?? null;
   }
 
+  /**
+   * Which written path this port's own convention puts a component in, the
+   * shape every output target already agrees on and not any one framework's:
+   * src/features, src/elements and src/app hold real components, and the
+   * site shell's own data modules there (the redirect map, the nav model,
+   * the head table, breadcrumbs, the search index) hold destinations by
+   * construction, so they are exempt for the same reason a navigation
+   * attribute naming a route is, in assertNoEndpointLiteral above.
+   */
+  isComponentPath(relPath) {
+    return (
+      (relPath.startsWith("src/features/") || relPath.startsWith("src/elements/") || relPath.startsWith("src/app/")) &&
+      /\.(jsx|tsx|vue|svelte|js)$/.test(relPath) &&
+      !/^src\/app\/(redirects|nav|head|breadcrumbs|search-index)\.js$/.test(relPath)
+    );
+  }
+
+  /**
+   * The write time half of the endpoint gate. Called from ctx.write itself,
+   * so a component naming a raw endpoint never reaches disk, the guarantee
+   * the secret gate already gives the source it reads before this one
+   * existed; the verify stage scan in general-policy stays as the second
+   * net, the same shape as the emitted secret scan, for anything that
+   * reaches disk some other way.
+   */
+  assertComponentWrite(relPath, contents, ctx) {
+    if (!this.isComponentPath(relPath)) return;
+    const paths = [...new Set((ctx?.api?.calls ?? []).map((c) => c.path).filter(Boolean))];
+    const routes = [...new Set([
+      ...(ctx?.site?.pages ?? []).map((p) => p.route),
+      ...(ctx?.routes?.table ?? []).map((r) => r.path).filter(Boolean),
+    ])];
+    this.assertNoEndpointLiteral(contents, relPath, paths, routes);
+  }
+
   assertNoEndpointLiteral(text, file, paths = [], routes = []) {
     // Navigation to the run's own routes is not a call. A portal's filter
     // form posts to the path its page lives at, so a link or the route

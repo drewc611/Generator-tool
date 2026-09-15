@@ -14,7 +14,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The console's own joke
 is where the plugin classes come from — Winamp's five, kept honest as a
-sidebar rather than a skin. Everything on the panel is real: 729
+sidebar rather than a skin. Everything on the panel is real: 769
 lines of core, no runtime dependencies, 225 plugins, and the literal output of
 `npm run demo`.</sub>
 
@@ -89,19 +89,19 @@ honest: there is nowhere in 729 lines to hide a special case for Angular.
 
 | | |
 | --- | --- |
-| Core | **729 lines** across four files |
+| Core | **769 lines** across four files |
 | Every line of the tool | 63,951 lines of JavaScript in src and plugins |
 | Tests | 24,598 lines, 1454 cases across 174 files |
-| Source on disk | src 28 KB, plugins 3.0 MB |
+| Source on disk | src 30 KB, plugins 3.0 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
 ```bash
-cat src/core/*.js src/cli.js | wc -l    # 729, and the suite fails if this table drifts
+cat src/core/*.js src/cli.js | wc -l    # 769, and the suite fails if this table drifts
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 729 across six hundred and ninety four features, and every
+The core grew from 527 lines to 729 across six hundred and ninety five features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -1210,8 +1210,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and ninety four features in
-one hundred and ninety seven phases, forty four shipped, six hundred and forty seven new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and ninety five features in
+one hundred and ninety eight phases, forty four shipped, six hundred and forty eight new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 
