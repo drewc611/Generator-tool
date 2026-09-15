@@ -67,6 +67,12 @@ export function createContext({ config, log, policy }) {
     // filled by vis plugins
     report: { parity: [], unverified: [] },
 
+    // A plugin may set this to ask something before a write's bytes land,
+    // and throw to refuse it. The core calls it if present and never learns
+    // what it checks, the same way it holds policy without knowing the
+    // rules; general-policy is what actually sets it.
+    beforeWrite: null,
+
     async write(relPath, contents) {
       const full = join(config.out, relPath);
       // A dry run records every write and performs none. The pipeline, the
@@ -77,7 +83,7 @@ export function createContext({ config, log, policy }) {
         // endpoint is refused here, the same moment the secret gate refuses
         // a credential in the source it reads, rather than caught later by
         // rereading a file that already exists to look at.
-        policy?.assertComponentWrite?.(relPath, contents, this);
+        await this.beforeWrite?.(relPath, contents);
         await mkdir(dirname(full), { recursive: true });
         await writeFile(full, contents, "utf8");
       }

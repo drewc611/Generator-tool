@@ -14,7 +14,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 <sub>portamp is a command line tool, not a desktop app. The console's own joke
 is where the plugin classes come from — Winamp's five, kept honest as a
-sidebar rather than a skin. Everything on the panel is real: 769
+sidebar rather than a skin. Everything on the panel is real: 740
 lines of core, no runtime dependencies, 225 plugins, and the literal output of
 `npm run demo`.</sub>
 
@@ -85,23 +85,23 @@ Each one is a thing it declined to guess.
 
 The constraint is the feature. A core small enough to read in one sitting is a
 core you can be sure about, and it is the only reason the plugin boundary stays
-honest: there is nowhere in 729 lines to hide a special case for Angular.
+honest: there is nowhere in 740 lines to hide a special case for Angular.
 
 | | |
 | --- | --- |
-| Core | **769 lines** across four files |
+| Core | **740 lines** across four files |
 | Every line of the tool | 63,951 lines of JavaScript in src and plugins |
 | Tests | 24,598 lines, 1454 cases across 174 files |
-| Source on disk | src 30 KB, plugins 3.0 MB |
+| Source on disk | src 29 KB, plugins 3.0 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
 ```bash
-cat src/core/*.js src/cli.js | wc -l    # 769, and the suite fails if this table drifts
+cat src/core/*.js src/cli.js | wc -l    # 740, and the suite fails if this table drifts
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 729 across six hundred and ninety five features, and every
+The core grew from 527 lines to 740 across six hundred and ninety five features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
