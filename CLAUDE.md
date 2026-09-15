@@ -4,12 +4,12 @@ Read this before changing anything. It is the contract, not a description.
 
 ## What this is
 
-A tiny plugin host that ports legacy front ends. The core is 718 lines across
+A tiny plugin host that ports legacy front ends. The core is 740 lines across
 four files and knows nothing about Angular, React, screenshots, or HTTP.
 Everything that knows a framework is a plugin. Keeping that true is the single
 most important constraint in the repo.
 
-Target repo: github.com/drewc611/portamp
+Target repo: github.com/drewc611/Generator-tool
 
 ## Run it
 
@@ -21,6 +21,7 @@ npm run demo-portal          # a service portal fixture through the same engine
 npm test                     # node --test, no framework
 node src/cli.js run -v       # timings per plugin
 node src/cli.js ui --watch   # the console, rerunning as the source changes
+node src/cli.js ui --lan true   # also reachable on your network, behind a token every request must carry
 node tools/ci-local.mjs --only smarty   # the CI's own exercise steps, locally, before a push
 node src/cli.js fetch https://old.example.com --out fetched --allow-live   # copy a site to port; needs portamp.authorization.json
 ```
@@ -37,8 +38,8 @@ directly and has no idea what any of them do.
 
 ```
 src/core/kernel.js     registry, discovery, pipeline        (~130 lines)
-src/core/policy.js     the rules, enforced, and what clears them  (~220 lines)
-src/core/context.js    shared context and logger            (~90 lines)
+src/core/policy.js     the rules, enforced, and what clears them  (~230 lines)
+src/core/context.js    shared context and logger            (~100 lines)
 src/cli.js             argument parsing and wiring          (~280 lines)
 plugins/*/index.js     everything that knows a framework
 skills/                agent playbooks, also usable standalone
@@ -76,7 +77,7 @@ the same screen written in Angular and in Vue produces byte identical React,
 Vue, Svelte and custom element output, which is the only honest way to claim
 the middle is framework blind.
 
-Plugins that ship, two hundred and twenty one in five classes, and the core has never learned
+Plugins that ship, two hundred and twenty five in five classes, and the core has never learned
 the name of any of them:
 
 ```
@@ -97,11 +98,11 @@ output   output-react  output-vue  output-svelte  output-angular  output-lit
          output-i18n  output-adr  output-migration  output-preact  output-solid
          output-alpine  output-cem  output-postman  output-curl
          output-fixtures  output-readme  output-ci  output-site
-         output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit  output-dockerfile  output-nginx  output-types  output-cypress
+         output-next  output-remix  output-astro  output-qwik  output-nuxt  output-sveltekit  output-dockerfile  output-nginx  output-types  output-cypress  output-backend
          output-codemod  output-aws  output-azure  output-gcp  output-vercel  output-netlify  output-cloudflare  output-caddy  output-eleventy  output-playwright
 vis      vis-parity  vis-ui  vis-timeline  vis-coverage  vis-equivalence  vis-roundtrip  vis-graph  vis-transformer  vis-a11y  vis-security  vis-perf  vis-lifecycle  vis-readers
 general  general-policy  general-authorization  general-license  general-size
-         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study
+         general-doctor  general-scaffold  general-watch  general-history  general-architect  general-agents  general-publish  general-study  general-scrape  general-search  general-agent
 ```
 
 An option the CLI does not recognise is passed through to the plugins
@@ -828,13 +829,297 @@ six are fixed rather than carried forward. The third pass first shipped
 with a violet into pink gradient standing in for the accent everywhere,
 called out as hideous once seen live; the gradient is dropped for one
 restrained blue that marks only a selection and the primary button, since
-an accent spent on every dot, badge and header marks nothing. The line
-budget, raised from
-2000 to 2050 for the second pass and to 2150 for the third, holds with room
-to spare; docs/UI-SPEC.md carries the same number, and the README's console
-images are real screenshots of the console the run actually serves rather
-than a hand-drawn mockup of it. test/ui.test.js's existing thirty four
-cases hold the contract; none needed rewriting.
+an accent spent on every dot, badge and header marks nothing. Asked
+again for more blackness and more blue, night moves from a neutral dark
+gray to a near black with a blue cast (the workspace, panels and hairlines
+all carry a blue tint rather than sitting neutral) and becomes the
+default regardless of the system's own light or dark preference, because
+the console's own content is screenshots and code, not a document; day
+exists one key away, retinted from its earlier lavender-gray to match, a
+pale blue-gray table rather than a violet one. The line budget, raised
+from 2000 to 2050 for the second pass and to 2150 for the third, holds
+with room to spare; docs/UI-SPEC.md carries the same number, and the
+README's console images are real screenshots of the console the run
+actually serves rather than a hand-drawn mockup of it. test/ui.test.js's
+existing thirty four cases hold the contract; none needed rewriting.
+
+10.21 leaves the third pass's shell alone and spends a round on what happens
+inside it. Every filtered list, screens, plugins, endpoints, unverified,
+files, now bolds the live match through a pure `matchRanges` function rather
+than only proving one exists, and every filter input grows a clear button and
+a hundred and fifty millisecond debounce so a long list stops re-rendering on
+every keystroke. An endpoint's method and path and a written file's path each
+get a one click copy, `copy all` does the same for the whole unverified list,
+and `c` copies the run's own diagnostics, its file, plugin, timing and
+unverified counts, as one pasteable block; `f` focuses the rack's own filter
+the way `/` already focused the unverified one. The source viewer gains a
+line count, a wrap toggle for a line too long to read, and a download button,
+since the pane you read source in is exactly where those three earn their
+keep. The head's five stats carry a tooltip naming what each counts, a
+relative-time readout beside the timestamp keeps counting forward on a timer
+between refreshes, and the tab title already carried the unverified count but
+now the pane does too. The flags popover closes on Escape and on a click
+outside it, and grows a `clear` button beside its own filter; the rack's sort
+order and the inspector's chosen tab now survive a reload the same way the
+theme already did. Nothing here changed the shell three passes built; every
+addition is additive, proven by keeping every one of test/ui.test.js's
+existing assertions about that shell intact. The line budget, raised from
+2150 to 2250, holds with room to spare. test/ui.test.js's four new cases
+hold matchRanges, relativeTime, formatCount and diagnosticsText, the pure
+functions the rest is built from.
+
+10.22 gives the mobile app screen the same care its desktop shell already had.
+A button sized for a mouse cursor is not sized for a fingertip: `.icon-btn`
+grows from 32px to a real 44px touch target, and `.btn.small`, `.field-x` and
+`.copy-mini`, each built to be found by a hover state, gain enough padding to
+be found by a thumb instead, every change scoped to the narrow breakpoint
+alone so the desktop rack keeps its own density. A search field under 16px
+makes iOS zoom the whole page in the moment it gets focus; every `.field` is
+16px under that breakpoint and nowhere else. `-webkit-tap-highlight-color:
+transparent` on every button and link removes the grey flash a touch screen
+leaves behind that a mouse never sees, and `touch-action: manipulation` stops
+a fast second tap from being read as the browser's own double-tap-to-zoom.
+The recorded-versus-built scrubber's thumb grows to 26px for a finger's own
+precision; a filename wraps instead of forcing the sideways scroll a thumb
+cannot aim at; and every scrollable panel gains `overscroll-behavior:
+contain` so flinging a short list to its end stops there instead of rubber
+banding into the browser's own chrome. `env(safe-area-inset-*)` on the mast
+and the tab bar keeps their content and icons clear of a notch and a home
+indicator in either orientation, and the shortcuts card gains a `max-width`
+so it never has to guess at a phone's narrower width. The mobile view itself
+now survives a reload through `localStorage`, the same convenience the
+theme, the rack's sort order and the inspector's tab already used. The
+shortcuts card also catches up to two keys the previous round wired and
+never documented, `f` and `c`. The line budget, raised from 2250 to 2300,
+holds with room to spare.
+
+10.23 opens the console beyond loopback for the first time, and only as far
+as a token lets it. `portamp ui --lan true` is the one door: naming it is
+what earns `0.0.0.0` in `server.listen`, so the default stays exactly what
+it always was. The moment it is asked for, a random per-run token is minted
+(`crypto.randomBytes`, base64url) and every route, `/` included, checks it
+first — from `?token=` on a first request, or a `portamp_token` cookie the
+server sets on that request so app.html's own fetch calls need no change to
+carry it afterward. The compare is `crypto.timingSafeEqual` after a length
+check, so a wrong guess costs the same time as a right one. The server
+prints the LAN address with the token already in it, found through
+`node:os`'s `networkInterfaces()`; finding none is named rather than
+guessed at. Nothing here is called secure without its caveat: HTTP on a LAN
+is still plaintext, and the server says so in the line it prints. The line
+budget, raised from 2300 to 2350, holds with room to spare.
+
+10.24 raises the learned model's floor from two exemplars per class to
+three. dsp-learn's corpus grows from twenty two labelled miniatures to
+thirty three, one more per archetype, each classifying as its own label
+under the rule based reader exactly as the first round did, so the model
+and the rules agree on every exemplar before either trains on it. Leave
+one out cross validation, defined since the corpus first reached two per
+class, now leaves a held out exemplar's class represented by two siblings
+rather than one; measured against the grown corpus it comes back a clean
+thirty three of thirty three. Corpus growth this way is still eleven human
+labelled shapes, not real shipped apps, so it narrows but does not close
+what ROADMAP.md's own next task already names: real labelled apps are what
+would make the confidence numbers mean more from here. model.js's own doc
+comments, stale since the corpus first left one exemplar per class behind
+(they still described a corpus of one and a cross validation the code had
+already stopped calling undefined), are corrected to say what the code has
+done since. test/learn.test.js and test/corpus.test.js hold both the grown
+corpus and its agreement with the rule based reader.
+
+10.25 answers a cheaper question than `fetch`'s: not what a site holds, but
+how big it is, before committing to a full copy. `portamp map <url>` reads
+an attested origin's `sitemap.xml` first (and a sitemap index's own
+children, one level deep), then crawls its pages to a depth exactly as
+`fetch` does, except a page is fetched only to read the links inside it
+and an asset's URL is taken from the page that names it, the asset itself
+never requested. A sitemap entry is a known good entry point, not a mere
+hint, so a page the sitemap names is still crawled for its own links even
+though its existence needed no request to learn; the redirect following,
+robots.txt honouring and origin confinement `fetch` already proved are not
+written twice, `followRedirects`, extracted from `fetchSite`'s own inline
+`get`, is the one function both call. It stands behind the exact same two
+gates as `fetch`, since discovering a live system's shape is still a live
+call to a real system, and writes `MAP.md` and `portamp.map.json` naming
+every URL found, whether from the sitemap or the crawl, and at what depth.
+What a full `fetch` would eventually find by reading a stylesheet's own
+`url()` and `@import` references is a named, honest gap here, since a map
+never downloads a stylesheet to read it. test/fetch.test.js holds
+`sitemapUrls` as a pure function and `mapSite` end to end.
+
+10.26 reads what map only counts. `portamp scrape` and `batch-scrape`
+(plugins/general-scrape/) read a URL, or many, as Markdown, HTML or JSON,
+with no browser and no dependency. `markdown.js` walks the same tree
+`parseMarkup` already builds for a reader's own dialect, by the ordinary
+rules a browser gives block and inline content: headings, emphasis and
+links resolved against the page, lists and tables kept on adjacent lines
+rather than read as several one line ones, a `<pre>` block's own spacing
+kept exactly. `htmlToText` strips Markdown's own marks from that same
+output rather than walking the tree a second way, so the two can never
+disagree about a block boundary; `pageMeta` reads the title, description,
+canonical and language a `<head>` names, never guessed when absent.
+Unlike `fetch` and `map`, neither command is confined to one origin: a
+redirect is followed wherever it leads, each hop still asking the policy
+first. `batch-scrape` reads many URLs concurrently and keeps going past a
+domain the attestation does not cover, failing only that one URL, since a
+mixed batch spanning several attested domains is the ordinary case; live
+calls being off entirely, or the run being offline, stops the whole batch,
+since every remaining URL would fail identically. `--format screenshot`
+is refused by name, since rendering a page as pixels needs a real browser
+and that is `input-record`'s job, not this one's. Manual testing surfaced
+three real bugs before a single formal test was written: the doctype
+leaking into the Markdown as stray text, and both lists and tables reading
+as several one line blocks instead of one, because a whitespace-stripping
+regex could reach back across a blank line it should have stopped at.
+test/scrape.test.js holds the converter and both commands end to end.
+
+10.27 answers what a person means by search rather than what map or scrape
+already answer. `portamp search` (plugins/general-search/) reads a query
+from a search engine's own no-JS results page, DuckDuckGo's HTML endpoint
+for now, walking the same tree `parseMarkup` already builds and matching
+only the vocabulary that endpoint actually carries: a `result__body` per
+result holding one `result__a` title link and one `result__snippet`.
+DuckDuckGo wraps every external result behind its own redirector; the
+wrapped `uddg` parameter is decoded to the real destination rather than
+left as a link nobody could follow by hand. A results page carrying none of
+that vocabulary is named unrecognised rather than reported as zero results,
+since a changed markup and a genuinely empty page would otherwise look
+identical. `search` stands behind the same `--allow-live` and
+`portamp.authorization.json` gates as `fetch`, `map` and `scrape`, since
+asking a search engine for results is a live call to a real system exactly
+like any of those; an engine this reader does not know is refused by name
+before either gate is even asked. `--scrape true` hands every result's url
+to `general-scrape`'s own `batchScrape`, so a result on a domain the
+attestation does not cover fails only that one result, the same behaviour
+`batch-scrape` already established rather than a second one invented for
+this command. test/search.test.js holds the parser against a fixture built
+from the real result markup, both commands end to end, and the gates.
+
+10.28 answers the sentence a person actually types rather than the recipe
+they already know to ask for. `portamp agent` (plugins/general-agent/)
+compiles one plain instruction to a scrape or search recipe, rule based
+throughout and never free form AI: a url in the sentence with a recognised
+verb (scrape, get, extract, find, read...) names fields before or after it,
+either phrasing read; no url but a leading `search` names a query, handed
+to `general-search`, with a trailing `and get the ...` clause narrowing
+which of a result's own title, url or snippet come back. Ten fields are
+read structurally off the fetched page, each a plain fact never an
+inference: title and description from the head, headings, links and images
+walked off the tree, a page's own mailto links and visible addresses as
+emails, a currency prefixed number matched as text and never parsed or
+verified as prices, a table's rows as data, the whole page as text or
+Markdown. A sentence naming an interaction verb this reader cannot perform,
+click, type, scroll, hover, fill, wait, is refused by name pointing at
+`input-record`, whose job a live browser session actually is; a field
+neither list recognises is refused by name too, listing what is understood,
+the same restraint `general-study`'s `SolveError` already keeps for an
+equation this tool cannot solve. `runInstruction` carries the compiled
+recipe out through `general-scrape`'s and `general-search`'s own functions
+directly, so an instruction stands behind the exact same `--allow-live` and
+`portamp.authorization.json` gates as reaching the same scrape or search by
+name would. test/agent.test.js holds every field extractor, the compiler's
+refusals, both actions end to end, and the gates.
+
+10.29 gives the port the other half of full stack: a real server, not a
+fixture that echoes the same canned response forever. output-backend
+(plugins/output-backend/) reads the same `ctx.api.calls` every emitter
+already reads, groups them by resource, and pairs a collection route with
+its own item route regardless of whether the source spelled the id as
+`:id`, `${id}` or `{id}`; only a resource the app writes to, not merely
+reads, is wired to a real store, and a call this reader cannot pair into a
+collection and an item is named in BACKEND.md and left to the fixture or
+501 path serve.js already has, never forced into a shape it does not have.
+Each wired entity is seeded from whichever source actually observed a
+shape, dsp-entities' clustered traffic, a recorded response body, or a
+declared API document, and the seed says which; an entity nothing ever
+observed still wires, seeded with an id alone. server/store.js is one
+small class, written verbatim into every port, one JSON file per entity
+with a write landing through a temp file and a rename so a crash mid write
+leaves the previous file intact. Requires `--site true`: the server this
+writes into is output-site's own serve.js, tried first inside `respond()`
+before the pre-existing fixture or 501 logic, which runs unchanged for
+anything the generated backend does not answer. Building this against a
+real pipeline and real HTTP requests surfaced two defects in dsp-apimap
+older than this plugin, fixed for every reader that feeds it rather than
+patched around here: a collection route and its own item route named
+identically and one silently overwrote the other in src/api/endpoints.js,
+and a call's `${id}`-style path reached that file untemplated, which
+serve.js's `:id`-only matcher could never match. A genuine ambiguity is
+named rather than guessed at: an item route ending in `:id` and a literal
+action route at the same depth (`DELETE /orders/:id` beside `DELETE
+/orders/cancel`) are indistinguishable to any path matcher, so the verb is
+pulled back out and reported rather than routed by luck. test/backend.test.js
+holds the inference, both dsp-apimap fixes, the collision refusal over real
+HTTP, a real create-list-get-update round trip, and persistence across a
+process restart.
+
+10.30 makes an alpha or a beta safe to publish before this is ready to be
+everyone's default install. Every publish before this phase ran `npm
+publish --provenance --access public` with no `--tag`, which would have
+published any version, prerelease included, as `latest`, the tag an
+untagged `npm install portamp` resolves to; nothing has published yet, so
+the defect was never exercised, but it is exactly the kind a real alpha
+would have found the hard way. distTagFor (plugins/general-publish/index.js)
+reads a version's own prerelease identifier, the word after its hyphen, and
+names it as the dist-tag to publish under, or names latest when there is
+none; the release workflow calls it once rather than keeping a second copy
+of the rule in shell, and passes whatever it names to `--tag`. Nothing about
+the tag check, the private flag or the NPM_TOKEN check changed.
+docs/PUBLISHING.md gains the alpha and beta flow, and its own long stale
+"what stands in the way today" section, still describing a `"private": true`
+blocker the copyright holder removed back at phase 10.2 without the
+document catching up, is corrected to name the one thing still missing, a
+person adding NPM_TOKEN. test/publish.test.js holds distTagFor against a
+plain version, three prerelease identifiers, and an empty or missing one.
+
+10.31 closes a gap output-html had named rather than fixed since it first
+shipped: a delegated handler nested two loops deep could only ever recover
+the innermost row, because a single `data-i` attribute and a single shared
+row lookup were all the custom element target carried. The reader carries
+the full chain now, outermost to innermost, as one `data-iN` attribute per
+nesting level rather than one shared index, and each auto-generated loop
+index takes its own name per depth so an inner loop's fallback can no
+longer shadow an outer one out of reach. Building the fix against a real
+run surfaced a second, narrower defect in the same code path: the row
+lookup this replaced reached into `this.state` explicitly, but the first
+version of the chained lookup left every level as a bare identifier, which
+only resolves for the outermost row; a nested row is written relative to
+the row above it, so only that outermost level reaches into `this.state`
+and every level under it stays bare, the way the source itself named it.
+This was caught by running the actual emitted custom element in a real
+browser and clicking a specific row two loops deep rather than by
+reasoning about the generated string, the same standard the pixel diff
+already held emission to; a string match alone would have passed the first,
+broken version. test/targets.test.js holds it, structurally and by proving
+the click.
+
+10.32 moves the endpoint gate to the moment it can still do something. Since
+the gate first shipped it ran at `verify`, after the whole port was already
+written: it could fail the run and name the file, but the offending
+component was already on disk to look at, unlike the secret gate, which
+stops the source from ever being copied in. `ctx` gains `beforeWrite`, a
+hook a plugin may set and `ctx.write` calls on every write before the bytes
+land, never learning what it checks, the same way the core already holds
+`policy` without knowing the rules; general-policy sets it at `extract` to
+refuse a component naming a raw endpoint before its bytes exist, the same
+guarantee the secret gate already gave the source it reads. Which written
+path counts as a component (`src/features`, `src/elements` and `src/app`,
+minus the site shell's own data modules) stays exactly where it always
+was, in general-policy, not core: a first version put that classification
+on `Policy` itself, and CI's own framework blindness check caught it within
+the hour, since the file extension list it matched against spelled `vue`
+and `svelte` in a file under `src/core/`. The write time hook and the verify
+stage scan, kept as the second net for anything that reaches disk some
+other way, now share the one classifier so they can no longer name two
+different trees by accident. Moving the check earlier turned out not to
+need checking a component before it exists, as this list used to say: every
+plugin that collects endpoints and routes runs at `plan`, every plugin that
+writes a component runs at `emit`, and a staged pipeline finishes one stage
+before starting the next, so by the time any component is written the map
+it is checked against is already whole. test/pipeline.test.js now asserts
+the refused component never reaches disk, not only that the run stopped,
+and test/policy.test.js holds `isComponentPath` and the installed
+`ctx.beforeWrite` hook directly, through the plugin's own `extract` handler
+rather than a hand rolled substitute.
 
 ## What is honestly incomplete
 
@@ -867,10 +1152,6 @@ Named plainly so nobody rediscovers it as a surprise.
 - `dsp-improve` reports what it measured: names, labels, contrast, target size,
   and states never observed. It does not judge information architecture, and a
   state it never reached is reported as unseen rather than as missing.
-- The endpoint gate runs at `verify`, so unlike the secret gate it cannot stop
-  the write. It fails the run and names the file; the offending component is
-  still on disk to look at. Moving it earlier would mean checking a component
-  before it exists.
 - `input-jquery` produces an inventory, not components. jQuery declares no
   boundaries and portamp does not invent them, so it reports which selector is
   written to, listened on and called from, and leaves the boundaries to a
@@ -879,8 +1160,6 @@ Named plainly so nobody rediscovers it as a surprise.
 - `output-openapi` describes requests and deliberately describes no response.
   The client says what goes out; it never says what comes back, and a schema
   nobody verified is the failure this tool exists to avoid.
-- `output-html` binds only the innermost row to a handler inside nested loops,
-  and names that case in the notes when it meets it.
 - `dsp-deadcode` reports candidates and never verdicts: a class name assembled
   at runtime looks unused and is not, so the report says what was searched.
 - `dsp-archetype` recognises the shape of an app from its structure and its
@@ -901,19 +1180,21 @@ Named plainly so nobody rediscovers it as a surprise.
 
 ## Next tasks, in the order they pay off
 
-The full picture is ROADMAP.md: six hundred and eighty three features in
-one hundred and eighty six phases, statuses honest. What remains open, and why:
+The full picture is ROADMAP.md: six hundred and ninety five features in
+one hundred and ninety eight phases, statuses honest. What remains open, and why:
 
 1. **npm publish.** The workflow is written: a v* tag runs the suite,
    publish-check, the tag against the version and the token's presence, then
    publishes with provenance. What remains is a person's: adding NPM_TOKEN;
    docs/PUBLISHING.md says how.
-2. **Growing the calibration corpus.** Twenty two labelled miniatures now, two
-   per archetype, enough for a leave one out cross validation; real labelled apps
-   would make the confidence numbers mean more.
-3. **A grammar for the template dialects.** The readers are structural
-   scanners now, not regexes, but a real grammar with positions would make
-   every note able to say the line it came from.
+2. **Growing the calibration corpus.** Thirty three labelled miniatures now,
+   three per archetype, enough for a leave one out cross validation that leaves
+   two siblings behind rather than one; real labelled apps, not more synthetic
+   miniatures, are what would make the confidence numbers mean more from here.
+
+The grammar with positions this list used to name as a third open task shipped
+at phase 3.0; every note already says the line it came from. Nothing else in
+the roadmap is marked planned.
 
 ## Conventions
 

@@ -54,9 +54,30 @@ test("the whole ui is under the budget the spec set", async () => {
   // the frosted edge to edge chassis, plus a real mobile app screen: a bottom
   // tab bar that swaps the sidebar, the stage and the inspector for full
   // screens, and a floating action button beside it wired to the same
-  // rerun(), bought the raise to 2150. The budget still exists so growth
-  // stays a decision, not a drift.
-  assert.ok(js + html + lib < 2150, `${js + html + lib} lines, the spec allows under 2150`);
+  // rerun(), bought the raise to 2150. A round of console enhancements —
+  // highlighting the live match in every filtered list, a clear button and a
+  // debounce on every filter input, a copy button beside an endpoint and a
+  // written file, a diagnostics-to-clipboard shortcut, a relative-time and a
+  // document-title readout that keep counting between runs, descriptive
+  // tooltips on the head's own stats, an escape key and a click outside that
+  // close the flags popover with a clear-all button beside its filter, the
+  // rack and inspector tab remembering their own choice across a reload, and
+  // the source viewer growing a line count, a wrap toggle and a download —
+  // bought the raise to 2250. A mobile robustness pass — a real touch target
+  // on the icon, copy and clear buttons, a sixteen pixel filter field so iOS
+  // stops zooming the page in on focus, an enlarged scrubber thumb, safe area
+  // insets around the notch and the home indicator, contained overscroll so a
+  // panel never rubber bands into the browser's own chrome, a filename that
+  // wraps instead of forcing a sideways scroll, the mobile view remembering
+  // its own choice across a reload the way the theme already does, and the
+  // shortcuts card catching up to two keys it had never listed — bought the
+  // raise to 2300. --lan, the one door out of loopback, opens only as far as
+  // a per-run token lets it: every route refuses a request that does not
+  // carry it in a cookie or the url, a constant time compare so the check
+  // itself gives nothing away, and the LAN address the server prints carries
+  // the token a phone would need — bought the raise to 2350. The budget
+  // still exists so growth stays a decision, not a drift.
+  assert.ok(js + html + lib < 2350, `${js + html + lib} lines, the spec allows under 2350`);
 });
 
 // The run comparison lives inside the 70px trend gauge in the head. It once
@@ -170,6 +191,57 @@ test("the server binds loopback, serves the run, and refuses to leave the direct
   assert.match(await source.text(), /export default function/);
 });
 
+// --lan is the one door out of loopback, and it opens only as far as a
+// token lets it: every route, including "/", refuses a request that does
+// not carry it, whether that request would have been read-only or not.
+test("--lan binds every interface but mints a token every route requires, and a query token becomes a cookie", async (t) => {
+  const { out, cleanup } = await ctxFor();
+  t.after(cleanup);
+  const { server, token, lanUrl } = await serve({ outDir: out, shotsDir: join(ROOT, "example/screenshots"), port: 0, log: {}, lan: true });
+  t.after(() => new Promise((done) => server.close(done)));
+
+  assert.equal(server.address().address, "0.0.0.0", "asking for --lan is what earns 0.0.0.0, never the default");
+  assert.match(token, /^[\w-]{20,}$/, "a real token was minted");
+  assert.match(lanUrl ?? "", /token=/, "the printed LAN address carries the token a phone would need");
+
+  const base = `http://127.0.0.1:${server.address().port}`;
+  assert.equal((await fetch(`${base}/`)).status, 401, "no token at all is refused, even for the page itself");
+  assert.equal((await fetch(`${base}/run.json?token=wrong`)).status, 401, "a wrong token is refused the same as none");
+
+  const withToken = await fetch(`${base}/run.json?token=${token}`);
+  assert.equal(withToken.status, 200);
+  const cookie = withToken.headers.get("set-cookie");
+  assert.match(cookie ?? "", /portamp_token=/, "a valid query token sets the cookie later requests can rely on");
+
+  const cookied = await fetch(`${base}/run.json`, { headers: { cookie } });
+  assert.equal(cookied.status, 200, "the cookie alone is enough on the next request, with no token in the url");
+});
+
+// A --lan link carries its token in the query string until the cookie takes
+// over; nosniff and no-referrer are cheap, standard insurance against that
+// token, or a report served as text/plain, ever being misread or leaked.
+test("every response carries nosniff and no-referrer, the 304 branch included", async (t) => {
+  const { out, cleanup } = await ctxFor();
+  t.after(cleanup);
+  const { server } = await serve({ outDir: out, shotsDir: join(ROOT, "example/screenshots"), port: 0, log: {} });
+  t.after(() => new Promise((done) => server.close(done)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+
+  const page = await fetch(`${base}/`);
+  assert.equal(page.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(page.headers.get("referrer-policy"), "no-referrer");
+
+  const run = await fetch(`${base}/run.json`);
+  const etag = run.headers.get("etag");
+  assert.equal(run.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(run.headers.get("referrer-policy"), "no-referrer");
+
+  const notModified = await fetch(`${base}/run.json`, { headers: { "if-none-match": etag } });
+  assert.equal(notModified.status, 304, "the etag branch is the one under test");
+  assert.equal(notModified.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(notModified.headers.get("referrer-policy"), "no-referrer");
+});
+
 test("the ui never writes into the port", async () => {
   const source = await readFile(join(ROOT, "plugins/vis-ui/index.js"), "utf8");
   const server = source.slice(source.indexOf("export async function serve"), source.indexOf("export function openBrowser"));
@@ -182,6 +254,7 @@ import {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
   sparklinePoints, keyAction, STAGE_KEYS, offlineNotice, isTextFile, reportsIn,
   intakePath, rerunOptions, rerunPatch, RERUN_FLAGS,
+  matchRanges, relativeTime, formatCount, diagnosticsText,
 } from "../plugins/vis-ui/lib.js";
 import { createIntake } from "../plugins/vis-ui/index.js";
 
@@ -246,6 +319,8 @@ test("the keymap is one decision: screens, stages, wipe, help, rerun, theme", ()
   assert.deepEqual(keyAction("4", {}), { kind: "stage", stage: "emit" });
   assert.deepEqual(keyAction("0", {}), { kind: "stage", stage: null });
   assert.equal(Object.keys(STAGE_KEYS).length, 5);
+  assert.equal(keyAction("f", {}).kind, "focus-rack-filter");
+  assert.equal(keyAction("c", {}).kind, "copy-diagnostics");
   assert.equal(keyAction("j", { inInput: true }), null, "keys inside an input belong to the input");
   assert.equal(keyAction("x", {}), null);
 });
@@ -266,6 +341,47 @@ test("reports are the run's own root level markdown, nothing deeper", () => {
     reportsIn(["PORT_NOTES.md", "src/i18n/README.md", "A11Y.md", "src/tokens.js"]),
     ["PORT_NOTES.md", "A11Y.md"],
   );
+});
+
+test("a row splits around its match, case blind, so the match can be highlighted", () => {
+  assert.deepEqual(matchRanges("dsp-tokens", "token"), [
+    { text: "dsp-", hit: false }, { text: "token", hit: true }, { text: "s", hit: false },
+  ]);
+  assert.deepEqual(matchRanges("dsp-tokens", "TOKEN"), [
+    { text: "dsp-", hit: false }, { text: "token", hit: true }, { text: "s", hit: false },
+  ]);
+  assert.deepEqual(matchRanges("dsp-tokens", ""), [{ text: "dsp-tokens", hit: false }], "an empty query matches nothing");
+  assert.deepEqual(matchRanges("dsp-tokens", "zzz"), [{ text: "dsp-tokens", hit: false }], "no match is the whole text unhit");
+});
+
+test("a timestamp reads in words until the gap stops being a useful number of them", () => {
+  const now = Date.UTC(2026, 8, 7, 12, 0, 0);
+  assert.equal(relativeTime(new Date(now - 2000).toISOString(), now), "just now");
+  assert.equal(relativeTime(new Date(now - 30_000).toISOString(), now), "30s ago");
+  assert.equal(relativeTime(new Date(now - 5 * 60_000).toISOString(), now), "5m ago");
+  assert.equal(relativeTime(new Date(now - 3 * 3_600_000).toISOString(), now), "3h ago");
+  assert.equal(relativeTime(new Date(now - 25 * 3_600_000).toISOString(), now), new Date(now - 25 * 3_600_000).toLocaleString());
+  assert.equal(relativeTime("not a date", now), "");
+});
+
+test("a big count reads with thousands separators, one fixed locale", () => {
+  assert.equal(formatCount(0), "0");
+  assert.equal(formatCount(1234), "1,234");
+  assert.equal(formatCount(1234567), "1,234,567");
+});
+
+test("copy diagnostics is the numbers already on screen, in one pasteable block", () => {
+  const run = {
+    ranAt: "2026-09-06T00:00:00.000Z", files: ["a.js", "b.js"],
+    plugins: [{ ms: 5 }, { ms: 7 }], unverified: ["one"], coverage: { ported: 42 },
+  };
+  const text = diagnosticsText(run);
+  assert.match(text, /files: 2/);
+  assert.match(text, /plugins: 2/);
+  assert.match(text, /ms: 12/);
+  assert.match(text, /unverified: 1/);
+  assert.match(text, /ported: 42%/);
+  assert.equal(diagnosticsText(null), "");
 });
 
 /* ------------------------------------------------------ the server half */
@@ -514,4 +630,17 @@ test("the nineteenth review pass: a rerun's flags ride on the command line's and
   assert.equal(await fetch(`${address}/shots/home.png`).then((r) => r.text()), "A");
   where = b;
   assert.equal(await fetch(`${address}/shots/home.png`).then((r) => r.text()), "B", "after an intake rerun the console serves the intake's screenshots");
+});
+
+// A tabbed-to filter field is a real focus target; a border color alone is
+// not the visible focus indicator every other control on the page gets, and
+// a swatch that only carries its color and role in a mouse tooltip is
+// invisible to a screen reader and unreachable by keyboard.
+test("a filter field keeps a real focus ring, and a token swatch names its role and value for assistive tech", async () => {
+  const html = await readFile(join(ROOT, "plugins/vis-ui/app.html"), "utf8");
+  assert.doesNotMatch(html, /\.field:focus-visible\s*\{[^}]*outline:\s*none/, "focusing a filter field must not remove the page's own focus ring");
+  assert.match(html, /role="img" aria-label="'\s*\+\s*role/, "each swatch carries its role and hex value as an accessible name, not only a title attribute");
+  const icons = [...html.matchAll(/<svg\b([^>]*)>/g)].filter((m) => !/id="spark"/.test(m[0]));
+  assert.ok(icons.length >= 5, "the mobile tab bar and the FAB carry an icon each");
+  assert.ok(icons.every((m) => /aria-hidden="true"/.test(m[1])), "a decorative icon paired with a real text or aria-label on its button stays out of assistive tech's way");
 });

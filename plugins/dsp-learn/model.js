@@ -1,21 +1,21 @@
 /**
  * A nearest prototype classifier over the labelled archetype corpus.
  *
- * The training is real and small: the corpus is one exemplar per archetype, and
- * what is learned from it is the standardization, a mean and a spread per
- * feature, so that a feature counted in tens (elements) and one that is zero or
- * one (a word flag) carry the same weight in the distance. A screen is then
- * classified by the nearest standardized prototype, and the confidence is a
- * softmax over the negative distances, so a screen far from everything and one
- * sitting exactly between two prototypes both read as low confidence rather than
- * being forced into a class.
+ * The training is real and small: the corpus holds three exemplars per
+ * archetype, and what is learned from it is the standardization, a mean and a
+ * spread per feature, so that a feature counted in tens (elements) and one that
+ * is zero or one (a word flag) carry the same weight in the distance. A screen
+ * is then classified by the nearest standardized prototype, and the confidence
+ * is a softmax over the negative distances, so a screen far from everything and
+ * one sitting exactly between two prototypes both read as low confidence rather
+ * than being forced into a class.
  *
- * It is honest about its size. One exemplar per class means a true held out
- * accuracy is undefined: removing a class's only exemplar leaves that class
- * unrepresentable. So instead of a cross validation number it cannot compute, it
- * reports a reproducible robustness figure, how far a screen can be jittered and
- * still land on its own label, which is a stability property this method really
- * has and can be measured without a person.
+ * It is honest about its size. With more than one exemplar per class, holding
+ * one out still leaves its class represented by its remaining siblings, so a
+ * real leave one out held out accuracy is defined; crossValidate below reports
+ * it. Robustness, how far a screen can be jittered and still land on its own
+ * label, is the companion measure, a stability property this method really has
+ * and can be measured without a person.
  */
 
 import { softmax } from "../vis-transformer/index.js";
@@ -98,10 +98,11 @@ function gaussian(draw) {
 /**
  * Leave one out cross validation: a real held out accuracy. Each example is held
  * out in turn, a model is trained on the rest, and the held out example is
- * classified against it. With two examples per class, holding one out still
- * leaves its class represented by its sibling, so the question "would the model
- * have got this right if it had never seen it" is well posed. Deterministic; the
- * same corpus always gives the same number, and a per class breakdown besides.
+ * classified against it. With three examples per class, holding one out still
+ * leaves its class represented by its two siblings, so the question "would the
+ * model have got this right if it had never seen it" is well posed.
+ * Deterministic; the same corpus always gives the same number, and a per class
+ * breakdown besides.
  */
 export function crossValidate(corpus) {
   let correct = 0;

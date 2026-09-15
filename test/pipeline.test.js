@@ -128,16 +128,22 @@ test("what could not be verified is written down rather than dropped", async (t)
   }
 });
 
-// The gate runs at verify, so unlike the secret gate it cannot stop the write.
-// It fails the run and names the file, which is what verify is for.
-test("an endpoint baked into a component fails the run", async (t) => {
-  const { error, cleanup } = await runPipeline({ src: join(ROOT, "test/fixtures/hardcoded") });
+// The gate is asked at write time now, from ctx.write itself, so the
+// component never reaches disk; the verify stage scan in general-policy is
+// only the second net, for anything that writes some other way.
+test("an endpoint baked into a component fails the run and never reaches disk", async (t) => {
+  const { out, error, cleanup } = await runPipeline({ src: join(ROOT, "test/fixtures/hardcoded") });
   t.after(cleanup);
 
   assert.ok(error instanceof PolicyViolation, "the run should have been stopped by policy");
   assert.equal(error.rule, "no-endpoints-in-components");
   assert.equal(error.path, "/api/v1/orders");
   assert.match(error.file, /\.jsx$/);
+  await assert.rejects(
+    readFile(join(out, error.file), "utf8"),
+    /ENOENT/,
+    "the offending component was refused before its bytes landed"
+  );
 });
 
 test("a component that only links somewhere external is left alone", async (t) => {

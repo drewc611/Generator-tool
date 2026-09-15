@@ -6,9 +6,9 @@
  * a fixture, which is the same privacy line every other emitter holds.
  */
 
-const templated = (path) => String(path).replace(/\$\{([^}]+)\}/g, (_, n) => `:${n.split(".").pop().trim()}`).split("?")[0];
+export const templated = (path) => String(path).replace(/\$\{([^}]+)\}/g, (_, n) => `:${n.split(".").pop().trim()}`).split("?")[0];
 
-const placeholder = (type, name) => {
+export const placeholder = (type, name) => {
   if (type === "number") return 0;
   if (type === "boolean") return false;
   if (type === "object") return {};
@@ -16,7 +16,7 @@ const placeholder = (type, name) => {
 };
 
 // `/orders/{id}` in a spec and `/orders/:id` in a call are one shape.
-const comparable = (path) => templated(path).replace(/\{[\w$]+\}|:[\w$]+/g, "*");
+export const comparable = (path) => templated(path).replace(/\{[\w$]+\}|:[\w$]+/g, "*");
 
 export function buildFixtures(ctx) {
   const observed = new Map((ctx.model?.endpoints ?? []).map((e) => [`${e.method} ${templated(e.path)}`, e]));
