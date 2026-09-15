@@ -1,0 +1,33 @@
+{
+  "label": "wizard",
+  "html": "<p>Step 1 of 3</p><p>Step</p><input [(ngModel)]=\"company\"><input [(ngModel)]=\"taxId\"><button>Continue</button>",
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/onboarding"
+    }
+  ],
+  "model": {
+    "screens": [
+      {
+        "kind": "form"
+      },
+      {
+        "kind": "form"
+      },
+      {
+        "kind": "form"
+      }
+    ],
+    "transitions": [
+      {
+        "from": "a",
+        "to": "b"
+      },
+      {
+        "from": "b",
+        "to": "c"
+      }
+    ]
+  }
+}

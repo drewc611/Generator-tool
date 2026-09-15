@@ -4,14 +4,36 @@ import { securityTotal } from "../vis-security/index.js";
 import { perfTotal } from "../vis-perf/index.js";
 import { leaksTotal } from "../vis-lifecycle/index.js";
 
+// Which written path this port's own convention puts a component in, the
+// shape every output target already agrees on and not any one framework's:
+// src/features, src/elements and src/app hold real components, and the site
+// shell's own data modules there (the redirect map, the nav model, the head
+// table, breadcrumbs, the search index) hold destinations by construction,
+// so they are exempt for the same reason a navigation attribute naming a
+// route is, in assertNoEndpointLiteral below. This is port-shape knowledge,
+// not core's to know, which is why it lives here and not in policy.js.
+export function isComponentPath(relPath) {
+  return (
+    (relPath.startsWith("src/features/") || relPath.startsWith("src/elements/") || relPath.startsWith("src/app/")) &&
+    /\.(jsx|tsx|vue|svelte|js)$/.test(relPath) &&
+    !/^src\/app\/(redirects|nav|head|breadcrumbs|search-index)\.js$/.test(relPath)
+  );
+}
+
 /**
- * Two gates, at the two moments they can still do something.
+ * Two gates, each now with two nets.
  *
- * At extract, before anything is emitted: credentials in the legacy source stop
- * the run. At verify, after the port is written: an endpoint that reached a
- * component stops it too. The second one is enforced here rather than by a
- * check in CI, because a rule that only exists in CI only holds for the
- * example, and only after somebody pushes.
+ * Credentials: the source is scanned at extract, before anything is
+ * emitted, and the emitted files are scanned again here at verify, in case a
+ * plugin copied a value out of an artifact into the port. An endpoint
+ * literal in a component is now caught the same way the source credential
+ * scan always was, at the moment of writing: ctx.beforeWrite, a hook the
+ * core calls from ctx.write and never asks what it does, is set here to
+ * refuse a component naming a raw endpoint before its bytes exist, so the
+ * common case never reaches disk; this verify time scan stays as the second
+ * net, for anything that reaches disk by some path other than ctx.write.
+ * Enforced here rather than by a check in CI, because a rule that only
+ * exists in CI only holds for the example, and only after somebody pushes.
  */
 export default {
   name: "general-policy",
@@ -19,6 +41,19 @@ export default {
   class: "general",
   setup({ on, log, policy }) {
     on("extract", async (ctx) => {
+      // Set once, read fresh on every write: by the time any component is
+      // written at emit, every plugin that collects endpoints and routes
+      // has already finished at plan, so ctx.api and ctx.routes are whole.
+      ctx.beforeWrite = (relPath, contents) => {
+        if (!isComponentPath(relPath)) return;
+        const paths = [...new Set((ctx.api?.calls ?? []).map((c) => c.path).filter(Boolean))];
+        const routes = [...new Set([
+          ...(ctx.site?.pages ?? []).map((p) => p.route),
+          ...(ctx.routes?.table ?? []).map((r) => r.path).filter(Boolean),
+        ])];
+        policy.assertNoEndpointLiteral(contents, relPath, paths, routes);
+      };
+
       // Binary formats cannot carry a secret these patterns could name, and
       // scanning their bytes decoded as text invents matches. Every format
       // that is text, however obscure, still goes through the gate.
@@ -36,16 +71,9 @@ export default {
 
     on("verify", async (ctx) => {
       const paths = [...new Set(ctx.api.calls.map((c) => c.path).filter(Boolean))];
-      // Every emitted component, whichever target wrote it. src/api is the
-      // one place endpoints belong, so it is exactly the tree not checked.
-      const components = ctx.written.filter(
-        (f) => (f.startsWith("src/features/") || f.startsWith("src/elements/") || f.startsWith("src/app/")) && /\.(jsx|tsx|vue|svelte|js)$/.test(f)
-          // The site shell's data modules hold destinations by construction:
-          // the redirect map, the nav model and the head table are routes and
-          // titles, and a route may spell the same path an API answers. The
-          // shell's code files stay gated like any component.
-          && !/^src\/app\/(redirects|nav|head|breadcrumbs|search-index)\.js$/.test(f)
-      );
+      // Every emitted component, whichever target wrote it, by the same rule
+      // ctx.write already checked each one against on its way to disk.
+      const components = ctx.written.filter((f) => isComponentPath(f));
       // The routes this run itself serves. A navigation attribute naming one
       // of these is a place to go, whatever an API thinks of the same string.
       const routes = [...new Set([

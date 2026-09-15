@@ -111,8 +111,23 @@ jobs:
           echo "NPM_TOKEN is not set. A person creates a granular access token on npmjs.com that may publish portamp and adds it to this repository under Settings, Secrets and variables, Actions, as NPM_TOKEN. This job never publishes without it and nothing was published."
           exit 1
 
+      # A prerelease (v10.30.0-alpha.1) publishes under its own identifier,
+      # never latest, the tag `npm install portamp` resolves to with no tag
+      # named; distTagFor is the one function that decides this, tested in
+      # test/publish.test.js, not a second copy of the rule in shell.
+      - name: pick the npm dist-tag
+        id: dist_tag
+        run: |
+          tag=$(node --input-type=module -e "
+            import { distTagFor } from './plugins/general-publish/index.js';
+            import { readFileSync } from 'node:fs';
+            console.log(distTagFor(JSON.parse(readFileSync('./package.json', 'utf8')).version));
+          ")
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "publishing as npm dist-tag: $tag"
+
       - name: publish with provenance
         if: env.HAS_NPM_TOKEN == 'true'
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --tag "${{ steps.dist_tag.outputs.tag }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
