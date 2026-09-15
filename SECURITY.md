@@ -17,9 +17,15 @@ network calls of its own. Three parts of it are worth your attention:
 - **It can drive a running application** (`input-explore`, `input-record`),
   which requires both `portamp.authorization.json` and `--allow-live`. A way to
   reach the network without both gates is a vulnerability.
-- **It can serve a local UI** (`portamp ui`), which binds `127.0.0.1` only and
-  reads from the output and screenshot directories. A path that escapes either
-  directory, or a bind on any other interface, is a vulnerability.
+- **It can serve a local UI** (`portamp ui`), which binds `127.0.0.1` only by
+  default and reads from the output and screenshot directories. A path that
+  escapes either directory is a vulnerability. `--lan true` is the one door
+  onto `0.0.0.0`: it must be asked for by name, and every request then has to
+  carry a random per-run token the server prints alongside the LAN address. A
+  way to reach a route without that token, or a bind on any interface other
+  than loopback or (with `--lan true`) the host's own addresses, is a
+  vulnerability. HTTP over LAN is still plaintext; the server says so in the
+  line it prints, and that caveat is not a vulnerability, it is the fact.
 
 ## What is not a vulnerability
 
