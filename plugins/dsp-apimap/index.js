@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { buildIr } from "../dsp-ir/ir.js";
+import { templated } from "../output-fixtures/index.js";
 
 /**
  * Turns the call inventory into one endpoint map plus a client, so the ported
@@ -47,11 +48,20 @@ export function fieldsRead(ir) {
   walk(ir.root, new Map());
   return out;
 }
+const isParamSegment = (seg) => seg.startsWith("$") || seg.startsWith(":") || (seg.startsWith("{") && seg.endsWith("}"));
+
+// A path ending in a param addresses one member, not the collection its own
+// name already describes; without this a list and its own item route (GET
+// /orders and GET /orders/:id) name identically and the second silently
+// overwrites the first wherever names key a map, `src/api/endpoints.js`
+// included.
 const nameFor = (call) => {
-  const parts = call.path.split(/[/?]/).filter((p) => p && !p.startsWith("$") && !p.startsWith(":"));
+  const segments = call.path.split(/[/?]/).filter(Boolean);
+  const parts = segments.filter((p) => !isParamSegment(p));
   const tail = parts.slice(-2).map((p) => p.replace(/[^a-z0-9]/gi, "")).filter(Boolean);
   const verb = { GET: "get", POST: "create", PUT: "update", PATCH: "update", DELETE: "remove" }[call.method] || "call";
-  return verb + tail.map((t) => t[0].toUpperCase() + t.slice(1)).join("");
+  const base = verb + tail.map((t) => t[0].toUpperCase() + t.slice(1)).join("");
+  return isParamSegment(segments.at(-1) ?? "") ? `${base}ById` : base;
 };
 
 export default {
@@ -143,8 +153,12 @@ export default {
     });
 
     on("emit", async (ctx) => {
+      // The endpoint map is what serve.js's own matcher reads a path against,
+      // and that matcher only recognises a `:id`-style param; a call site's
+      // own `${id}` or `{id}` spelling is templated to match here, the same
+      // conversion output-fixtures and output-openapi already apply on read.
       const lines = ctx.api.calls
-        .map((c) => `  ${c.name}: { method: ${JSON.stringify(c.method)}, path: ${JSON.stringify(c.path)} },`)
+        .map((c) => `  ${c.name}: { method: ${JSON.stringify(c.method)}, path: ${JSON.stringify(templated(c.path))} },`)
         .join("\n");
       await ctx.write("src/api/endpoints.js", `export const endpoints = {\n${lines}\n};\n`);
       await ctx.write("src/api/client.js", CLIENT);

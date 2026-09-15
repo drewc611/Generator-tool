@@ -1,0 +1,10 @@
+{
+  "label": "form-entry",
+  "html": "<form (submit)=\"apply()\"><input [(ngModel)]=\"firstName\"><input [(ngModel)]=\"lastName\"><input [(ngModel)]=\"email\"><button type=\"submit\">Apply</button></form>",
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/candidates"
+    }
+  ]
+}

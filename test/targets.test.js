@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
@@ -125,20 +126,114 @@ test("the raw node is the only thing not escaped, and it is reported", () => {
 // was printed, so without an index it acts on the wrong item or none.
 test("a handler inside a loop carries the row it belongs to", () => {
   const result = toHtml(`<li *ngFor="let o of xs" (click)="pick(o)">x</li>`);
-  assert.match(result.markup, /data-i="\$\{__i\}"/);
-  assert.equal(result.handlers[0].scope.item, "o");
-  assert.equal(result.handlers[0].scope.list, "xs");
+  assert.match(result.markup, /data-i0="\$\{__i0\}"/);
+  assert.equal(result.handlers[0].scope.length, 1);
+  assert.equal(result.handlers[0].scope[0].item, "o");
+  assert.equal(result.handlers[0].scope[0].list, "xs");
 });
 
 test("a handler outside a loop carries no row", () => {
   const result = toHtml(`<button (click)="go()">x</button>`);
   assert.equal(result.handlers[0].scope, null);
-  assert.doesNotMatch(result.markup, /data-i=/);
+  assert.doesNotMatch(result.markup, /data-i\d*=/);
 });
 
-test("nested loops are named as the case only the inner row survives", () => {
+// The bug this guards: only the innermost loop's index was ever carried, so a
+// handler two loops deep acted on the wrong outer row, or none, and portamp
+// used to admit it with a note rather than fix it.
+test("a handler two loops deep carries every ancestor row, not only the inner one", () => {
   const result = toHtml(`<ul *ngFor="let g of gs"><li *ngFor="let o of g.xs" (click)="pick(o)">x</li></ul>`);
-  assert.ok(result.notes.some((n) => /nested loops/.test(n)));
+  assert.match(result.markup, /data-i0="\$\{__i0\}"/, "the outer row's own index is carried");
+  assert.match(result.markup, /data-i1="\$\{__i1\}"/, "the inner row's own index is carried too");
+  assert.equal(result.handlers[0].scope.length, 2);
+  assert.deepEqual(result.handlers[0].scope.map((s) => s.item), ["g", "o"]);
+  assert.deepEqual(result.handlers[0].scope.map((s) => s.list), ["gs", "g.xs"]);
+  assert.ok(!result.notes.some((n) => /nested loops/.test(n)), "the gap this used to admit is closed, not just documented");
+});
+
+// The strongest proof available: build the real custom element, run it in a
+// real browser, click a specific row two loops deep, and check that only
+// that row's own state changed. A string match on the generated source could
+// still be wrong about what the browser actually does with it; this cannot.
+test("clicking a specific row two loops deep in a real element mutates that row, and no other", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "portamp-nested-click-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await mkdir(join(dir, "src/app"), { recursive: true });
+  await writeFile(join(dir, "src/app/nested.component.ts"), `
+import { Component } from '@angular/core';
+@Component({
+  selector: 'app-nested',
+  template: \`
+    <ul>
+      <li *ngFor="let g of groups">
+        <span>{{g.name}}</span>
+        <button *ngFor="let o of g.items" (click)="o.picked = !o.picked">
+          {{o.label}}<span *ngIf="o.picked">picked</span>
+        </button>
+      </li>
+    </ul>
+  \`,
+})
+export class NestedComponent {}
+`);
+
+  const { runPipeline } = await import("./helpers.js");
+  const { out, error, cleanup } = await runPipeline({ src: dir, html: true });
+  t.after(cleanup);
+  assert.equal(error, null);
+
+  const runtime = (await readFile(join(out, "src/elements/runtime.js"), "utf8")).replace(/^export /gm, "");
+  const elementFile = (await readFile(join(out, "src/elements/AppNested.js"), "utf8")).replace(/^import[^\n]*from "\.\/runtime\.js";\n?/m, "");
+  assert.match(elementFile, /const g = \(this\.state\.groups \?\? \[\]\)\[Number\(node\.dataset\.i0\)\];/, "the outer row is recovered from state itself");
+  assert.match(elementFile, /const o = \(g\.items \?\? \[\]\)\[Number\(node\.dataset\.i1\)\];/, "the inner row is recovered relative to the outer one's own row, not state directly");
+
+  let chromium = null;
+  try {
+    chromium = (await import("playwright")).chromium;
+  } catch { /* optional */ }
+  if (!chromium) return t.skip("playwright not installed");
+
+  let browser;
+  try {
+    const executablePath = process.env.PORTAMP_CHROMIUM || undefined;
+    browser = await chromium.launch(executablePath ? { executablePath } : {});
+  } catch {
+    return t.skip("no browser binary; set PORTAMP_CHROMIUM to run this");
+  }
+  try {
+    const page = await browser.newPage();
+    page.on("pageerror", (e) => { throw e; });
+    await page.setContent(`<body><app-nested id="el"></app-nested></body>`);
+    await page.addScriptTag({ content: runtime + "\n" + elementFile, type: "module" });
+    await page.evaluate(() => {
+      document.querySelector("#el").set({
+        groups: [
+          { name: "Group A", items: [{ label: "a1" }, { label: "a2" }] },
+          { name: "Group B", items: [{ label: "b1" }, { label: "b2" }, { label: "b3" }] },
+        ],
+      });
+    });
+    await page.waitForTimeout(50);
+
+    // Group B's second item (outer index 1, inner index 1): the case that
+    // only ever worked by accident when just the innermost index was kept.
+    const buttons = page.locator("app-nested").locator("button");
+    await buttons.nth(3).click();
+    await page.waitForTimeout(50);
+
+    const picked = await page.locator("app-nested button:has-text('picked')").allTextContents();
+    assert.equal(picked.length, 1, "exactly one row picked up the click");
+    assert.match(picked[0], /b2/, "and it is the row that was actually clicked, not the first or the innermost-only guess");
+
+    // A second click, on group A's first item, proves the outer row this
+    // resolves against genuinely changes with the outer index too.
+    await buttons.nth(0).click();
+    await page.waitForTimeout(50);
+    const pickedNow = (await page.locator("app-nested button:has-text('picked')").allTextContents()).sort();
+    assert.deepEqual(pickedNow.map((s) => s.trim().replace("picked", "").trim()), ["a1", "b2"]);
+  } finally {
+    await browser.close();
+  }
 });
 
 test("a backtick in literal text cannot end the template it is printed into", () => {

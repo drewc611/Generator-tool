@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: drewc611.portamp
+PackageVersion: 0.1.0
+PackageLocale: en-US
+Publisher: drewc611
+PublisherUrl: https://github.com/drewc611
+PublisherSupportUrl: https://github.com/drewc611/Generator-tool/issues
+PackageName: portamp
+PackageUrl: https://github.com/drewc611/Generator-tool
+License: Proprietary
+LicenseUrl: https://github.com/drewc611/Generator-tool/blob/main/LICENSE
+Copyright: Copyright drewc611. All rights reserved.
+ShortDescription: A tiny plugin host that ports legacy front ends to React, Vue, Svelte, or a dependency free custom element.
+Description: >-
+  portamp reads a legacy front end (Angular, AngularJS, Vue, Knockout,
+  Backbone, jQuery, a Windows executable, a WinForms/WPF/VB6/Delphi form, a
+  photograph of a screen, or a running app with no source, among many more)
+  and emits React, Vue, Svelte, Angular, Lit, or a custom element that
+  depends on nothing, with the proofs beside them. This installer packages
+  the desktop console shell; the tool itself is a zero dependency Node CLI.
+Tags:
+  - migration
+  - legacy
+  - angular
+  - react
+  - vue
+  - svelte
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

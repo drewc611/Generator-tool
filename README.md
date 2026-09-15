@@ -3,18 +3,25 @@
 Port a legacy front end without losing the look or the API contract.
 Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
-![The portamp console: rounded, floating panels on a pale workspace, one restrained accent, showing a pipeline run, the numbered stage index and the plugin rack](media/portamp-console.png)
+[![CI](https://github.com/drewc611/Generator-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/drewc611/Generator-tool/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/drewc611/Generator-tool/actions/workflows/codeql.yml/badge.svg)](https://github.com/drewc611/Generator-tool/actions/workflows/codeql.yml)
+[![Version: 10.30.0](https://img.shields.io/badge/version-10.30.0-blue)](https://github.com/drewc611/Generator-tool/releases)
+![Runtime dependencies: zero](https://img.shields.io/badge/dependencies-0-brightgreen)
+![Node >= 18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![License: proprietary](https://img.shields.io/badge/license-proprietary-lightgrey)
+
+![The portamp console: rounded, floating panels on a near black blue-tinted workspace, one vivid blue accent, showing a pipeline run, the numbered stage index and the plugin rack](media/portamp-console.png)
 
 <sub>portamp is a command line tool, not a desktop app. The console's own joke
 is where the plugin classes come from — Winamp's five, kept honest as a
-sidebar rather than a skin. Everything on the panel is real: 718
-lines of core, no runtime dependencies, 221 plugins, and the literal output of
+sidebar rather than a skin. Everything on the panel is real: 740
+lines of core, no runtime dependencies, 225 plugins, and the literal output of
 `npm run demo`.</sub>
 
 ![node --test running the portamp suite: 1382 passing, 1390 tests, 0 failing, 8 skipped, grouped by the core staying framework blind, nine targets on one IR, the countable claims, and the newest plugins, from raw AWT/Swing and UIKit code to the transformer, the console's own solver, and the desktop installers read for the first time](media/test-run.png)
 
-<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1382
-tests pass across 170 test files with `node --test` and no framework, and
+<sub>Proof, not a promise. Every line above is verbatim from `npm test`: 1454
+tests pass across 174 test files with `node --test` and no framework, and
 CodeQL's javascript-security-extended query finds nothing it does not already
 know about: the one alert it raises on `input-fetch` is the site copy writing
 network data to a folder, which is what copying a site is, and the write
@@ -37,13 +44,24 @@ writes components instead of audio, and `vis` shows you what you got.
 ## Thirty seconds
 
 ```bash
-git clone https://github.com/drewc611/portamp && cd portamp
-node src/cli.js plugins      # 221 plugin(s)
+git clone https://github.com/drewc611/Generator-tool && cd Generator-tool
+node src/cli.js plugins      # 225 plugin(s)
 npm run demo                 # runs the pipeline against example/legacy
-npm test                     # 1042 tests, node --test, no framework
+npm test                     # 1454 tests, node --test, no framework
 ```
 
 No install step. No build step. Node 18 or newer and nothing else.
+
+A Homebrew tap works today:
+
+```bash
+brew tap drewc611/generator-tool https://github.com/drewc611/Generator-tool
+brew install portamp
+```
+
+`npm publish` and a winget submission are both fully built and waiting on
+the same thing, a pushed release tag; see `docs/PUBLISHING.md` and
+`winget/README.md`.
 
 ```
 scan      2 screenshot(s), states: default, empty
@@ -67,23 +85,23 @@ Each one is a thing it declined to guess.
 
 The constraint is the feature. A core small enough to read in one sitting is a
 core you can be sure about, and it is the only reason the plugin boundary stays
-honest: there is nowhere in 718 lines to hide a special case for Angular.
+honest: there is nowhere in 740 lines to hide a special case for Angular.
 
 | | |
 | --- | --- |
-| Core | **718 lines** across four files |
-| Every line of the tool | 62,254 lines of JavaScript in src and plugins |
-| Tests | 23,433 lines, 1390 cases across 170 files |
-| Source on disk | src 27 KB, plugins 2.9 MB |
+| Core | **740 lines** across four files |
+| Every line of the tool | 63,951 lines of JavaScript in src and plugins |
+| Tests | 24,598 lines, 1454 cases across 174 files |
+| Source on disk | src 29 KB, plugins 3.0 MB |
 | Runtime dependencies | **none** |
 | Build step | none |
 
 ```bash
-cat src/core/*.js src/cli.js | wc -l    # 718, and the suite fails if this table drifts
+cat src/core/*.js src/cli.js | wc -l    # 740, and the suite fails if this table drifts
 du -sh src plugins                      # the whole tool
 ```
 
-The core grew from 527 lines to 718 across six hundred and eighty three features, and every
+The core grew from 527 lines to 740 across six hundred and ninety five features, and every
 one of those lines is a rule earning its place: sharper policy gates, the
 explanations a stopped run prints, the flags the workbench needed. Nothing in
 `src/` knows a framework. Capability arrives in `plugins/`, and the suite
@@ -124,9 +142,9 @@ export default {
 Drop it in `./plugins/` and it loads. No registration file, no build step. The
 full contract is in [`docs/PLUGIN-API.md`](docs/PLUGIN-API.md).
 
-## The 221 it ships with
+## The 225 it ships with
 
-![The plugin rack: 221 plugins listed by class, with what each one does](media/plugin-rack.svg)
+![The plugin rack: 225 plugins listed by class, with what each one does](media/plugin-rack.svg)
 
 ## Yes, there is a transformer in it
 
@@ -510,11 +528,39 @@ fetches from another host, and writes every request it skipped and why into
 `FETCH.md`, so a missing page is a known gap rather than a page the site
 lacked. The console's intake takes the same URL through the same function.
 
+Before copying a whole site it can be worth knowing how big it is.
+`portamp map <url>` discovers every URL an attested site names — its own
+`sitemap.xml` (and a sitemap index's own children, one level deep) plus
+whatever the pages themselves link to, to a depth — without downloading a
+single asset: a page is fetched only to read the links inside it, and an
+asset's URL is taken from the page that names it, never requested itself.
+It stands behind the exact same two gates as `fetch`, honours `robots.txt`
+the same way, and writes `MAP.md` and `portamp.map.json` naming every URL
+found, where it came from (`sitemap` or `crawl`) and what stood in the way.
+It does not read a stylesheet for the assets *it* references, so an asset
+reachable only through CSS is a real, named gap against a full `fetch`.
+
+Once you know what is there, `portamp scrape <url>` and
+`portamp batch-scrape <url...>` read it: one page, or many, concurrently, as
+Markdown, HTML or JSON, with no browser and no dependency. A hand written
+converter walks the same tree the tool's own template readers already parse,
+by the rules a browser gives block and inline content — headings, emphasis
+and links resolved against the page, lists and tables kept as one block
+rather than several, a `<pre>` block's own spacing kept exactly — and reads
+the `<head>`'s title, description, canonical and language by name. Unlike
+`fetch` and `map`, neither command is confined to one origin: a redirect is
+followed wherever it leads, each hop still asking the policy first, and
+`batch-scrape` keeps going past a domain the attestation does not cover,
+failing only that one URL rather than the whole batch. `--format screenshot`
+is refused by name — rendering a page as pixels needs a real browser, and
+that stays `input-record`'s job. `BATCH.md` and `portamp.batch.json` name
+every URL scraped and every one refused.
+
 ## Install it
 
 ```bash
 npm install -g portamp     # once the v* tag publishes; docs/PUBLISHING.md says how
-portamp plugins            # 221 plugin(s)
+portamp plugins            # 225 plugin(s)
 portamp ui                 # the console, with its intake
 ```
 
@@ -574,9 +620,13 @@ for a tool whose pipeline runs where Node runs:
   browser and the rack, the wipe and the unverified list are on your phone.
   The shell caches; the run data deliberately never does, because a report
   that silently shows yesterday's run is worse than one that says it cannot
-  reach the server.
-- The server still binds 127.0.0.1 only, in every wrapper. A window in front
-  of the console does not change what it serves, or to whom.
+  reach the server. `portamp ui --lan true` is what actually gets a phone on
+  the same network to it: it mints a per-run token and prints the address
+  carrying it, and every route refuses a request without that token.
+- The server still binds 127.0.0.1 only, in every wrapper, unless `--lan`
+  asked otherwise. A window in front of the console does not change what it
+  serves, or to whom, and neither does a phone on the same wifi without the
+  token that request needs.
 
 ## It works out what it is looking at
 
@@ -613,17 +663,17 @@ both, rather than picking one and sounding certain.
 
 `dsp-learn` reads the same screen a second way, with a model instead of rules. It
 turns each screen into a vector of the features the rules already trust and trains
-a nearest prototype classifier on twenty two labelled archetype miniatures, two per
-class, so a new screen is placed by its nearest exemplar in a standardization
+a nearest prototype classifier on thirty three labelled archetype miniatures, three
+per class, so a new screen is placed by its nearest exemplar in a standardization
 learned from the corpus rather than by which rules happened to fire. `LEARNED.md`
 ranks every archetype by distance with a softmax confidence, and reports a real
-held out number: two exemplars per class make a leave one out cross validation
+held out number: three exemplars per class make a leave one out cross validation
 defined, so it leaves each out in turn, retrains on the rest, and scores whether
 it gets the unseen one right, naming the ones it missed and keeping the robustness
 curve beside it.
 
 ```
-[dsp-learn] learned reading: crud-table (18%), leave one out 95% over 22 exemplars
+[dsp-learn] learned reading: crud-table (18%), leave one out 100% over 33 exemplars
 ```
 
 The two readings are meant to be read together. When the learned model and the
@@ -939,17 +989,18 @@ A plugin that wants to do something consequential asks the policy object first.
 
 `portamp ui` serves the last run on `127.0.0.1:4321` and opens a browser.
 
-![The portamp console: a numbered stage index, the recorded screenshot wiped against the emitted source by a media scrubber, and the endpoints and unverified panels behind a pill shaped segmented control, each panel a rounded card on a pale workspace](media/portamp-ui.png)
+![The portamp console: a numbered stage index, the recorded screenshot wiped against the emitted source by a media scrubber, and the endpoints and unverified panels behind a pill shaped segmented control, each panel a rounded card on a near black blue-tinted workspace](media/portamp-ui.png)
 
-Three rounded panels floating on a pale workspace under one toolbar, a design
-studio rather than a code editor: one restrained accent — a single blue,
-never a gradient — marks a selection and the primary button and nothing
-else; a dense creative suite's properties dock sits inside each rounded card
-rather than a flush, edge to edge one. Below the desk's own width it is a
-real mobile app: the same three panels, one full screen at a time, switched
-by a bottom tab bar with a floating "run again" button beside it — and since
-the console's manifest already declares `"display": "standalone"`, opening
-it from a phone's home screen has no browser chrome around it at all.
+Three rounded panels floating on a near black, blue-tinted workspace under
+one toolbar, a design studio rather than a code editor: one vivid accent — a
+single blue, never a gradient — marks a selection and the primary button and
+nothing else; a dense creative suite's properties dock sits inside each
+rounded card rather than a flush, edge to edge one. Below the desk's own
+width it is a real mobile app: the same three panels, one full screen at a
+time, switched by a bottom tab bar with a floating "run again" button
+beside it — and since the console's manifest already declares
+`"display": "standalone"`, opening it from a phone's home screen has no
+browser chrome around it at all.
 
 - **Sidebar**, left. The five stages as a numbered list, each one a live count
   and a filter on the rack below it; the screens, filterable; the plugin rack,
@@ -995,16 +1046,38 @@ The constraints are the interesting part:
   writes nothing itself; a test asserts the server contains no write call,
   and another that nothing which weakens a policy gate is a flag the page can
   set.
-- **Loopback only.** It binds `127.0.0.1`, never `0.0.0.0`, because it serves
-  screenshots of a customer system. A test asserts the bound address, and both
-  file routes refuse any path that climbs out of their directory.
-- **Under a budget**, including the HTML: 2150 lines now, raised on the record
+- **Loopback only, unless asked otherwise.** It binds `127.0.0.1`, never
+  `0.0.0.0`, because it serves screenshots of a customer system — except
+  behind `--lan`, which mints a random per-run token and requires it, in a
+  cookie or the url, on every route including `/`; a test asserts the bound
+  address changes only when asked and that every route is refused without
+  the token, and both file routes still refuse any path that climbs out of
+  their directory.
+- **Under a budget**, including the HTML: 2350 lines now, raised on the record
   each time a feature bought it, and a test fails the build if the console
   grows past it.
 
 The built component cannot be rendered without a build, so the right pane shows
 the emitted source, syntax highlighted, and says that is what it is rather than
-pretending to be a preview.
+pretending to be a preview; it now also carries its own line count, a wrap
+toggle for a long line and a download button, since the pane you read source
+in is exactly where those three earn their keep. Every filtered list —
+screens, plugins, endpoints, unverified, files — bolds the live match instead
+of only proving one exists, carries a clear button once there is something to
+clear, and stops re-rendering on every keystroke; an endpoint and a written
+file each get a one click copy, and `c` copies the whole run's diagnostics as
+one pasteable block. The rack's sort order and the inspector's chosen tab now
+survive a reload the same way the theme already did, the head's own stats
+carry a tooltip naming what each counts, and the run's age keeps counting
+forward between refreshes rather than freezing at the last one. Below the
+desk's own breakpoint the mobile app screen carries the same care: a real
+forty four pixel target on the icon, copy and clear buttons a hover state
+used to be enough for, a sixteen pixel filter field so iOS stops zooming
+the whole page in on focus, an enlarged scrubber thumb, safe area insets
+around a notch and a home indicator, a scrollable panel that stops rather
+than rubber banding into the browser's own chrome, a filename that wraps
+instead of forcing a sideways scroll, and its own active tab remembering
+itself across a reload.
 
 ## Configuration
 
@@ -1137,8 +1210,8 @@ The plugin classes are the point. Everything below is a directory and an
 
 **Still open**
 
-The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and eighty three features in
-one hundred and eighty six phases, forty four shipped, six hundred and thirty six new in the
+The whole picture is [ROADMAP.md](ROADMAP.md): six hundred and ninety five features in
+one hundred and ninety eight phases, forty four shipped, six hundred and forty eight new in the
 current branch, three planned, every status honest. Each open one names
 what it waits on; npm publish stays a command that belongs to a person.
 

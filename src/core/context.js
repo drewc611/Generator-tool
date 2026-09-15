@@ -67,12 +67,23 @@ export function createContext({ config, log, policy }) {
     // filled by vis plugins
     report: { parity: [], unverified: [] },
 
+    // A plugin may set this to ask something before a write's bytes land,
+    // and throw to refuse it. The core calls it if present and never learns
+    // what it checks, the same way it holds policy without knowing the
+    // rules; general-policy is what actually sets it.
+    beforeWrite: null,
+
     async write(relPath, contents) {
       const full = join(config.out, relPath);
       // A dry run records every write and performs none. The pipeline, the
       // gates and the summary all behave as if the files landed, which is
       // the point: the answer to "what would this run do" with nothing done.
       if (!config.dryRun) {
+        // Ask before the bytes land, not after: a component naming a raw
+        // endpoint is refused here, the same moment the secret gate refuses
+        // a credential in the source it reads, rather than caught later by
+        // rereading a file that already exists to look at.
+        await this.beforeWrite?.(relPath, contents);
         await mkdir(dirname(full), { recursive: true });
         await writeFile(full, contents, "utf8");
       }

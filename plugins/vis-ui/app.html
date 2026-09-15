@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#7d2ae8" />
+<meta name="theme-color" content="#0a0e18" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" href="/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/icons/icon-180.png" />
@@ -15,48 +15,37 @@
    * A studio console, not a code editor: panels are rounded, floating cards on
    * a neutral workspace, the way a design tool's canvas sits on its table,
    * with the dense information density of a creative suite's properties
-   * dock. One brand pair, a violet and a pink, carries every accent, gradient
-   * and selection state; night leans on the suite's own dark chrome, day
-   * leans on the workspace's own pale lavender table. Nothing here is traced
-   * from a real application; the language (rounded cards, one gradient, a
-   * pill for anything that is a choice) is a system, not a copy.
+   * dock. Night is the default chassis, near black with a blue-tinted cast
+   * rather than neutral gray, and one accent blue carries every selection
+   * state and the primary button; day, the same materials on a pale
+   * blue-gray table, exists behind one key. Nothing here is traced from a
+   * real application; the language (rounded cards, dense panels, one accent
+   * spent only where it means something) is a system, not a copy.
    */
   :root {
-    --workspace: #e8e9f1; --panel: #ffffff; --panel2: #f3f1fb; --canvas: #ffffff;
-    --ink: #1a1a2e; --dim: #63637a; --faint: #9494a8;
-    --line: rgba(30,20,70,.09); --line-solid: #ddd9ee;
-    --accent: #1473e6; --accent-ink: #ffffff; --code-kw: #9333c4;
-    --good: #1f9d55; --warn: #b8720a; --bad: #d6294f;
-    --shadow-card: 0 14px 30px rgba(40,20,90,.12), 0 1px 0 rgba(255,255,255,.6) inset;
-    --shadow-pop: 0 24px 60px rgba(30,15,70,.22);
-    --shadow-sm: 0 2px 8px rgba(40,20,90,.14);
+    --workspace: #0a0e18; --panel: #121a2c; --panel2: #1a2338; --canvas: #121a2c;
+    --ink: #eef2fb; --dim: #94a3c2; --faint: #57648a;
+    --line: rgba(140,170,255,.12); --line-solid: #263354;
+    --accent: #3b82f6; --accent-ink: #ffffff; --code-kw: #a78bfa;
+    --good: #34d399; --warn: #fbbf24; --bad: #f87171;
+    --shadow-card: 0 18px 40px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.03) inset;
+    --shadow-pop: 0 26px 65px rgba(0,0,0,.6);
+    --shadow-sm: 0 2px 10px rgba(0,0,0,.35);
     --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --rounded: ui-rounded, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     --r-lg: 18px; --r-md: 12px; --r-sm: 8px;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="day"]) {
-      --workspace: #16161a; --panel: #232329; --panel2: #2b2b33; --canvas: #232329;
-      --ink: #f1f1f6; --dim: #a5a5b4; --faint: #6d6d7c;
-      --line: rgba(255,255,255,.08); --line-solid: #3a3a44;
-      --accent: #4b9eff; --accent-ink: #ffffff; --code-kw: #c48aff;
-      --good: #35d97a; --warn: #ffb020; --bad: #ff5d78;
-      --shadow-card: 0 16px 36px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.04) inset;
-      --shadow-pop: 0 24px 60px rgba(0,0,0,.55);
-      --shadow-sm: 0 2px 10px rgba(0,0,0,.3);
-    }
-  }
-  :root[data-theme="night"] {
-    --workspace: #16161a; --panel: #232329; --panel2: #2b2b33; --canvas: #232329;
-    --ink: #f1f1f6; --dim: #a5a5b4; --faint: #6d6d7c;
-    --line: rgba(255,255,255,.08); --line-solid: #3a3a44;
-    --accent: #4b9eff; --accent-ink: #ffffff; --code-kw: #c48aff;
-    --good: #35d97a; --warn: #ffb020; --bad: #ff5d78;
-    --shadow-card: 0 16px 36px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.04) inset;
-    --shadow-pop: 0 24px 60px rgba(0,0,0,.55);
-    --shadow-sm: 0 2px 10px rgba(0,0,0,.3);
+  :root[data-theme="day"] {
+    --workspace: #eef1f7; --panel: #ffffff; --panel2: #eef3fb; --canvas: #ffffff;
+    --ink: #16233d; --dim: #56658a; --faint: #8a97b8;
+    --line: rgba(20,50,100,.08); --line-solid: #d7e0f0;
+    --accent: #1473e6; --accent-ink: #ffffff; --code-kw: #9333c4;
+    --good: #1f9d55; --warn: #b8720a; --bad: #d6294f;
+    --shadow-card: 0 14px 30px rgba(20,40,90,.12), 0 1px 0 rgba(255,255,255,.6) inset;
+    --shadow-pop: 0 24px 60px rgba(20,40,90,.2);
+    --shadow-sm: 0 2px 8px rgba(20,40,90,.12);
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -66,6 +55,10 @@
     height: 100vh; overflow: hidden; display: grid; grid-template-rows: 56px 1fr;
   }
   button, input, select { font: inherit; color: inherit; }
+  /* A tap on a touch screen leaves a grey flash the mouse never sees, and
+     without this a fast second tap can be read as the browser's own
+     double-tap-to-zoom rather than a second press of the same control. */
+  button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   ::selection { background: var(--accent); color: #fff; }
   @media (prefers-reduced-motion: no-preference) {
     .side-row, .seg, .btn, .flag-row, .mtab, input[type=range]::-webkit-slider-thumb { transition: background-color .15s ease, color .15s ease, transform .1s ease; }
@@ -127,8 +120,21 @@
     background: var(--panel2); border: 1px solid transparent; border-radius: var(--r-md); color: var(--ink);
     padding: 7px 11px; font: inherit; font-size: 12.5px; width: 100%;
   }
-  .field:focus-visible { border-color: var(--accent); outline: none; }
+  .field:focus-visible { border-color: var(--accent); }
   .field::placeholder { color: var(--faint); }
+  .field-wrap { position: relative; display: flex; flex: 1; min-width: 0; }
+  .field-wrap .field { padding-right: 24px; }
+  .field-x {
+    position: absolute; right: 3px; top: 50%; transform: translateY(-50%); border: 0; background: none;
+    color: var(--faint); cursor: pointer; font-size: 14px; line-height: 1; padding: 4px 6px; border-radius: 50%;
+  }
+  .field-x:hover { background: var(--line-solid); color: var(--ink); }
+  mark { background: color-mix(in srgb, var(--accent) 32%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+  .copy-mini {
+    border: 0; background: none; color: var(--faint); cursor: pointer; font-size: 11px;
+    margin-left: 6px; padding: 2px 5px; border-radius: 5px; flex: none;
+  }
+  .copy-mini:hover { background: var(--line-solid); color: var(--ink); }
   .side-scroll { overflow: auto; min-height: 0; scrollbar-width: thin; padding-bottom: var(--sp-2); }
   .side-row {
     display: flex; align-items: center; gap: var(--sp-2); width: calc(100% - 16px); margin: 2px 8px; text-align: left;
@@ -212,6 +218,7 @@
   .layer { position: absolute; inset: 0; overflow: auto; background: var(--canvas); }
   .layer img { display: block; width: 100%; height: auto; }
   .layer pre { margin: 0; padding: var(--sp-4) var(--sp-4) 40px; font-size: 12px; line-height: 1.65; tab-size: 2; color: var(--ink); font-family: var(--mono); }
+  .layer pre.wrap { white-space: pre-wrap; word-break: break-word; }
   .layer .why {
     position: sticky; top: 0; z-index: 1; padding: var(--sp-2) var(--sp-4); font-size: 11px; color: var(--faint);
     background: var(--panel2); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: var(--sp-3);
@@ -335,6 +342,30 @@
     .side-scroll { overflow: visible; max-height: none; }
     .mtabs { display: flex; }
     .fab { display: grid; }
+    /* A control sized for a mouse cursor is a control a thumb keeps
+       missing: a search field under 16px makes iOS zoom the whole page in
+       on focus, and the small copy, clear and icon buttons built for a
+       hover state need real room once the pointer is a fingertip. */
+    .field { font-size: 16px; }
+    .icon-btn { width: 44px; height: 44px; }
+    .btn.small { padding: 9px 13px; }
+    .field-x { padding: 10px; }
+    .copy-mini { padding: 7px 10px; }
+    input[type=range] { height: 32px; }
+    input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; margin-top: -10.5px; }
+    input[type=range]::-moz-range-thumb { width: 26px; height: 26px; }
+    /* A filename is one long word with no space to wrap at, so left alone
+       it forces the same sideways scroll a fat finger cannot aim at; a
+       scrollable panel rubber banding into the browser's own chrome reads
+       as the page breaking, not as room to keep scrolling. */
+    .path { word-break: break-all; }
+    .sidebar, .main, .inspector, .side-scroll, .block-scroll, .layer { overscroll-behavior: contain; }
+    /* viewport-fit=cover lets the mast sit under a notch or a home
+       indicator; these keep its content and the tab bar's icons clear of
+       both in either orientation. */
+    .mast { padding-left: max(var(--sp-3), env(safe-area-inset-left)); padding-right: max(var(--sp-3), env(safe-area-inset-right)); padding-top: env(safe-area-inset-top); }
+    .mtabs { padding-left: max(var(--sp-2), env(safe-area-inset-left)); padding-right: max(var(--sp-2), env(safe-area-inset-right)); }
+    dialog#help { max-width: min(92vw, 420px); width: 100%; }
   }
 
   @media print {
@@ -359,14 +390,15 @@
   <div class="now-line">
     <span id="now" role="status" aria-live="polite">no run loaded</span>
     <span id="now-sub" class="sub"></span>
+    <span id="now-age" class="sub"></span>
     <span id="offline" class="sub warn" role="status"></span>
   </div>
   <div class="stats">
-    <dl><dt>files</dt><dd id="g-files">0</dd></dl>
-    <dl><dt>plugins</dt><dd id="g-plugins">0</dd></dl>
-    <dl><dt>ms</dt><dd id="g-ms">0</dd></dl>
-    <dl><dt>unverified</dt><dd id="g-unver">0</dd></dl>
-    <dl><dt>ported</dt><dd id="g-cover">—</dd></dl>
+    <dl title="written files this run touched"><dt>files</dt><dd id="g-files">0</dd></dl>
+    <dl title="loaded plugins that ran"><dt>plugins</dt><dd id="g-plugins">0</dd></dl>
+    <dl title="total plugin time, summed"><dt>ms</dt><dd id="g-ms">0</dd></dl>
+    <dl title="claims the run could not confirm on its own"><dt>unverified</dt><dd id="g-unver">0</dd></dl>
+    <dl title="share of the original app this run has a route or component for"><dt>ported</dt><dd id="g-cover">—</dd></dl>
   </div>
   <div class="trend spark-box" tabindex="0" title="unverified per run, oldest first; hover or focus for the change since the previous run">
     <svg id="spark" width="54" height="16" viewBox="0 0 54 16" aria-label="unverified count per run, oldest first"><polyline id="spark-line" points="" /></svg>
@@ -408,9 +440,12 @@
         <input type="file" id="camera" accept="image/*" capture="environment" aria-label="take a picture of a screen or a page to port">
       </label>
       <details class="drop-menu">
-        <summary>Configure rerun <span class="count" id="flags-count"></span></summary>
+        <summary>Configure rerun <span class="count" id="flags-count" aria-live="polite"></span></summary>
         <div class="drop-panel">
-          <input id="flags-filter" class="field" type="search" placeholder="Filter options" aria-label="filter rerun options">
+          <div class="tray-row">
+            <input id="flags-filter" class="field" style="width:auto;flex:1;margin:0" type="search" placeholder="Filter options" aria-label="filter rerun options">
+            <button class="btn small" id="flags-clear" title="Clear every pressed flag" style="flex:0 0 auto">clear</button>
+          </div>
           <div class="flags" id="flags" aria-label="flags for the next run"></div>
         </div>
       </details>
@@ -465,7 +500,7 @@
         <div class="block-scroll"><table id="endpoints"></table></div>
       </div>
       <div class="block">
-        <div class="block-head"><span>Unverified</span><input id="un-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="/ to filter" aria-label="filter unverified items"><b id="un-total"></b></div>
+        <div class="block-head"><span>Unverified</span><input id="un-q" class="field" style="width:auto;flex:1;margin:0 8px" type="search" placeholder="/ to filter" aria-label="filter unverified items"><b id="un-total"></b><button class="btn small" id="un-copy-all" title="Copy the whole list" style="flex:0 0 auto;margin-left:6px">copy all</button></div>
         <div class="block-scroll"><ul class="unver" id="unver"></ul></div>
       </div>
     </div>
@@ -503,12 +538,12 @@
 </div>
 
 <nav class="mtabs" id="mtabs" aria-label="mobile navigation">
-  <button type="button" class="mtab" data-view="screens" aria-current="false"><svg viewBox="0 0 20 20"><rect x="2" y="2" width="7" height="7" rx="2"/><rect x="11" y="2" width="7" height="7" rx="2"/><rect x="2" y="11" width="7" height="7" rx="2"/><rect x="11" y="11" width="7" height="7" rx="2"/></svg>Screens</button>
-  <button type="button" class="mtab" data-view="stage" aria-current="true"><svg viewBox="0 0 20 20"><rect x="2" y="3" width="16" height="14" rx="2"/><line x1="10" y1="3" x2="10" y2="17"/></svg>Compare</button>
-  <button type="button" class="mtab" data-view="signals" aria-current="false"><svg viewBox="0 0 20 20"><path d="M2 14l3-7 3 10 3-13 3 10 3-5"/></svg>Signals</button>
-  <button type="button" class="mtab" data-view="intake" aria-current="false"><svg viewBox="0 0 20 20"><path d="M10 2v10M6 8l4-4 4 4"/><rect x="3" y="14" width="14" height="4" rx="1"/></svg>Intake</button>
+  <button type="button" class="mtab" data-view="screens" aria-current="false"><svg aria-hidden="true" viewBox="0 0 20 20"><rect x="2" y="2" width="7" height="7" rx="2"/><rect x="11" y="2" width="7" height="7" rx="2"/><rect x="2" y="11" width="7" height="7" rx="2"/><rect x="11" y="11" width="7" height="7" rx="2"/></svg>Screens</button>
+  <button type="button" class="mtab" data-view="stage" aria-current="true"><svg aria-hidden="true" viewBox="0 0 20 20"><rect x="2" y="3" width="16" height="14" rx="2"/><line x1="10" y1="3" x2="10" y2="17"/></svg>Compare</button>
+  <button type="button" class="mtab" data-view="signals" aria-current="false"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="M2 14l3-7 3 10 3-13 3 10 3-5"/></svg>Signals</button>
+  <button type="button" class="mtab" data-view="intake" aria-current="false"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="M10 2v10M6 8l4-4 4 4"/><rect x="3" y="14" width="14" height="4" rx="1"/></svg>Intake</button>
 </nav>
-<button type="button" class="fab" id="fab-run" aria-label="Run the pipeline again" title="Run again"><svg viewBox="0 0 20 20"><path d="M4 10a6 6 0 0 1 10.6-3.8M16 10a6 6 0 0 1-10.6 3.8"/><path d="M14 3v4h-4M6 17v-4h4"/></svg></button>
+<button type="button" class="fab" id="fab-run" aria-label="Run the pipeline again" title="Run again"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="M4 10a6 6 0 0 1 10.6-3.8M16 10a6 6 0 0 1-10.6 3.8"/><path d="M14 3v4h-4M6 17v-4h4"/></svg></button>
 
 <dialog id="help" aria-label="keyboard shortcuts">
   <h3>Keyboard</h3>
@@ -517,6 +552,8 @@
     <tr><td><code>1</code>–<code>5</code>, <code>0</code></td><td>select a stage, and all of them</td></tr>
     <tr><td><code>[</code> / <code>]</code></td><td>nudge the wipe</td></tr>
     <tr><td><code>/</code></td><td>filter the unverified items</td></tr>
+    <tr><td><code>f</code></td><td>filter the plugin rack</td></tr>
+    <tr><td><code>c</code></td><td>copy the run's diagnostics</td></tr>
     <tr><td><code>r</code></td><td>run the pipeline again</td></tr>
     <tr><td><code>t</code></td><td>light and dark console</td></tr>
     <tr><td><code>?</code> / <code>Esc</code></td><td>this card, open and closed</td></tr>
@@ -527,6 +564,7 @@
 import {
   encodeHash, decodeHash, filterByQuery, filterEndpoints, sortPlugins,
   sparklinePoints, keyAction, offlineNotice, isTextFile, reportsIn, compareRuns, FLAG_GROUPS,
+  matchRanges, relativeTime, formatCount, diagnosticsText,
 } from "/lib.js";
 
 const $ = (id) => document.getElementById(id);
@@ -537,6 +575,38 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ENTITIES[c]);
 const CLASSES = ["input", "dsp", "output", "vis", "general"];
 const STAGES = ["scan", "extract", "plan", "emit", "verify"];
 let run = null;
+
+// A row's own match, bolded rather than only proven to exist; matchRanges is
+// the pure half, this is just its escaped-HTML rendering.
+const markMatch = (text, query) => matchRanges(text, query).map((r) => r.hit ? "<mark>" + esc(r.text) + "</mark>" : esc(r.text)).join("");
+
+// One filter, typed fast, should not re-render on every keystroke of a long list.
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+// Every filter gets the same clear door: a small × that only shows once
+// there is something to clear, wired once per input rather than five times by hand.
+function addClearButton(input) {
+  const wrap = document.createElement("span");
+  wrap.className = "field-wrap";
+  input.replaceWith(wrap);
+  wrap.append(input);
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "field-x"; btn.setAttribute("aria-label", "clear filter"); btn.textContent = "×"; btn.hidden = true;
+  wrap.append(btn);
+  const sync = () => { btn.hidden = !input.value; };
+  input.addEventListener("input", sync);
+  btn.addEventListener("click", () => { input.value = ""; input.dispatchEvent(new Event("input")); input.focus(); });
+  sync();
+}
+
+// One clipboard door for every small copy button in the console, success or
+// not shown right on the button that was pressed rather than a toast nobody asked for.
+async function copyText(text, btn) {
+  try {
+    await navigator.clipboard.writeText(text);
+    if (btn) { const was = btn.textContent; btn.textContent = "✓"; setTimeout(() => { btn.textContent = was; }, 1000); }
+  } catch { /* clipboard unavailable in this context; nothing to fall back to safely */ }
+}
 
 /**
  * Enough of a tokenizer to make emitted JSX readable. One pass, because
@@ -570,16 +640,17 @@ function renderTokens() {
   const colours = run.tokens?.color ?? {};
   const roles = ["accent", "ink", "surface", "bg", "danger"].filter((r) => colours[r]);
   $("swatches").innerHTML = roles.map((role) =>
-    '<i title="' + role + " " + esc(colours[role]) + '" style="background:' + esc(colours[role]) + '"></i>'
+    '<i role="img" aria-label="' + role + " " + esc(colours[role]) + '" title="' + role + " " + esc(colours[role]) +
+      '" style="background:' + esc(colours[role]) + '"></i>'
   ).join("");
 }
 
 function renderHead() {
   const ms = run.plugins.reduce((t, p) => t + p.ms, 0);
-  $("g-files").textContent = run.files.length;
-  $("g-plugins").textContent = run.plugins.length;
-  $("g-ms").textContent = ms;
-  $("g-unver").textContent = run.unverified.length;
+  $("g-files").textContent = formatCount(run.files.length);
+  $("g-plugins").textContent = formatCount(run.plugins.length);
+  $("g-ms").textContent = formatCount(ms);
+  $("g-unver").textContent = formatCount(run.unverified.length);
   // Coverage is vis-coverage's number and the verdicts are vis-equivalence's;
   // the console shows what the run measured instead of re-deriving either.
   $("g-cover").textContent = run.coverage ? run.coverage.ported + "%" : "—";
@@ -590,10 +661,15 @@ function renderHead() {
   $("now-sub").textContent = diverged.length
     ? diverged.length + " equivalence verdict(s) diverged — see PORT_NOTES.md"
     : new Date(run.ranAt).toLocaleString();
+  $("now-age").textContent = run.ranAt ? relativeTime(run.ranAt) : "";
+  // The tab title is the one place the unverified count is visible without
+  // the console itself in view, so a backgrounded tab still says so.
+  document.title = run.unverified.length ? "(" + run.unverified.length + ") portamp" : "portamp";
 }
 
 let stageFilter = null;
 let rackSort = "class";
+try { rackSort = localStorage.getItem("portamp-rack-sort") === "cost" ? "cost" : "class"; } catch { /* default order */ }
 
 /** The stage index: a numbered list of the five stages, live counted, each
  * one a filter on the rack below it. Nothing here is decorative. */
@@ -631,11 +707,12 @@ function renderRack() {
 
   // Two orders for one rack: the class order the roster was given, or cost
   // first so a slow run names its suspect without anybody squinting at ms.
+  const query = $("rk-q").value;
   if (rackSort === "cost") {
     let n = 0;
     $("rack").innerHTML = sortPlugins(visible, "cost").map((p) => {
       n += 1;
-      return rackRow(p, n);
+      return rackRow(p, n, query);
     }).join("") || '<p class="empty-note">nothing matches</p>';
     return;
   }
@@ -643,13 +720,13 @@ function renderRack() {
   $("rack").innerHTML = CLASSES.map((cls) => {
     const group = visible.filter((p) => p.class === cls);
     if (!group.length) return "";
-    return '<div class="side-hd" style="padding:8px 8px 2px">' + cls + "</div>" + group.map((p) => { n += 1; return rackRow(p, n); }).join("");
+    return '<div class="side-hd" style="padding:8px 8px 2px">' + cls + "</div>" + group.map((p) => { n += 1; return rackRow(p, n, query); }).join("");
   }).join("") || '<p class="empty-note">nothing matches</p>';
 }
 
-function rackRow(p, n) {
+function rackRow(p, n, query) {
   return '<div><div class="side-row" style="cursor:default" role="listitem"><span class="n">' + n + "</span>" +
-    '<span class="nm">' + esc(p.name) + '</span><span class="ct">' + p.ms + "ms</span></div>" +
+    '<span class="nm">' + markMatch(p.name, query) + '</span><span class="ct">' + p.ms + "ms</span></div>" +
     '<div class="said">' + esc(p.contributed) + "</div></div>";
 }
 
@@ -663,7 +740,7 @@ function renderScreens() {
   }
   $("screens").innerHTML = visible.map((s) =>
     '<button class="side-row" data-i="' + s.i + '" aria-current="' + String(s.i === currentIndex) + '">' +
-      '<span class="n">' + (s.i + 1) + "</span><span class=\"nm\">" + esc(s.name) + "</span>" +
+      '<span class="n">' + (s.i + 1) + "</span><span class=\"nm\">" + markMatch(s.name, $("sc-q").value) + "</span>" +
       '<span class="st">' + (s.origin === "observed" ? "observed" : s.matched ? esc(s.state || "shot") : "no shot") + "</span>" +
     "</button>"
   ).join("") || '<p class="empty-note">nothing matches</p>';
@@ -686,12 +763,17 @@ function renderEndpoints() {
     ? (shown.length
         ? shown.map((e) =>
             '<tr><td class="verb ' + esc(e.method) + '"><span>' + esc(e.method) + "</span></td>" +
-            '<td class="path">' + esc(e.path) + "</td>" +
+            '<td class="path">' + markMatch(e.path, $("ep-q").value) +
+            ' <button class="copy-mini" data-copy="' + esc(e.method + " " + e.path) + '" title="Copy method and path">copy</button></td>' +
             '<td class="src ' + esc(e.origin) + '">' + esc(e.origin) + "</td></tr>"
           ).join("")
         : '<tr><td class="hint">nothing matches</td></tr>')
     : '<tr><td class="hint">no endpoints found</td></tr>';
 }
+$("endpoints").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-copy]");
+  if (btn) copyText(btn.dataset.copy, btn);
+});
 
 function renderUnverified() {
   const query = $("un-q").value.trim().toLowerCase();
@@ -699,7 +781,7 @@ function renderUnverified() {
   $("un-total").textContent = query ? shown.length + "/" + run.unverified.length : run.unverified.length;
   $("unver").innerHTML = run.unverified.length
     ? (shown.length
-        ? shown.map((u) => "<li>" + esc(u) + "</li>").join("")
+        ? shown.map((u) => "<li>" + markMatch(u, $("un-q").value) + "</li>").join("")
         : '<li class="none">nothing matches the filter.</li>')
     : '<li class="none">nothing. every value came from the source or from the app itself.</li>';
 }
@@ -711,13 +793,15 @@ function renderFiles() {
   const files = filterByQuery((run.files ?? []).map((f) => ({ f })), $("fi-q").value, ["f"]).map((x) => x.f);
   $("files-total").textContent = files.length === (run.files ?? []).length
     ? (run.files ?? []).length : files.length + "/" + (run.files ?? []).length;
+  const query = $("fi-q").value;
   $("files-list").innerHTML = files.length
     ? files.map((f) => {
         const who = (run.provenance ?? {})[f];
         const name = isTextFile(f)
-          ? '<button class="path-btn" data-file="' + esc(f) + '">' + esc(f) + "</button>"
-          : esc(f);
-        return '<tr><td class="path">' + name + '</td><td class="src">' +
+          ? '<button class="path-btn" data-file="' + esc(f) + '">' + markMatch(f, query) + "</button>"
+          : markMatch(f, query);
+        return '<tr><td class="path">' + name +
+          ' <button class="copy-mini" data-copy="' + esc(f) + '" title="Copy the path">copy</button></td><td class="src">' +
           (who ? esc(who.plugin) + " at " + esc(who.stage) : "unattributed") + "</td></tr>";
       }).join("")
     : '<tr><td class="hint">nothing written yet</td></tr>';
@@ -725,11 +809,15 @@ function renderFiles() {
     button.addEventListener("click", () => showSource(button.dataset.file, button.dataset.file));
   }
 }
+$("files-list").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-copy]");
+  if (btn) copyText(btn.dataset.copy, btn);
+});
 
 // The run's reports, rendered by the server under /report. Each opens in its
 // own tab so the console keeps its place.
 async function renderReports() {
-  const reports = reportsIn(run.files);
+  const reports = reportsIn(run.files).slice().sort((a, b) => a.localeCompare(b));
   $("reports-total").textContent = reports.length;
   $("reports-list").innerHTML = reports.length
     ? reports.map((name) =>
@@ -801,18 +889,26 @@ async function select(index) {
 async function showSource(why, path) {
   const source = await fetch("/source?path=" + encodeURIComponent(path)).then((r) => r.text());
   const highlighted = /\.(jsx?|tsx?|vue|svelte|json|css|html?)$/i.test(path) ? highlight(source) : esc(source);
-  $("layer-built").innerHTML = '<p class="why">' + esc(why) +
-    ' <button class="btn small" id="copy-src" title="Copy the file to the clipboard">copy</button></p>' +
-    "<pre>" + highlighted + "</pre>";
+  const lines = source ? source.split("\n").length : 0;
+  $("layer-built").innerHTML = '<p class="why">' + esc(why) + " · " + formatCount(lines) + " line" + (lines === 1 ? "" : "s") +
+    ' <button class="btn small" id="copy-src" title="Copy the file to the clipboard">copy</button>' +
+    ' <button class="btn small" id="wrap-src" aria-pressed="false" title="Wrap long lines">wrap</button>' +
+    ' <button class="btn small" id="dl-src" title="Download the file">download</button></p>' +
+    '<pre id="src-pre">' + highlighted + "</pre>";
   $("cmp-file").textContent = path;
-  $("copy-src").addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(source);
-      $("copy-src").textContent = "copied";
-    } catch {
-      $("copy-src").textContent = "select and copy by hand";
-    }
-    setTimeout(() => { $("copy-src").textContent = "copy"; }, 1500);
+  $("copy-src").addEventListener("click", () => copyText(source, $("copy-src")));
+  $("wrap-src").addEventListener("click", () => {
+    const on = $("src-pre").classList.toggle("wrap");
+    $("wrap-src").setAttribute("aria-pressed", String(on));
+  });
+  $("dl-src").addEventListener("click", () => {
+    const blob = new Blob([source], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = path.split("/").pop();
+    a.click();
+    URL.revokeObjectURL(url);
   });
 }
 
@@ -904,21 +1000,37 @@ window.addEventListener("online", setConnectivity);
 window.addEventListener("offline", setConnectivity);
 setConnectivity();
 
-// The inspector's four faces: signals, files, reports, study.
+// The inspector's four faces: signals, files, reports, study. The choice
+// survives a reload the same way the theme does — a browser convenience,
+// never load bearing if storage is unavailable.
 for (const tab of document.querySelectorAll(".seg")) {
   tab.addEventListener("click", () => {
     for (const t of document.querySelectorAll(".seg")) t.setAttribute("aria-selected", String(t === tab));
     for (const pane of document.querySelectorAll(".pane")) pane.hidden = pane.id !== "pane-" + tab.dataset.tab;
+    try { localStorage.setItem("portamp-tab", tab.dataset.tab); } catch { /* per browser convenience only */ }
   });
 }
+try {
+  const savedTab = localStorage.getItem("portamp-tab");
+  if (savedTab) $("tab-" + savedTab)?.click();
+} catch { /* default face */ }
 
 for (const [id, render] of [["un-q", renderUnverified], ["sc-q", renderScreens], ["rk-q", renderRack], ["ep-q", renderEndpoints], ["fi-q", renderFiles]]) {
-  $(id) && $(id).addEventListener("input", () => run && render());
+  const input = $(id);
+  if (!input) continue;
+  addClearButton(input);
+  input.addEventListener("input", debounce(() => run && render(), 150));
 }
+
+$("un-copy-all").addEventListener("click", () => copyText(run ? run.unverified.join("\n") : "", $("un-copy-all")));
+
+setInterval(() => { if (run && run.ranAt) $("now-age").textContent = relativeTime(run.ranAt); }, 30000);
 $("ep-verbs").addEventListener("change", () => { epVerb = $("ep-verbs").value || null; renderEndpoints(); });
+$("rk-sort").setAttribute("aria-pressed", String(rackSort === "cost"));
 $("rk-sort").addEventListener("click", () => {
   rackSort = rackSort === "cost" ? "class" : "cost";
   $("rk-sort").setAttribute("aria-pressed", String(rackSort === "cost"));
+  try { localStorage.setItem("portamp-rack-sort", rackSort); } catch { /* per browser convenience only */ }
   renderRack();
 });
 
@@ -974,6 +1086,16 @@ $("flags-filter").addEventListener("input", () => {
     const rows = [...grp.querySelectorAll("[data-flag]")];
     grp.style.display = rows.length && rows.every((r) => r.hidden) ? "none" : "";
   }
+});
+$("flags-clear").addEventListener("click", () => {
+  for (const k of $("flags").querySelectorAll("[data-flag]")) k.setAttribute("aria-pressed", "false");
+  updateFlagsCount();
+});
+// A popover that only closes on its own toggle is a popover with no door out;
+// Escape and a click elsewhere are the two a person reaches for first.
+const flagsPopover = document.querySelector(".drop-menu");
+document.addEventListener("click", (e) => {
+  if (flagsPopover.open && !flagsPopover.contains(e.target)) flagsPopover.open = false;
 });
 
 async function rerun(options = {}) {
@@ -1108,6 +1230,11 @@ function renderAll() {
 // One keymap, decided in lib.js where the suite can read it. Keys inside an
 // input belong to the input.
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && flagsPopover.open) {
+    flagsPopover.open = false;
+    flagsPopover.querySelector("summary").focus();
+    return;
+  }
   const inInput = event.target.matches("input, textarea, select");
   if (inInput && event.key === "Escape" && event.target.id === "un-q") {
     event.target.value = ""; run && renderUnverified(); event.target.blur();
@@ -1119,6 +1246,8 @@ document.addEventListener("keydown", (event) => {
   if (action.kind === "next-screen" && run.screens.length) select(Math.min(currentIndex + 1, run.screens.length - 1));
   if (action.kind === "prev-screen" && run.screens.length) select(Math.max(currentIndex - 1, 0));
   if (action.kind === "focus-filter") $("un-q").focus();
+  if (action.kind === "focus-rack-filter") $("rk-q").focus();
+  if (action.kind === "copy-diagnostics") { copyText(diagnosticsText(run)); $("now-sub").textContent = "diagnostics copied"; }
   if (action.kind === "toggle-help") $("help").open ? $("help").close() : $("help").showModal();
   if (action.kind === "rerun") rerun();
   if (action.kind === "toggle-theme") applyTheme(document.documentElement.getAttribute("data-theme") !== "day");
@@ -1192,12 +1321,18 @@ async function renderTrend() {
 // switched by a bottom tab bar the way a phone app switches screens; the FAB
 // is a second, thumb reachable door to the same rerun(), never a third one.
 const desk = document.querySelector(".desk");
-for (const tab of document.querySelectorAll(".mtab")) {
-  tab.addEventListener("click", () => {
-    desk.dataset.view = tab.dataset.view;
-    for (const t of document.querySelectorAll(".mtab")) t.setAttribute("aria-current", String(t === tab));
-  });
+function selectMobileView(view) {
+  desk.dataset.view = view;
+  for (const t of document.querySelectorAll(".mtab")) t.setAttribute("aria-current", String(t.dataset.view === view));
+  try { localStorage.setItem("portamp-mview", view); } catch { /* per browser convenience only */ }
 }
+for (const tab of document.querySelectorAll(".mtab")) {
+  tab.addEventListener("click", () => selectMobileView(tab.dataset.view));
+}
+try {
+  const savedView = localStorage.getItem("portamp-mview");
+  if (savedView) selectMobileView(savedView);
+} catch { /* default view */ }
 $("fab-run").addEventListener("click", () => $("run").click());
 
 (async function start() {
