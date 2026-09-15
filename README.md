@@ -5,7 +5,7 @@ Four targets: React, Vue, Svelte, and a custom element that depends on nothing.
 
 [![CI](https://github.com/drewc611/Generator-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/drewc611/Generator-tool/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/drewc611/Generator-tool/actions/workflows/codeql.yml/badge.svg)](https://github.com/drewc611/Generator-tool/actions/workflows/codeql.yml)
-[![Version: 10.30.0](https://img.shields.io/badge/version-10.30.0-blue)](https://github.com/drewc611/Generator-tool/releases)
+[![Version: 10.32.0](https://img.shields.io/badge/version-10.32.0-blue)](https://github.com/drewc611/Generator-tool/releases)
 ![Runtime dependencies: zero](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![Node >= 18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
 ![License: proprietary](https://img.shields.io/badge/license-proprietary-lightgrey)
