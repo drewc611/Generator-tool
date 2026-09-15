@@ -64,17 +64,28 @@ export function vectorFromParts({ shape, api, widgets = 0, components = 0 }) {
   return FEATURES.map((k) => Number(named[k] ?? 0));
 }
 
+// Leave one out cross validation retrains on the same corpus entries dozens of
+// times over, one training run per held out exemplar; without this cache each
+// retraining reparsed every entry's markup from scratch, work whose answer
+// cannot change since a corpus entry's own fields never do. Keyed by the
+// entry object itself, so it only ever serves the same immutable row back.
+const cache = new WeakMap();
+
 /**
  * Assemble the vector from a corpus miniature: its markup, its calls and, where
  * it carries them, the widgets and component count its label depends on.
  */
 export function vectorFromEntry(entry) {
+  const cached = cache.get(entry);
+  if (cached) return cached;
   const shape = shapeOf(buildIr(entry.html || ""));
   const api = readApi(entry.calls ?? [], entry.model ?? null);
-  return vectorFromParts({
+  const vector = vectorFromParts({
     shape,
     api,
     widgets: (entry.widgets ?? []).length,
     components: entry.components ?? 1,
   });
+  cache.set(entry, vector);
+  return vector;
 }

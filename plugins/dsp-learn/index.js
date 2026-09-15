@@ -8,11 +8,11 @@
  * agree, that is worth more than either alone; when they disagree, the
  * disagreement is the finding, and LEARNED.md says so.
  *
- * It is honest about being small. The corpus holds two exemplars per class, so a
- * leave one out cross validation is defined and the report carries that real held
- * out accuracy alongside a reproducible robustness figure; every reading is a
- * proposal marked unverified. No network, no dependency, deterministic: the same
- * app reads the same way every run.
+ * It is honest about being small. The corpus holds three exemplars per class, so
+ * a leave one out cross validation is defined and the report carries that real
+ * held out accuracy alongside a reproducible robustness figure; every reading is
+ * a proposal marked unverified. No network, no dependency, deterministic: the
+ * same app reads the same way every run.
  */
 
 import { buildIr } from "../dsp-ir/ir.js";
@@ -93,10 +93,10 @@ exemplar reads as low confidence rather than being forced into the nearest class
 
 ## How much this can be trusted
 
-The corpus holds two labelled exemplars per archetype, so a real held out
+The corpus holds three labelled exemplars per archetype, so a real held out
 accuracy is defined: each exemplar is left out in turn, the model is retrained on
-the rest (its class still represented by its sibling), and the held out one is
-classified against it. Leave one out cross validation over ${cv.n} exemplars
+the rest (its class still represented by its two siblings), and the held out one
+is classified against it. Leave one out cross validation over ${cv.n} exemplars
 scores **${pct(cv.accuracy)}** (${Math.round(cv.accuracy * cv.n)} of ${cv.n}
 correct). The exemplars it missed when unseen: ${missed}. This is the honest
 number: how often the model gets a screen right that it never trained on.
@@ -109,12 +109,12 @@ noise and still keep its label:
 ${curve}
 
 Cross validation says how often an unseen exemplar lands right; robustness says
-how far one can move before it stops. Two exemplars per class is still a small
+how far one can move before it stops. Three exemplars per class is still a small
 corpus, so both numbers are a floor to raise, not a ceiling to trust.
 
 ---
 
-This is a proposal from a model, not a fact. It is trained on twenty two human
+This is a proposal from a model, not a fact. It is trained on thirty three human
 labelled miniatures and it can be confidently wrong, most easily on an app whose
 shape sits between two archetypes. Where it disagrees with ARCHITECTURE.md, treat
 the disagreement as the thing to look at, not as one reading to pick.
@@ -180,7 +180,7 @@ export default {
       if (!ctx.learned) return;
       await ctx.write("LEARNED.md", renderLearned(ctx.learned));
       ctx.unverified(
-        `LEARNED.md is a learned archetype reading from a model trained on twenty two labelled miniatures, two per class, and cross validated at leave one out. ` +
+        `LEARNED.md is a learned archetype reading from a model trained on thirty three labelled miniatures, three per class, and cross validated at leave one out. ` +
           `It read this app as ${ctx.learned.reading.label} at ${pct(ctx.learned.reading.confidence)}; that is a proposal for a ` +
           "person to confirm against ARCHITECTURE.md, not a measured fact, and the model can be confidently wrong."
       );

@@ -1,0 +1,18 @@
+{
+  "label": "dashboard",
+  "html": "<h2>Traffic</h2><canvas></canvas><h2>Conversions</h2><canvas></canvas><h2>Refunds</h2><svg></svg><h2>Uptime</h2>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/metrics/traffic"
+    },
+    {
+      "method": "GET",
+      "path": "/api/metrics/conversions"
+    },
+    {
+      "method": "GET",
+      "path": "/api/metrics/refunds"
+    }
+  ]
+}

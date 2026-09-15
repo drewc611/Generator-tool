@@ -82,6 +82,20 @@ export function checkPack(pkg, paths) {
   return { checks, ok: checks.every((c) => c.ok) };
 }
 
+/**
+ * The npm dist-tag a version publishes under. A plain release (no
+ * prerelease identifier) goes to `latest`, the default anyone installing
+ * with no tag gets; a prerelease keeps its own identifier as the tag
+ * (10.30.0-alpha.1 publishes as alpha, 10.30.0-beta.2 as beta), so an
+ * alpha or a beta build never becomes the version `npm install portamp`
+ * resolves to. release.yml reads this before every publish; nothing here
+ * runs npm.
+ */
+export function distTagFor(version) {
+  const prerelease = /^\d+\.\d+\.\d+-([0-9A-Za-z]+)/.exec(String(version ?? ""));
+  return prerelease ? prerelease[1] : "latest";
+}
+
 export default {
   name: "general-publish",
   version: "0.1.0",

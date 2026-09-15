@@ -1,0 +1,27 @@
+{
+  "label": "calendar",
+  "html": "<button>Previous week</button><button>Next week</button><table><tr><th>Room A</th><th>Room B</th><th>Room C</th></tr><tr><td *ngFor=\"let slot of slots\">{{slot.status}}</td></tr></table>",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/reservations?date=2024-03-01&room=all"
+    }
+  ],
+  "model": {
+    "screens": [
+      {
+        "kind": "grid"
+      }
+    ],
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/api/reservations",
+        "query": [
+          "date",
+          "room"
+        ]
+      }
+    ]
+  }
+}

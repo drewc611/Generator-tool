@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import plugin, { checkPack, packDryRun } from "../plugins/general-publish/index.js";
+import plugin, { checkPack, distTagFor, packDryRun } from "../plugins/general-publish/index.js";
 
 /**
  * publish-check turns the last manual step in docs/PUBLISHING.md, reading the
@@ -49,6 +49,16 @@ test("a runtime dependency, a bad version, or a missing bin fails", () => {
   const b = bin.checks.find((c) => /bin target/.test(c.name));
   assert.equal(b.ok, false);
   assert.match(b.detail, /src\/cli\.js/);
+});
+
+test("a prerelease version publishes under its own identifier, never latest", () => {
+  assert.equal(distTagFor("10.30.0"), "latest");
+  assert.equal(distTagFor("10.30.0-alpha.1"), "alpha");
+  assert.equal(distTagFor("10.30.0-alpha.2"), "alpha");
+  assert.equal(distTagFor("10.30.0-beta.1"), "beta");
+  assert.equal(distTagFor("10.30.0-rc.1"), "rc");
+  assert.equal(distTagFor(""), "latest");
+  assert.equal(distTagFor(undefined), "latest");
 });
 
 test("the real repository packs clean: the actual proof, run against npm", async () => {
