@@ -9,6 +9,7 @@ import { pascal } from "../dsp-ir/emit.js";
 import { RERUN_FLAGS, intakePath, rerunOptions, rerunPatch, siteUrl } from "./lib.js";
 import { fetchForRun } from "../input-fetch/index.js";
 import { readZip } from "./zip.js";
+import { refuseRequest } from "./guard.js";
 import { readAsar } from "../input-asar/asar.js";
 import { solve } from "../general-study/solve.js";
 import { extractText } from "../general-study/pdftext.js";
@@ -355,6 +356,11 @@ export async function serve({ outDir, shotsDir, port = 4321, log = console, reru
     };
 
     try {
+      // Before the token: a page on another site is refused whatever it carries (guard.js).
+      const { method, headers, socket } = req;
+      const refused = refuseRequest({ method, host: headers.host, origin: headers.origin, secFetchSite: headers["sec-fetch-site"], localPort: socket.localPort, lan: Boolean(token) });
+      if (refused) return send(403, TYPES[".json"], JSON.stringify({ error: refused }));
+
       // Every route needs the token once the server is reachable beyond
       // this machine; the query string carries it in from a pasted link or
       // a scanned URL, and a cookie carries it for every request after that

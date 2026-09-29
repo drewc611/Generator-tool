@@ -6,8 +6,10 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+# Read only by default. Only the attach job below writes to the release, and it is the one job
+# that runs a third party action with that right.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   desktop:
@@ -20,8 +22,8 @@ jobs:
           - os: ubuntu-latest     # AppImage
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with: { node-version: 22 }
 
       # The desktop app ships the repository inside it. The suite has to be
@@ -41,7 +43,7 @@ jobs:
           # unsigned build that says so beats a build signed with nothing.
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: portamp-desktop-${{ runner.os }}
           path: |
@@ -51,9 +53,23 @@ jobs:
             desktop/dist/*.AppImage
           if-no-files-found: error
 
+  # Split from the build so the third party release action is the only step holding contents: write,
+  # and it runs on the installers the build jobs uploaded rather than beside a build toolchain.
+  attach:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: desktop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: portamp-desktop-*
+          path: desktop/dist
+          merge-multiple: true
+
       - name: attach to the release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
             desktop/dist/*.dmg
@@ -76,8 +92,8 @@ jobs:
       # the secrets context, so the fact is carried across as a boolean.
       HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
@@ -128,6 +144,7 @@ jobs:
 
       - name: publish with provenance
         if: env.HAS_NPM_TOKEN == 'true'
-        run: npm publish --provenance --access public --tag "${{ steps.dist_tag.outputs.tag }}"
+        run: npm publish --provenance --access public --tag "$DIST_TAG"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DIST_TAG: ${{ steps.dist_tag.outputs.tag }}

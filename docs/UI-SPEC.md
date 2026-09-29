@@ -34,6 +34,13 @@ Opens a browser. Serves only on localhost. Dies on ctrl c.
   url before that); the token is compared in constant time so the check
   itself leaks nothing, and it travels in plaintext HTTP, so the server says
   so out loud and this stays something to ask for on a trusted network only.
+  Loopback alone is not a guard, because any web page the developer visits can
+  send requests to it. `guard.js` answers 403 to a `Host` that is not a loopback
+  name on the bound port (which is what DNS rebinding sends), and to any change
+  (`POST`, `DELETE`) carrying a cross site `Sec-Fetch-Site` or an `Origin` that
+  is not the console's own. With `--lan` the `Host` is not listed, since a phone
+  arrives by an address no list could name, but the cross site rules still
+  apply and the token check is unchanged.
 - **Under a stated line budget**, currently 2350 across `index.js`, `app.html`
   and `lib.js`. The number lives in `test/ui.test.js` with the history of every
   raise and what bought it, so growth stays a decision, not a drift.
