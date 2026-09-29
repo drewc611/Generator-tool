@@ -644,3 +644,90 @@ test("a filter field keeps a real focus ring, and a token swatch names its role 
   assert.ok(icons.length >= 5, "the mobile tab bar and the FAB carry an icon each");
   assert.ok(icons.every((m) => /aria-hidden="true"/.test(m[1])), "a decorative icon paired with a real text or aria-label on its button stays out of assistive tech's way");
 });
+
+/* ------------------------------------------------ cross site requests, GT-1 */
+
+import { request as httpRequest } from "node:http";
+import { refuseRequest } from "../plugins/vis-ui/guard.js";
+
+// fetch() will not let a script choose Host or Origin, and those are the two
+// headers under test, so these requests go through node:http.
+const raw = (base, method, path, headers = {}, body) => new Promise((done, fail) => {
+  const u = new URL(base);
+  const req = httpRequest({ host: u.hostname, port: u.port, method, path, headers }, (res) => {
+    const chunks = [];
+    res.on("data", (c) => chunks.push(c));
+    res.on("end", () => done({ status: res.statusCode, body: Buffer.concat(chunks).toString("utf8"), headers: res.headers }));
+  });
+  req.on("error", fail);
+  req.end(body);
+});
+
+test("refuseRequest lists loopback hosts on the bound port and rejects a foreign origin", () => {
+  const ok = { host: "127.0.0.1:4321", localPort: 4321 };
+  assert.equal(refuseRequest({ ...ok, method: "GET" }), null);
+  for (const host of ["localhost:4321", "LOCALHOST:4321", "[::1]:4321"]) assert.equal(refuseRequest({ host, localPort: 4321 }), null, host);
+  for (const host of [undefined, "", "rebind.example:4321", "127.0.0.1", "127.0.0.1:80", "127.0.0.1.example:4321"]) {
+    assert.match(refuseRequest({ host, localPort: 4321 }) ?? "", /Host header/, String(host));
+  }
+  assert.equal(refuseRequest({ ...ok, method: "POST", origin: "http://127.0.0.1:4321", secFetchSite: "same-origin" }), null);
+  assert.equal(refuseRequest({ ...ok, method: "POST" }), null, "no Origin at all is a script or curl, not a page");
+  for (const origin of ["http://evil.example", "null", "http://127.0.0.1:4322", "https://127.0.0.1:4321", "not a url"]) {
+    assert.match(refuseRequest({ ...ok, method: "POST", origin }) ?? "", /origin/, origin);
+  }
+  for (const secFetchSite of ["cross-site", "same-site"]) {
+    assert.match(refuseRequest({ ...ok, method: "DELETE", secFetchSite }) ?? "", /another site/, secFetchSite);
+  }
+  assert.equal(refuseRequest({ ...ok, method: "GET", origin: "http://evil.example", secFetchSite: "cross-site" }), null, "a read cannot be read back across sites; the Host rule covers rebinding");
+});
+
+test("loopback console refuses a foreign Host and any cross site change, and changes nothing", async (t) => {
+  const { out, cleanup } = await ctxFor();
+  t.after(cleanup);
+  const dir = await mkdtemp(join(tmpdir(), "portamp-guard-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const intake = createIntake(join(dir, "intake"));
+  let reruns = 0;
+  const { server } = await serve({ outDir: out, shotsDir: join(ROOT, "example/screenshots"), port: 0, log: {}, intake, rerun: async () => { reruns += 1; } });
+  t.after(() => new Promise((done) => server.close(done)));
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}`;
+  const own = { host: `127.0.0.1:${port}` };
+  const evil = { ...own, origin: "http://evil.example", "sec-fetch-site": "cross-site" };
+
+  assert.equal((await raw(base, "GET", "/healthz", { host: `rebind.example:${port}` })).status, 403, "a rebound hostname reads nothing");
+  assert.equal((await raw(base, "GET", "/source?path=x", { host: `rebind.example:${port}` })).status, 403);
+  assert.equal((await raw(base, "GET", "/healthz", own)).status, 200);
+
+  assert.equal((await raw(base, "POST", "/rerun", evil, "{}")).status, 403);
+  assert.equal((await raw(base, "POST", "/intake?path=planted.exe", evil, "MZ")).status, 403);
+  assert.equal((await raw(base, "DELETE", "/intake", evil)).status, 403);
+  assert.equal(reruns, 0, "a refused request never reached the rerun");
+  assert.deepEqual(await intake.list(), [], "a refused request planted nothing");
+
+  const same = { ...own, origin: base, "sec-fetch-site": "same-origin" };
+  assert.equal((await raw(base, "POST", "/intake?path=ok.exe", same, "MZ")).status, 200, "the console's own page still works");
+  assert.deepEqual((await intake.list()).map((f) => f.path), ["ok.exe"]);
+  assert.equal((await raw(base, "DELETE", "/intake", same)).status, 200);
+  assert.deepEqual(await intake.list(), [], "a same origin wipe still empties it");
+  assert.equal((await raw(base, "POST", "/rerun", same, "{}")).status, 200);
+  assert.equal(reruns, 1);
+});
+
+test("--lan keeps its token and still refuses a cross site change, from any Host", async (t) => {
+  const { out, cleanup } = await ctxFor();
+  t.after(cleanup);
+  const { server, token } = await serve({ outDir: out, shotsDir: join(ROOT, "example/screenshots"), port: 0, log: {}, lan: true });
+  t.after(() => new Promise((done) => server.close(done)));
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}`;
+  const lanHost = `192.168.1.20:${port}`;
+  const cookie = `portamp_token=${token}`;
+
+  assert.equal((await raw(base, "GET", "/healthz", { host: lanHost })).status, 401, "no token is still refused");
+  assert.equal((await raw(base, "GET", "/healthz", { host: lanHost, cookie })).status, 200, "a phone on a LAN address with the token is served");
+  const solve = JSON.stringify({ text: "1 + 1" });
+  assert.equal((await raw(base, "POST", "/study/solve", { host: lanHost, cookie, origin: `http://${lanHost}` }, solve)).status, 200, "the console's own page on a LAN address still works");
+  const cross = await raw(base, "POST", "/study/solve", { host: lanHost, cookie, origin: "http://evil.example", "sec-fetch-site": "cross-site" }, solve);
+  assert.equal(cross.status, 403, "a valid token does not excuse a cross site request");
+});
